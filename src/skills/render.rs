@@ -20,13 +20,28 @@ pub const KNOWN_ADDON_KEYS: &[&str] = &[
     "domain_modeling",
     "dev_principles",
     "architecture_principles",
-    "grill_me",
-    "grill_with_docs",
-    "absolute_mode",
+    "challenge",
+    "communication_policy",
     "readme",
     "outline",
     "coverage",
 ];
+
+/// Whether a named addon is enabled on the effective manifest.
+pub fn manifest_addon_enabled(manifest: &crate::config::manifest::Manifest, name: &str) -> bool {
+    match name {
+        "arc42" => manifest.addons.arc42,
+        "domain_modeling" => manifest.addons.domain_modeling,
+        "dev_principles" => manifest.addons.dev_principles,
+        "architecture_principles" => manifest.addons.architecture_principles,
+        "challenge" => manifest.addons.challenge,
+        "communication_policy" => manifest.addons.communication_policy,
+        "readme" => manifest.addons.readme,
+        "outline" => manifest.addons.outline,
+        "coverage" => manifest.addons.coverage,
+        _ => false,
+    }
+}
 
 const OPEN_CONDITION: &str = "{{#if ";
 const CLOSE_CONDITION: &str = "{{/if}}";
@@ -293,5 +308,16 @@ mod tests {
         let template = "```\n{{#if addons.arc42}}\nkept\n{{/if}}\n```\n";
         let out = render(template, &[("arc42", true)]).unwrap();
         assert_eq!(out, "```\nkept\n```\n");
+    }
+}
+
+#[cfg(test)]
+mod shipped_template_tests {
+    #[test]
+    fn commands_template_is_valid_yaml() {
+        let text = crate::config::embedded::Assets::get_str("commands.yaml.tmpl")
+            .expect("embedded commands template");
+        serde_yaml_ng::from_str::<serde_yaml_ng::Value>(&text)
+            .expect("commands template must be valid YAML");
     }
 }

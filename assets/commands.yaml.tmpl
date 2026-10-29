@@ -28,14 +28,41 @@
 #   pytest
 #   npx cucumber-js "givn/specs/**/*.feature"
 #
+# Served runner setup example — copy this script to ./run-tests.sh and make it
+# executable. It executes the selected Gherkin features from GIVN_FEATURES,
+# selects regular or E2E explicitly through GIVN_RESULT_SCOPE, and writes a
+# fresh GIVN_RESULT_FILE with total, passed, failed, and skipped counts. A
+# failed, undefined, pending, ambiguous, or skipped scenario and a missing,
+# malformed, zero, or inconsistent result exit nonzero.
+#
+#   #!/bin/sh
+#   set -eu
+#   scope=${GIVN_RESULT_SCOPE:-regular}
+#   features=${GIVN_FEATURES:-givn/specs}
+#   result=${GIVN_RESULT_FILE:?GIVN_RESULT_FILE must be set}
+#   rm -f "$result"
+#   case "$scope" in
+#     regular) tags='not @e2e' ;;
+#     e2e) tags='@e2e' ;;
+#     *) echo "unsupported GIVN_RESULT_SCOPE: $scope" >&2; exit 2 ;;
+#   esac
+#   GIVN_FEATURES="$features" GIVN_RESULT_SCOPE="$scope" GIVN_RESULT_FILE="$result" \
+#     cargo test --test features_runner -- --tags "$tags"
+#   test -s "$result"
+#
+# Matching verification configuration:
+#   verify:
+#     command: "./run-tests.sh"
+#     e2e_command: "./run-tests.sh"
+#
 # See arc42 ch.8.10 for details.
 verify:
-  command: "./run-tests.sh"            # project-owned test script
+  command: "givn missing-testrunner"   # unconfigured sentinel: prints setup guidance and exits nonzero
 
   # --- E2E test runner --------------------------------------------------------
   # Command to run @e2e-tagged scenarios. If unconfigured, the review gate and
   # archive gate will reject any change whose specs include @e2e scenarios.
-  e2e_command: "./run-tests.sh --e2e"  # same script, @e2e filter
+  e2e_command: "givn missing-e2e-runner"  # unconfigured sentinel
 
 # --- Coverage gate (requires addons.coverage: true) ---------------------------
 # Commands that produce Cobertura XML coverage data. The measurement script

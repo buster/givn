@@ -21,11 +21,12 @@ const BANNER: &str = r#"
 const DEFAULT_PROMPT_TARGET: AgentTarget = AgentTarget::Opencode;
 
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
-/// versioned `givn/config.yaml`. Enables the default-on addons (opt-out via
-/// `--no-addons`); default-off addons stay disabled. Generates skills. Idempotent. `AGENTS.md` is otherwise
+/// versioned `givn/config.yaml`. A fresh project enables every addon; an
+/// existing project keeps its explicit choices, and `--no-addons` opts every
+/// addon out. Generates skills. Idempotent. `AGENTS.md` is otherwise
 /// user-owned: givn writes to it only inside its own fenced
-/// `<!-- givn:begin:* -->` blocks (e.g. the `absolute_mode` addon), and only
-/// when the corresponding addon is enabled.
+/// `<!-- givn:begin:* -->` blocks (for example the `communication_policy`
+/// addon), and only when the corresponding addon is enabled.
 pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     let project_root = std::env::current_dir()?;
 
@@ -52,6 +53,16 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         (Vec::new(), Vec::new())
     };
 
+    // Re-rendering an existing managed scaffold must not discard the
+    // project's explicit addon choices. Read and validate them before the
+    // first write so a retired or malformed block is refused unchanged.
+    let preserved_addons = if config_created && config_path.exists() && !no_addons {
+        let existing = std::fs::read_to_string(&config_path)?;
+        Some(crate::cli::addons::explicit_addon_settings(&existing)?)
+    } else {
+        None
+    };
+
     // Create directory scaffolding.
     let dirs = ["givn/specs", "givn/changes", "givn/archive"];
     println!("\nScaffolding project...\n");
@@ -65,6 +76,18 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     if config_created {
         let content = crate::config::render::config_yaml(env!("CARGO_PKG_VERSION"))?;
         std::fs::write(&config_path, content)?;
+        if let Some(settings) = &preserved_addons {
+            let block = crate::cli::addons::addons_block(settings);
+            if !block.is_empty() {
+                let mut content = std::fs::read_to_string(&config_path)?;
+                if !content.ends_with('\n') {
+                    content.push('\n');
+                }
+                content.push('\n');
+                content.push_str(&block);
+                std::fs::write(&config_path, content)?;
+            }
+        }
         println!("  wrote    givn/config.yaml");
     } else {
         println!("  exists   givn/config.yaml  (use --force to overwrite)");
@@ -76,7 +99,8 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         println!("  skills will be installed to: {}", target_print.join(", "));
     }
 
-    // Write givn/commands.yaml (test runner + coverage, separate from config).
+    // givn never invents a project runner script. The commands template ships
+    // an explicit unconfigured sentinel that explains setup and exits non-zero.
     let commands_path = project_root.join("givn/commands.yaml");
     if commands_path.exists() && !force {
         println!("  exists   givn/commands.yaml  (use --force to overwrite)");
@@ -86,51 +110,53 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         println!("  wrote    givn/commands.yaml");
     }
 
-    // Scaffold the fail-closed runner only when the project has no script.
-    // The commands template points verify.command at ./run-tests.sh, so a
-    // fresh project must never silently skip the suite.
-    let runner = project_root.join("run-tests.sh");
-    if !runner.exists() {
-        std::fs::write(
-            &runner,
-            "#!/bin/sh\n             echo 'run-tests.sh is not configured yet.' >&2\n             echo 'Run the project suite, then write the counts with:' >&2\n             echo '  givn test-result --total N --passed N --failed N --skipped N' >&2\n             exit 1\n",
-        )?;
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mut permissions = std::fs::metadata(&runner)?.permissions();
-            permissions.set_mode(0o755);
-            std::fs::set_permissions(&runner, permissions)?;
-        }
-        println!("  wrote    run-tests.sh (fails until configured)");
-    }
-
-    // Enable every known addon (default) unless --no-addons. Each addon's
-    // own scaffolding (arc42 docs, absolute_mode's AGENTS.md block) runs as
-    // part of `addons::enable_scaffold`, so the effect is identical to running
-    // `givn addons enable <name>` manually for every addon (skills are
-    // generated once below instead of per addon).
-    if !no_addons {
+    // Resolve addons exactly once. A fresh scaffold enables every addon; a
+    // re-rendered existing scaffold scaffolds only the choices restored from
+    // the project. A plain re-init leaves the stored choices untouched.
+    if no_addons {
+        crate::cli::addons::disable_all(&project_root)?;
+        println!("\nDisabling addons...\n");
+        println!("  explicit false written for every addon");
+    } else if config_created {
         println!("\nEnabling addons...\n");
-        for addon in crate::cli::addons::KNOWN_ADDONS {
-            if addon.default_enabled {
-                crate::cli::addons::enable_scaffold(addon.id)?;
+        if preserved_addons.is_some() {
+            let manifest = crate::config::overlay::load_effective()?;
+            for addon in crate::cli::addons::KNOWN_ADDONS {
+                if manifest
+                    .addons
+                    .get(addon.id)
+                    .unwrap_or(addon.default_enabled)
+                {
+                    crate::cli::addons::scaffold_enabled(addon.id)?;
+                }
+            }
+        } else {
+            for addon in crate::cli::addons::KNOWN_ADDONS {
+                if addon.default_enabled {
+                    crate::cli::addons::enable_scaffold(addon.id)?;
+                }
             }
         }
-    } else {
-        // The default is enabled, so `--no-addons` must write an explicit
-        // false for every addon instead of relying on an embedded default.
-        crate::cli::addons::disable_all(&project_root)?;
     }
 
-    // Generate skills and agent commands.
-    println!("\nGenerating skills and agent commands...\n");
-    match crate::skills::targets::sync(&project_root) {
-        Ok(()) => {}
-        Err(e) => {
-            eprintln!("  warning: skill generation failed: {e}");
-            eprintln!("  Run `givn skills sync` after configuring verify.command.");
-        }
+    // Generate skills and agent integrations. A failure here leaves a partial
+    // initialization: the scaffold remains for retry, and the command exits
+    // non-zero without declaring the project Ready.
+    println!("\nGenerating skills and agent integrations...\n");
+    if let Err(error) = crate::skills::targets::sync(&project_root) {
+        let destination = failed_skill_destination(&project_root);
+        eprintln!("\n{}", "─".repeat(52));
+        eprintln!("\nInitialization partial: required skill synchronization failed.");
+        eprintln!("  failed destination: {destination}");
+        eprintln!("  reported error: {error}");
+        eprintln!("  successfully written scaffold files remain available for retry");
+        eprintln!("  no rollback was attempted");
+        eprintln!("  retry after correcting the destination: givn skills sync");
+        eprintln!();
+        return Err(anyhow::anyhow!(
+            "initialization partial: required skill synchronization failed at {destination}: \
+             {error}; retry after correcting the destination: givn skills sync"
+        ));
     }
 
     // Backend awareness: name the selected backend's limits instead of
@@ -154,7 +180,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     println!("\n{}", "─".repeat(52));
     println!("\nInstalled:\n");
     println!("  givn/config.yaml, givn/{{specs,changes,archive}}");
-    println!("  core skills and commands");
+    println!("  core skills and agent integrations");
     match crate::scm::select(&project_root) {
         Ok(crate::scm::Backend::Fossil(_)) => {
             println!(
@@ -186,9 +212,32 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         println!("  addons:  disabled (--no-addons)");
         println!("           explicit false written for every addon");
     } else {
-        println!("  addons:  enabled");
-        for addon in crate::cli::addons::KNOWN_ADDONS {
-            println!("    - {}: {}", addon.id, addon.description);
+        let manifest = crate::config::overlay::load_effective()?;
+        let states: Vec<(&str, bool)> = crate::cli::addons::KNOWN_ADDONS
+            .iter()
+            .map(|addon| {
+                (
+                    addon.id,
+                    manifest
+                        .addons
+                        .get(addon.id)
+                        .unwrap_or(addon.default_enabled),
+                )
+            })
+            .collect();
+        let enabled = states.iter().filter(|(_, enabled)| *enabled).count();
+        if enabled == states.len() {
+            println!("  addons:  enabled");
+        } else if enabled == 0 {
+            println!("  addons:  disabled");
+        } else {
+            println!("  addons:  effective selection");
+        }
+        for (id, enabled) in states {
+            println!(
+                "    - {id}: {}",
+                if enabled { "enabled" } else { "disabled" }
+            );
         }
     }
 
@@ -200,6 +249,37 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     println!();
 
     Ok(())
+}
+
+/// Name the selected skill destination that is obviously unwritable (for
+/// example a regular file where the target directory belongs). Falls back to
+/// the selected destination list so the partial report never hides where the
+/// required synchronization was headed.
+fn failed_skill_destination(project_root: &Path) -> String {
+    let targets = crate::config::overlay::load_skills_targets(project_root).unwrap_or_default();
+    for name in &targets {
+        let Some(target) = crate::skills::targets::AgentTarget::from_name(name) else {
+            continue;
+        };
+        for path in [
+            project_root.join(target.dir()),
+            project_root.join(target.dir()).join("skills"),
+        ] {
+            if path.exists() && !path.is_dir() {
+                return path.display().to_string();
+            }
+        }
+    }
+    let directories: Vec<String> = targets
+        .iter()
+        .filter_map(|name| crate::skills::targets::AgentTarget::from_name(name))
+        .map(|target| target.display().to_string())
+        .collect();
+    if directories.is_empty() {
+        "the selected agent target".to_string()
+    } else {
+        directories.join(", ")
+    }
 }
 
 /// Ask the user which agents to install skills/commands to.
@@ -326,4 +406,158 @@ fn write_rules_policy(project_root: &Path) -> Result<()> {
     content.push_str("rules: local-only\n");
     std::fs::write(&config_path, content)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn cwd_lock() -> &'static std::sync::Mutex<()> {
+        crate::config::overlay::test_cwd_lock()
+    }
+
+    struct RestoreCwd(PathBuf);
+
+    impl Drop for RestoreCwd {
+        fn drop(&mut self) {
+            let _ = std::env::set_current_dir(&self.0);
+        }
+    }
+
+    #[test]
+    fn required_skill_sync_failure_makes_init_partial_and_nonzero() {
+        let _lock = cwd_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let directory = tempfile::tempdir().unwrap();
+        std::fs::write(directory.path().join(".opencode"), "not a directory").unwrap();
+        let _restore = RestoreCwd(std::env::current_dir().unwrap());
+        std::env::set_current_dir(directory.path()).unwrap();
+
+        let error = run(false, true, &["opencode".to_string()])
+            .expect_err("a required skill synchronization failure must fail init");
+        let message = error.to_string();
+        assert!(message.contains("partial"), "{message}");
+        assert!(message.contains("givn skills sync"), "{message}");
+        assert!(message.contains(".opencode"), "{message}");
+        assert!(
+            directory.path().join("givn/config.yaml").exists(),
+            "successfully written scaffold files must remain for retry"
+        );
+    }
+
+    #[test]
+    fn init_scaffolds_unconfigured_runner_sentinels_without_a_script() {
+        let _lock = cwd_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let directory = tempfile::tempdir().unwrap();
+        let _restore = RestoreCwd(std::env::current_dir().unwrap());
+        std::env::set_current_dir(directory.path()).unwrap();
+
+        run(false, true, &["opencode".to_string()]).expect("init succeeds");
+        assert!(
+            !directory.path().join("run-tests.sh").exists(),
+            "init must not invent a project runner script"
+        );
+        let commands =
+            std::fs::read_to_string(directory.path().join("givn/commands.yaml")).unwrap();
+        assert!(commands.contains("givn missing-testrunner"), "{commands}");
+        let active: Vec<&str> = commands
+            .lines()
+            .filter(|line| !line.trim_start().starts_with('#'))
+            .collect();
+        assert!(
+            !active.iter().any(|line| line.contains("./run-tests.sh")),
+            "{commands}"
+        );
+    }
+    fn append_addons(project_root: &Path, settings: &[(&str, bool)]) {
+        let config_path = project_root.join("givn/config.yaml");
+        let content = std::fs::read_to_string(&config_path).unwrap();
+        let mut kept = Vec::new();
+        let mut in_addons = false;
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if trimmed == "addons:" {
+                in_addons = true;
+                continue;
+            }
+            if in_addons {
+                if !line.is_empty() && !line.starts_with(' ') && !line.starts_with('#') {
+                    in_addons = false;
+                    kept.push(line.to_string());
+                }
+                continue;
+            }
+            kept.push(line.to_string());
+        }
+        while kept.last().is_some_and(|line| line.trim().is_empty()) {
+            kept.pop();
+        }
+        kept.push(
+            crate::cli::addons::addons_block(
+                &settings
+                    .iter()
+                    .map(|(name, enabled)| (name.to_string(), *enabled))
+                    .collect::<Vec<_>>(),
+            )
+            .trim_end()
+            .to_string(),
+        );
+        std::fs::write(config_path, kept.join("\n") + "\n").unwrap();
+    }
+
+    #[test]
+    fn reentry_preserves_explicit_addon_opt_outs() {
+        let _lock = cwd_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let directory = tempfile::tempdir().unwrap();
+        let _restore = RestoreCwd(std::env::current_dir().unwrap());
+        std::env::set_current_dir(directory.path()).unwrap();
+
+        run(false, true, &["opencode".to_string()]).unwrap();
+        append_addons(
+            directory.path(),
+            &[("outline", false), ("challenge", false)],
+        );
+
+        run(false, false, &[]).unwrap();
+        let after_plain =
+            std::fs::read_to_string(directory.path().join("givn/config.yaml")).unwrap();
+        assert!(after_plain.contains("  outline: false"), "{after_plain}");
+        assert!(after_plain.contains("  challenge: false"), "{after_plain}");
+
+        run(true, false, &["opencode".to_string()]).unwrap();
+        let after_force =
+            std::fs::read_to_string(directory.path().join("givn/config.yaml")).unwrap();
+        assert!(after_force.contains("  outline: false"), "{after_force}");
+        assert!(after_force.contains("  challenge: false"), "{after_force}");
+        assert_eq!(after_force.matches("\naddons:").count(), 1, "{after_force}");
+        let manifest = crate::config::overlay::load_effective().unwrap();
+        assert!(!manifest.addons.outline);
+        assert!(!manifest.addons.challenge);
+        assert!(manifest.addons.communication_policy);
+    }
+
+    #[test]
+    fn no_addons_opts_out_every_current_addon_including_the_renamed_pair() {
+        let _lock = cwd_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let directory = tempfile::tempdir().unwrap();
+        let _restore = RestoreCwd(std::env::current_dir().unwrap());
+        std::env::set_current_dir(directory.path()).unwrap();
+
+        run(false, true, &["opencode".to_string()]).unwrap();
+        let config = std::fs::read_to_string(directory.path().join("givn/config.yaml")).unwrap();
+        assert!(config.contains("  communication_policy: false"), "{config}");
+        assert!(config.contains("  challenge: false"), "{config}");
+        assert!(
+            !config.contains("absolute_mode") && !config.contains("grill_"),
+            "{config}"
+        );
+    }
 }

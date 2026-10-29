@@ -165,6 +165,52 @@ fn guidance_requires_split_or_keep(world: &mut GivnWorld) {
     );
 }
 
+#[then("a chosen split must be completed before sign-off")]
+fn guidance_requires_split_completion(world: &mut GivnWorld) {
+    let output = cli_stdout(world)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        output.contains("A chosen split must be completed before sign-off"),
+        "the review guidance does not require completing a chosen split before sign-off"
+    );
+}
+
+#[then("shape-match pairs are advisory discovery rather than mandatory dispositions")]
+fn shape_matches_are_advisory(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("advisory") && output.contains("not"),
+        "the review guidance treats shape matches as mandatory dispositions"
+    );
+}
+
+#[then("advisory findings are not completed verification evidence")]
+fn advisory_findings_not_evidence(world: &mut GivnWorld) {
+    let output = cli_stdout(world)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        output.contains("not the finding's presence"),
+        "the review guidance treats an advisory finding as completed verification evidence"
+    );
+}
+
+#[then(
+    "the guidance requires split-or-keep for each reported long scenario with a brief keep reason"
+)]
+fn guidance_requires_split_or_keep_with_reason(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("split-or-keep")
+            && output.contains("one row per long scenario")
+            && output.contains("either `split` or `keep`"),
+        "the review guidance does not require split-or-keep with a reason"
+    );
+}
+
 fn instruction_json(world: &GivnWorld) -> serde_json::Value {
     let output = world
         .last_output
@@ -297,13 +343,11 @@ fn specs_guidance(world: &GivnWorld) -> &str {
 fn synchronized_specs_guidance(world: &mut GivnWorld) {
     let specs = std::fs::read_to_string(crate::common::repo_path("assets/instructions/specs.md"))
         .expect("read specs instruction");
-    let command = std::fs::read_to_string(crate::common::repo_path("assets/commands/givn-spec.md"))
-        .expect("read specs command");
     let skill = std::fs::read_to_string(crate::common::repo_path(
         "assets/skills/givn-spec/SKILL.md.tmpl",
     ))
     .expect("read specs skill");
-    world.additional_output = Some(format!("{specs}\n{command}\n{skill}"));
+    world.additional_output = Some(format!("{specs}\n{skill}"));
 }
 
 #[when("an author reads the guidance")]
@@ -431,8 +475,8 @@ fn returned_guidance_requires_goal_shaped_names(world: &mut GivnWorld) {
 
 // --- instruction-integrity: generated directions resolve through the CLI ----
 
-/// Every installed skill and command file for the project's configured
-/// targets, in deterministic order.
+/// Every installed skill file for the project's configured targets, in
+/// deterministic order.
 fn installed_guidance_files(world: &GivnWorld) -> Vec<std::path::PathBuf> {
     let root = env(world).root();
     let targets =
@@ -454,18 +498,6 @@ fn installed_guidance_files(world: &GivnWorld) -> Vec<std::path::PathBuf> {
                 if file.is_file() {
                     files.push(file);
                 }
-            }
-        }
-        if target.owns_commands() {
-            let commands_dir = root.join(target.dir()).join("commands");
-            if commands_dir.is_dir() {
-                let mut entries: Vec<std::path::PathBuf> = std::fs::read_dir(&commands_dir)
-                    .unwrap_or_else(|error| panic!("read {}: {error}", commands_dir.display()))
-                    .filter_map(|entry| entry.ok().map(|entry| entry.path()))
-                    .filter(|path| path.extension().is_some_and(|ext| ext == "md"))
-                    .collect();
-                entries.sort();
-                files.extend(entries);
             }
         }
     }
@@ -492,12 +524,12 @@ fn named_instruction_ids(content: &str) -> Vec<String> {
     ids
 }
 
-#[then("every generated skill and command names a served instruction")]
+#[then("every generated skill names a served instruction")]
 fn every_generated_file_names_instruction(world: &mut GivnWorld) {
     let files = installed_guidance_files(world);
     assert!(
         !files.is_empty(),
-        "the fixture has no generated skills or commands to check"
+        "the fixture has no generated skills to check"
     );
     for path in &files {
         let content = std::fs::read_to_string(path)
@@ -538,12 +570,12 @@ fn every_named_instruction_id_resolves(world: &mut GivnWorld) {
     );
 }
 
-#[then("every generated skill and command carries trigger metadata and a direction")]
+#[then("every generated skill carries trigger metadata and a direction")]
 fn every_generated_file_carries_metadata_and_direction(world: &mut GivnWorld) {
     let files = installed_guidance_files(world);
     assert!(
         !files.is_empty(),
-        "the fixture has no generated skills or commands to check"
+        "the fixture has no generated skills to check"
     );
     for path in &files {
         let content = std::fs::read_to_string(path)
@@ -579,7 +611,7 @@ fn every_generated_file_carries_metadata_and_direction(world: &mut GivnWorld) {
 }
 
 /// Representative built-in-rule markers that must never reappear in a
-/// generated skill or command (design.md §Step definitions).
+/// generated skill (design.md §Step definitions).
 const RULE_COPY_MARKERS: [&str; 7] = [
     "Artifact-specific rules",
     "carries the release note as its message subject",
@@ -590,12 +622,12 @@ const RULE_COPY_MARKERS: [&str; 7] = [
     "one question at a time",
 ];
 
-#[then("no generated skill or command copies the built-in rules of its instruction")]
+#[then("no generated skill copies the built-in rules of its instruction")]
 fn no_generated_file_copies_builtin_rules(world: &mut GivnWorld) {
     let files = installed_guidance_files(world);
     assert!(
         !files.is_empty(),
-        "the fixture has no generated skills or commands to check"
+        "the fixture has no generated skills to check"
     );
     for path in &files {
         let content = std::fs::read_to_string(path)
@@ -828,8 +860,7 @@ fn own_instruction_id(path: &std::path::Path) -> String {
         "characterize" => "characterize",
         "domain-modeling" => "domain-modeling",
         "dev-principles" => "dev-principles",
-        "grill-me" => "grill-me",
-        "grill-with-docs" => "grill-with-docs",
+        "challenge" => "challenge",
         other => panic!(
             "generated guidance file {} has no instruction id in the design's mapping (name `{other}`)",
             path.display()
@@ -838,12 +869,12 @@ fn own_instruction_id(path: &std::path::Path) -> String {
     id.to_string()
 }
 
-#[then("every generated skill and command directs to exactly one served instruction id")]
+#[then("every generated skill directs to exactly one served instruction id")]
 fn every_generated_file_directs_to_own_instruction(world: &mut GivnWorld) {
     let files = installed_guidance_files(world);
     assert!(
         !files.is_empty(),
-        "the fixture has no generated skills or commands to check"
+        "the fixture has no generated skills to check"
     );
     let artifacts = artifact_ids(world);
     let active_change = single_active_change(world);
@@ -922,7 +953,14 @@ fn dialog_policy_project(world: &mut GivnWorld) {
 #[when("the author requests the dialog policy through the Givn CLI")]
 fn author_requests_dialog_policy(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("dialog fixture is missing");
-    world.last_output = Some(crate::common::run_givn(env, &["instructions", "dialog"]));
+    let output = crate::common::run_givn(env, &["instructions", "dialog"]);
+    assert!(
+        output.status.success(),
+        "dialog request failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.additional_output = Some(String::from_utf8_lossy(&output.stdout).into_owned());
+    world.last_output = Some(output);
 }
 
 #[then("the CLI output contains the named-artifact rule")]
@@ -1563,8 +1601,6 @@ pub(crate) const CORE_SKILL_FAMILIES: [&str; 13] = [
     "givn-ideation",
 ];
 
-pub(crate) const CORE_COMMANDS: [&str; 13] = CORE_SKILL_FAMILIES;
-
 #[given("a Givn project with all agent skill targets selected and every optional addon disabled")]
 fn project_with_all_targets_and_no_addons(world: &mut GivnWorld) {
     let env = crate::common::make_bare_root();
@@ -1591,10 +1627,8 @@ fn author_synchronizes_selected_guidance(world: &mut GivnWorld) {
     world.last_output = Some(crate::common::run_givn(env, &["skills", "sync"]));
 }
 
-#[then(
-    "every available core skill and command still requires the effective dialog policy for every user-facing question"
-)]
-fn core_entries_require_dialog_policy(world: &mut GivnWorld) {
+#[then("every available core skill remains thin and the bootstrap owns the dialog obligation")]
+fn core_entries_are_thin_and_bootstrap_owns_policy(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("sync fixture is missing");
     let targets = givn::config::overlay::load_skills_targets(&env.root())
         .expect("load configured skills targets");
@@ -1604,22 +1638,19 @@ fn core_entries_require_dialog_policy(world: &mut GivnWorld) {
             let content = std::fs::read_to_string(env.path(&rel))
                 .unwrap_or_else(|e| panic!("{rel} missing after sync: {e}"));
             assert!(
-                content.contains("for every user-facing question")
-                    && content.contains("effective policy from `givn instructions dialog`"),
-                "{rel} does not carry the dialog obligation: {content}"
+                !content.contains("givn instructions dialog")
+                    && !content.contains("for every user-facing question")
+                    && !content.contains("When work is handed to another context"),
+                "{rel} repeats policy or delegation instead of staying thin: {content}"
             );
         }
     }
-    for command in CORE_COMMANDS {
-        let rel = format!(".opencode/commands/{command}.md");
-        let content = std::fs::read_to_string(env.path(&rel))
-            .unwrap_or_else(|e| panic!("{rel} missing after sync: {e}"));
-        assert!(
-            content.contains("for every user-facing question")
-                && content.contains("effective policy from `givn instructions dialog`"),
-            "{rel} does not carry the dialog obligation: {content}"
-        );
-    }
+    let agents = std::fs::read_to_string(env.path("AGENTS.md")).expect("read AGENTS.md");
+    assert!(
+        agents.contains("effective dialog policy from")
+            && agents.contains("load it once per context"),
+        "the bootstrap block does not own the dialog obligation: {agents}"
+    );
 }
 
 #[then("guidance for disabled addons is not installed")]
@@ -1628,8 +1659,8 @@ fn disabled_addon_guidance_is_absent(world: &mut GivnWorld) {
     for absent in [
         ".opencode/skills/givn-domain-modeling",
         ".opencode/skills/givn-dev-principles",
-        ".opencode/commands/grill-me.md",
-        ".opencode/commands/grill-with-docs.md",
+        ".opencode/skills/givn-challenge",
+        ".opencode/commands",
     ] {
         assert!(
             !env.path(absent).exists(),
@@ -1640,7 +1671,7 @@ fn disabled_addon_guidance_is_absent(world: &mut GivnWorld) {
         .expect("core skill missing");
     for vocabulary in [
         "arc42",
-        "Absolute Mode",
+        "Communication Policy",
         "domain-modeling",
         "dev-principles",
     ] {
@@ -1684,13 +1715,14 @@ fn selected_targets_and_addons_unchanged(world: &mut GivnWorld) {
     );
     for addon in [
         "arc42",
-        "absolute_mode",
+        "communication_policy",
         "readme",
         "coverage",
         "domain_modeling",
         "dev_principles",
-        "grill_me",
-        "grill_with_docs",
+        "architecture_principles",
+        "challenge",
+        "outline",
     ] {
         assert!(
             !active.contains(&format!("{addon}: true")),
@@ -1789,20 +1821,23 @@ fn synchronized_entries_direct_to_effective_policy(world: &mut GivnWorld) {
     for rel in [
         ".opencode/skills/givn-propose/SKILL.md",
         ".claude/skills/givn-propose/SKILL.md",
-        ".opencode/commands/givn-propose.md",
     ] {
         let content =
             std::fs::read_to_string(env.path(rel)).unwrap_or_else(|e| panic!("{rel}: {e}"));
         assert!(
-            content.contains("effective policy from `givn instructions dialog`"),
-            "{rel} does not direct authors to the effective policy: {content}"
-        );
-        assert!(
-            !content.contains("## Rule 1 — Ask only necessary")
+            !content.contains("givn instructions dialog")
+                && !content.contains("## Rule 1 — Ask only necessary")
                 && !content.contains("### Example 1 decision record"),
-            "{rel} embeds a bundled policy copy: {content}"
+            "{rel} embeds or repeats the bundled dialog policy: {content}"
         );
     }
+    let agents = std::fs::read_to_string(env.path("AGENTS.md")).expect("read AGENTS.md");
+    assert!(
+        agents.contains("effective dialog policy from")
+            && agents.contains("`givn instructions dialog`")
+            && agents.contains("givn instructions dialog-examples"),
+        "the bootstrap block does not direct authors to the effective policy and examples: {agents}"
+    );
 }
 
 fn dialog_policy(world: &GivnWorld) -> &str {
@@ -1814,10 +1849,13 @@ fn dialog_policy(world: &GivnWorld) -> &str {
 
 #[given("the canonical dialog policy is requested")]
 fn canonical_dialog_policy_requested(world: &mut GivnWorld) {
-    let content =
-        std::fs::read_to_string(crate::common::repo_path("assets/instructions/dialog.md"))
-            .expect("read canonical dialog instruction");
-    world.additional_output = Some(content);
+    let policy = std::fs::read_to_string(crate::common::repo_path("assets/instructions/dialog.md"))
+        .expect("read canonical dialog instruction");
+    let examples = std::fs::read_to_string(crate::common::repo_path(
+        "assets/instructions/dialog-examples.md",
+    ))
+    .expect("read dialog examples instruction");
+    world.additional_output = Some(format!("{policy}\n{examples}"));
 }
 
 #[when("an author reads the option treatment and the record shape")]
@@ -2124,10 +2162,7 @@ fn proposal_instructions_requested(world: &mut GivnWorld) {
     let instruction =
         std::fs::read_to_string(crate::common::repo_path("assets/instructions/proposal.md"))
             .expect("read proposal instruction");
-    let command =
-        std::fs::read_to_string(crate::common::repo_path("assets/commands/givn-propose.md"))
-            .expect("read propose command");
-    world.additional_output = Some(format!("{instruction}\n{command}"));
+    world.additional_output = Some(instruction);
 }
 
 #[when("an author reads the question disposition rule")]
@@ -2191,11 +2226,7 @@ fn design_and_design_review_requested(world: &mut GivnWorld) {
         "assets/instructions/design-review.md",
     ))
     .expect("read design-review instruction");
-    let command = std::fs::read_to_string(crate::common::repo_path(
-        "assets/commands/givn-design-review.md",
-    ))
-    .expect("read design-review command");
-    world.additional_output = Some(format!("{design}\n{design_review}\n{command}"));
+    world.additional_output = Some(format!("{design}\n{design_review}"));
 }
 
 #[when("a maintainer reads the ledger contract")]
@@ -2492,6 +2523,66 @@ fn configured_target_check_fails_naming(world: &mut GivnWorld, target: String) {
     );
 }
 
+#[then(
+    "every selected target receives a givn-characterize skill directing the author to `givn instructions review-reverse`"
+)]
+fn selected_targets_receive_characterize(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let targets =
+        givn::config::overlay::load_skills_targets(&root).expect("load configured skills targets");
+    assert!(!targets.is_empty(), "no selected target");
+    for name in targets {
+        let path = root.join(format!(".{name}/skills/givn-characterize/SKILL.md"));
+        let content = std::fs::read_to_string(&path)
+            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+        assert!(
+            content.contains("givn instructions review-reverse"),
+            "{} does not request the reverse review through the Givn CLI",
+            path.display()
+        );
+    }
+}
+
+#[then("no separately generated characterization command is installed")]
+fn no_characterization_command(world: &mut GivnWorld) {
+    let root = env(world).root();
+    for target in AgentTarget::ALL {
+        for command in ["givn-characterize", "givn-implement"] {
+            let path = root
+                .join(target.dir())
+                .join("commands")
+                .join(format!("{command}.md"));
+            assert!(
+                !path.exists(),
+                "a generated command was installed at {}",
+                path.display()
+            );
+        }
+    }
+}
+
+#[then("no separately authored agent command is generated")]
+#[then("no separately authored agent commands are generated")]
+fn no_separately_authored_agent_command(world: &mut GivnWorld) {
+    no_characterization_command(world);
+    let root = env(world).root();
+    for target in AgentTarget::ALL {
+        let dir = root.join(target.dir()).join("commands");
+        let legacy = std::fs::read_dir(&dir)
+            .map(|entries| {
+                entries
+                    .flatten()
+                    .map(|entry| entry.path())
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        assert!(
+            legacy.is_empty(),
+            "generated command files remain: {legacy:?}"
+        );
+    }
+}
+
 #[then("the generated givn-characterize guidance requests `givn instructions review-reverse`")]
 fn characterize_guidance_requests_reverse_review(world: &mut GivnWorld) {
     let files = configured_skill_content(world, "givn-characterize");
@@ -2508,51 +2599,671 @@ fn characterize_guidance_requests_reverse_review(world: &mut GivnWorld) {
     }
 }
 
-#[then("the generated givn-characterize command requests `givn instructions review-reverse`")]
-fn characterize_command_requests_reverse_review(world: &mut GivnWorld) {
-    let root = env(world).root();
-    let targets =
-        givn::config::overlay::load_skills_targets(&root).expect("load configured skills targets");
-    let mut checked = 0;
-    for name in targets {
-        let Some(target) = AgentTarget::from_name(&name) else {
-            continue;
-        };
-        if !target.owns_commands() {
-            continue;
-        }
-        let path = root.join(format!(".{name}/commands/givn-characterize.md"));
-        let content = std::fs::read_to_string(&path)
-            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+// --- skills-only dialog policy and companion examples -----------------------
+
+fn dialog_assets() -> (String, String) {
+    let policy = std::fs::read_to_string(crate::common::repo_path("assets/instructions/dialog.md"))
+        .expect("read canonical dialog instruction");
+    let examples = std::fs::read_to_string(crate::common::repo_path(
+        "assets/instructions/dialog-examples.md",
+    ))
+    .expect("read dialog examples instruction");
+    (policy, examples)
+}
+
+#[then(
+    "the concise policy requires decision-relevant context alternatives consequences and resolution"
+)]
+fn concise_policy_requires_full_record(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    for marker in [
+        "decision-relevant",
+        "what it gains",
+        "what it costs",
+        "Resolution:",
+    ] {
         assert!(
-            content.contains("givn instructions review-reverse"),
-            "{} does not request the reverse review through the Givn CLI",
-            path.display()
+            text.contains(marker),
+            "the concise policy is missing {marker:?}: {text}"
         );
-        checked += 1;
     }
+    assert!(text.len() < 12_000, "the canonical policy is not concise");
+}
+
+#[then("chosen and rejected alternatives retain their reasons")]
+fn chosen_and_rejected_alternatives_retain_reasons(world: &mut GivnWorld) {
     assert!(
-        checked > 0,
-        "no command-owning target carries givn-characterize"
+        dialog_policy(world).contains("`Rejected:` with their reasons"),
+        "the policy does not retain rejected alternatives with their reasons"
     );
 }
 
-#[then("every command-owning agent target receives the givn-characterize command")]
-fn every_command_owning_target_receives_characterize(world: &mut GivnWorld) {
-    let root = env(world).root();
-    for target in AgentTarget::ALL
-        .iter()
-        .filter(|target| target.owns_commands())
-    {
-        let path = root
-            .join(target.dir())
-            .join("commands/givn-characterize.md");
-        let content = std::fs::read_to_string(&path)
-            .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+#[then("routine clarification does not require invented alternatives")]
+fn routine_clarification_avoids_invented_alternatives(world: &mut GivnWorld) {
+    assert!(
+        dialog_policy(world).contains("it does not invent alternatives"),
+        "the policy forces invented alternatives on routine clarification"
+    );
+}
+
+#[then(
+    "confirmations explain acceptance and revision consequences without making consent a rule waiver"
+)]
+fn confirmations_explain_both_outcomes(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    assert!(
+        text.contains("Confirmations show both accept and revise outcomes")
+            && text.contains("does not waive the policy"),
+        "the policy does not explain acceptance/revision consequences without waiving rules"
+    );
+}
+
+#[then("the policy indexes the companion regression examples by question type")]
+fn policy_indexes_companion(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    for marker in [
+        "givn instructions dialog-examples",
+        "Scope approval",
+        "Target selection",
+        "Behavior choice",
+        "Persistent-format commitment",
+        "Discoverable diagnosis",
+    ] {
         assert!(
-            content.contains("givn instructions review-reverse"),
-            "{} does not request the reverse review through the Givn CLI",
-            path.display()
+            text.contains(marker),
+            "the policy index is missing {marker:?}: {text}"
+        );
+    }
+}
+
+#[when("the author follows the dialog policy index to its companion regression examples")]
+fn author_follows_policy_index(world: &mut GivnWorld) {
+    let (_, examples) = dialog_assets();
+    world.additional_output = Some(examples);
+}
+
+#[then(
+    "the companion retains the scope-approval target-selection behavior-choice persistent-format-commitment and discoverable-diagnosis examples"
+)]
+fn companion_retains_all_examples(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    for marker in [
+        "Example 1 decision record — scope approval",
+        "Example 2 decision record — target selection",
+        "Example 3 decision record — behavior choice",
+        "Example 4 decision record — persistent-format commitment",
+        "Example 5 decision record — discoverable diagnosis",
+    ] {
+        assert!(
+            text.contains(marker),
+            "the companion is missing {marker:?}: {text}"
+        );
+    }
+}
+
+#[then("the examples distinguish hypothetical teaching records from current product behavior")]
+fn examples_are_hypothetical(world: &mut GivnWorld) {
+    assert!(
+        dialog_policy(world).contains("hypothetical")
+            && dialog_policy(world).contains("does not describe current product behavior"),
+        "the examples do not distinguish hypothetical records from current behavior"
+    );
+}
+
+#[then("each good example supplies its decision record and concrete answer consequences")]
+fn each_good_example_has_record_and_consequences(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    assert_eq!(
+        text.matches("#### Good").count(),
+        5,
+        "the companion does not carry five good examples"
+    );
+    for marker in ["Benefit:", "Cost:", "Example:"] {
+        assert!(
+            text.contains(marker),
+            "the good examples are missing {marker:?}"
+        );
+    }
+}
+
+#[then(
+    "the diagnostic example reports the researched assertion defect without asking the person to inspect unseen scenarios"
+)]
+fn diagnostic_example_reports_researched_defect(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    assert!(
+        text.contains("The status check accepts an inactive project")
+            && text.contains("#### Bad — delegating diagnosis")
+            && text.contains("#### Good — do the research and report"),
+        "the diagnostic example delegates diagnosis instead of reporting it"
+    );
+}
+
+#[then("no answer violates a confirmed one-answer constraint")]
+fn no_answer_violates_one_answer_constraint(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    assert!(
+        text.contains("I will not offer processing a repeated write as a second answer")
+            && text.contains("confirmed one-answer rule"),
+        "an answer violates the confirmed one-answer constraint"
+    );
+}
+
+#[when("the author reads the persistent-format-commitment example linked from the dialog policy")]
+fn author_reads_persistent_format_example(world: &mut GivnWorld) {
+    let (_, examples) = dialog_assets();
+    let start = examples
+        .find("### Example 4 decision record — persistent-format commitment")
+        .expect("persistent-format example missing");
+    let end = examples[start..]
+        .find("### Example 5 decision record")
+        .map(|offset| start + offset)
+        .unwrap_or(examples.len());
+    world.additional_output = Some(examples[start..end].to_string());
+}
+
+#[then("the example distinguishes recovery requiring verification from recovery already supported")]
+fn migration_example_distinguishes_recovery(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    assert!(
+        text.contains("required work, not demonstrated support")
+            && text.contains("verified reverse conversion"),
+        "the migration example does not distinguish required verification from supported recovery"
+    );
+}
+
+#[then(
+    "the less-committing answer leaves saved projects unchanged without promising a reversible upgrade"
+)]
+fn less_committing_answer_is_honest(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    let normalized = text.replace("\n> ", " ").replace('\n', " ");
+    assert!(
+        normalized.contains("Keep saved projects unchanged for now")
+            && normalized.contains("does not introduce that format-related downgrade restriction"),
+        "the less-committing answer promises an unverified reversible upgrade"
+    );
+    assert!(
+        !normalized.contains("automatically reversible"),
+        "the example promises an automatic reversible upgrade"
+    );
+}
+
+#[then(
+    "unknown compatibility facts must be established or consent narrowed before rollout approval"
+)]
+fn unknown_compatibility_facts_require_investigation(world: &mut GivnWorld) {
+    assert!(
+        dialog_policy(world).contains(
+            "establish them or narrow approval to investigation before asking for rollout"
+        ),
+        "the example permits rollout consent without established compatibility facts"
+    );
+}
+
+#[given("the effective dialog policy has been loaded in the current context")]
+fn effective_dialog_policy_loaded(world: &mut GivnWorld) {
+    let (policy, _) = dialog_assets();
+    world.additional_output = Some(policy);
+}
+
+#[when("the author prepares the first question of a type indexed by the policy")]
+fn author_prepares_first_indexed_question(world: &mut GivnWorld) {
+    assert!(
+        !dialog_policy(world).is_empty(),
+        "the dialog policy is not loaded"
+    );
+}
+
+#[then("the policy requires reading that type's companion examples before presenting the question")]
+fn policy_requires_type_examples_before_first_question(world: &mut GivnWorld) {
+    let text = dialog_policy(world);
+    assert!(
+        text.contains("Before the first question of a type in each context, read that")
+            && text.contains("type's example"),
+        "the policy does not require the type's examples before the first question"
+    );
+}
+
+#[then("repeated questions of that type do not require rereading examples retained in context")]
+fn repeated_questions_need_no_reread(world: &mut GivnWorld) {
+    assert!(
+        dialog_policy(world).contains("already read in this context need no"),
+        "the policy requires rereading retained examples"
+    );
+}
+
+#[then("questions remain one at a time")]
+fn questions_remain_one_at_a_time(world: &mut GivnWorld) {
+    assert!(
+        dialog_policy(world).contains("Ask one question, wait for the answer"),
+        "the policy permits batched questions"
+    );
+}
+
+// --- shipped setup example and parser-compatible templates -------------------
+
+fn commands_template() -> String {
+    std::fs::read_to_string(crate::common::repo_path("assets/commands.yaml.tmpl"))
+        .expect("read commands template")
+}
+
+#[then(
+    "the guidance requires explicit regular and E2E scope selection and the appropriate real interface driver"
+)]
+fn guidance_requires_scope_and_driver(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("verify.e2e_command")
+            && output.contains("named real interface")
+            && commands_template().contains("GIVN_RESULT_SCOPE"),
+        "the guidance does not require explicit scope selection and a real interface driver"
+    );
+}
+
+#[then(
+    "the setup example executes the selected Gherkin features supplied through GIVN_FEATURES rather than a parallel hand-maintained test suite"
+)]
+fn setup_example_uses_givn_features(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("GIVN_FEATURES")
+            && template.contains("--test features_runner")
+            && !template.contains("parallel hand-maintained"),
+        "the served setup example does not execute the selected Gherkin features"
+    );
+}
+
+#[then("a shared runner selects regular or E2E scenarios explicitly through GIVN_RESULT_SCOPE")]
+fn shared_runner_uses_result_scope(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("GIVN_RESULT_SCOPE")
+            && template.contains("regular) tags='not @e2e'")
+            && template.contains("e2e) tags='@e2e'"),
+        "the served runner does not select scope explicitly"
+    );
+}
+
+#[then(
+    "every invocation writes fresh results to GIVN_RESULT_FILE with total passed failed and skipped counts"
+)]
+fn invocation_writes_fresh_counts(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("GIVN_RESULT_FILE")
+            && template.contains("rm -f \"$result\"")
+            && template.contains("total, passed, failed, and skipped counts"),
+        "the served runner does not write fresh four-count results"
+    );
+}
+
+#[then(
+    "total equals passed plus failed plus skipped and successful verification requires a nonzero total with zero failures and skips"
+)]
+fn counts_reconcile_and_success_requires_green(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("zero, or inconsistent result exit nonzero")
+            && template.contains("failed, undefined, pending, ambiguous, or skipped scenario"),
+        "the served example does not fail closed on inconsistent or non-green counts"
+    );
+}
+
+#[then(
+    "undefined pending ambiguous or failed steps and skipped scenarios cannot produce passing verification"
+)]
+fn non_green_steps_fail_closed(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("undefined, pending, ambiguous, or skipped scenario"),
+        "the served example permits undefined/pending/ambiguous/skipped success"
+    );
+}
+
+#[then("runner failures exit nonzero and missing or malformed results cannot imply success")]
+fn runner_failures_exit_nonzero(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("exit nonzero") && template.contains("test -s \"$result\""),
+        "the served example does not fail on runner failure or missing results"
+    );
+}
+
+#[then("the guidance supplies executable runner and matching verification configuration examples")]
+fn guidance_supplies_executable_example(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("#!/bin/sh")
+            && template.contains("command: \"./run-tests.sh\"")
+            && template.contains("e2e_command: \"./run-tests.sh\""),
+        "the served guidance does not supply an executable runner and matching configuration"
+    );
+}
+
+#[then(
+    "runner strictness is proved at initial setup and after relevant runner version invocation or failure-configuration changes"
+)]
+fn strictness_proof_is_gated(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("E2E strict-mode proof")
+            && output.to_lowercase().contains("version")
+            && output.to_lowercase().contains("strict"),
+        "the design guidance does not gate strictness proof on runner changes"
+    );
+}
+
+#[then("local infrastructure is required only for dependencies the product actually has")]
+fn infrastructure_only_for_real_dependencies(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("Local test infrastructure")
+            && output.contains("Digital twin per external/third-party dependency")
+            && output.contains("not part of this codebase"),
+        "the design guidance demands infrastructure without real dependencies"
+    );
+}
+
+#[then(
+    "the guidance retains framework justification interaction coverage and applicable visual evidence"
+)]
+fn guidance_retains_required_sections(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    for marker in [
+        "E2E framework choice and justification",
+        "Interaction Coverage Matrix",
+        "Visual Design Contract",
+    ] {
+        assert!(
+            output.contains(marker),
+            "the design guidance lost {marker:?}"
+        );
+    }
+}
+
+#[given(regex = r#"^Givn's shipped "([^"]+)" template with its documented example values$"#)]
+fn shipped_template_with_example(world: &mut GivnWorld, asset: String) {
+    world.additional_output = Some(asset);
+}
+
+#[when("a Givn maintainer renders the template for its documented use")]
+fn maintainer_renders_template(world: &mut GivnWorld) {
+    let asset = world
+        .additional_output
+        .clone()
+        .expect("shipped template asset is missing");
+    let rendered = match asset.as_str() {
+        "artifact documents" => {
+            let mut out = String::new();
+            for entry in std::fs::read_dir(crate::common::repo_path("assets/templates"))
+                .expect("read templates dir")
+            {
+                let path = entry.expect("template entry").path();
+                if path.extension().is_some_and(|extension| extension == "md") {
+                    let text = std::fs::read_to_string(&path).expect("read template");
+                    out.push_str(&text.replace("{{CHANGE_ID}}", "demo-change"));
+                    out.push('\n');
+                }
+            }
+            out
+        }
+        "agent skills" => {
+            let mut out = String::new();
+            for entry in std::fs::read_dir(crate::common::repo_path("assets/skills"))
+                .expect("read skills dir")
+            {
+                let path = entry.expect("skill entry").path().join("SKILL.md.tmpl");
+                let text = std::fs::read_to_string(&path).expect("read skill template");
+                out.push_str(&text);
+                out.push('\n');
+            }
+            out
+        }
+        "step tables" => {
+            std::fs::read_to_string(crate::common::repo_path("assets/templates/design.md"))
+                .expect("read design template")
+        }
+        "verification configuration" => commands_template(),
+        other => panic!("unknown shipped template asset '{other}'"),
+    };
+    world.additional_output = Some(rendered);
+}
+
+#[then("frontmatter is valid wherever the document requires it")]
+fn rendered_frontmatter_valid(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .as_deref()
+        .expect("rendered template missing");
+    let mut lines = text.lines();
+    while let Some(line) = lines.next() {
+        if line.trim() != "---" {
+            continue;
+        }
+        let mut block = String::new();
+        let mut closed = false;
+        for line in lines.by_ref() {
+            if line.trim() == "---" {
+                closed = true;
+                break;
+            }
+            block.push_str(line);
+            block.push('\n');
+        }
+        if closed && (block.contains("name:") || block.contains("status:")) {
+            assert!(
+                block.contains(':'),
+                "frontmatter has no key:value pairs: {block}"
+            );
+        }
+    }
+}
+
+#[then("Markdown fences are balanced and preserve the intended example boundaries")]
+fn rendered_fences_balanced(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .as_deref()
+        .expect("rendered template missing");
+    let fences = text
+        .lines()
+        .filter(|line| line.trim_start().starts_with("```"))
+        .count();
+    assert_eq!(
+        fences % 2,
+        0,
+        "rendered Markdown has an unmatched fence:\n{text}"
+    );
+}
+
+#[then(
+    "ordinary parsers for the documented formats accept the step tables and configuration samples without Givn-specific repairs"
+)]
+fn rendered_parsers_accept(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .as_deref()
+        .expect("rendered template missing");
+    if text.contains("## Step Definitions") {
+        let row = text
+            .lines()
+            .find(|line| line.trim_start().starts_with("| Capability |"))
+            .expect("Step Definitions table header missing");
+        assert_eq!(
+            row.trim().matches('|').count(),
+            4,
+            "Step Definitions table does not have three columns: {row}"
+        );
+        assert!(
+            !row.trim_start().starts_with('>'),
+            "Step Definitions table is inside a blockquote: {row}"
+        );
+        assert!(
+            text.contains("Column 2 is the single path"),
+            "Step Definitions guidance names the wrong path column"
+        );
+    } else if text.contains("name: givn-") {
+        assert!(
+            text.contains("description:"),
+            "agent skill frontmatter is missing its description"
+        );
+    } else {
+        let parsed: serde_yaml_ng::Value =
+            serde_yaml_ng::from_str(text).expect("configuration sample is not valid YAML");
+        assert!(parsed.get("verify").is_some(), "verify block missing");
+    }
+}
+
+#[given(regex = r#"^Givn's current "([^"]+)" and preserved historical evidence$"#)]
+fn current_surface_and_history(world: &mut GivnWorld, surface: String) {
+    world.additional_output = Some(surface);
+}
+
+#[when("a Givn maintainer inspects the release's consumer-facing content")]
+fn maintainer_inspects_surface(world: &mut GivnWorld) {
+    let surface = world
+        .additional_output
+        .clone()
+        .expect("consumer-facing surface missing");
+    let mut corpus = String::new();
+    if surface == "shipped guidance assets" {
+        fn collect(dir: &std::path::Path, out: &mut String) {
+            for entry in std::fs::read_dir(dir).expect("read asset dir") {
+                let path = entry.expect("asset entry").path();
+                if path.is_dir() {
+                    collect(&path, out);
+                } else if path
+                    .extension()
+                    .is_some_and(|extension| extension == "md" || extension == "tmpl")
+                {
+                    out.push_str(&std::fs::read_to_string(&path).expect("read asset"));
+                    out.push('\n');
+                }
+            }
+        }
+        collect(&crate::common::repo_path("assets"), &mut corpus);
+    } else {
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_givn"))
+            .arg("--help")
+            .output()
+            .expect("run givn --help");
+        corpus.push_str(&String::from_utf8_lossy(&output.stdout));
+        corpus.push_str(&String::from_utf8_lossy(&output.stderr));
+    }
+    world.additional_output = Some(corpus);
+}
+
+#[then(
+    "harness-project paths fixture names and recording content are absent from current consumer guidance"
+)]
+fn harness_content_absent(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .as_deref()
+        .expect("consumer-facing corpus missing")
+        .to_lowercase();
+    for marker in ["catopia", "harness/", "reports/recordings", "test-corpus/"] {
+        assert!(
+            !text.contains(marker),
+            "current consumer guidance contains harness marker {marker:?}"
+        );
+    }
+}
+
+#[then("legitimate generic examples remain usable outside Givn's own repository")]
+fn generic_examples_remain(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .as_deref()
+        .expect("consumer-facing corpus missing");
+    assert!(
+        text.contains("Example:") || text.contains("For example") || text.contains("Usage:"),
+        "no generic example remains in the consumer guidance"
+    );
+}
+
+#[then(
+    "historical decisions and evidence remain unchanged and are clearly distinguished from current guidance"
+)]
+fn historical_evidence_unchanged(_world: &mut GivnWorld) {
+    let archive = crate::common::repo_path("givn/archive");
+    assert!(archive.is_dir(), "historical archive is missing");
+    let latest = crate::common::repo_path("givn/archive")
+        .read_dir()
+        .expect("read historical archive")
+        .filter_map(|entry| entry.ok())
+        .next();
+    assert!(
+        latest.is_some(),
+        "the checkout has no preserved historical evidence"
+    );
+}
+
+// --- release distribution ---------------------------------------------------
+
+#[given("a Givn release checkout containing local runtime recordings and harness fixtures")]
+fn release_checkout_with_harness(world: &mut GivnWorld) {
+    let root = crate::common::repo_path(".");
+    assert!(
+        root.join("harness").is_dir() || root.join("harness/.gitignore").is_file(),
+        "the checkout has no harness fixtures"
+    );
+    world.additional_output = Some("release-checkout".to_string());
+}
+
+#[when("a Givn maintainer prepares the release distribution")]
+fn maintainer_prepares_distribution(world: &mut GivnWorld) {
+    let cargo = std::env::var("CARGO").unwrap_or_else(|_| "cargo".to_string());
+    let output = std::process::Command::new(cargo)
+        .args(["package", "--list", "--allow-dirty"])
+        .current_dir(crate::common::repo_path("."))
+        .output()
+        .expect("run cargo package --list");
+    assert!(
+        output.status.success(),
+        "cargo package --list failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.additional_output = Some(String::from_utf8_lossy(&output.stdout).into_owned());
+}
+
+#[then("the distributed package contains neither runtime recordings nor harness fixtures")]
+fn distribution_excludes_harness(world: &mut GivnWorld) {
+    let listing = world
+        .additional_output
+        .as_deref()
+        .expect("release distribution listing missing");
+    for prefix in ["harness/", "reports/", "test-corpus/"] {
+        assert!(
+            !listing.lines().any(|line| line.starts_with(prefix)),
+            "the distributed package contains {prefix} fixtures"
+        );
+    }
+}
+
+#[then("the checkout's historical evidence remains unchanged")]
+fn checkout_history_unchanged(world: &mut GivnWorld) {
+    let _ = world;
+    let archive = crate::common::repo_path("givn/archive");
+    assert!(
+        archive.is_dir(),
+        "the checkout's historical archive is missing"
+    );
+}
+
+#[then("this Givn distribution requirement installs no release gate in consumer projects")]
+fn distribution_installs_no_gate(world: &mut GivnWorld) {
+    let _ = world;
+    for asset in [
+        "assets/instructions/archive.md",
+        "assets/instructions/review.md",
+    ] {
+        let text = std::fs::read_to_string(crate::common::repo_path(asset))
+            .unwrap_or_else(|error| panic!("read {asset}: {error}"));
+        assert!(
+            !text.contains("cargo package --list"),
+            "{asset} installs a release-distribution gate in consumer projects"
         );
     }
 }

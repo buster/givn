@@ -158,3 +158,23 @@ fn response_is_valid_instruction_json(world: &mut GivnWorld) {
     assert!(value["requires"].is_array());
     assert!(value["instruction"].is_string());
 }
+
+#[then("the bootstrap owns that obligation independently of optional addons and named skills")]
+fn bootstrap_owns_dialog_obligation(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        output.contains("optional addons disabled")
+            && output.contains("outside a named workflow")
+            && output.contains("outside any named skill"),
+        "the bootstrap does not own the addon- and skill-independent obligation: {output}"
+    );
+}
+
+#[then("the policy is loaded once per context and reloaded if lost")]
+fn policy_load_once_and_reload(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        output.contains("load it once per context") && output.contains("not loaded automatically"),
+        "the bootstrap does not state the load-once and reload-if-lost obligation: {output}"
+    );
+}

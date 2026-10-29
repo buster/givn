@@ -85,22 +85,6 @@ pub fn load_catalog() -> Result<MigrationCatalog> {
     let mut sources = HashSet::new();
     for bundle in &catalog.migrations {
         let source = ReleaseVersion::parse(&bundle.source_version)?;
-        if bundle.target_version == "<target-version>" {
-            if !ids.insert(bundle.id.clone()) {
-                bail!(
-                    "migration catalog contains duplicate bundle '{}'",
-                    bundle.id
-                );
-            }
-            if !sources.insert(source) {
-                bail!(
-                    "migration catalog contains multiple bundles from source version '{}'",
-                    bundle.source_version
-                );
-            }
-            validate_bundle_assets(bundle)?;
-            continue;
-        }
         let target = ReleaseVersion::parse(&bundle.target_version)?;
         if target <= source {
             bail!(
@@ -157,10 +141,22 @@ fn validate_bundle_assets(bundle: &MigrationBundle) -> Result<()> {
 /// transition, so the caller should perform only a managed upgrade. Once a
 /// route starts, an incomplete route is an error rather than a silent skip.
 pub fn migration_path(source: &str, target: &str) -> Result<Vec<MigrationBundle>> {
+    let catalog = load_catalog()?;
+    migration_path_with_catalog(source, target, &catalog)
+}
+
+/// Resolve a route from an explicit catalog. This is the test-only seam for
+/// synthetic future routes (for example a disposable 1.0 project targeting a
+/// simulated 1.1): shipped catalogs remain authoritative in production, and
+/// no fabricated route is added to the embedded catalog.
+pub fn migration_path_with_catalog(
+    source: &str,
+    target: &str,
+    catalog: &MigrationCatalog,
+) -> Result<Vec<MigrationBundle>> {
     let source = ReleaseVersion::parse(source)?;
     let target = ReleaseVersion::parse(target)?;
-    let catalog = load_catalog()?;
-    resolve_migration_path(&catalog, source, target)
+    resolve_migration_path(catalog, source, target)
 }
 
 fn resolve_migration_path(
@@ -314,14 +310,32 @@ pub fn prepare_legacy_upgrade(
     )?
     .ok_or_else(|| anyhow::anyhow!("managed migration preparation produced no commit"))?;
 
-    write_aggregate_migration_plan(
+    if let Err(error) = write_aggregate_migration_plan(
         &migration_dir,
         &commit_a,
         source_version,
         target_version,
         bundles,
-    )?;
-    let commit_b = commit_migration_plan(project_root, &migration_dir, &change_id)?;
+    ) {
+        eprintln!(
+            "\nMigration preparation partial: managed revision {commit_a} was published; the \
+             migration plan was not written and no migration revision exists. Review the managed \
+             revision and fix forward or restore manually; no reset was performed."
+        );
+        return Err(error.context("write the aggregate migration plan"));
+    }
+    let commit_b = match commit_migration_plan(project_root, &migration_dir, &change_id) {
+        Ok(hash) => hash,
+        Err(error) => {
+            eprintln!(
+                "\nMigration preparation partial: managed revision {commit_a} was published and \
+                 the migration plan files were written, but no migration revision exists. Review \
+                 the plan at givn/changes/{change_id}, commit it, or restore manually; no reset \
+                 was performed."
+            );
+            return Err(error.context("publish the aggregate migration plan"));
+        }
+    };
 
     println!("Prepared Givn {target_version} migration from {source_version}.");
     println!("  managed upgrade commit (A): {commit_a}");
@@ -352,22 +366,46 @@ pub fn prepare_managed_upgrade(
     target_version: &str,
     commit_message: &str,
 ) -> Result<Option<String>> {
-    let backend = crate::scm::select(project_root)?;
-    if !backend.dirty_entries()?.is_empty() {
-        bail!("automatic managed upgrade requires a clean checkout; no files were changed");
+    let backend = crate::scm::select(project_root).context(
+        "a version-controlled checkpoint is required for a managed upgrade; \
+         no files were changed",
+    )?;
+    let dirty = backend.dirty_entries()?;
+    if !dirty.is_empty() {
+        bail!(
+            "automatic managed upgrade requires a clean checkout; commit or restore these paths \
+             first, then retry from the checkpoint: {}; no files were changed",
+            dirty
+                .iter()
+                .map(|path| path.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     }
 
+    let checkpoint = backend
+        .revision()
+        .context("read the checkpoint revision before a managed upgrade")?;
+    let mut report = UpgradeReport::new(checkpoint);
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
     let commands_path = project_root.join("givn/commands.yaml");
-    let snapshot = FileSnapshot::capture(
-        std::iter::once(config_path.to_path_buf())
-            .chain(std::iter::once(commands_path.clone()))
-            .chain(managed_paths.iter().cloned()),
-    )?;
+    let mut snapshot_paths: Vec<PathBuf> = std::iter::once(config_path.to_path_buf())
+        .chain(std::iter::once(commands_path.clone()))
+        .chain(managed_paths.iter().cloned())
+        .collect();
+    for extra in [".gitignore", ".fossil-settings/ignore-glob"] {
+        let path = project_root.join(extra);
+        if path.exists() {
+            snapshot_paths.push(path);
+        }
+    }
+    let snapshot = FileSnapshot::capture(snapshot_paths)?;
 
     let upgraded = crate::cli::upgrade::upgrade_config(existing_config, target_version)?;
-    if let Err(error) = apply_managed_upgrade(config_path, &upgraded, project_root) {
-        snapshot.restore().ok();
+    if let Err(error) = apply_managed_upgrade(config_path, &upgraded, project_root, &mut report) {
+        report.completed = snapshot.changed_paths(project_root);
+        let restoration = snapshot.restore_report();
+        report.print_failure(&error, &restoration);
         return Err(error);
     }
 
@@ -378,12 +416,24 @@ pub fn prepare_managed_upgrade(
         &managed_paths,
         commit_message,
     ) {
-        Ok(hash) => Ok(hash),
+        Ok(hash) => {
+            if let Some(hash) = &hash {
+                report.revisions.push(hash.clone());
+            }
+            Ok(hash)
+        }
         Err(error) => {
-            snapshot.restore().ok();
+            report.completed = snapshot.changed_paths(project_root);
+            if let Ok(current) = backend.revision()
+                && current != report.checkpoint
+            {
+                report.revisions.push(current);
+            }
+            let restoration = snapshot.restore_report();
             // The transition may have staged index removals before the
             // failure; reset the index to the restored revision state.
             backend.restore_index().ok();
+            report.print_failure(&error, &restoration);
             let source = source_version.unwrap_or("unknown");
             Err(error.context(format!(
                 "managed upgrade from {source} to {target_version} was not committed"
@@ -392,12 +442,100 @@ pub fn prepare_managed_upgrade(
     }
 }
 
-fn apply_managed_upgrade(config_path: &Path, upgraded: &str, project_root: &Path) -> Result<()> {
+/// Completed managed work for honest failure reporting. It never performs a
+/// reset, clean, or history rewrite.
+struct UpgradeReport {
+    checkpoint: String,
+    completed: Vec<String>,
+    revisions: Vec<String>,
+}
+
+impl UpgradeReport {
+    fn new(checkpoint: String) -> Self {
+        Self {
+            checkpoint,
+            completed: Vec::new(),
+            revisions: Vec::new(),
+        }
+    }
+
+    fn print_failure(&self, operation: &anyhow::Error, restoration: &Restoration) {
+        eprintln!("\nManaged upgrade failed: {operation}");
+        eprintln!("  checkpoint: {}", self.checkpoint);
+        eprintln!("  completed writes:");
+        if self.completed.is_empty() {
+            eprintln!("    none");
+        } else {
+            for write in &self.completed {
+                eprintln!("    - {write}");
+            }
+        }
+        if self.revisions.is_empty() {
+            eprintln!("  revisions actually published: none");
+        } else {
+            eprintln!(
+                "  revisions actually published: {}",
+                self.revisions.join(", ")
+            );
+        }
+        eprintln!("  best-effort restoration: {}", restoration.summary());
+        eprintln!(
+            "  remaining partial state: completed writes above were followed by the failed \
+             operation; any path not restored remains as reported"
+        );
+        eprintln!(
+            "  pending work: the managed revision and any migration change were not published; \
+             files not listed as completed were not written"
+        );
+        eprintln!(
+            "  recovery: restore from checkpoint {} manually (for example `git restore` / \
+             `fossil update`) or fix forward from that checkpoint. Givn performed no automatic \
+             reset, clean, or history rewrite and promises no complete rollback.",
+            self.checkpoint
+        );
+    }
+}
+
+struct Restoration {
+    restored: usize,
+    failed: Vec<String>,
+}
+
+impl Restoration {
+    fn summary(&self) -> String {
+        if self.failed.is_empty() {
+            format!(
+                "{} managed path(s) restored from the snapshot; this is best effort, not a complete rollback",
+                self.restored
+            )
+        } else {
+            format!(
+                "{} managed path(s) restored; {} path(s) could not be restored ({}); this is best effort, not a complete rollback",
+                self.restored,
+                self.failed.len(),
+                self.failed.join(", ")
+            )
+        }
+    }
+}
+
+fn apply_managed_upgrade(
+    config_path: &Path,
+    upgraded: &str,
+    project_root: &Path,
+    report: &mut UpgradeReport,
+) -> Result<()> {
     std::fs::write(config_path, upgraded)
         .with_context(|| format!("write managed config '{}'", config_path.display()))?;
+    report
+        .completed
+        .push("givn/config.yaml (managed scaffold refreshed)".to_string());
 
     crate::skills::targets::sync(project_root)
         .context("synchronize generated Givn skills and commands")?;
+    report
+        .completed
+        .push("generated skills and agent integrations".to_string());
 
     // Run backfill: an existing project may predate the run declaration.
     // Idempotent — a commands file that already declares `run:` is left
@@ -410,6 +548,9 @@ fn apply_managed_upgrade(config_path: &Path, upgraded: &str, project_root: &Path
             std::fs::write(&commands_path, backfilled).with_context(|| {
                 format!("write managed commands file '{}'", commands_path.display())
             })?;
+            report
+                .completed
+                .push("givn/commands.yaml (run declaration backfill)".to_string());
             println!(
                 "  wrote    run: scaffold to givn/commands.yaml — fill it in; `givn archive` is blocked until you do"
             );
@@ -752,17 +893,41 @@ impl FileSnapshot {
         Ok(Self { files })
     }
 
-    fn restore(&self) -> Result<()> {
+    fn changed_paths(&self, project_root: &Path) -> Vec<String> {
+        let mut changed = Vec::new();
         for (path, content) in &self.files {
-            match content {
-                Some(bytes) => std::fs::write(path, bytes)
-                    .with_context(|| format!("restore managed path '{}'", path.display()))?,
-                None if path.exists() => std::fs::remove_file(path)
-                    .with_context(|| format!("remove new managed path '{}'", path.display()))?,
-                None => {}
+            let current = std::fs::read(path).ok();
+            if current != *content {
+                let display = path
+                    .strip_prefix(project_root)
+                    .map(Path::to_path_buf)
+                    .unwrap_or_else(|_| path.clone());
+                changed.push(display.display().to_string());
             }
         }
-        Ok(())
+        changed.sort();
+        changed
+    }
+
+    fn restore_report(&self) -> Restoration {
+        let mut restoration = Restoration {
+            restored: 0,
+            failed: Vec::new(),
+        };
+        for (path, content) in &self.files {
+            let result = match content {
+                Some(bytes) => std::fs::write(path, bytes)
+                    .with_context(|| format!("restore managed path '{}'", path.display())),
+                None if path.exists() => std::fs::remove_file(path)
+                    .with_context(|| format!("remove new managed path '{}'", path.display())),
+                None => Ok(()),
+            };
+            match result {
+                Ok(()) => restoration.restored += 1,
+                Err(_) => restoration.failed.push(path.display().to_string()),
+            }
+        }
+        restoration
     }
 }
 
@@ -777,45 +942,44 @@ mod tests {
             source_version: source.to_string(),
             target_version: target.to_string(),
             order,
-            proposal_asset: "migrations/0.7.0-to-0.8.0/proposal.md".to_string(),
-            design_asset: "migrations/0.7.0-to-0.8.0/design.md".to_string(),
+            proposal_asset: "migrations/fixtures/synthetic/proposal.md".to_string(),
+            design_asset: "migrations/fixtures/synthetic/design.md".to_string(),
         }
     }
 
     #[test]
-    fn catalog_declares_0_7_0_as_the_oldest_source() {
+    fn embedded_catalog_ships_no_pre_1_0_migration_routes() {
         let catalog = load_catalog().unwrap();
         assert_eq!(catalog.schema_version, MIGRATION_CATALOG_SCHEMA_VERSION);
-        let oldest = catalog
-            .migrations
-            .iter()
-            .map(|migration| ReleaseVersion::parse(&migration.source_version).unwrap())
-            .min()
-            .expect("the catalog declares at least one bundle");
-        assert_eq!(
-            oldest,
-            ReleaseVersion::parse("0.7.0").unwrap(),
-            "the oldest declared migration source must be 0.7.0"
+        assert!(
+            catalog.migrations.is_empty(),
+            "the 1.0 migration baseline ships no embedded route: {:?}",
+            catalog.migrations
         );
     }
 
     #[test]
-    fn migration_path_routes_0_7_0_to_the_current_release() {
+    fn migration_path_has_no_embedded_0_7_route() {
         let current = env!("CARGO_PKG_VERSION");
         let path = migration_path("0.7.0", current).unwrap();
-        let last = path
-            .last()
-            .expect("0.7.0 must have a catalog route toward the current release");
-        let last_target = ReleaseVersion::parse(&last.target_version).unwrap();
-        let current_version = ReleaseVersion::parse(current).unwrap();
-        // The route must carry the project to the current release's minor
-        // line. Every minor release ships its catalog route; a missing route
-        // makes `migration_path` fail above instead of ending early.
         assert!(
-            last_target.same_minor(current_version),
-            "the catalog route ends at {} (bundle '{}') and does not reach the current release {current}",
-            last.target_version,
-            last.id
+            path.is_empty(),
+            "0.x configuration requires manual transition, not an embedded route: {path:?}"
+        );
+    }
+
+    #[test]
+    fn future_synthetic_route_resolves_from_1_0_to_1_1() {
+        let catalog = MigrationCatalog {
+            schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
+            migrations: vec![bundle("synthetic-1-0-to-1-1", "1.0.0", "1.1.0", 10)],
+        };
+        let path = migration_path_with_catalog("1.0.0", "1.1.0", &catalog).unwrap();
+        assert_eq!(
+            path.iter()
+                .map(|bundle| bundle.id.as_str())
+                .collect::<Vec<_>>(),
+            ["synthetic-1-0-to-1-1"]
         );
     }
 
@@ -981,6 +1145,56 @@ mod tests {
         );
     }
 
+    fn git_fixture(directory: &std::path::Path) {
+        for args in [
+            ["init"].as_slice(),
+            ["config", "user.name", "Givn Test"].as_slice(),
+            ["config", "user.email", "givn@example.test"].as_slice(),
+        ] {
+            let output = Command::new("git")
+                .current_dir(directory)
+                .args(args)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "git {:?} failed", args);
+        }
+    }
+
+    #[test]
+    fn dirty_checkout_refusal_names_the_paths_and_the_checkpoint_requirement() {
+        let directory = tempfile::tempdir().unwrap();
+        git_fixture(directory.path());
+        let config = directory.path().join("givn/config.yaml");
+        std::fs::create_dir_all(config.parent().unwrap()).unwrap();
+        let committed = "givn_config_version: \"0.7.0\"\n";
+        std::fs::write(&config, committed).unwrap();
+        for args in [
+            ["add", "--", "givn/config.yaml"].as_slice(),
+            ["commit", "-m", "initial"].as_slice(),
+        ] {
+            let output = Command::new("git")
+                .current_dir(directory.path())
+                .args(args)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "git {:?} failed", args);
+        }
+        std::fs::write(&config, format!("{committed}outline: false\n")).unwrap();
+
+        let error = prepare_managed_upgrade(
+            directory.path(),
+            &config,
+            committed,
+            Some("0.7.0"),
+            "0.9.10",
+            "chore(givn): managed upgrade",
+        )
+        .expect_err("a dirty checkout must be refused before writing");
+        let message = error.to_string();
+        assert!(message.contains("checkpoint"), "{message}");
+        assert!(message.contains("givn/config.yaml"), "{message}");
+    }
+
     #[test]
     fn managed_upgrade_without_changes_does_not_create_empty_commit() {
         let directory = tempfile::tempdir().unwrap();
@@ -1016,5 +1230,87 @@ mod tests {
 
         assert_eq!(result, None);
         assert_eq!(backend.revision().unwrap(), before);
+    }
+    #[test]
+    fn synthetic_future_route_records_the_actual_managed_revision() {
+        let _lock = crate::config::overlay::test_cwd_lock()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        let directory = tempfile::tempdir().unwrap();
+        git_fixture(directory.path());
+        let config = directory.path().join("givn/config.yaml");
+        std::fs::create_dir_all(config.parent().unwrap()).unwrap();
+        let existing = "givn_config_version: \"1.0.0\"\n";
+        std::fs::write(&config, existing).unwrap();
+        for args in [
+            ["add", "-A"].as_slice(),
+            ["commit", "-m", "fixture"].as_slice(),
+        ] {
+            let output = Command::new("git")
+                .current_dir(directory.path())
+                .args(args)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "git {:?} failed", args);
+        }
+
+        let bundles = vec![bundle("synthetic-1-0-to-1-1", "1.0.0", "1.1.0", 10)];
+        let restore = std::env::current_dir().unwrap();
+        std::env::set_current_dir(directory.path()).unwrap();
+        let result = prepare_legacy_upgrade(
+            directory.path(),
+            &config,
+            existing,
+            "1.0.0",
+            "1.1.0",
+            &bundles,
+        );
+        std::env::set_current_dir(&restore).unwrap();
+        result.expect("the synthetic future route must produce a reviewable plan");
+
+        let metadata = std::fs::read_to_string(
+            directory
+                .path()
+                .join("givn/changes/migrate-1-0-0-to-1-1-0/migration.yaml"),
+        )
+        .expect("read migration metadata");
+        let parsed: serde_yaml_ng::Value = serde_yaml_ng::from_str(&metadata).unwrap();
+        assert_eq!(
+            parsed
+                .get("target_version")
+                .and_then(|value| value.as_str()),
+            Some("1.1.0")
+        );
+        let commit = parsed
+            .get("upgrade_commit")
+            .and_then(|value| value.as_str())
+            .expect("the plan records the managed revision");
+        let log = Command::new("git")
+            .current_dir(directory.path())
+            .args(["log", "--format=%H"])
+            .output()
+            .unwrap();
+        let log = String::from_utf8_lossy(&log.stdout);
+        assert!(
+            log.contains(commit),
+            "managed revision {commit} is not in history:\n{log}"
+        );
+
+        let design = std::fs::read_to_string(
+            directory
+                .path()
+                .join("givn/changes/migrate-1-0-0-to-1-1-0/design.md"),
+        )
+        .unwrap();
+        assert!(
+            !design
+                .lines()
+                .any(|line| line.trim() == "DESIGN-REVIEW: PASS"),
+            "{design}"
+        );
+        assert!(
+            !design.lines().any(|line| line.trim() == "REVIEW: PASS"),
+            "{design}"
+        );
     }
 }

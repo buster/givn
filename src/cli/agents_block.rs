@@ -276,11 +276,11 @@ mod tests {
     #[test]
     fn two_named_blocks_coexist_independently() {
         let content = upsert_block("", "givn-project", "PROJECT HINT");
-        let content = upsert_block(&content, "absolute-mode", "POLICY TEXT");
+        let content = upsert_block(&content, "communication-policy", "POLICY TEXT");
         assert!(content.contains("PROJECT HINT"));
         assert!(content.contains("POLICY TEXT"));
 
-        let removed_one = remove_block(&content, "absolute-mode");
+        let removed_one = remove_block(&content, "communication-policy");
         assert!(removed_one.contains("PROJECT HINT"));
         assert!(!removed_one.contains("POLICY TEXT"));
     }
