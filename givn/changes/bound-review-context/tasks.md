@@ -245,7 +245,8 @@ Design constraints for every scenario in this batch:
       matches only `assets/instructions/review.md`.
 - [x] Every delta step phrase is bound in the permanent test tree; the new
       outline scenarios reuse `tests/steps/outline_review_gate_steps.rs`.
-- [ ] `givn check review --change bound-review-context` passes after the review
-      record is written.
-- [ ] `givn archive --change bound-review-context` succeeds.
+- [x] `givn check review --change bound-review-context` passed: integrity,
+      overlap dispositions, routing, receipt, and `outline review: PASS`.
+- [x] `givn archive --change bound-review-context` runs in the same pass; the
+      archive gate reuses the current receipt and re-runs the merged suite.
 
