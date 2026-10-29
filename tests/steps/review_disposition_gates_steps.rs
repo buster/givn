@@ -86,7 +86,7 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
 fn review_md_split_or_keep_row(world: &mut GivnWorld, title: String) {
     let path = change_dir(world).join("review.md");
     let content = format!(
-        "README-IMPACT: none\n\n## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `{title}` | keep |\n\nREVIEW: PASS\n"
+        "README-IMPACT: none\n\n## Split-or-keep\n\n| Scenario | Decision | Reason |\n|---|---|---|\n| `{title}` | keep | one atomic import requires all setup rows |\n\nREVIEW: PASS\n"
     );
     std::fs::write(&path, content).expect("write review.md split-or-keep row");
 }

@@ -15,6 +15,7 @@ pub struct DispositionRow {
 pub struct SplitOrKeepRow {
     pub title: String,
     pub decision: String,
+    pub reason: String,
 }
 
 /// Parse review.md disposition sections. Returns (rows, split_or_keep).
@@ -64,7 +65,8 @@ pub fn parse_review_content(content: &str) -> (Vec<DispositionRow>, Vec<SplitOrK
             "split" if cells.len() >= 2 && cells[0].to_lowercase() != "scenario" => {
                 split_rows.push(SplitOrKeepRow {
                     title: cells[0].clone(),
-                    decision: cells[1].clone(),
+                    decision: cells[1].to_lowercase(),
+                    reason: cells.get(2).cloned().unwrap_or_default(),
                 });
             }
             _ => {}

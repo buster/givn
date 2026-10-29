@@ -409,32 +409,26 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
                 let is_usecase = usecase_names.iter().any(|name| name == target.id());
                 let is_fragment = fragment_ids.iter().any(|id| id == target.id());
                 let path = specs_root.join(usecase).join("usecase.md");
-                if is_usecase && is_fragment {
-                    findings.push(Finding {
-                        kind: "ambiguous_relationship_target".to_string(),
-                        level: "error".to_string(),
-                        files: vec![path.display().to_string()],
-                        titles: vec![format!(
-                            "{relation} target '{}' resolves as both use case and fragment",
-                            target.id()
-                        )],
-                        contradiction: false,
-                    });
-                } else if target.is_fragment() && relation == "Extends" {
+                if target.is_fragment() && relation == "Extends" {
                     findings.push(Finding {
                         kind: "extend_fragment".to_string(),
                         level: "error".to_string(),
                         files: vec![path.display().to_string()],
-                        titles: vec![format!("{relation} target '{}' is a fragment", target.id())],
+                        titles: vec![format!(
+                            "Extends cannot target a fragment: '{}'",
+                            target.id()
+                        )],
                         contradiction: false,
                     });
-                } else if !is_usecase && !is_fragment {
+                } else if (target.is_fragment() && !is_fragment)
+                    || (!target.is_fragment() && !is_usecase)
+                {
                     findings.push(Finding {
                         kind: "dangling_use_case_ref".to_string(),
                         level: "error".to_string(),
                         files: vec![path.display().to_string()],
                         titles: vec![format!(
-                            "{relation} target '{}' does not resolve to a use case or fragment",
+                            "{relation} target '{}' does not resolve in its declared namespace",
                             target.id()
                         )],
                         contradiction: false,
@@ -540,9 +534,6 @@ fn singleton_usecases(root: &Path) -> Vec<Finding> {
     findings
 }
 
-/// Review gate: every shape match (without fact contradiction) that involves
-/// the change's delta needs a disposition row; every long scenario in the
-/// delta needs a split-or-keep row. Prints the net-delta receipt.
 pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<()> {
     let review_path = root.join("givn/changes").join(change_id).join("review.md");
     let (rows, split_rows) = crate::overlap::disposition::parse_review(&review_path);
@@ -568,27 +559,31 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
         match finding.kind.as_str() {
             "shape_match" if !finding.contradiction => {
                 let (a, b) = (finding.titles[0].as_str(), finding.titles[1].as_str());
-                if !crate::overlap::disposition::disposed(&rows, a, b) {
-                    missing.push(format!("shape match: '{a}' / '{b}'"));
-                } else {
-                    for (i, r) in rows.iter().enumerate() {
-                        if (r.title_a == a && r.title_b == b) || (r.title_a == b && r.title_b == a)
-                        {
-                            matched_rows[i] = true;
-                        }
+                for (i, r) in rows.iter().enumerate() {
+                    if (r.title_a == a && r.title_b == b) || (r.title_a == b && r.title_b == a) {
+                        matched_rows[i] = true;
                     }
                 }
             }
             "long_scenario" => {
                 let title = finding.titles.first().map(String::as_str).unwrap_or("?");
-                if !split_rows.iter().any(|r| r.title == title) {
-                    missing.push(format!("split-or-keep: '{title}'"));
-                } else {
-                    for (i, r) in split_rows.iter().enumerate() {
-                        if r.title == title {
-                            matched_split[i] = true;
-                        }
-                    }
+                let decisions: Vec<_> = split_rows
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, row)| row.title == title)
+                    .collect();
+                if decisions.len() != 1 {
+                    missing.push(format!(
+                        "split-or-keep: '{title}' needs one explicit decision"
+                    ));
+                    continue;
+                }
+                let (index, row) = decisions[0];
+                matched_split[index] = true;
+                match row.decision.as_str() {
+                    "keep" if !row.reason.trim().is_empty() => {}
+                    "split" => missing.push(format!("split-or-keep: '{title}' has an incomplete split; the long scenario remains")),
+                    _ => missing.push(format!("split-or-keep: '{title}' requires keep with a brief reason or a completed split")),
                 }
             }
             _ => {}
@@ -652,6 +647,172 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn typed_relationships_do_not_cross_namespaces() {
+        let usecase =
+            crate::gherkin::usecase_md::usecase_md_template().replace("<usecase-id>", "first");
+        let fragment = crate::gherkin::usecase_md::fragment_md_template()
+            .replace("<fragment-id>", "support")
+            .replace("<capability-id>", "help");
+        for (target, same_named_usecase, expected_kind) in [
+            ("usecase: support", true, None),
+            ("fragment: support", true, None),
+            ("usecase: support", false, Some("dangling_use_case_ref")),
+        ] {
+            let root = temp_tree(&[
+                (
+                    "givn/specs/first/usecase.md",
+                    &usecase.replace(
+                        "## Includes\n\n- none",
+                        &format!("## Includes\n\n- {target}"),
+                    ),
+                ),
+                ("givn/specs/fragments/fragment.md", &fragment),
+            ]);
+            if same_named_usecase {
+                let dir = root.path().join("givn/specs/support");
+                std::fs::create_dir_all(&dir).unwrap();
+                std::fs::write(dir.join("usecase.md"), usecase.replace("first", "support"))
+                    .unwrap();
+            }
+            let findings = use_case_graph_findings(root.path());
+            assert!(
+                !findings
+                    .iter()
+                    .any(|f| f.kind == "ambiguous_relationship_target"),
+                "{findings:?}"
+            );
+            assert_eq!(
+                findings.iter().any(|f| f.kind == "dangling_use_case_ref"),
+                expected_kind.is_some(),
+                "{findings:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn fragment_target_cannot_resolve_as_usecase_or_be_extended() {
+        let template = crate::gherkin::usecase_md::usecase_md_template();
+        for relation in ["Includes", "Extends"] {
+            let source = template.replace("<usecase-id>", "first").replace(
+                &format!("## {relation}\n\n- none"),
+                &format!("## {relation}\n\n- fragment: support"),
+            );
+            let root = temp_tree(&[
+                ("givn/specs/first/usecase.md", &source),
+                (
+                    "givn/specs/support/usecase.md",
+                    &template.replace("<usecase-id>", "support"),
+                ),
+            ]);
+            let expected = if relation == "Includes" {
+                "dangling_use_case_ref"
+            } else {
+                "extend_fragment"
+            };
+            assert!(
+                use_case_graph_findings(root.path())
+                    .iter()
+                    .any(|finding| finding.kind == expected)
+            );
+        }
+    }
+
+    #[test]
+    fn cycles_follow_only_usecase_relationships() {
+        let template = crate::gherkin::usecase_md::usecase_md_template();
+        for relation in ["Includes", "Extends"] {
+            for fragment_target in [false, true] {
+                let first = template.replace("<usecase-id>", "first").replace(
+                    &format!("## {relation}\n\n- none"),
+                    &format!(
+                        "## {relation}\n\n- {}: support",
+                        if fragment_target {
+                            "fragment"
+                        } else {
+                            "usecase"
+                        }
+                    ),
+                );
+                let second = template
+                    .replace("<usecase-id>", "support")
+                    .replace("## Includes\n\n- none", "## Includes\n\n- usecase: first");
+                let fragment = crate::gherkin::usecase_md::fragment_md_template()
+                    .replace("<fragment-id>", "support");
+                let root = temp_tree(&[
+                    ("givn/specs/first/usecase.md", &first),
+                    ("givn/specs/support/usecase.md", &second),
+                    ("givn/specs/fragments/fragment.md", &fragment),
+                ]);
+                assert_eq!(
+                    use_case_graph_findings(root.path())
+                        .iter()
+                        .any(|finding| finding.kind == "use_case_cycle"),
+                    !fragment_target
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn shape_advisory_does_not_require_disposition() {
+        let root = temp_tree(&[
+            (
+                "givn/specs/a/a.feature",
+                "Feature: A\n  Scenario: One\n    Given a\n    Then result\n",
+            ),
+            (
+                "givn/changes/c1/specs/b/b.feature",
+                "@givn.delta @b\nFeature: B\n  @givn.added\n  Scenario: Two\n    Given a\n    Then result\n",
+            ),
+        ]);
+        assert!(
+            scan_tree(root.path())
+                .iter()
+                .any(|f| f.kind == "shape_match")
+        );
+        run_review_overlap_gate(root.path(), "c1").unwrap();
+    }
+
+    #[test]
+    fn long_scenario_requires_reasoned_keep_or_completed_split() {
+        let long = format!(
+            "@givn.delta @a\nFeature: A\n  @givn.added\n  Scenario: Marathon\n{}",
+            "    Given setup\n".repeat(15)
+        );
+        for (decision, reason, passes) in [
+            ("", "", false),
+            ("keep", "", false),
+            ("keep", "atomic import", true),
+            ("split", "promised", false),
+            ("other", "reason", false),
+        ] {
+            let review = format!(
+                "## Split-or-keep\n\n| Scenario | Decision | Reason |\n|---|---|---|\n| Marathon | {decision} | {reason} |\n"
+            );
+            let root = temp_tree(&[
+                ("givn/changes/c1/specs/a/a.feature", &long),
+                ("givn/changes/c1/review.md", &review),
+            ]);
+            assert_eq!(
+                run_review_overlap_gate(root.path(), "c1").is_ok(),
+                passes,
+                "{decision}: {reason}"
+            );
+        }
+        let root = temp_tree(&[
+            (
+                "givn/changes/c1/specs/a/a.feature",
+                "@givn.delta @a\nFeature: A\n  @givn.added\n  Scenario: Part one\n    Given x\n  @givn.added\n  Scenario: Part two\n    Given y\n",
+            ),
+            (
+                "givn/changes/c1/review.md",
+                "## Split-or-keep\n\n| Scenario | Decision | Reason |\n|---|---|---|\n| Marathon | split | |\n",
+            ),
+        ]);
+        run_review_overlap_gate(root.path(), "c1").unwrap();
+    }
 
     /// Temp project with a grouped specs tree seeded from (rel, text) pairs.
     fn temp_tree(files: &[(&str, &str)]) -> tempfile::TempDir {

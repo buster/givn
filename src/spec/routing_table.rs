@@ -112,24 +112,6 @@ pub fn collect_delta_capabilities(specs_dir: &Path) -> Result<Vec<DeltaCapabilit
     Ok(out)
 }
 
-pub fn resolve_permanent_usecase(specs_root: &Path, capability: &str) -> Option<PathBuf> {
-    let entries = std::fs::read_dir(specs_root).ok()?;
-    for entry in entries.flatten() {
-        let usecase_dir = entry.path();
-        if !usecase_dir.is_dir()
-            || usecase_dir
-                .file_name()
-                .is_some_and(|name| name == "fragments")
-        {
-            continue;
-        }
-        if usecase_dir.join(format!("{capability}.feature")).exists() {
-            return Some(usecase_dir);
-        }
-    }
-    None
-}
-
 fn usecase_document_path(specs_dir: &Path, usecase: &str) -> PathBuf {
     specs_dir.join(usecase).join("usecase.md")
 }
@@ -267,18 +249,20 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
     }
 
     if rows.is_empty() {
-        println!(
-            "  ⚠ proposal.md has no filled '{HEADING_CAPABILITY_ROUTING}' table — \
+        return emit_or_return(
+            project_root,
+            &cache,
+            BTreeSet::from([format!(
+                "proposal.md has no filled '{HEADING_CAPABILITY_ROUTING}' table — \
              the delta capabilities [{}] are undeclared; record decisions \
              (EXTEND <capability> / NEW in <usecase-id>)",
-            deltas
-                .iter()
-                .map(|delta| delta.capability.as_str())
-                .collect::<Vec<_>>()
-                .join(", ")
+                deltas
+                    .iter()
+                    .map(|delta| delta.capability.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )]),
         );
-        emit_or_return(project_root, &cache, BTreeSet::new())?;
-        return Ok(());
     }
 
     let permanent_root = project_root.join("givn/specs");
@@ -292,11 +276,26 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
             continue;
         };
 
+        let owner = match crate::spec::owner::resolve_capability_owner(
+            &permanent_root,
+            &delta.capability,
+        ) {
+            Ok(owner) => owner,
+            Err(error) => {
+                errors.insert(error.to_string());
+                continue;
+            }
+        };
+        if matches!(row.decision, Decision::NewIn(_)) && owner.is_some() {
+            errors.insert(format!(
+                "decision NEW: capability '{}' already exists in the permanent corpus; record 'EXTEND {}' instead",
+                delta.capability, delta.capability
+            ));
+            continue;
+        }
         match &row.decision {
             Decision::Extend(capability) => {
-                let Some(permanent_usecase) =
-                    resolve_permanent_usecase(&permanent_root, capability)
-                else {
+                let Some(permanent_usecase) = owner else {
                     errors.insert(format!(
                         "decision EXTEND {capability}: capability does not exist in the permanent corpus; record 'NEW in <usecase-id>' instead"
                     ));
@@ -319,7 +318,12 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                 }
             }
             Decision::NewIn(usecase) if usecase == "fragments" => {
-                let fragment_path = permanent_root.join("fragments").join("fragment.md");
+                let delta_path = specs_dir.join("fragments/fragment.md");
+                let fragment_path = if delta_path.exists() {
+                    delta_path
+                } else {
+                    permanent_root.join("fragments/fragment.md")
+                };
                 cache_document(&mut cache, &fragment_path, project_root);
                 let fragment = cache
                     .get(&fragment_path)
@@ -342,12 +346,6 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                 }
             }
             Decision::NewIn(usecase) => {
-                if resolve_permanent_usecase(&permanent_root, &delta.capability).is_some() {
-                    errors.insert(format!(
-                        "decision NEW in {usecase}: capability '{}' already exists in the permanent corpus; record 'EXTEND {}' instead",
-                        delta.capability, delta.capability
-                    ));
-                }
                 if delta.usecase.as_deref() != Some(usecase.as_str()) {
                     errors.insert(format!(
                         "decision NEW in {usecase}: the delta must live under specs/{usecase}/"
@@ -541,6 +539,69 @@ flowchart LR
         )
         .unwrap();
         (root, project)
+    }
+
+    #[test]
+    fn fragment_ownership_routes_and_conflicts_are_checked() {
+        for (decision, duplicate, expected) in [
+            ("EXTEND gate-a", false, None),
+            ("NEW in fragments", false, Some("already exists")),
+            ("EXTEND gate-a", true, Some("ambiguous")),
+            ("NEW in fragments", true, Some("ambiguous")),
+        ] {
+            let (_root, project) = temp_project();
+            let fragments = project.join("givn/specs/fragments");
+            std::fs::create_dir_all(&fragments).unwrap();
+            std::fs::write(fragments.join("gate-a.feature"), "Feature: Gate A\n").unwrap();
+            std::fs::write(
+                fragments.join("fragment.md"),
+                crate::gherkin::usecase_md::fragment_md_template()
+                    .replace("<fragment-id>", "support")
+                    .replace("<capability-id>", "gate-a"),
+            )
+            .unwrap();
+            if !duplicate {
+                std::fs::remove_file(project.join("givn/specs/gates/gate-a.feature")).unwrap();
+            }
+            let change = project.join("givn/changes/my-change");
+            std::fs::create_dir_all(change.join("specs/fragments")).unwrap();
+            std::fs::write(change.join("proposal.md"), format!("## Capability Routing\n\n| Proposed capability | Recommendation | Decision | Rationale |\n|---|---|---|---|\n| gate-a | | {decision} | |\n")).unwrap();
+            std::fs::write(change.join("specs/fragments/gate-a.feature"), "@givn.delta @gate-a\nFeature: Gate A\n  @givn.added\n  Scenario: Added\n    Given x\n").unwrap();
+            let result = check_routing_consistency(&project, "my-change");
+            match expected {
+                Some(message) => assert!(result.unwrap_err().to_string().contains(message)),
+                None => result.unwrap(),
+            }
+        }
+    }
+
+    #[test]
+    fn new_fragment_can_use_its_delta_narrative() {
+        let (_root, project) = temp_project();
+        let change = project.join("givn/changes/my-change");
+        let dir = change.join("specs/fragments");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(change.join("proposal.md"), "## Capability Routing\n\n| Proposed capability | Recommendation | Decision | Rationale |\n|---|---|---|---|\n| help | | NEW in fragments | |\n").unwrap();
+        std::fs::write(
+            dir.join("fragment.md"),
+            crate::gherkin::usecase_md::fragment_md_template()
+                .replace("<fragment-id>", "support")
+                .replace("<capability-id>", "help"),
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("help.feature"),
+            "@givn.delta @help\nFeature: Help\n  @givn.added\n  Scenario: Help\n    Given x\n",
+        )
+        .unwrap();
+        check_routing_consistency(&project, "my-change").unwrap();
+        std::fs::remove_file(change.join("proposal.md")).unwrap();
+        assert!(
+            check_routing_consistency(&project, "my-change")
+                .unwrap_err()
+                .to_string()
+                .contains("undeclared")
+        );
     }
 
     #[test]
