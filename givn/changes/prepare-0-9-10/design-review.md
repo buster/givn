@@ -20,8 +20,9 @@ The operator's completed scope discussion governs deliberate changes to current 
 | PR-04 | Step table literal paths disagreed with prose exceptions | Exact registered durable paths in table, genuinely new files explicitly planned | PASS — preparation-reviewer |
 | PR-05 | Conflicting Background/non-English/N/A disagreement safety not executable | Add pre-mutation refusal and contradictory applicability scenarios; English-only publication is explicit | PASS — preparation-reviewer |
 | PR-06 | Matrix omitted retained actions and demoted archive inventory mismatch | Full owner/fragment matrix plus projected retained E2Es, normalize archive variants; final closure includes missing reporter and OpenCode/Claude/OMP rows | PASS — preparation-reviewer |
+| PR-07 | Step Definitions table named four files that do not exist (`refresh_generated_guidance_steps.rs`, `review_architecture_documentation_steps.rs`, `report_change_status_steps.rs`, `check_specification_health_steps.rs`); found by independent final review as F-01, after the design review was signed off | Table corrected in `7bef6352` to the durable binding files (`skill_rewrites_steps.rs`, `arc42_review_alignment_steps.rs`, `run_command_steps.rs`, `spec_overlap_gates_steps.rs`); same commit removes the harness-name example from the outline help (final-review F-02) | PASS — preparation-reviewer, targeted closure |
 
-Final targeted response: DESIGN-REVIEW PASS. PR-01–PR-05 passed first closure; PR-06 required one bounded completeness correction and then passed. No additional broad audit requested.
+Final targeted response: DESIGN-REVIEW PASS. PR-01–PR-05 passed first closure; PR-06 required one bounded completeness correction and then passed. No additional broad audit requested. PR-07 is a post-sign-off path correction surfaced by the independent final review and closed in a targeted re-check, not a new review round.
 
 ## Review branch dispositions
 
@@ -42,6 +43,12 @@ Final targeted response: DESIGN-REVIEW PASS. PR-01–PR-05 passed first closure;
 ## Remaining phase boundary
 
 Tasks may now be authored. Architecture assessment remains partial until implementation/documentation reconciliation; this review does not mark it DONE. No feature is implemented or green merely because its specification parses.
+
+## Targeted closure after final review
+
+`design.md` changed after the initial sign-off. Commit `7bef6352` replaced four Step Definitions rows that named planned-but-never-created paths with the files that actually hold the bindings, and replaced the shipped outline help example `--path catopia` with `--path src` (`src/cli/outline.rs:26`).
+
+Verification of the corrected rows: all four named files exist, are registered in `tests/steps/mod.rs`, and contain the capability bindings; `givn check review --change prepare-0-9-10` reports no promised-file failure. The correction touches one table and one help string — no decision, matrix row, use case, or scenario changed, so PR-01–PR-06 conclusions stand unchanged. Retained as a non-blocking accuracy note for the final review: the `enable-commit-attribution` row still points at `tests/steps/llm_attribution_installation_steps.rs`, a registered shared fixture module with zero bindings; that capability's delta scenarios are all `@e2e` and bind in `llm_attribution_installation_e2e_steps.rs`, so no behavior is unbound and no gate fails.
 
 ## Sign-off
 
