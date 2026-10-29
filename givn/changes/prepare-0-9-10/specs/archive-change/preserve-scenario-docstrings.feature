@@ -55,3 +55,21 @@ Feature: Preserve supported executable Gherkin on archive
     When the developer archives the change
     Then the command exits non-zero and names the unsupported Rule and feature path
     And no active change, archive receipt or permanent specification is mutated
+
+
+  @givn.added @wip
+  Scenario: A conflicting Background replacement is refused before archive mutation
+    Given a permanent English feature has Background setup shared by a modified and an unaffected scenario
+    And a completed change modifies the first scenario while supplying different Background setup
+    When the developer archives the change
+    Then the command exits non-zero and names the conflicting Background and feature path
+    And both permanent scenarios retain their original Background setup
+    And no active change, archive receipt or permanent specification is mutated
+
+  @givn.added @wip
+  Scenario: An explicit non-English Gherkin dialect is refused before archive mutation
+    Given a completed change contains a valid French feature declaring "# language: fr"
+    And 0.9.10 supports English Gherkin only
+    When the developer archives the change
+    Then the command exits non-zero and names the unsupported dialect "fr" and feature path
+    And no active change, archive receipt or permanent specification is mutated

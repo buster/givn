@@ -110,3 +110,32 @@ Feature: Safe attribution and explicit-path revisions
     When the consumer creates a human Git commit
     Then the commit succeeds without waiting indefinitely
     And the human commit message is unchanged
+
+
+  @givn.added @wip
+  Scenario Outline: An explicit selected tracked deletion is committed successfully
+    Given an initialized "<backend>" project with a tracked file "obsolete.txt"
+    And the developer has deleted "obsolete.txt" with no unrelated pending work
+    When the consumer runs `givn commit obsolete.txt -m "fix: remove obsolete file"`
+    Then the command exits 0 and the revision records the deletion of "obsolete.txt" only
+    And "obsolete.txt" remains absent from the working tree
+
+    Examples:
+      | backend |
+      | Git     |
+      | Fossil  |
+
+  @givn.added @wip
+  Scenario Outline: Unrelated staged additions and deletions survive an explicit Git commit
+    Given an initialized Git project with a working change to "batch.txt"
+    And "other.txt" has an unrelated staged <operation>
+    When the consumer runs `givn commit batch.txt -m "fix: selected batch"`
+    Then the command either commits only the selected working content or refuses an isolation conflict before mutation
+    And the staged <operation> of "other.txt" and its working state remain unchanged
+    And a successful revision contains no addition or deletion of "other.txt"
+    And an isolation refusal creates no revision and leaves all index entries and working changes unchanged
+
+    Examples:
+      | operation |
+      | addition  |
+      | deletion  |

@@ -7,7 +7,7 @@ Givn prepares for a stable 1.0 with skills-only guidance, genuine test-first beh
 ## Use-Case Context
 
 - Primary use case: verify-change — verify a change without false assurance or unnecessary repeated work.
-- Supporting use cases: initialize-project, obtain-effective-guidance, create-change, archive-change, assess-code-structure, inspect-change-state, discover-specifications, operate-product, keep-documentation-current, inspect-development-history, upgrade-a-project; reusable support fragment.
+- Supporting use cases: initialize-project, obtain-effective-guidance, create-change, archive-change, assess-code-structure, inspect-change-state, discover-specifications, operate-product, keep-documentation-current, inspect-development-history, upgrade-a-project, publish-a-release; reusable support fragment.
 - Ideation topic: none. Seed path: none.
 - Confirmed Personas: developer--primary-user; agent--technical-role; givn-maintainer--owner. Their existing authority and goals are reused, not reconfirmed or invented. Outdated per-scenario-commit statements are superseded for this change by the agreed batch contract.
 - Source: the operator's completed point-by-point audit discussion, including the final outline rules. The portable decisions are recorded here and in design.md; no execution depends on the agent-local scratch plan.
@@ -26,8 +26,8 @@ Users and agents encounter competing instructions, unnecessary dispositions and 
 
 ### Reliable outcomes without extra ceremony
 
-1. Verification requires fresh results and stable tested inputs, with useful independent diagnostics reported together. Explicit no-behavior-change changes may omit delta scenarios and report verification as not applicable, not falsely passed.
-2. Archive preserves supported executable specifications or refuses unsupported constructs before mutation. Preservation comparisons include executable arguments and inherited setup, without claiming semantic equivalence.
+1. Verification requires fresh results and stable tested inputs, with useful independent diagnostics reported together. Changes declaring `Behavior change: none`, explicitly skipping specs, and containing no delta feature files report changed-scenario verification as not applicable, not falsely passed; contradictory deltas or a missing skip refuse before mutation. Applicable merged-candidate archive verification remains required.
+2. Archive preserves supported English executable specifications or refuses unsupported constructs, explicit non-English dialects, and conflicting Background replacements before mutation. 0.9.10 supports English Gherkin only. Preservation comparisons include executable arguments and inherited setup, without claiming semantic equivalence.
 3. Recovery is trusted, lean and fix-forward. Reuse valid successful evidence when relevant inputs match; do not rerun suites merely because evidence publication failed. Retain existing broad archive evidence exemptions and explain their limitation. No blanket retry re-review.
 4. Scenario ownership, typed references, interaction identity and actual verdicts are checked consistently. Long scenarios still require a meaningful split-or-keep decision; shape similarity and outline findings do not block review or archive.
 5. Coverage reports must be fresh and valid, but equal coverage is not a failure. Verification scopes are explicit; relative scenario counts and different command strings are not evidence of isolation.
@@ -49,7 +49,7 @@ Users and agents encounter competing instructions, unnecessary dispositions and 
 15. Initialization preserves explicit choices and reports required skill-generation failures honestly. Configuration editing changes the intended setting or refuses before writing. Policy belongs in config.yaml; executable commands/runtime settings belong in commands.yaml. Defaults and partial blocks resolve consistently.
 16. Commits require explicit paths and preserve unrelated work on Git/Fossil. Hook installation cannot self-dispatch. Readiness waits have a real deadline. README updates refuse ambiguous managed markers before writing. Recorders have bounded waits and cannot prevent primary work.
 17. Recordings remain local, ignored and outside repository history; warn that they may contain sensitive content. No new recording privacy/filtering program.
-18. Correct shipped templates/examples, remove harness-project leakage from current shipped guidance/help, consolidate duplicated docs and clearly label historical decisions. Establish 1.0 as the future migration baseline, remove embedded 0.x routes, and document manual transition; 0.x configuration compatibility is not required. Preserve user-owned specifications/files and keep future migration machinery.
+18. Correct shipped templates/examples, remove harness-project leakage from current shipped guidance/help, consolidate duplicated docs and clearly label historical decisions. Establish 1.0 as the future migration baseline, remove embedded 0.x routes, and document manual transition; 0.x configuration compatibility is not required. Preserve user-owned specifications/files and keep future migration machinery. The shipped route catalog may be empty at the 1.0 migration baseline, contains no pre-1.0 routes, and still declares its schema; synthetic future-route fixtures retain complete bundle-validation coverage.
 
 ## Capability Routing
 
@@ -79,6 +79,7 @@ The initial route command recommended EXTEND givn-workflow-enforcement (signal, 
 | serve-extended-rules | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND serve-extended-rules | Existing obtain-effective-guidance ownership; do not concentrate unrelated goals in verification. |
 | start-the-declared-product | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND start-the-declared-product | Existing operate-product ownership; do not concentrate unrelated goals in verification. |
 | apply-a-managed-upgrade | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND apply-a-managed-upgrade | Existing upgrade-a-project ownership; do not concentrate unrelated goals in verification. |
+| describe-the-release | No signal on targeted recheck | EXTEND describe-the-release | Existing publish-a-release owner; permit the empty shipped 1.0-baseline route catalog while retaining complete future bundle validation. |
 | check-specification-health | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND check-specification-health | Existing verify-change ownership; do not concentrate unrelated goals in verification. |
 | givn-workflow-enforcement | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND givn-workflow-enforcement | Primary verification behavior. |
 | outline-review-gate | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND outline-review-gate | Retire blocking outline enforcement; retain advisory outline-report. |
