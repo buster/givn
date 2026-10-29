@@ -68,7 +68,7 @@ fn scan_for_fixture(dir: &std::path::Path) -> Option<PathBuf> {
         .ok()?
         .flatten()
         .map(|e| e.path())
-        .find(|p| {
+        .filter(|p| {
             p.file_name()
                 .and_then(|n| n.to_str())
                 .is_some_and(|n| n.starts_with("ready_fixture"))
@@ -76,6 +76,7 @@ fn scan_for_fixture(dir: &std::path::Path) -> Option<PathBuf> {
                     .map(|m| m.permissions().mode() & 0o111 != 0)
                     .unwrap_or(false)
         })
+        .max_by_key(|p| p.metadata().and_then(|m| m.modified()).ok())
 }
 
 /// The fixture command for a server that binds the port givn hands it

@@ -85,6 +85,19 @@ fn serve(args: &[String]) {
         .unwrap_or(0);
     let never_ready = args.iter().any(|a| a == "--never-ready");
     let trap_marker = arg_value(args, "--trap-marker");
+    let stall = arg_value(args, "--stall");
+    if let Some(path) = arg_value(args, "--pid-file") {
+        std::fs::write(path, std::process::id().to_string()).expect("write fixture pid");
+        std::fs::write(
+            "run-started-ms",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                .to_string(),
+        )
+        .expect("write fixture start time");
+    }
 
     install_trap();
     let listener = TcpListener::bind(("127.0.0.1", port)).expect("fixture bind");
@@ -101,7 +114,17 @@ fn serve(args: &[String]) {
             std::process::exit(0);
         }
         match listener.accept() {
-            Ok((stream, _)) => {
+            Ok((mut stream, _)) => {
+                if let Some(stall) = &stall {
+                    if stall != "write" {
+                        request_path(&stream);
+                    }
+                    if stall == "partial" {
+                        stream.write_all(b"HTTP/1.0 200").expect("partial status");
+                    }
+                    std::thread::sleep(Duration::from_secs(10));
+                    continue;
+                }
                 if never_ready {
                     respond(&stream, 404);
                     continue;

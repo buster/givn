@@ -124,47 +124,81 @@ pub fn resolve_start_plan(
 /// `ready_path`. 2xx accepts; anything else — other statuses, malformed
 /// responses, connection refused or reset — is a failed attempt.
 pub fn probe_once(port: u16, ready_path: &str) -> bool {
+    probe_before_deadline(
+        port,
+        ready_path,
+        Instant::now() + Duration::from_millis(500),
+    )
+}
+
+fn remaining_probe_budget(deadline: Instant) -> Option<Duration> {
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    (!remaining.is_zero()).then_some(remaining.min(Duration::from_millis(500)))
+}
+
+fn probe_before_deadline(port: u16, ready_path: &str, deadline: Instant) -> bool {
+    let Some(remaining) = remaining_probe_budget(deadline) else {
+        return false;
+    };
     let Ok(mut stream) = TcpStream::connect_timeout(
         &std::net::SocketAddr::from(([127, 0, 0, 1], port)),
-        Duration::from_millis(500),
+        remaining,
     ) else {
         return false;
     };
     let request = format!("GET {ready_path} HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\n\r\n");
-    if stream.write_all(request.as_bytes()).is_err() {
-        return false;
+    let mut pending = request.as_bytes();
+    while !pending.is_empty() {
+        let Some(remaining) = remaining_probe_budget(deadline) else {
+            return false;
+        };
+        if stream.set_write_timeout(Some(remaining)).is_err() {
+            return false;
+        }
+        match stream.write(pending) {
+            Ok(0) | Err(_) => return false,
+            Ok(n) => pending = &pending[n..],
+        }
     }
     let mut head = [0u8; 8 * 1024];
-    let Ok(n) = stream.read(&mut head) else {
-        return false;
-    };
-    let head = String::from_utf8_lossy(&head[..n]);
-    let Some(status) = head
-        .lines()
-        .next()
-        .and_then(|line| line.split_whitespace().nth(1))
-        .and_then(|code| code.parse::<u16>().ok())
-    else {
-        return false;
-    };
-    (200..300).contains(&status)
+    let mut used = 0;
+    while used < head.len() {
+        let Some(remaining) = remaining_probe_budget(deadline) else {
+            return false;
+        };
+        if stream.set_read_timeout(Some(remaining)).is_err() {
+            return false;
+        }
+        match stream.read(&mut head[used..]) {
+            Ok(0) | Err(_) => return false,
+            Ok(n) => used += n,
+        }
+        if let Some(end) = head[..used].windows(2).position(|bytes| bytes == b"\r\n") {
+            let line = String::from_utf8_lossy(&head[..end]);
+            let mut fields = line.split_whitespace();
+            let version = fields.next();
+            let status = fields.next().and_then(|code| code.parse::<u16>().ok());
+            return Instant::now() < deadline
+                && matches!(version, Some("HTTP/1.0" | "HTTP/1.1"))
+                && status.is_some_and(|status| (200..300).contains(&status));
+        }
+    }
+    false
 }
 
-/// Poll the readiness probe every 100 ms until it accepts or the deadline
-/// elapses. Returns the attempt count for the retry scenarios.
 pub fn probe_until_ready(port: u16, ready_path: &str, timeout: Duration) -> ProbeOutcome {
     let deadline = Instant::now() + timeout;
     let mut attempts = 0;
-    loop {
+    while Instant::now() < deadline {
         attempts += 1;
-        if probe_once(port, ready_path) {
+        if probe_before_deadline(port, ready_path, deadline) {
             return ProbeOutcome::Ready { attempts };
         }
-        if Instant::now() >= deadline {
-            return ProbeOutcome::TimedOut;
-        }
-        std::thread::sleep(Duration::from_millis(100));
+        std::thread::sleep(
+            Duration::from_millis(100).min(deadline.saturating_duration_since(Instant::now())),
+        );
     }
+    ProbeOutcome::TimedOut
 }
 
 /// The line `givn run --print` emits: one sh-eval-able start line.
@@ -303,12 +337,7 @@ fn start_product(plan: &StartPlan) -> i32 {
         if is_server && !ready {
             let port = plan.port.expect("a server plan carries a resolved port");
             let ready_path = plan.ready_path.as_deref().expect("R3 requires ready_path");
-            // One probe attempt per tick: a zero deadline degenerates
-            // probe_until_ready to a single attempt.
-            if matches!(
-                probe_until_ready(port, ready_path, Duration::ZERO),
-                ProbeOutcome::Ready { .. }
-            ) {
+            if probe_before_deadline(port, ready_path, deadline) {
                 ready = true;
                 println!("givn run: ready at http://127.0.0.1:{port}{ready_path}");
             } else if !ready && Instant::now() >= deadline {
@@ -320,9 +349,88 @@ fn start_product(plan: &StartPlan) -> i32 {
                 #[cfg(not(unix))]
                 let _ = child.kill();
                 let _ = child.wait();
+                eprintln!("givn run: readiness timeout at http://127.0.0.1:{port}{ready_path}");
                 return 2;
             }
         }
         std::thread::sleep(Duration::from_millis(50));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::net::TcpListener;
+
+    fn stalled_probe(response: &'static [u8], ready_path: String, consume_request: bool) {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let peer = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            if consume_request {
+                let mut request = [0; 8192];
+                stream.read(&mut request).unwrap();
+            }
+            stream.write_all(response).unwrap();
+            std::thread::sleep(Duration::from_millis(600));
+        });
+        let started = Instant::now();
+        let outcome = probe_until_ready(port, &ready_path, Duration::from_millis(120));
+        let elapsed = started.elapsed();
+        peer.join().unwrap();
+        assert_eq!(outcome, ProbeOutcome::TimedOut);
+        assert!(elapsed < Duration::from_millis(350), "elapsed: {elapsed:?}");
+    }
+
+    #[test]
+    fn readiness_silent_response_uses_total_deadline() {
+        stalled_probe(b"", "/healthz".into(), true);
+    }
+
+    #[test]
+    fn readiness_partial_status_is_not_ready() {
+        stalled_probe(b"HTTP/1.0 200", "/healthz".into(), true);
+    }
+
+    #[test]
+    fn readiness_blocked_write_uses_total_deadline() {
+        stalled_probe(b"", format!("/{}", "x".repeat(16 * 1024 * 1024)), false);
+    }
+
+    #[test]
+    fn readiness_expired_deadline_does_not_connect() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let peer = std::thread::spawn(move || {
+            let until = Instant::now() + Duration::from_millis(300);
+            while Instant::now() < until {
+                if let Ok((mut stream, _)) = listener.accept() {
+                    stream
+                        .write_all(b"HTTP/1.0 204 No Content\r\n\r\n")
+                        .unwrap();
+                    return true;
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            false
+        });
+        let outcome = probe_until_ready(port, "/healthz", Duration::ZERO);
+        let connected = peer.join().unwrap();
+        assert_eq!(outcome, ProbeOutcome::TimedOut);
+        assert!(!connected);
+    }
+
+    #[test]
+    fn readiness_retry_sleep_uses_remaining_budget() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        drop(listener);
+        let started = Instant::now();
+        assert_eq!(
+            probe_until_ready(port, "/healthz", Duration::from_millis(20)),
+            ProbeOutcome::TimedOut
+        );
+        assert!(started.elapsed() < Duration::from_millis(80));
     }
 }

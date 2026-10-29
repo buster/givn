@@ -361,3 +361,121 @@ fn readme_has_no_dev_block(world: &mut GivnWorld) {
         "README unexpectedly contains development managed block markers"
     );
 }
+
+#[given(
+    regex = r"^an otherwise complete README whose (development|run) managed block markers have (.+)$"
+)]
+fn ambiguous_markers(world: &mut GivnWorld, block: String, damage: String) {
+    let begin = format!("<!-- givn:begin:{block} -->");
+    let end = format!("<!-- givn:end:{block} -->");
+    let separator = "\r\nHuman prose between markers.  \t\r\n";
+    let markers = match damage.as_str() {
+        "a closing marker before its opening" => vec![&end, &begin],
+        "a duplicated opening marker" => vec![&begin, &begin, &end],
+        "a duplicated closing marker" => vec![&begin, &end, &end],
+        "two complete marker pairs" => vec![&begin, &end, &begin, &end],
+        _ => panic!("unknown marker damage: {damage}"),
+    };
+    write_readme(
+        world,
+        &format!(
+            "# Complete README\r\n{}\r\nFinal prose.",
+            markers
+                .into_iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join(separator)
+        ),
+    );
+}
+
+#[given("user-authored prose surrounds and separates the marker occurrences")]
+fn separated_markers(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let text = std::fs::read_to_string(env.path("README.md")).unwrap();
+    assert!(text.starts_with("# Complete README\r\n"));
+    assert!(text.contains("Human prose between markers.  \t\r\n"));
+    assert!(text.ends_with("Final prose."));
+}
+
+#[given("the README is snapshotted")]
+fn snapshot_readme(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    std::fs::copy(env.path("README.md"), env.path("readme-before.bin")).unwrap();
+}
+
+#[then("the README is unchanged")]
+#[then("the README is byte-for-byte unchanged")]
+#[then("no automatic marker repair is attempted")]
+fn unchanged_readme(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    assert_eq!(
+        std::fs::read(env.path("README.md")).unwrap(),
+        std::fs::read(env.path("readme-before.bin")).unwrap()
+    );
+}
+
+#[given(regex = r#"^an otherwise completed change "([^"]+)" is ready for archive preflight$"#)]
+fn archive_preflight_change(world: &mut GivnWorld, id: String) {
+    let env = world.env.as_ref().unwrap();
+    super::archive_proof_support::disable_coverage(env);
+    super::archive_proof_support::write_result_runner(env, "pass");
+    super::archive_proof_support::configure_commands(env);
+    super::archive_proof_support::write_change_artifacts(env, &id, false);
+    world.last_change_id = Some(id);
+}
+
+#[then(regex = r"^the diagnostic names the invalid (development|run) managed block markers$")]
+fn invalid_markers_diagnostic(world: &mut GivnWorld, block: String) {
+    let out = super::output(world);
+    let text = format!(
+        "{}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        text.contains(&format!("{block} managed block markers")),
+        "{text}"
+    );
+    assert!(text.contains("damaged"), "{text}");
+}
+
+#[given("a stale development managed block with exactly one ordered opening and closing marker")]
+fn ordered_stale_block(world: &mut GivnWorld) {
+    stale_block_readme(world);
+    let env = world.env.as_ref().unwrap();
+    let findings = givn::cli::readme::check_readme(&env.root());
+    assert!(
+        !findings
+            .iter()
+            .any(|f| f.kind == givn::cli::readme::ReadmeFindingKind::DamagedBlock)
+    );
+}
+
+#[given("user-authored prose before and after the managed block")]
+fn surround_development_block(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let text = std::fs::read_to_string(env.path("README.md")).unwrap();
+    write_readme(
+        world,
+        &format!("User prefix.  \t\r\n{text}\r\nUser suffix.  \t"),
+    );
+    snapshot_readme(world);
+}
+
+#[then("the user-authored prose before and after the managed block is byte-for-byte unchanged")]
+fn surrounding_prose_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let before = std::fs::read_to_string(env.path("readme-before.bin")).unwrap();
+    let after = std::fs::read_to_string(env.path("README.md")).unwrap();
+    let begin = givn::cli::readme::DEV_BLOCK_BEGIN;
+    let end = givn::cli::readme::DEV_BLOCK_END;
+    assert_eq!(
+        &before[..before.find(begin).unwrap()],
+        &after[..after.find(begin).unwrap()]
+    );
+    assert_eq!(
+        &before[before.find(end).unwrap() + end.len()..],
+        &after[after.find(end).unwrap() + end.len()..]
+    );
+}
