@@ -64,7 +64,7 @@ pub(crate) fn write_result_runner(env: &common::TestEnv, kind: &str) {
         r#"#!/bin/sh
 # archive-proof result runner
 kind={kind}
-scope=${{1:-regular}}
+scope=${{GIVN_RESULT_SCOPE:-${{1:-regular}}}}
 if [ -z "${{GIVN_RESULT_FILE:-}}" ]; then
     exit 0
 fi

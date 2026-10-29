@@ -73,8 +73,50 @@ impl ReleaseVersion {
 pub fn load_catalog() -> Result<MigrationCatalog> {
     let yaml = crate::config::embedded::Assets::get_str(MIGRATION_CATALOG_PATH)
         .ok_or_else(|| anyhow::anyhow!("embedded migration catalog not found"))?;
+    parse_catalog(&yaml, "embedded migration catalog")
+}
+
+/// Load and validate a catalog supplied by the test-only synthetic-route seam.
+pub fn load_catalog_from_path(path: &Path) -> Result<MigrationCatalog> {
+    let yaml = std::fs::read_to_string(path)
+        .with_context(|| format!("read synthetic migration catalog '{}'", path.display()))?;
+    parse_catalog(&yaml, "synthetic migration catalog")
+}
+
+pub fn validate_catalog_yaml(yaml: &str) -> Result<MigrationCatalog> {
+    let value: serde_yaml_ng::Value =
+        serde_yaml_ng::from_str(yaml).context("parse migration catalog")?;
+    if let Some(migrations) = value
+        .get("migrations")
+        .and_then(|value| value.as_sequence())
+    {
+        for (index, bundle) in migrations.iter().enumerate() {
+            let id = bundle
+                .get("id")
+                .and_then(|value| value.as_str())
+                .map(str::to_string)
+                .unwrap_or_else(|| format!("#{}", index + 1));
+            for (key, label) in [
+                ("source_version", "source"),
+                ("target_version", "target"),
+                ("order", "order"),
+                ("proposal_asset", "proposal asset"),
+                ("design_asset", "design asset"),
+            ] {
+                if bundle.get(key).is_none() {
+                    bail!("migration bundle '{id}' is missing the '{label}' field");
+                }
+            }
+        }
+    }
+    parse_catalog(yaml, "migration catalog")
+}
+
+/// Parse and validate catalog YAML. Shipped and synthetic catalogs share the
+/// same bundle contract.
+fn parse_catalog(yaml: &str, origin: &str) -> Result<MigrationCatalog> {
     let catalog: MigrationCatalog =
-        serde_yaml_ng::from_str(&yaml).context("parse embedded migration catalog")?;
+        serde_yaml_ng::from_str(yaml).with_context(|| format!("parse {origin}"))?;
     if catalog.schema_version != MIGRATION_CATALOG_SCHEMA_VERSION {
         bail!(
             "unsupported migration catalog schema version {}",
@@ -367,8 +409,8 @@ pub fn prepare_managed_upgrade(
     commit_message: &str,
 ) -> Result<Option<String>> {
     let backend = crate::scm::select(project_root).context(
-        "a version-controlled checkpoint is required for a managed upgrade; \
-         no files were changed",
+        "a version-controlled checkpoint is required for a managed upgrade \
+         (a version-controlled project is required); no files were changed",
     )?;
     let dirty = backend.dirty_entries()?;
     if !dirty.is_empty() {
@@ -761,6 +803,7 @@ fn aggregate_migration_proposal(
     let mut output = format!(
         "# Proposal: {change_id}\n\n\
 ## Aggregate migration\n\n\
+Behavior change: none\n\n\
 This maintenance change migrates a project from Givn {source_version} to the \
 installed Givn {target_version} contract. Managed preparation was recorded in \
 Commit A `{commit_a}`. The migration phases below are one ordered plan; work \

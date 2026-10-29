@@ -614,24 +614,33 @@ pub fn remove_previous_output(path: &Path) -> Result<()> {
     }
 }
 
-pub fn change_verification_not_applicable(change_dir: &Path) -> Result<bool> {
+fn no_behavior_change_declared(change_dir: &Path) -> bool {
     let proposal = std::fs::read_to_string(change_dir.join("proposal.md")).unwrap_or_default();
-    let declared = crate::state::actual_entries(&proposal, "Behavior change:")
+    crate::state::actual_entries(&proposal, "Behavior change:")
         .iter()
-        .any(|v| v == "none");
-    let features = crate::gherkin::parse::collect_feature_files(&change_dir.join("specs"));
-    if declared {
-        if !features.is_empty() {
-            bail!(
-                "executable deltas contradict no behavior change; remove the declaration or delta feature files"
-            );
-        }
-        if !crate::state::is_skipped("specs", change_dir) {
-            bail!("Behavior change: none requires an explicit specs skip in .givn-skip");
-        }
+        .any(|value| value == "none")
+}
+
+pub fn validate_no_behavior_change(change_dir: &Path) -> Result<()> {
+    if !no_behavior_change_declared(change_dir) {
+        return Ok(());
+    }
+    if !crate::gherkin::parse::collect_feature_files(&change_dir.join("specs")).is_empty() {
+        bail!(
+            "executable deltas contradict no behavior change; remove the declaration or delta feature files"
+        );
+    }
+    if !crate::state::is_skipped("specs", change_dir) {
+        bail!("Behavior change: none requires an explicit specs skip in .givn-skip");
+    }
+    Ok(())
+}
+
+pub fn change_verification_not_applicable(change_dir: &Path) -> Result<bool> {
+    if no_behavior_change_declared(change_dir) {
         return Ok(true);
     }
-    if features.is_empty() {
+    if crate::gherkin::parse::collect_feature_files(&change_dir.join("specs")).is_empty() {
         bail!("missing delta specs or explicit Behavior change: none declaration and specs skip");
     }
     Ok(false)
@@ -1190,12 +1199,14 @@ mod tests {
         let root = tempfile::TempDir::new().unwrap();
         assert!(change_verification_not_applicable(root.path()).is_err());
         std::fs::write(root.path().join("proposal.md"), "Behavior change: none").unwrap();
-        assert!(change_verification_not_applicable(root.path()).is_err());
+        assert!(change_verification_not_applicable(root.path()).unwrap());
+        assert!(validate_no_behavior_change(root.path()).is_err());
         std::fs::write(root.path().join(".givn-skip"), "specs\n").unwrap();
         assert!(change_verification_not_applicable(root.path()).unwrap());
+        assert!(validate_no_behavior_change(root.path()).is_ok());
         std::fs::create_dir_all(root.path().join("specs")).unwrap();
         std::fs::write(root.path().join("specs/demo.feature"), "Feature: Demo\n").unwrap();
-        assert!(change_verification_not_applicable(root.path()).is_err());
+        assert!(validate_no_behavior_change(root.path()).is_err());
     }
 
     #[test]
