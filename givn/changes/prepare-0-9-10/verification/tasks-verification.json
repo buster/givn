@@ -2,12 +2,12 @@
   "schema": 2,
   "change": "prepare-0-9-10",
   "status": "passed",
-  "head": "6e01714c7b577fe7aef8edd00cddf159e66988c6",
+  "head": "24808c7746af7a1ceee4a6f0be5affaa0dd91f41",
   "features_path": "givn/changes/prepare-0-9-10/specs",
-  "features_digest": "91aa352d5ae461b60cb6f0465399e13f3ad1d1e2d43ad41144d8bde62fd3b35d",
+  "features_digest": "6fac139f7a118954cc2543b6376bf5d793082ed39bd617017e824e9ba8eebfb7",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
   "command": "./run-tests.sh --non-e2e",
-  "tested_content_digest": "9c7bde6f508c419195ec57aa3dbd7dd86346ce614813ce424378f56ff09d1992",
+  "tested_content_digest": "d5e76cf3005ebe6fc65942bc89784957a3170da6bdfd0b7ffec0806fa6cb191f",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1793313755
+  "finished_at_unix": 1793314126
 }
