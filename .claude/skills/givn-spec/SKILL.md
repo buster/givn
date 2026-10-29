@@ -7,4 +7,4 @@ description: Write Gherkin .feature delta files for a givn change — observable
 
 Write the change's Gherkin delta specs under `<change-id>/specs/`.
 
-The rules for this step are served by `givn instructions specs` — load the instruction and follow it.
+The rules for this step are served by `givn instructions specs --change <CHANGE>` — load the instruction and follow it.
