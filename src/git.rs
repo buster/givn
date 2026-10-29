@@ -261,6 +261,97 @@ impl Worktree {
         Ok(())
     }
 
+    pub fn commit_selected(&self, message: &str, paths: &[String]) -> Result<String> {
+        if paths.is_empty() {
+            bail!("explicit paths are required");
+        }
+        let conflicts = run_git(&self.root, &["ls-files", "--unmerged", "-z"])?;
+        if !conflicts.status.success() || !conflicts.stdout.is_empty() {
+            bail!("cannot isolate selected paths with an unmerged index; resolve conflicts first");
+        }
+        let mut additions = Vec::new();
+        for path in paths {
+            let known = run_git(
+                &self.root,
+                &[
+                    "--literal-pathspecs",
+                    "ls-files",
+                    "--cached",
+                    "--others",
+                    "--exclude-standard",
+                    "-z",
+                    "--",
+                    path,
+                ],
+            )?;
+            if !known.status.success() {
+                bail!("cannot inspect explicit path '{path}'");
+            }
+            if known.stdout.is_empty() {
+                let deleted = run_git(
+                    &self.root,
+                    &[
+                        "--literal-pathspecs",
+                        "diff",
+                        "--cached",
+                        "--name-only",
+                        "--diff-filter=D",
+                        "-z",
+                        "--",
+                        path,
+                    ],
+                )?;
+                if !deleted.status.success() || deleted.stdout.is_empty() {
+                    bail!("unknown or ignored explicit path '{path}'");
+                }
+            }
+            let untracked = run_git(
+                &self.root,
+                &[
+                    "--literal-pathspecs",
+                    "ls-files",
+                    "--others",
+                    "--exclude-standard",
+                    "-z",
+                    "--",
+                    path,
+                ],
+            )?;
+            if !untracked.status.success() {
+                bail!("cannot inspect explicit path '{path}'");
+            }
+            additions.extend(parse_nul_paths(&untracked.stdout)?);
+        }
+        if !additions.is_empty() {
+            let mut args = vec!["--literal-pathspecs", "add", "--intent-to-add", "--"];
+            args.extend(additions.iter().map(String::as_str));
+            let output = run_git(&self.root, &args)?;
+            if !output.status.success() {
+                bail!(
+                    "cannot record selected additions: {}",
+                    String::from_utf8_lossy(&output.stderr).trim()
+                );
+            }
+        }
+        let mut args = vec![
+            "--literal-pathspecs",
+            "commit",
+            "--only",
+            "--message",
+            message,
+            "--",
+        ];
+        args.extend(paths.iter().map(String::as_str));
+        let output = run_git(&self.root, &args)?;
+        if !output.status.success() {
+            bail!(
+                "the selected commit was rejected: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        self.head()
+    }
+
     /// Stage exactly `paths` and create one commit. Returns the commit id.
     pub fn commit(&self, message: &str, paths: &[String]) -> Result<String> {
         if paths.is_empty() {

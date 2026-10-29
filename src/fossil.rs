@@ -245,6 +245,49 @@ impl FossilCheckout {
         }
     }
 
+    pub fn commit_selected(&self, message: &str, paths: &[String]) -> Result<String> {
+        if paths.is_empty() {
+            bail!("explicit paths are required");
+        }
+        let conflicts = self.run(&["changes", "--classify"])?;
+        if !conflicts.status.success()
+            || String::from_utf8_lossy(&conflicts.stdout)
+                .lines()
+                .any(|line| line.starts_with("CONFLICT") || line.starts_with("MERGED"))
+        {
+            bail!("cannot isolate selected paths while Fossil has pending merge changes");
+        }
+        let tracked = self.run(&["ls"])?;
+        if !tracked.status.success() {
+            bail!("cannot inspect tracked Fossil paths");
+        }
+        let tracked = String::from_utf8_lossy(&tracked.stdout);
+        for path in paths {
+            if !self.root.join(path).exists()
+                && !tracked
+                    .lines()
+                    .any(|entry| Path::new(entry) == Path::new(path))
+            {
+                bail!("unknown absent explicit path '{path}'");
+            }
+        }
+        for entry in tracked.lines() {
+            if paths.iter().any(|path| Path::new(entry).starts_with(path))
+                && !self.root.join(entry).exists()
+            {
+                self.run_checked(&["rm", "--soft", "--", entry])?;
+            }
+        }
+        for path in paths {
+            if self.root.join(path).exists() {
+                self.run_checked(&["add", "--", path])?;
+            }
+        }
+        let relative: Vec<PathBuf> = paths.iter().map(PathBuf::from).collect();
+        self.commit_paths(message, &relative)?;
+        self.revision()
+    }
+
     /// Commit exactly `paths` (already recorded), leaving other pending
     /// changes untouched. Returns an error when none of them changed.
     pub fn commit_paths(&self, message: &str, paths: &[PathBuf]) -> Result<()> {

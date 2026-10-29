@@ -4,9 +4,13 @@ set -u
 # givn commit-attribution launcher
 
 original="$0.givn-original"
-if [ -x "$original" ]; then
+if [ -x "$original" ] && ! grep -q 'givn commit-attribution launcher' "$original"; then
     "$original" "$@" || exit $?
 fi
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
-exec "$root/.githooks/commit-msg" "$@"
+helper="$root/.githooks/commit-msg"
+if [ -x "$helper" ] && ! [ "$helper" -ef "$0" ]; then
+    "$helper" "$@" || exit $?
+fi
+exit 0
