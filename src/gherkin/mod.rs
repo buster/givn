@@ -1,3 +1,4 @@
+pub mod content;
 pub mod delta;
 pub mod interaction;
 pub mod merge;

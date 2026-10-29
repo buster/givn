@@ -209,8 +209,7 @@ fn is_subsequence(needle: &[String], haystack: &[String]) -> bool {
 }
 
 /// Walk the permanent corpus and report exact/structural duplicate
-/// scenarios. Behavior text is the joined step values (normalized);
-/// structure comes from the overlap fingerprint's assertion sequence.
+/// scenarios.
 pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
     use crate::overlap::fingerprint::Fingerprint;
 
@@ -247,17 +246,10 @@ pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
             }
             let feature = gherkin::Feature::parse_path(&file, GherkinEnv::default())
                 .map_err(|e| anyhow::anyhow!("failed to parse {}: {e}", file.display()))?;
+            crate::gherkin::parse::validate_supported_feature(&feature)?;
             let file_label = file.display().to_string();
             for scenario in &feature.scenarios {
-                let mut steps: Vec<&gherkin::Step> = scenario.steps.iter().collect();
-                if let Some(background) = &feature.background {
-                    steps.extend(background.steps.iter());
-                }
-                let behavior = steps
-                    .iter()
-                    .map(|s| normalize_phrasing(&s.value))
-                    .collect::<Vec<_>>()
-                    .join("\n");
+                let behavior = crate::gherkin::content::executable_content(&feature, scenario);
                 let fingerprint = Fingerprint::of_scenario(scenario, feature.background.as_ref());
                 entries.push(Entry {
                     file: file_label.clone(),
@@ -269,6 +261,7 @@ pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
         }
     }
 
+    entries.sort_by(|a, b| (&a.file, &a.title).cmp(&(&b.file, &b.title)));
     let mut matches = Vec::new();
     for i in 0..entries.len() {
         for j in (i + 1)..entries.len() {
@@ -312,6 +305,28 @@ pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
             }
         }
     }
+    for entry in &mut matches {
+        if (&entry.left_file, &entry.left_title) > (&entry.right_file, &entry.right_title) {
+            std::mem::swap(&mut entry.left_file, &mut entry.right_file);
+            std::mem::swap(&mut entry.left_title, &mut entry.right_title);
+        }
+    }
+    matches.sort_by(|a, b| {
+        (
+            &a.left_file,
+            &a.left_title,
+            &a.right_file,
+            &a.right_title,
+            &a.kind,
+        )
+            .cmp(&(
+                &b.left_file,
+                &b.left_title,
+                &b.right_file,
+                &b.right_title,
+                &b.kind,
+            ))
+    });
     Ok(matches)
 }
 
@@ -372,6 +387,52 @@ pub fn find_scenarios(root: &Path, query: &str) -> Result<Vec<FindHit>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn exact_duplicates_require_literal_executable_content() {
+        let source = "@api\nFeature: Catalog\n  Background: Session\n    Given user 1\n  Scenario Outline: Read\n    When query \"Ada\"\n      \"\"\"json\n      body\n      \"\"\"\n      | key | value |\n      | a | b |\n    Then visible <name>\n    @fast\n    Examples:\n      | name |\n      | Ada |\n";
+        for (from, to) in [
+            ("user 1", "user 2"),
+            ("@api", "@slow"),
+            ("\"Ada\"", "\"Grace\""),
+            ("When query", "Given query"),
+            ("body", "changed"),
+            ("json", "text"),
+            ("| a | b |", "| a | c |"),
+            ("| Ada |", "| Grace |"),
+            ("@fast", "@slow"),
+        ] {
+            let root = tempfile::tempdir().unwrap();
+            let base = root.path().join("givn/specs/catalog");
+            std::fs::create_dir_all(&base).unwrap();
+            std::fs::write(base.join("a.feature"), source).unwrap();
+            std::fs::write(base.join("b.feature"), source.replace(from, to)).unwrap();
+            let matches = duplicate_matches(root.path()).unwrap();
+            assert!(
+                !matches.iter().any(|m| m.kind == "exact_duplicate"),
+                "false exact duplicate for {from}: {matches:?}"
+            );
+            assert!(matches.iter().any(|m| m.kind == "same_assertion_shape"));
+        }
+    }
+
+    #[test]
+    fn exact_duplicate_endpoints_are_sorted_and_titles_are_not_content() {
+        let root = tempfile::tempdir().unwrap();
+        let base = root.path().join("givn/specs/catalog");
+        std::fs::create_dir_all(&base).unwrap();
+        for name in ["z", "a", "m"] {
+            std::fs::write(base.join(format!("{name}.feature")), format!("@givn.delta\nFeature: {name}\n  @wip @givn.added\n  Scenario: {name}\n    Given same\n    Then equal\n")).unwrap();
+        }
+        let matches = duplicate_matches(root.path()).unwrap();
+        assert_eq!(matches.len(), 3);
+        let endpoints: Vec<_> = matches
+            .iter()
+            .map(|m| (m.left_title.as_str(), m.right_title.as_str()))
+            .collect();
+        assert_eq!(endpoints, [("a", "m"), ("a", "z"), ("m", "z")]);
+        assert!(matches.iter().all(|m| m.kind == "exact_duplicate"));
+    }
 
     #[test]
     fn normalize_phrasing_masks_quotes_digits_and_whitespace() {
