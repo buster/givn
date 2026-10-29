@@ -2,7 +2,8 @@
 
 | Term | Definition |
 |---|---|
-| **Addon** | Embedded behavior toggled through `addons.<name>`. The embedded manifest starts disabled, but current `givn init` enables every default-on registered addon unless `--no-addons` is supplied; a default-off addon such as `outline` requires `givn addons enable <name>`. |
+| **Addon** | Embedded behavior toggled through `addons.<name>`. Every registered addon is enabled by default; a missing key in a partial block means enabled, and only an explicit `false` (written by `givn init --no-addons` or `givn addons disable <name>`) opts out. |
+| **Addon default** | The enabled-by-default posture shared by the embedded manifest, the `Addons` serde defaults, and the registry. Anti-term: opt-in default (the rejected mixed posture). |
 | **Addon-aware generation** | Generation that includes only the template sections whose declared addon condition matches the current effective addon set; an addon that is off leaves no trace in the generated skill or slash command. |
 | **AGENTS.md ownership** | Givn owns only the content between its own named fenced markers. All other `AGENTS.md` content is user-owned and preserved. |
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, `claude`, or `omp`, represented by `.opencode/`, `.agents/`, `.claude/`, or `.omp/`. |

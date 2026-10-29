@@ -117,6 +117,10 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
                 crate::cli::addons::enable_scaffold(addon.id)?;
             }
         }
+    } else {
+        // The default is enabled, so `--no-addons` must write an explicit
+        // false for every addon instead of relying on an embedded default.
+        crate::cli::addons::disable_all(&project_root)?;
     }
 
     // Generate skills and agent commands.
@@ -180,28 +184,11 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     }
     if no_addons {
         println!("  addons:  disabled (--no-addons)");
+        println!("           explicit false written for every addon");
     } else {
         println!("  addons:  enabled");
         for addon in crate::cli::addons::KNOWN_ADDONS {
-            if addon.default_enabled {
-                println!("    - {}: {}", addon.id, addon.description);
-            }
-        }
-        let default_off: Vec<&str> = crate::cli::addons::KNOWN_ADDONS
-            .iter()
-            .filter(|addon| !addon.default_enabled)
-            .map(|addon| addon.id)
-            .collect();
-        if default_off.len() == 1 {
-            println!(
-                "  addons available (default off): {} — enable with givn addons enable {}",
-                default_off[0], default_off[0]
-            );
-        } else if !default_off.is_empty() {
-            println!(
-                "  addons available (default off): {} — enable with givn addons enable <name>",
-                default_off.join(", ")
-            );
+            println!("    - {}: {}", addon.id, addon.description);
         }
     }
 

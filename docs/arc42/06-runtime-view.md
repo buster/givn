@@ -23,11 +23,12 @@ The sequence is:
 5. Write `givn/commands.yaml` from the embedded project command template unless
    it already exists and `--force` is absent. The current template contains
    `./run-tests.sh`, `./run-tests.sh --e2e`, and coverage script/path entries.
-6. Unless `--no-addons` is set, enable every default-on registered addon. In the
-   current registry this scaffolds Arc42, manages the Absolute Mode fenced
-   block, may scaffold README content, enables the archive coverage gate, and
-   toggles the four project-level skills and commands. A default-off addon is
-   registered but not enabled.
+6. Unless `--no-addons` is set, enable every registered addon. In the current
+   registry this scaffolds Arc42, manages the Absolute Mode fenced block, may
+   scaffold README content, enables the archive coverage gate, and toggles the
+   project-level skills, commands, and the outline report. With `--no-addons`,
+   write an explicit `false` for every known addon instead, so the opt-out is
+   visible in `givn/config.yaml`.
 7. Synchronize skills, commands, and attribution integrations to the selected
    targets. The sync
    updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other
@@ -39,11 +40,11 @@ The sequence is:
    exists, install or refresh the local dispatcher without replacing an
    existing `commit-msg` hook.
 
-The embedded default manifest has addon flags disabled, but initialized projects
-normally receive enabled addon settings because the current `init` command
-enables the default-on set. When a registered addon is default-off, `givn init`
-prints a separate line naming it and the enabling command instead of writing its
-flag; the first such addon is `outline`. Existing Arc42 files are not
+The embedded default manifest enables every addon, and initialized projects
+receive the same enabled settings. A missing addon key in a partial `addons:`
+block resolves to enabled; only an explicit `false` disables a flag. `givn init
+--no-addons` writes that explicit false for every known addon, and `givn addons
+disable <name>` opts one addon out later. Existing Arc42 files are not
 overwritten by addon scaffolding.
 
 ## 6.1a Commit attribution

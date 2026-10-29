@@ -122,15 +122,15 @@ Feature: enable-optional-addons
     And  the file ".opencode/skills/givn-dev-principles/SKILL.md" exists
     And  the file ".opencode/commands/grill-me.md" exists
     And  the file ".opencode/commands/grill-with-docs.md" exists
-    And  the outline addon is disabled
+    And  stdout contains "- outline:"
 
   Scenario: givn init lists default-off addons and how to enable them
     Given  a project root without a givn/ directory
     When  the user runs "givn init --agents opencode"
     Then  the command exits 0
-    And  stdout contains "addons available (default off): architecture_principles, outline"
+    And  stdout contains "addons:  enabled"
     When  the user runs "givn addons list"
-    Then  stdout contains "[disabled]  outline"
+    Then  stdout contains "[enabled ]  outline"
     And  stdout contains "givn addons enable"
 
   @e2e

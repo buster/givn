@@ -474,6 +474,19 @@ impl GateOutcome {
         }
     }
 
+    /// A change with no touched production path has no outline obligation.
+    fn pass(base: Option<ChangeBase>) -> Self {
+        Self {
+            base,
+            analyzed: false,
+            touched: 0,
+            hints: Vec::new(),
+            outlines: Vec::new(),
+            markers: ReviewMarkers::default(),
+            failures: Vec::new(),
+        }
+    }
+
     pub fn passed(&self) -> bool {
         self.failures.is_empty()
     }
@@ -628,6 +641,16 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
     }
 
     if let Some(reason) = &request.scope_error {
+        // A change with no touched production path has no outline obligation.
+        // Probe the conventional `src` root before requiring the command, so
+        // enabling the outline addon by default does not force an
+        // OUTLINE-COMMAND on archive-only or documentation-only changes.
+        let probe_roots = vec!["src".to_string()];
+        let probe_changed =
+            head::changed_production_paths(&backend, base.parent.as_deref(), &probe_roots);
+        if matches!(probe_changed, Ok(changed) if changed.is_empty()) {
+            return Ok(GateOutcome::pass(Some(base)));
+        }
         return Ok(GateOutcome::early(
             None,
             GateFailure::MissingOutlineScope(reason.clone()),

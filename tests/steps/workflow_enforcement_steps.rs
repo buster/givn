@@ -138,6 +138,13 @@ fn disable_coverage_addon(world: &GivnWorld) {
     std::fs::write(&config_path, updated).unwrap();
 }
 
+fn disable_outline_addon(world: &GivnWorld) {
+    let config_path = project_root(world).join("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).unwrap();
+    let updated = config.replace("outline: true", "outline: false");
+    std::fs::write(&config_path, updated).unwrap();
+}
+
 fn set_verify_fails_post_merge(world: &GivnWorld) {
     let script_path = project_root(world).join(".verify_gate.sh");
     std::fs::write(&script_path, "#!/bin/sh\nexit 1\n").unwrap();
@@ -327,6 +334,9 @@ fn change_passed_design_review(world: &mut GivnWorld) {
     scaffold_init_root_change(world, "test-change");
     set_verify_true(world);
     set_coverage_true(world);
+    // These fixtures exercise the review gate, not the outline gate. The
+    // outline addon is enabled by default, so opt this fixture out explicitly.
+    disable_outline_addon(world);
     // Write design-review.md with PASS marker.
     let dr_path = change_dir_for(world, "test-change").join("design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
@@ -692,6 +702,8 @@ fn project_arc42_enabled(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
     set_verify_true(world);
     set_coverage_true(world);
+    // These fixtures exercise the Arc42 integrity hook, not the outline gate.
+    disable_outline_addon(world);
     // Create the test change so subsequent steps can write to it.
     let out = common::run_givn(world.env.as_ref().unwrap(), &["new", "test-change"]);
     assert!(
@@ -714,6 +726,8 @@ fn standalone_change_design_review(world: &mut GivnWorld) {
     world.last_change_id = Some("test-change".to_string());
     set_verify_true(world);
     set_coverage_true(world);
+    // These fixtures exercise the integrity hook, not the outline gate.
+    disable_outline_addon(world);
     let dr_path = project_root(world).join("givn/changes/test-change/design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
     write_fixture_change_receipt(world, "test-change");
@@ -1508,6 +1522,7 @@ fn write_review_fixture_with_options(
     }
     if archive_ready {
         disable_coverage_addon(world);
+        disable_outline_addon(world);
         std::fs::write(
             change.join("tasks.md"),
             "- [x] COMMIT: a1b2c3d4 -- Fixture scenario\n",

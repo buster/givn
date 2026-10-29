@@ -9,7 +9,14 @@ use cucumber::{given, then, when};
 
 #[given("a Givn project with the outline experiment disabled")]
 fn outline_disabled_project(world: &mut GivnWorld) {
-    world.env = Some(common::make_init_root());
+    let env = common::make_init_root();
+    let out = common::run_givn(&env, &["addons", "disable", "outline"]);
+    assert!(
+        out.status.success(),
+        "givn addons disable outline failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.env = Some(env);
 }
 
 #[when(regex = r#"^the developer runs "(givn outline report[^"]*)"$"#)]

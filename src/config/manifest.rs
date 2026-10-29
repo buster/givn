@@ -265,50 +265,72 @@ impl Default for Coverage {
     }
 }
 
-/// Addon switches.
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+/// Addon switches. Every switch is enabled by default; an explicit `false`
+/// opts one add-on out.
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Addons {
     /// Enable the arc42 documentation artifact.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub arc42: bool,
     /// Enable the Absolute Mode communication policy. When true, givn
     /// manages a fenced `<!-- givn:begin:absolute-mode -->` block in the
     /// project's AGENTS.md containing the policy text.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub absolute_mode: bool,
     /// Enable the readme scaffolding addon. When true, `givn init` and
     /// `givn addons enable readme` write an initial README.md to the
     /// project root from the embedded template.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub readme: bool,
     /// Enable the archive-level coverage gate. When true, givn measures
     /// full-project coverage during archive (runs coverage.*_command, merges
     /// Cobertura XML, updates README). A coverage failure leaves the archive
     /// candidate unproven.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub coverage: bool,
     /// Skill — model a change's domain (ubiquitous language, aggregates,
     /// invariants) before design.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub domain_modeling: bool,
     /// Skill — apply the team's engineering principles during implementation.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub dev_principles: bool,
-    /// Opt-in architecture guidance — design the consumer's contract now,
-    /// split components by responsibility, and use ports/adapters for complex
-    /// external boundaries. Default off.
-    #[serde(default)]
+    /// Architecture guidance — design the consumer's contract now, split
+    /// components by responsibility, and use ports/adapters for complex
+    /// external boundaries. Enabled by default; a project may disable it.
+    #[serde(default = "enabled_by_default")]
     pub architecture_principles: bool,
     /// Command — Socratically grill the current plan/design, one question at a time.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub grill_me: bool,
     /// Command — grill the plan/design, citing a source in the project's own
     /// docs for every challenge.
-    #[serde(default)]
+    #[serde(default = "enabled_by_default")]
     pub grill_with_docs: bool,
-    /// Opt-in outline report. Default off; `givn init` never enables it.
-    #[serde(default)]
+    /// Outline report. Enabled by default; a project may disable it.
+    #[serde(default = "enabled_by_default")]
     pub outline: bool,
+}
+
+fn enabled_by_default() -> bool {
+    true
+}
+
+impl Default for Addons {
+    fn default() -> Self {
+        Self {
+            arc42: true,
+            absolute_mode: true,
+            readme: true,
+            coverage: true,
+            domain_modeling: true,
+            dev_principles: true,
+            architecture_principles: true,
+            grill_me: true,
+            grill_with_docs: true,
+            outline: true,
+        }
+    }
 }
 
 impl Manifest {

@@ -139,9 +139,11 @@ givn_config_version: "{{GIVN_VERSION}}"
 
 # --- Addons ------------------------------------------------------------------
 # Pre-packaged artifact sets. See arc42 ch.8.11.
-# `givn init` enables the default-on addons (opt-out via `givn init --no-addons`);
-# default-off addons such as `outline` are listed but stay disabled.
-# This project's actual settings are below, written by `givn init`/`givn addons`:
+# Every known addon is enabled by default. Opt out of all of them with
+# `givn init --no-addons`, or disable one with `givn addons disable <name>`.
+# A missing key in a partial `addons:` block means enabled; only an explicit
+# `false` disables a flag. This project's actual settings are below, written by
+# `givn init`/`givn addons`:
 #
 # addons:
 #   arc42: true             # set to false to disable the arc42 documentation artifact
@@ -152,10 +154,10 @@ givn_config_version: "{{GIVN_VERSION}}"
 #   coverage: true          # set to false to disable the coverage lifecycle artifact
 #   domain_modeling: true   # project-level skill; see below
 #   dev_principles: true    # project-level skill; see below
-#   architecture_principles: false # opt-in architecture guidance; see below
+#   architecture_principles: true # enabled by default; set false to disable; see below
 #   grill_me: true          # project-level command; see below
 #   grill_with_docs: true   # project-level command; see below
-#   outline: false      # opt-in outline report; default off
+#   outline: true           # enabled by default; set false to disable the outline report
 #                          # Toggle with: givn addons enable|disable <name>, or
 #                          # `givn addons list` to see all known addons.
 
@@ -182,10 +184,10 @@ givn_config_version: "{{GIVN_VERSION}}"
 #
 
 # --- Addon: architecture_principles -------------------------------------------
-# Opt-in architecture-principles experiment: answer questions at their last
-# responsible moment; design the consumer's contract now, defer the component
-# split. Gates the `architecture-principles` instruction and its proposal,
-# design, design-review, dialog, review, and tasks references.
+# Architecture-principles guidance (enabled by default): answer questions at
+# their last responsible moment; design the consumer's contract now, defer the
+# component split. Gates the `architecture-principles` instruction and its
+# proposal, design, design-review, dialog, review, and tasks references.
 # Toggle with: givn addons enable|disable architecture_principles.
 #
 

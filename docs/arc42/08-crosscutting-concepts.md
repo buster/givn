@@ -187,12 +187,13 @@ docs/arc42/                      # fixed durable Arc42 output path
 ```
 
 `givn init` creates the core `givn/` directories and command/config files. The
-current init path also enables every default-on registered addon unless
-`--no-addons` is passed; Arc42 scaffolding therefore normally appears during
-initialization, while a default-off addon such as `outline` or
-`architecture_principles` stays absent until it is explicitly enabled. There is
-no effective `arc42.output_dir` or chapter-list setting, and no lifecycle
-cascade for selecting individual durable chapter files.
+current init path enables every registered addon unless `--no-addons` is passed;
+Arc42 scaffolding therefore normally appears during initialization, and the
+outline report and architecture-principles guidance are available in a fresh
+project. A project opts out with `givn addons disable <name>` or by writing an
+explicit `false`; there is no effective `arc42.output_dir` or chapter-list
+setting, and no lifecycle cascade for selecting individual durable chapter
+files.
 
 ## 8.5 The TDD Loop
 
@@ -489,12 +490,11 @@ exception into a general bypass for product changes.
 ## 8.11 Addons and the Arc42 Documentation Artifact
 
 An addon is embedded behavior toggled through `addons.<name>` in the project
-config. The embedded default flags are false, but the current `givn init` path
-enables every default-on registered addon unless `--no-addons` is supplied. A
-registry entry records whether it is default-on; `outline` and
-`architecture_principles` are default-off entries, so initialization lists them
-as available instead of enabling them, and `givn addons enable <name>` is the
-opt-in step.
+config. The embedded default flags are true, and `givn init` enables every
+registered addon unless `--no-addons` is supplied. A missing key in an explicit
+`addons:` block resolves to enabled; only an explicit `false` disables a flag.
+`givn init --no-addons` writes explicit false values for every known add-on, and
+`givn addons disable <name>` is the per-add-on opt-out.
 
 For Arc42 specifically, `givn addons enable arc42`:
 
@@ -1114,14 +1114,15 @@ real `givn` binary; the driver never substitutes an API call for a click.
 
 ## 8.26 The Outline Report and the Source Analysis Boundary
 
-The outline experiment is a default-off addon. Its report is a read view that
+The outline experiment is enabled by default. Its report is a read view that
 appends no development-record entry; its review gate (8.26a) is scoped to
 `givn check review` for a named change and adds no archive gate. The report's
 contract is:
 
-- **Opt-in only.** `addons.outline` is absent or false in an ordinary project.
-  The command is still registered so the disabled path can name the experiment
-  and the enabling command; that path exits 1.
+- **Enabled by default, explicitly disableable.** `addons.outline` is enabled
+  unless the project writes `false` or runs `givn addons disable outline`. The
+  command is still registered so the disabled path can name the experiment and
+  the enabling command; that path exits 1.
 - **Outline first, hints second.** Every unit is printed as a per-component call
   tree first: declarations, signatures, order, and calls. Module outlines list
   declared member types as type items. Same-unit calls nest under the caller;
