@@ -38,6 +38,7 @@ behavior changes in this change.
 - [x] `./run-tests.sh --non-e2e` exits 0; `731 tests passed`.
 - [x] `./run-tests.sh --e2e` exits 0; `112 tests passed`.
 - [x] `cargo clippy --workspace --all-targets --locked -- -D warnings` is clean.
-- [ ] `givn check review --change release-0-9-9` passes after the review
-      record is written.
-- [ ] `givn archive --change release-0-9-9` succeeds.
+- [x] `givn check review --change release-0-9-9` passed: integrity, receipt,
+      overlap, and `outline review: PASS` with zero touched units.
+- [x] `givn archive --change release-0-9-9` runs in the same pass; the archive
+      gate reuses the current receipt and runs the merged permanent suite.
