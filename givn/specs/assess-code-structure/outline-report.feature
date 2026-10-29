@@ -10,11 +10,6 @@ Feature: Outline report
     And  the report records no recommendation
     And  the report writes no baseline file
 
-  Scenario: The outline experiment is disabled by default
-    Given  a Givn project with the outline experiment disabled
-    When  the developer runs "givn addons list"
-    Then  the outline addon is listed as disabled
-
   Scenario: The outline report is unavailable when the experiment is disabled
     Given  a Givn project with the outline experiment disabled
     When  the developer runs "givn outline report"
@@ -372,3 +367,14 @@ Feature: Outline report
     And  the JSON method signature contains "*const Config"
     And  the JSON method signature contains "[u8; 4]"
     And  the JSON method signature contains "crate::config::Config"
+  Scenario: The outline experiment is enabled by default
+    Given  a Givn project
+    When  the developer runs "givn addons list"
+    Then  stdout contains "[enabled ]  outline"
+
+  Scenario: A project can explicitly disable the outline experiment
+    Given  a Givn project
+    When  the user runs `givn addons disable outline`
+    Then  the command exits 0
+    When  the developer runs "givn addons list"
+    Then  the outline addon is listed as disabled
