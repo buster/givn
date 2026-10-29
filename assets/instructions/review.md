@@ -47,10 +47,10 @@ accepts only `Review kind: independent`; a self-review is never turned into an
 independent claim by gate inference. If independence is required but no fresh
 context is available, ask the user; do not silently fall back to self-review.
 
-When the outline addon is enabled, the outline review is part of the recorded
-review context. A self-review uses the self context; an independent review uses
-the one independent reviewer. Never start a second context for the outline
-review.
+When the outline addon is enabled, its report is advisory evidence for the one
+recorded review context. A self-review uses the self context; an independent
+review uses the one independent reviewer. Never create a second outline review
+context, require an outline verdict, or treat the outline as a gate.
 
 The review writes only `review.md`. It does not edit production code, tests,
 specs, design, tasks, ADRs, glossary, coverage, or README.
@@ -73,10 +73,13 @@ Do not start the review on a tree that still fails a mechanical check.
 The review is for semantic findings, not for discovering work the implementer
 can verify deterministically.
 
-After review, fix every finding and verify each one. The re-review checks
-closure of the recorded finding IDs only; it is not another full audit. A new
-non-critical finding goes to the next change. A new critical finding invalidates
-the trial rather than extending the loop.
+After review, fix every finding and verify each one. One targeted closure checks
+the recorded findings and material regressions introduced by their fixes; it is
+not another open-ended audit and does not require a redundant full-suite run.
+Critical defects remain repairable blockers. Minor naming, style polish, and
+unrelated findings go to the existing backlog or a separate follow-up batch. A
+new non-critical finding goes to the next change. A new critical finding
+invalidates the trial rather than extending the loop.
 
 ## Step 0 (mandatory, first): implementation evidence check
 
@@ -158,18 +161,14 @@ Examples:
    E2E scenario. Variants, error cases, and output-affecting flag combinations
    of the same action are regular scenarios. Excess E2E scenarios are a
    implementation-evidence finding.
-9. **Confirm `verify.e2e_command` is actually scoped to `@e2e`, not a copy
-   of `verify.command`.** Read both values from `givn/commands.yaml`
-   literally. If they are identical strings, the "e2e run" re-runs the
-   entire suite and proves nothing about e2e isolation specifically — this
-   is always a implementation-evidence finding, never an acceptable
-   configuration. The archive verification receipt records the per-scope
-   scenario counts; read it and confirm the e2e scope count is strictly
-   smaller than the regular scope count, unless literally every in-scope
-   scenario is tagged `@e2e` (state this explicitly if so). If the counts
-   are equal without that justification, the tag filter is missing or
-   broken — reopen as an implementation-evidence finding. Do not re-run the suite in
-   review; the receipt is the execution evidence.
+9. **Confirm the E2E scope is selected explicitly.** When regular and E2E
+   verification share one runner command, an explicit scope selection such as
+   `GIVN_RESULT_SCOPE` must distinguish the executions. Equal test counts or
+   identical command strings do not by themselves invalidate honestly isolated
+   scopes. Read the archive verification receipt's per-scope evidence; required
+   executions and zero failed or skipped tests remain required, without an
+   extra isolation run. Do not re-run the suite in review; the receipt is the
+   execution evidence.
 10. **Diff the implementation against design.md's stated commands, file
     layout, and framework choices — do not just check they exist.**
     design.md names specific things: the exact `verify.e2e_command` value
@@ -222,6 +221,20 @@ Record the result even when clean: "0 empty step bodies found across N files."
 {{#if addons.arc42}}
 ## Arc42 implementation conformance
 
+## Architecture conformance from the first implementation
+
+Review checks substantive boundaries from the first implementation, not filenames
+or a later architecture polish pass:
+
+- cohesive responsibilities and narrow consumer contracts;
+- external adapters separate from the domain, with a separate composition root;
+- explicit dependency direction, with consumers using the declared boundary and
+  confirmed actual imports and calls rather than inferring boundaries from filenames;
+- a narrow module API may satisfy a contract unless isolation or substitution
+  needs an explicit interface;
+- confirmed Personas remain stakeholder review lenses, without invented
+  identities or an internal-change exemption (no internal-change exemption).
+
 Run this block after the implementation evidence check and before coverage classification.
 
 The check is mandatory. It catches both directions of
@@ -232,7 +245,9 @@ implementation ignores or contradicts.
 1. Read the durable `docs/arc42/` chapters and the change-level `arc42.md`.
 2. Independently derive the affected chapters and concrete architecture facts
    from the completed implementation, `design.md`, and `tasks.md` before
-   accepting the change-level Arc42 claims.
+   accepting the change-level Arc42 claims. The returned guidance compares
+   Arc42 design tasks and the completed implementation against available
+   evidence, not an unwritten review verdict or a future archive receipt.
 3. For every chapter marked affected by either assessment, open the chapter and
    check that it contains current, decision-specific content rather than a
    placeholder or stale contradiction.
@@ -246,7 +261,7 @@ implementation ignores or contradicts.
    | | | | | | | |
 
 5. Treat every omission, contradiction, stale chapter, or missing task mapping
-   as a finding. Fix the affected Arc42 chapter, `arc42.md`, `design.md`,
+   as a finding and record and resolve every material conformance mismatch. Fix the affected Arc42 chapter, `arc42.md`, `design.md`,
    `tasks.md`, or implementation, then repeat the comparison. If `design.md`
    changes, run design-review again before continuing.
 6. Record `ARC42 CONFORMANCE: CLEAN` as the explicit clean marker only when
@@ -464,9 +479,9 @@ blocks the archive gate regardless of this line.
 - The exact file(s) `verify.e2e_command` invokes were identified and read;
   the tree (including untracked files) was searched for a second/parallel
   e2e implementation before accepting a weaker one.
-- `verify.e2e_command` is not identical to `verify.command`; the archive
-  receipt's per-scope counts prove the e2e scope is strictly smaller (or
-  "all scenarios are @e2e" was stated explicitly).
+- The E2E scope is selected explicitly (`GIVN_RESULT_SCOPE` or equivalent);
+  equal counts or command strings are acceptable only with that honest
+  isolation, and required executions report zero failures and skips.
 - Implementation (commands, file layout, framework/driver) matches what
   design.md explicitly named — any deviation was resolved by updating
   design.md and re-running design-review, never left as a silent shortcut.
@@ -497,9 +512,10 @@ reported result:
    did not mention. A report that never names the exact invoked file(s) or
    never mentions the parallel-implementation check is incomplete — reject it.
 6. Read both `verify.command` and `verify.e2e_command` from
-   `givn/commands.yaml` yourself. Identical strings are never a passable state —
-   reject `REVIEW: PASS` outright. A report without both scoped scenario
-   counts (e2e strictly smaller, or an explicit "all scenarios are @e2e") is
+   `givn/commands.yaml` yourself and confirm the E2E execution names an explicit
+   scope selection such as `GIVN_RESULT_SCOPE`. Equal counts or identical
+   command strings are acceptable only with that honest isolation, and a report
+   without the required execution evidence (zero failures and skips) is
    incomplete.
 7. Spot-check one command, file-layout, or framework/driver decision
    `design.md` names against what was actually built. A mismatch not backed by
@@ -511,64 +527,27 @@ reported result:
    discrepancy named.
 
 {{#if addons.outline}}
-## Outline review gate
+## Advisory outline evidence
 
-When the `outline` addon is enabled, the implementing agent starts the outline
-and knows the production paths from `design.md` and `tasks.md`. Run it
-explicitly and record the exact command before review:
+When the `outline` addon is enabled, the outline report supports substantive,
+source-confirmed architecture review. It is advisory: it has no verdict, no
+metric waiver, no forced reviewer context, and no authority to block review or
+archive. A report produced during implementation is reused unless structural
+changes have made its relevant evidence stale; only structurally stale
+relevant evidence requires rerunning the outline. Nonstructural edits alone do
+not require a rerun.
 
-```text
-OUTLINE-COMMAND: givn outline report --path app --path app/main.py
-```
+The report covers supported Rust and Python components and their relevant
+neighbors. Disclose which languages and components it covers and which it
+omits. Unsupported Go or Java components receive direct source assessment using
+the same responsibility, interface, dependency-direction, and decomposition
+questions; unavailable outline support is not a failure and needs no waiver.
 
-The command accepts one or more `--path` arguments. It fails when the scope
-contains no production sources; there is no silent empty PASS. `givn check
-review --change <id>` reuses the paths from `OUTLINE-COMMAND`; it does not
-guess `src/`. Then the gate prints the outline of every touched unit that has
-methods: declarations, signatures, and the calls each method makes. Same-unit
-calls nest under the caller; calls to another component are leaves tagged with
-the target. The tree is forward-only: it never lists callers, and a
-cross-component leaf points at that component's own outline. An `[ambiguous]`
-edge means the analyzer could not choose a target; it is not the callee. The
-outline contains no method bodies or data.
-
-The review record must name the author and the reviewer context, and give
-every printed outline a verdict:
-
-- `OUTLINE: AUTHOR <id>`
-- `OUTLINE: REVIEWER <id>`
-- `OUTLINE: PASS <unit> | <what the unit is responsible for; why its calls happen in that order>`
-- `OUTLINE: FAIL <unit> | <reason>`
-- `OUTLINE: PASS` when every outline passes.
-
-`OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` must match the review record's
-`Author` and `Reviewer context`. For a self-review, both name the self context
-and may be equal. For an independent review, `REVIEWER` is the recorded reviewer
-context and differs from the author. A fake or conflicting id fails. A legacy
-record without a `Review kind` keeps the reviewer-differs rule. A `PASS` needs a
-responsibility and call-order explanation; an empty explanation fails. A `FAIL`
-blocks review, and there is no justification path for an unreadable outline:
-fix the code and re-review. Every touched unit with an outline needs a verdict;
-a missing verdict fails. Unknown or conflicting `OUTLINE:` markers fail.
-
-The reviewer also applies the architecture check. A single-file implementation
-is acceptable only when the change has one external dependency and simple
-business rules. A change with an external service or complex rules must have
-distinct ports and adapters for each external mechanism and separate components
-for its named responsibilities. A single unit that owns CLI dispatch, an HTTP
-service, storage, and CSV import is a `FAIL`, even when its methods are readable.
-Weigh the outline and the metrics together; the metrics are hints, not the gate.
-A unit can be readable while a metric flags it, and unreadable while every
-metric is clean, so the reviewer decides. If a metric finding remains and the
-reviewer still passes, record a specific waiver:
-
-```text
-WAIVER: <unit> | <metric or finding> | <why it is acceptable here> | <split trigger>
-```
-
-A waiver without all four fields does not satisfy the architecture check.
-There is no waiver for missing port/adapter boundaries in a complex change;
-fix the code and re-review.
+Ask whether responsibilities are cohesive, public interfaces narrow,
+dependencies correctly directed, and decomposition understandable. Confirm any
+suspected problem against source before drawing conclusions or editing. The
+structural call order is not a complete runtime trace, and uncertain or omitted
+edges limit the conclusions. The outline alone cannot block review or archive.
 {{/if}}
 
 ## Result

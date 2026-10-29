@@ -201,8 +201,11 @@ never silently keep a deviation and never reject a conforming improvement.
 
 Every capability with `@e2e` scenarios MUST document:
 
-- **E2E runner command**: the exact `verify.e2e_command` value, filtered to
-  `@e2e` and distinct from `verify.command`.
+- **E2E runner command**: the exact `verify.e2e_command` value and its explicit
+  scope selection (for example `GIVN_RESULT_SCOPE=e2e`). It may share a runner
+  command with `verify.command`; equal counts or command strings do not
+  invalidate honestly isolated scopes, and both executions must still report
+  zero failed or skipped tests.
 - **E2E step definition location**: separate from unit/integration steps, one
   file per capability.
 - **Local test infrastructure**: browser driver, CLI invocation, server

@@ -638,8 +638,13 @@ fn target_merges(target: AgentTarget) -> &'static [fn(&Path) -> Result<()>] {
 }
 
 fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
+    let mut installed_reporter = false;
     for target in targets {
         sync_target_integrations(project_root, *target)?;
+        installed_reporter |= !integrations_of(*target).is_empty();
+    }
+    if installed_reporter {
+        crate::history::warn_tracked_recordings(project_root);
     }
     Ok(())
 }

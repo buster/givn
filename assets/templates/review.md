@@ -71,13 +71,13 @@ cleanly:
 <!-- paste local-run command + confirmation of clean startup -->
 ```
 
-**E2e isolation check** — `verify.command` and `verify.e2e_command` read
-literally from `givn/commands.yaml`; if identical, this is always a finding
-(the "e2e run" is not isolating `@e2e` scenarios at all). Prove isolation
-with the per-scope scenario counts recorded in the archive verification
-receipt (`givn/archive/<id>/verification.json`):
+**E2E scope check** — `verify.command` and `verify.e2e_command` read literally
+from `givn/commands.yaml`; an explicit scope selection such as
+`GIVN_RESULT_SCOPE` must distinguish the executions. Equal counts or command
+strings do not invalidate honestly isolated scopes. Record the evidence from
+the archive verification receipt (`givn/archive/<id>/verification.json`):
 
-| `verify.command` value | `verify.e2e_command` value | Identical? | Regular scope scenario count | E2e scope scenario count | E2e count strictly smaller (or all scenarios @e2e)? |
+| `verify.command` value | `verify.e2e_command` value | Explicit scope selection | Regular scope evidence | E2e scope evidence | Zero failed or skipped? |
 |---|---|---|---|---|---|
 | | | | | | |
 
@@ -178,7 +178,9 @@ of the design-review table.
 First derive the architectural facts and affected chapters from the completed
 change and the current durable documentation. Then compare the change-level
 Arc42 claims. Read each chapter named by either assessment and record concrete
-evidence in the table:
+evidence in the table. This block records Arc42 design tasks and the completed
+implementation against available evidence, and records evidence and material
+mismatches without an outline verdict or metric waiver:
 
 | Arc42 chapter or architectural fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Completed implementation evidence | Match? / finding |
 |---|---|---|---|---|---|---|
@@ -290,8 +292,9 @@ For every scenario longer than the lint threshold, one row: `split` or `keep`.
 - [ ] The exact file(s) `verify.e2e_command` invokes were identified, and
       the tree (including untracked files) was searched for a parallel e2e
       implementation before accepting a weaker one.
-- [ ] `verify.e2e_command` is not identical to `verify.command`; scenario
-      counts prove real isolation (or "all scenarios are @e2e" is stated).
+- [ ] The E2E execution selects its scope explicitly (`GIVN_RESULT_SCOPE` or
+      equivalent); equal counts or command strings are acceptable with that
+      honest isolation, and both executions report zero failures and skips.
 - [ ] Implementation (commands, file layout, framework/driver) matches
       design.md as reviewed; any deviation went through a design.md update
       + design-review re-run, not a silent shortcut.

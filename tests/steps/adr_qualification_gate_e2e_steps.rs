@@ -114,3 +114,89 @@ fn cli_output_states_guidance_only(world: &mut GivnWorld) {
     assert!(content.contains("not runtime"));
     assert!(content.contains("enforcement"));
 }
+
+// --- prepare-0-9-10: served concise qualification ---------------------------
+
+#[then(
+    "the output explains qualification by architectural commitment real alternatives lasting consequence and existing-ADR search"
+)]
+fn output_explains_concise_qualification(world: &mut GivnWorld) {
+    let content = stdout(world);
+    for marker in [
+        "Architectural commitment",
+        "Real alternatives",
+        "Durable consequence",
+        "search the active and archived ADR registers",
+    ] {
+        assert!(
+            content.contains(marker),
+            "served ADR guidance is missing {marker:?}: {content}"
+        );
+    }
+}
+
+#[then("the output routes the result to a new amended superseding or non-ADR artifact")]
+fn output_routes_the_result(world: &mut GivnWorld) {
+    let content = stdout(world);
+    for route in ["NEW_ADR", "AMEND_ADR", "SUPERSEDE_ADR"] {
+        assert!(
+            content.contains(route),
+            "served ADR guidance is missing route {route}: {content}"
+        );
+    }
+    assert!(
+        content.contains(
+            "ordinary implementation choice belongs in its appropriate existing artifact"
+        ),
+        "served ADR guidance does not route non-ADR decisions: {content}"
+    );
+}
+
+#[then("the output requires qualification once in the change assessment")]
+fn output_requires_one_assessment(world: &mut GivnWorld) {
+    let content = stdout(world);
+    assert!(
+        content.contains("Qualify a decision once, concisely, in the change assessment"),
+        "served ADR guidance does not require one change-assessment qualification: {content}"
+    );
+    assert!(
+        content.contains("Do not repeat a qualification worksheet"),
+        "served ADR guidance permits repeated worksheets: {content}"
+    );
+}
+
+#[then("the output directs the reviewer to the recorded qualification and existing-ADR search")]
+fn output_directs_reviewer_to_recorded_qualification(world: &mut GivnWorld) {
+    let content = stdout(world);
+    assert!(
+        content.contains("concise qualification recorded once"),
+        "design-review guidance does not point to the recorded qualification: {content}"
+    );
+    assert!(
+        content.contains("existing-decision search"),
+        "design-review guidance does not require the existing-decision search: {content}"
+    );
+}
+
+#[then("the output does not demand a duplicate qualification worksheet")]
+fn output_does_not_demand_duplicate_worksheet(world: &mut GivnWorld) {
+    let content = stdout(world);
+    assert!(
+        content.contains("Do not demand a duplicate qualification worksheet"),
+        "design-review guidance does not reject a duplicate worksheet: {content}"
+    );
+    assert!(
+        !content.contains("qualification = alternatives"),
+        "design-review guidance still demands the old gate formula: {content}"
+    );
+}
+
+#[then("the output distinguishes authoring policy from runtime enforcement")]
+fn output_distinguishes_policy_from_runtime(world: &mut GivnWorld) {
+    let content = stdout(world);
+    assert!(
+        content.contains("authoring guidance, not runtime enforcement")
+            || content.contains("not runtime enforcement"),
+        "design-review guidance does not distinguish policy from runtime enforcement: {content}"
+    );
+}

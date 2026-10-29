@@ -551,3 +551,288 @@ fn generated_guidance_does_not_contain(world: &mut GivnWorld, text: String) {
         "generated guidance contains forbidden {text:?}"
     );
 }
+
+// --- prepare-0-9-10: canonical E2E, seed stamps and thin guidance -----------
+
+fn normalized_asset(relative: &str) -> String {
+    let content = std::fs::read_to_string(crate::common::repo_path(relative))
+        .unwrap_or_else(|error| panic!("read {relative}: {error}"));
+    content.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn loaded_guidance(world: &GivnWorld) -> String {
+    let content = match world.additional_output.as_deref() {
+        Some(content) => content.to_string(),
+        None => crate::steps::stdout(world),
+    };
+    content.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+#[given("a project whose product is a library without a service or browser")]
+fn project_with_library_product(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    world.additional_output = Some(normalized_asset("assets/instructions/specs.md"));
+}
+
+#[when("the author reads the canonical E2E guidance")]
+fn author_reads_canonical_e2e_guidance(world: &mut GivnWorld) {
+    assert!(!loaded_guidance(world).is_empty(), "E2E guidance is empty");
+}
+
+#[then("consumer calls to the public library API may run in process as real-interface evidence")]
+fn library_api_calls_may_run_in_process(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("public library API"),
+        "E2E guidance does not accept a public library API"
+    );
+    assert!(
+        content.contains("may run in process"),
+        "E2E guidance does not accept in-process library calls"
+    );
+}
+
+#[then("the policy does not require artificial services containers or browser infrastructure")]
+fn policy_requires_no_artificial_infrastructure(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content
+            .contains("do not require artificial services, containers, or browser infrastructure"),
+        "E2E guidance demands infrastructure the product does not have"
+    );
+}
+
+#[given("regular and E2E verification share one runner command")]
+fn shared_verification_runner(world: &mut GivnWorld) {
+    let combined = [
+        "assets/instructions/specs.md",
+        "assets/instructions/design.md",
+        "assets/instructions/tasks.md",
+        "assets/instructions/review.md",
+    ]
+    .iter()
+    .map(|relative| normalized_asset(relative))
+    .collect::<Vec<_>>()
+    .join("\n");
+    world.additional_output = Some(combined);
+}
+
+#[when("the author reads the canonical verification guidance")]
+fn author_reads_canonical_verification_guidance(world: &mut GivnWorld) {
+    assert!(
+        !loaded_guidance(world).is_empty(),
+        "verification guidance is empty"
+    );
+}
+
+#[then("explicit scope selection such as GIVN_RESULT_SCOPE distinguishes the executions")]
+fn explicit_scope_selection_distinguishes_executions(world: &mut GivnWorld) {
+    assert!(
+        loaded_guidance(world).contains("GIVN_RESULT_SCOPE"),
+        "verification guidance does not name explicit scope selection"
+    );
+}
+
+#[then("equal test counts or command strings do not invalidate honestly isolated scopes")]
+fn equal_counts_do_not_invalidate_scopes(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("Equal test counts or identical command strings do not"),
+        "verification guidance still infers isolation from command shape"
+    );
+}
+
+#[then(
+    "required executions and zero failed or skipped tests remain required without an extra isolation run"
+)]
+fn required_executions_remain_without_extra_run(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("zero failed or skipped tests"),
+        "verification guidance drops the zero-failure requirement"
+    );
+    assert!(
+        content.contains("no extra isolation run")
+            || content.contains("without an extra isolation run")
+            || content.contains("without adding an extra isolation run"),
+        "verification guidance adds an isolation run"
+    );
+}
+
+#[given("an existing E2E scenario is shown to be a variant rather than a distinct action")]
+fn existing_e2e_scenario_is_a_variant(world: &mut GivnWorld) {
+    let combined = [
+        "assets/instructions/specs.md",
+        "assets/instructions/tasks.md",
+    ]
+    .iter()
+    .map(|relative| normalized_asset(relative))
+    .collect::<Vec<_>>()
+    .join("\n");
+    world.additional_output = Some(combined);
+}
+
+#[when("the author reads the canonical reclassification guidance")]
+fn author_reads_reclassification_guidance(world: &mut GivnWorld) {
+    assert!(
+        !loaded_guidance(world).is_empty(),
+        "reclassification guidance is empty"
+    );
+}
+
+#[then(
+    "reclassification requires a reason and aligned interaction inventory tasks and review records"
+)]
+fn reclassification_requires_reason_and_alignment(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains(
+            "record the reason and align the interaction inventory, tasks, and review records"
+        ),
+        "reclassification does not require a reason and aligned records"
+    );
+}
+
+#[then("every retained real user action still has exactly one E2E smoke scenario")]
+fn retained_actions_keep_one_smoke(world: &mut GivnWorld) {
+    assert!(
+        loaded_guidance(world)
+            .contains("every retained real user action still has exactly one `@e2e` smoke"),
+        "reclassification loses one-smoke coverage"
+    );
+}
+
+#[then("tags cannot be removed merely to evade verification")]
+fn tags_cannot_be_removed_to_evade(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("tags are never removed merely to evade verification")
+            || content.contains("Do not remove an `@e2e` tag merely to bypass a gate"),
+        "guidance permits removing tags to evade verification"
+    );
+}
+
+#[then("regular scenarios protect requirements distinct from the retained smoke")]
+fn regular_scenarios_remain_distinct(world: &mut GivnWorld) {
+    assert!(
+        loaded_guidance(world).contains(
+            "regular scenarios still protect requirements distinct from the retained smoke"
+        ),
+        "reclassification collapses regular requirements into the smoke"
+    );
+}
+
+#[then(
+    "the managed bootstrap still requires loading the effective dialog policy before the context's first question"
+)]
+fn bootstrap_still_requires_dialog_policy(world: &mut GivnWorld) {
+    let block = project_start_block(world)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+    assert!(
+        block.contains("load it once per context before the first question")
+            || block.contains(
+                "loading the effective dialog policy before the context's first question"
+            ),
+        "bootstrap lost the dialog obligation: {block}"
+    );
+    assert!(
+        block.contains("givn instructions dialog"),
+        "bootstrap does not name the effective dialog policy: {block}"
+    );
+}
+
+#[then("core skills contain no repeated policy-loading boilerplate")]
+fn core_skills_contain_no_policy_boilerplate(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let targets = givn::config::overlay::load_skills_targets(&root).expect("load skills targets");
+    for target in targets {
+        let dir = root.join(format!(".{target}/skills"));
+        let Ok(entries) = fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path().join("SKILL.md");
+            let content = fs::read_to_string(&path).unwrap_or_default();
+            let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
+            assert!(
+                !normalized.contains("givn instructions dialog"),
+                "{} repeats the dialog-loading policy instead of pointing to the instruction",
+                path.display()
+            );
+            assert!(
+                !normalized.contains("presenting agent remains responsible"),
+                "{} repeats the delegation policy",
+                path.display()
+            );
+        }
+    }
+}
+
+#[given("valid project-owned skill replacements intentionally omit bundled dialog-loading text")]
+fn replacements_omit_bundled_dialog_text(world: &mut GivnWorld) {
+    project_replacements_omit_obligation(world);
+}
+
+#[then("project-owned skill source bytes remain unchanged")]
+fn project_owned_skill_bytes_unchanged(world: &mut GivnWorld) {
+    replacement_sources_unchanged(world);
+}
+
+#[then(
+    "every selected skill consumer receives the authoritative replacement without a bundled prefix"
+)]
+fn every_skill_consumer_receives_replacement(world: &mut GivnWorld) {
+    skill_consumers_receive_replacement(world);
+}
+
+#[then("user-owned legacy command files remain unchanged without being generated or synchronized")]
+fn user_owned_legacy_command_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("replacement fixture is missing");
+    let path = env.path("givn/commands/givn-propose.md");
+    let source = fs::read_to_string(&path).expect("user-owned legacy command missing");
+    assert_eq!(
+        source, REPLACEMENT_COMMAND,
+        "the user-owned command changed"
+    );
+    assert!(
+        !env.path(".opencode/commands/givn-propose.md").exists(),
+        "a generated command was installed beside the user-owned legacy command"
+    );
+}
+
+#[then(
+    "browser E2E guidance accepts a real browser rendering static content as interface evidence"
+)]
+fn browser_guidance_accepts_static_content(world: &mut GivnWorld) {
+    assert!(
+        loaded_guidance(world)
+            .contains("a real browser rendering static content is valid interface evidence"),
+        "browser E2E guidance rejects static rendered content"
+    );
+}
+
+#[then("it requires state changes only when the product interaction actually changes state")]
+fn rendered_state_change_only_when_interaction_changes(world: &mut GivnWorld) {
+    assert!(
+        loaded_guidance(world).contains(
+            "Require a rendered-state change only when the product interaction actually changes state"
+        ),
+        "browser E2E guidance requires a state change for every interaction"
+    );
+}
+
+#[then("it does not require artificial clocks counters or asynchronous content")]
+fn no_artificial_rendered_state(world: &mut GivnWorld) {
+    assert!(
+        loaded_guidance(world)
+            .contains("do not require artificial clocks, counters, or asynchronous content"),
+        "browser E2E guidance manufactures a rendered-state change"
+    );
+}
+
+#[then("managed project-start guidance still references the effective dialog policy")]
+fn managed_project_start_references_policy(world: &mut GivnWorld) {
+    managed_guidance_references_policy(world);
+}

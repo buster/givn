@@ -75,6 +75,12 @@ fn install_trap() {
 fn install_trap() {}
 
 fn serve(args: &[String]) {
+    if let Some(marker) = arg_value(args, "--survive-marker") {
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(1500));
+            let _ = std::fs::write(marker, "the product survived the cleanup bound\n");
+        });
+    }
     let port: u16 = arg_value(args, "--port")
         .and_then(|v| v.parse().ok())
         .or_else(|| std::env::var("PORT").ok().and_then(|v| v.parse().ok()))

@@ -114,14 +114,17 @@ issuance and its refusals). Work the batch, not one scenario at a time.
   carries the release note as its message subject and names the batch in the body.
   Scenarios record it as `COMMIT: <hash> -- Batch: <batch-name>`.
 
-## Rule: @e2e tags are immutable — never remove them
+## Rule: @e2e tags are never removed to evade verification
 
-Once `@e2e` is placed on a delta scenario, it MUST NOT be removed. The
-`verify-e2e` hook at review time and `givn lint --change <id>` both
-independently detect tag removal by cross-referencing against tasks.md
-content. If e2e is blocked by infrastructure, configure
-`verify.e2e_command` — never delete the tag. Removing `@e2e` tags to bypass
-a gate is a procedure violation.
+Do not remove an `@e2e` tag merely to bypass a gate. The `verify-e2e` hook at
+review time and `givn lint --change <id>` independently detect unexplained tag
+removal by cross-referencing tasks.md content. If e2e is blocked by
+infrastructure, configure `verify.e2e_command` instead. A justified
+reclassification is allowed only when the scenario is shown to be a variant
+rather than a distinct user action: record the reason and align the interaction
+inventory, tasks, and review records, while every retained real user action
+still has exactly one `@e2e` smoke scenario and regular scenarios protect
+requirements distinct from that smoke.
 
 ## Behavior batches — @e2e
 
@@ -152,16 +155,13 @@ Before the first `@e2e` scenario:
   tag-filter flag/env var — `-- --tags @e2e`, `CUCUMBER_FILTER_TAGS`,
   `--strict --tags @e2e`, etc., depending on the runner from
   `design.md`/arc42 ch.4).
-- **Rule: `verify.e2e_command` must be a strict subset, never equal to
-  `verify.command`.** If both are byte-identical, the "e2e run" is silently
-  re-running the whole suite, not isolating `@e2e` scenarios — this defeats
-  the entire purpose of a separate e2e gate and is a hard-stop, fix-before-
-  continuing condition, not a passable state. Prove the filter is real:
-  run `verify.command` and record the scenario count in the output; run
-  `verify.e2e_command` and record its scenario count; the e2e count MUST be
-  strictly less than the full count (unless literally every scenario in
-  scope is tagged `@e2e`, which must be stated explicitly if true). Paste
-  both counts into this task.
+- **Rule: the E2E execution must select its scope explicitly.** When regular
+  and E2E verification share one runner command, an explicit scope selection
+  such as `GIVN_RESULT_SCOPE` must distinguish the executions. Equal test
+  counts or identical command strings do not by themselves invalidate honestly
+  isolated scopes. Both required executions must still exit zero with no
+  failed or skipped tests; record their evidence without adding an extra
+  isolation run.
 - Confirm the e2e runner can reach the running local environment (health
   check, or a trivial smoke request) before writing any scenario steps.
 
@@ -181,8 +181,8 @@ Tasks execute what design.md decided — they do not re-decide it. If, while
 implementing, the exact command, file layout, framework, or approach
 design.md names turns out to be wrong, impractical, or an easier
 alternative appears (e.g. reusing one step file instead of the two
-design.md named, or pointing `verify.e2e_command` at the same command as
-`verify.command` because configuring a real tag filter is inconvenient),
+design.md named, or dropping the explicit `GIVN_RESULT_SCOPE` selection
+because it is inconvenient),
 that is a design gap or a design.md error — not something tasks may work
 around unilaterally:
 

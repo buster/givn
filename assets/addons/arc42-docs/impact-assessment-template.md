@@ -40,26 +40,24 @@
 This impact marker does not replace the ADR Qualification Checklist or the
 individual ADR file. A change may affect chapter 09 without qualifying for an
 ADR, and a qualifying ADR must still be recorded as its own file and linked
-from the chapter-09 register. Record the result once in the change assessment:
+from the chapter-09 register. Record the result once in the change assessment. This is one concise
+qualification, not a second schema or a per-ADR worksheet. Fill it before
+drafting, amending, or superseding any ADR:
 
 ```text
+Architectural commitment: <the lasting boundary, contract, or consequence, or none>
+Real alternatives: <the materially different options, or none>
+Durable consequence: <what reversal would cost, or none>
+Existing-decision search: <active and archived ADRs checked; what was found>
 ADR action: NONE | NEW_ADR | AMEND_ADR | SUPERSEDE_ADR | CANONICAL_ARTIFACT
 ADR target: none | <one ADR or canonical artifact>
-
-Record the structured verdict here, in the change assessment, before creating or editing any MADR file:
-
-qualification: <blank until recorded>
-alternatives: <blank until recorded>
-architectural_impact: <blank until recorded>
-durable_consequence: <blank until recorded>
-lower_level_artifact: <blank until recorded>
-existing_adr_check: <blank until recorded>
-must_be_shared: <blank until recorded>
-routing: <blank until recorded>
-canonical_artifact: <blank until recorded>
-target_adr: <blank until recorded>
-replacement_adr: <blank until recorded>
 ```
+
+`Must be shared` is supporting evidence only and never qualifies a candidate by
+itself. A qualifying ADR records its rationale, alternatives, and consequences
+in its own MADR file; the ADR and design-review do not repeat this assessment as
+another qualification worksheet. This assessment is authoring policy, not
+runtime enforcement.
 
 Do not copy the complete qualification procedure or MADR body into this
 impact marker. The complete ADR procedure and template are owned by the Arc42

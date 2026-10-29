@@ -41,12 +41,13 @@ index entries manually.
 
 ## Qualification Gate
 
-Before creating an ADR or registering it, read the complete qualification
-procedure from the resolved Arc42 addon instruction. This chapter README owns
-storage and index rules only; it does not duplicate the qualification formula,
-LLM verdict schema, or routing values. If a mandatory dimension fails, no ADR is
-created and the decision is routed once to its canonical artifact. A refinement
-amends an existing ADR instead of creating a new file.
+Before creating an ADR or registering it, read the concise qualification policy
+from the resolved Arc42 addon instruction. This chapter README owns storage and
+index rules only; it does not copy the qualification worksheet, structured
+verdict, or routing schema. The change assessment records the commitment, real
+alternatives, durable consequence, and existing-decision search once. If they do
+not qualify, no ADR is created and the decision is routed once to its canonical
+artifact. A refinement amends an existing ADR instead of creating a new file.
 
 ## Status and Supersession
 

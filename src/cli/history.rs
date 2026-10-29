@@ -1452,6 +1452,12 @@ pub fn settings(json: bool) -> Result<()> {
             setting.mode.label(),
             setting.source.label()
         );
+        println!(
+            "record storage: givn/history/ is a local, gitignored recording rather than repository history by default"
+        );
+        println!(
+            "record content: recordings can contain sensitive tool input, prompts, and output; Givn makes no redaction, privacy-boundary, or complete-capture guarantee"
+        );
     }
     Ok(())
 }

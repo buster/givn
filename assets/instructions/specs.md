@@ -134,7 +134,10 @@ run via `verify.e2e_command` (configured in `givn/commands.yaml`), not
 **What makes a scenario `@e2e`:**
 - It interacts through the real external boundary: a browser (via Playwright,
   Selenium, etc.), a real CLI invocation, a real HTTP client, a public library
-  API, or a real message producer/consumer — whatever the system exposes.
+  API, or a real message producer/consumer — whatever the system exposes. A
+  library consumer's real public API calls may run in process; do not require
+  artificial services, containers, or browser infrastructure the product does
+  not have.
 - It may require local test infrastructure: a running application server,
   a test database, fake containers (Testcontainers), stub services.
 - It covers the critical happy path: "can a consumer actually do the thing
@@ -158,6 +161,20 @@ rendered page. An HTTP request to a backend route, or `fetch()`/
 is not a valid browser E2E substitute. For an API-only capability, a real HTTP
 client is the correct interface.
 
+**Verification scope is explicit, not inferred from command shape.** When
+regular and E2E verification share one runner command, an explicit scope
+selection such as `GIVN_RESULT_SCOPE` distinguishes the executions. Equal test
+counts or identical command strings do not invalidate honestly isolated scopes,
+and no extra isolation run is required; both required executions still must
+report zero failed or skipped tests.
+
+**Justified E2E reclassification.** Moving an existing scenario out of `@e2e` is
+allowed only when it is shown to be a variant rather than a distinct user
+action. Record the reason and align the interaction inventory, tasks, and review
+records. Every retained real user action still has exactly one `@e2e` smoke
+scenario; tags are never removed merely to evade verification, and regular
+scenarios still protect requirements distinct from the retained smoke.
+
 **No silent deferral:** a mandatory check is never deferred because of a project constraint.
 When a constraint conflicts with a mandatory check (for example "no dependencies" versus a browser driver), the conflict is put to the operator as an operator question; only the operator's recorded decision may allow the deferral, and a review without that record fails the review.
 
@@ -165,8 +182,13 @@ When a constraint conflicts with a mandatory check (for example "no dependencies
 reason to weaken the assertion or switch to a lower-level boundary. Apply the
 concrete fix documented in `design.md` before implementing the scenario.
 
-**Rendered state:** at least one `@e2e` scenario of a Web UI asserts a value the browser produced by rendering and observes that the rendered state changes between two observations — a clock that advances, a counter that increments, or content that appears after a request.
-A successful page request and a static heading are not rendered-state evidence.
+**Rendered state:** a real browser rendering static content is valid interface
+evidence: the scenario asserts a value the browser actually produced by loading
+and rendering the page. Require a rendered-state change only when the product
+interaction actually changes state; do not require artificial clocks, counters,
+or asynchronous content merely to manufacture a change. When the interaction
+does change state, assert the browser-observed change. A successful raw page
+request is not by itself browser evidence.
 
 **Canonical scope: one E2E evidence scenario per distinct real user action.**
 Each normalized inventory entry has exactly one matching `@e2e` scenario that
