@@ -21,7 +21,10 @@ pub fn install(project_root: &Path) -> Result<()> {
     let shared_dir = project_root.join(".githooks");
     std::fs::create_dir_all(&shared_dir)
         .with_context(|| format!("create {}", shared_dir.display()))?;
-    write_executable(&shared_dir.join("commit-msg"), &asset("hooks/commit-msg")?)?;
+    let shared_hook = shared_dir.join("commit-msg");
+    let shared_asset = asset("hooks/commit-msg")?;
+    preserve_hook(&shared_hook, &shared_asset)?;
+    write_executable(&shared_hook, &shared_asset)?;
     println!("  commit attribution: .githooks/commit-msg");
 
     let hooks_dir = match git_hooks_dir(project_root) {
@@ -35,7 +38,12 @@ pub fn install(project_root: &Path) -> Result<()> {
         .with_context(|| format!("create Git hooks directory {}", hooks_dir.display()))?;
 
     let launcher = hooks_dir.join("commit-msg");
+    if std::fs::canonicalize(&hooks_dir)? == std::fs::canonicalize(&shared_dir)? {
+        println!("  Git activation: shared commit-msg hook installed");
+        return Ok(());
+    }
     let backup = hooks_dir.join(format!("commit-msg{ORIGINAL_HOOK_SUFFIX}"));
+    remove_managed_backup(&backup)?;
     if launcher.exists() && !contains_marker(&launcher)? {
         if !backup.exists() {
             std::fs::rename(&launcher, &backup).with_context(|| {
@@ -56,6 +64,33 @@ pub fn install(project_root: &Path) -> Result<()> {
 
     write_executable(&launcher, &asset("hooks/git-commit-msg-launcher")?)?;
     println!("  Git activation: local commit-msg dispatcher installed");
+    Ok(())
+}
+
+fn remove_managed_backup(path: &Path) -> Result<()> {
+    if path.exists() && contains_marker(path)? {
+        std::fs::remove_file(path)
+            .with_context(|| format!("remove recursive managed hook {}", path.display()))?;
+    }
+    Ok(())
+}
+
+fn preserve_hook(path: &Path, managed: &str) -> Result<()> {
+    let backup = path.with_file_name(format!("commit-msg{ORIGINAL_HOOK_SUFFIX}"));
+    remove_managed_backup(&backup)?;
+    if path.exists() {
+        let current = std::fs::read_to_string(path)?;
+        if current != managed && !current.contains(LAUNCHER_MARKER) {
+            if backup.exists() {
+                anyhow::bail!(
+                    "cannot preserve existing user hook {}: backup already exists",
+                    path.display()
+                );
+            }
+            std::fs::rename(path, &backup)?;
+            println!("  Git activation: existing user hook preserved");
+        }
+    }
     Ok(())
 }
 
