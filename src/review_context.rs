@@ -200,12 +200,30 @@ pub fn check(change_dir: &Path) -> Result<()> {
                 );
             }
         }
-    } else if let Some(design) = &design_review
-        && design.kind == Some(ReviewKind::Independent)
-    {
-        bail!(
-            "design-review.md records Review kind: independent, but review.md records Review kind: self-review — one review context must cover both"
-        );
+    } else {
+        if reviewer != author {
+            bail!("self-review: Reviewer context '{reviewer}' must match the author '{author}'");
+        }
+        if let Some(design) = &design_review {
+            match design.kind {
+                Some(ReviewKind::Independent) => bail!(
+                    "design-review.md records Review kind: independent, but review.md records Review kind: self-review — one review context must cover both"
+                ),
+                Some(ReviewKind::SelfReview) => {
+                    let design_reviewer = required(
+                        design.reviewer.as_deref(),
+                        "Reviewer context:",
+                        &design_review_path,
+                    )?;
+                    if design_reviewer != reviewer {
+                        bail!(
+                            "design-review.md and review.md must record one review context for a self-review: '{design_reviewer}' vs '{reviewer}'"
+                        );
+                    }
+                }
+                None => {}
+            }
+        }
     }
 
     Ok(())
@@ -272,6 +290,34 @@ mod tests {
             ),
         );
         assert!(check(dir.path()).is_ok());
+    }
+
+    #[test]
+    fn self_review_rejects_a_different_reviewer() {
+        let dir = temp_change(
+            &record("self-review", "agent", "someone-else"),
+            "Review kind: self-review\n",
+            &format!(
+                "{}\nDESIGN-REVIEW: PASS\n",
+                record("self-review", "agent", "agent")
+            ),
+        );
+        let error = check(dir.path()).unwrap_err().to_string();
+        assert!(error.contains("must match the author"));
+    }
+
+    #[test]
+    fn self_review_requires_one_design_review_context() {
+        let dir = temp_change(
+            &record("self-review", "agent", "agent"),
+            "Review kind: self-review\n",
+            &format!(
+                "{}\nDESIGN-REVIEW: PASS\n",
+                record("self-review", "agent", "other-context")
+            ),
+        );
+        let error = check(dir.path()).unwrap_err().to_string();
+        assert!(error.contains("one review context"));
     }
 
     #[test]

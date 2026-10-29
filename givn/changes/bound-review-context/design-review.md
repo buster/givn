@@ -8,10 +8,11 @@ Reviewer context: agent
 
 | # | Branch | Question | Outcome |
 |---|---|---|---|
-| 1 | Scope | Which gate requires independence? | The proposal's recorded `Review kind: independent`; the outline identity check stays separate. |
+| 1 | Scope | Which gate requires independence? | The proposal's recorded `Review kind`; the outline gate uses the same record rather than a separate reviewer rule. |
 | 2 | Missing scenarios | How do pre-policy changes keep passing? | A record with no `Review kind` line keeps the previous result; only a recorded kind is enforced. |
 | 3 | Testability | Where does the new check run? | The review integrity hook and the archive static gates, both naming the offending artifact and value. |
 | 4 | Interaction coverage | Is a new E2E scenario needed? | No; the existing `check review` E2E action already covers the real CLI boundary. |
+| 5 | Outline identity | What does the outline gate compare? | `OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` against the recorded `Author` and `Reviewer context`; self-review accepts the self context, independent requires the recorded reviewer and a different author, legacy keeps reviewer-differs. |
 
 ## Resolved by codebase exploration
 
@@ -20,7 +21,7 @@ Reviewer context: agent
 | Scope | `src/integrity_hook.rs` already owns review-artifact checks and receives the change directory; `src/cli/archive.rs::run_static_review_gates` is the archive re-entry point. The new module fits both without touching the CLI surface. |
 | Tech choices | `src/outline/gate/markers.rs` shows the established fenced-block-aware parser pattern; `review_context` reuses that shape and adds no dependency. |
 | Testability | `tests/steps/workflow_enforcement_steps.rs` already owns the `check review` fixtures and the `scaffold_init_root_change` helper. No new step file is needed. |
-| Risk | The outline gate's `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER` identity check is independent of the review kind. Merging the two would change an existing gate; the design keeps them separate. |
+| Risk | The outline gate's `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER` check must use the recorded review kind: a self-review accepts the self context, an independent review requires the recorded reviewer and a different author, and fake or conflicting ids fail. |
 
 ## Open questions
 
@@ -72,6 +73,9 @@ None.
 |---|---|
 | `proposal.md` | Recorded `Review kind: self-review` and the confirmed personas. |
 | `specs/verify-change/givn-workflow-enforcement.feature` | Removed the outline-requires-independence scenario; the proposal record is the requirement. |
+| `specs/verify-change/outline-review-gate.feature` | Added self-review, independent, fake-id, and legacy outline-identity scenarios. |
+| `src/outline/gate.rs`, `assets/instructions/review.md` | The outline gate cross-checks the recorded review context; the instruction states the self and independent rules. |
+| E2E fixtures | Added the change use case for `NEW in` routing, updated the conditional handoff assertion, and named the absent routing decision in the diagnostic. |
 | `arc42.md` and chapters | Added the constraint, component, runtime step, concept, quality scenario, risk, and glossary terms. |
 
 ## Sign-off
@@ -80,7 +84,7 @@ None.
 - [x] Every proposal question ID (`D1`) resolves in the design's `## Decisions` ledger.
 - [x] All questions are resolved.
 - [x] `design.md` reflects decisions reached during grilling.
-- [x] `specs/**/*.feature` updated for the removed outline scenario.
+- [x] `specs/**/*.feature` updated for the removed outline scenario and the new outline-identity scenarios.
 - [x] `givn lint --change bound-review-context` exits 0 or 2 (advisories only).
 - [x] Architecture documentation (arc42) check completed above.
 

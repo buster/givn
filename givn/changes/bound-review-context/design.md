@@ -32,7 +32,7 @@ Owning use case: `verify-change` (`givn/specs/verify-change/usecase.md`).
 | A review PASS requires the existing review markers | Both markers stay required; the new gate runs alongside them | `givn-workflow-enforcement`, existing review-check E2E scenario |
 | The developer receives a complete verification result | The gate reports every review-context defect in one run, not the first | `givn-workflow-enforcement` review-kind scenarios |
 | An invalid change cannot pass the verification gate | A proposal recording `independent` cannot be satisfied by a `self-review` record | `givn-workflow-enforcement` mismatch scenarios |
-| The outline gate keeps its reviewer identity check | `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER` are unchanged; the new record is separate | `outline-review-gate` scenarios |
+| The outline gate keeps its reviewer identity check | The check now follows the recorded review kind: self-review uses the self context, independent uses the recorded reviewer context, and fake or conflicting ids fail | `outline-review-gate` scenarios |
 
 ## Technology Decisions
 
@@ -54,6 +54,7 @@ Owning use case: `verify-change` (`givn/specs/verify-change/usecase.md`).
 | Capability | Step definition file | Permanent merge target |
 |---|---|---|
 | `givn-workflow-enforcement` | `tests/steps/workflow_enforcement_steps.rs` | same file |
+| `outline-review-gate` | `tests/steps/outline_review_gate_steps.rs` | same file |
 
 Test runner command (from `givn/commands.yaml`):
 
@@ -75,6 +76,7 @@ GIVN_FEATURES=givn/changes/bound-review-context/specs cargo test --locked --test
 | `ReviewRecord` | `struct` | Optional kind plus `Author` and `Reviewer context` values from one artifact |
 | `review_context::parse` | `fn` | Read and validate one artifact's review record, ignoring fenced examples |
 | `review_context::check` | `fn` | Compare the proposal, design-review, and review records and return one deterministic failure |
+| `outline::gate::validate_outline_identity` | `fn` | Cross-check `OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` against the recorded review context and reject fake or conflicting ids |
 | `guidance_assets` | `const` | The four guidance asset trees the vocabulary scan targets |
 
 ## Strict Mode
@@ -135,6 +137,8 @@ Modified modules:
 | `src/lib.rs` | Export `review_context` |
 | `src/integrity_hook.rs` | Call `review_context::check` during the review integrity check |
 | `src/cli/archive.rs` | Call `review_context::check` in the static review gates before mutation |
+| `src/outline/gate.rs` | Cross-check outline author and reviewer ids against the recorded review context |
+| `src/spec/routing_table.rs` | Name the absent `NEW in` / `EXTEND` decision in the missing-row diagnostic |
 | `assets/templates/proposal.md` | Add the `Review kind` record with the self-review default |
 | `assets/templates/design-review.md` | Add kind, author, and reviewer-context fields |
 | `assets/templates/review.md` | Add kind, author, and reviewer-context fields |
@@ -169,9 +173,29 @@ Reviewer context: <id>
 
 The proposal records the requested kind. `design-review.md` and `review.md`
 record the performed kind. A proposal-recording `independent` requires an
-independent review record with a different reviewer context. The outline
-gate's existing `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER` identity check is
-unchanged.
+independent review record with a different reviewer context. A self-review's
+reviewer context is the author's self context. The outline gate cross-checks
+`OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` against the recorded `Author` and
+`Reviewer context`: a self-review accepts equal ids naming the self context, an
+independent review requires the recorded reviewer and a different author, and
+any fake or conflicting id fails. A legacy record without a kind keeps the
+reviewer-differs rule.
+
+## Release maintenance
+
+The release run exposed three stale fixture shapes and one diagnostic wording
+gap that blocked the E2E scope. They are test-only except for the routing
+diagnostic:
+
+- `tests/steps/grouped_merge_steps.rs` and
+  `tests/steps/enforce_post_merge_e2e_gate_steps.rs` now provide the change
+  use case required by a `NEW in <usecase>` routing decision.
+- `tests/steps/initialize_a_project_e2e_steps.rs` and the initialize-project
+  scenario assert the new conditional handoff wording.
+- `src/spec/routing_table.rs` names the absent `NEW in` / `EXTEND` decision in
+  its missing-row diagnostic, matching the archive scenario.
+- `assets/instructions/tasks.md` keeps the release-note and scenario-title
+  message contract in the resident rules.
 
 ## Coverage process boundaries
 

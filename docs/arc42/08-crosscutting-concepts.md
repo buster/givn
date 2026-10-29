@@ -1197,7 +1197,7 @@ unit id (`type:<path>::<Name>` or `module:<path>`), never a file alias:
 | Marker | Meaning |
 |---|---|
 | `OUTLINE: AUTHOR <id>` | Names the author of the review record. Required when any outline verdict exists. |
-| `OUTLINE: REVIEWER <id>` | Names the fresh-context reviewer. Required when any outline verdict exists; it must differ from the author. |
+| `OUTLINE: REVIEWER <id>` | Names the review context that produced the verdict. Required when any outline verdict exists. For a self-review it is the self context and may equal the author; for an independent review it is the recorded reviewer context and differs from the author. A legacy record without a kind keeps the reviewer-differs rule. |
 | `OUTLINE: PASS <unit> \| <responsibility; call order>` | The reviewer can explain the unit's responsibility and why its calls happen in that order. Same-unit calls are nested in the tree; calls to another component are leaves the reviewer follows into that component's outline. The explanation must be non-empty. |
 | `OUTLINE: FAIL <unit> \| <reason>` | The outline is not explainable. Review is blocked; there is no justification path. |
 | `OUTLINE: PASS` | Overall verdict. Required when at least one outline exists. |
@@ -1205,7 +1205,8 @@ unit id (`type:<path>::<Name>` or `module:<path>`), never a file alias:
 
 Every printed outline needs exactly one verdict. A missing verdict, an empty
 `PASS` explanation, a `FAIL`, two conflicting verdicts for one unit, a missing
-reviewer, and a reviewer equal to the author all block. Fenced examples are
+reviewer, a reviewer that does not match the recorded review context, and an
+independent reviewer equal to the author all block. Fenced examples are
 ignored. Metric hints in the gate output are advisory and never create, satisfy,
 or block a verdict.
 

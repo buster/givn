@@ -81,6 +81,11 @@ If classification is ambiguous, ask the user one question. Do not infer "major" 
 - For independent review, the reviewer context must differ from the author.
 - A gate that requires independence accepts only `Review kind: independent`.
 - A gate that does not require independence accepts self-review.
+- The outline review gate uses the recorded kind: a self-review's outline
+  markers name the self context and the gate accepts that context; an
+  independent review's `OUTLINE: REVIEWER` equals the recorded reviewer context
+  and differs from the author. A fake or conflicting outline author or reviewer
+  is refused. A legacy record with no kind keeps the reviewer-differs rule.
 - A self-review must never be turned into an independent claim by gate inference.
 - Existing design-review and review markers remain required; only the context policy changes.
 
@@ -138,6 +143,7 @@ Use this exact behavior in `assets/instructions/review.md`:
 | Proposed capability | Route's recommendation | Decision | Rationale |
 |---|---|---|---|
 | `givn-workflow-enforcement` | `EXTEND givn-workflow-enforcement` | `EXTEND givn-workflow-enforcement` | The existing verification use case owns the review gate and workflow enforcement. The new review-kind record and independence check extend that contract; the guidance changes carry the same policy. |
+| `outline-review-gate` | (no route signal) | `EXTEND outline-review-gate` | The outline reviewer identity check must use the recorded review kind. The gate currently compares `OUTLINE: REVIEWER` with `OUTLINE: AUTHOR` and can accept two labels from the same context as false independence. |
 
 ## Out of Scope
 
