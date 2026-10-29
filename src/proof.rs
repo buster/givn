@@ -945,7 +945,9 @@ fn digest_content(
     let mut entries = backend.content_paths()?;
     entries.retain(|entry| {
         !is_documentation_or_evidence_path(project_root, change, manifest, &entry.path)
-            && !(archive && (entry.path == Path::new("givn/commands.yaml") || is_evidence_path(project_root, change, manifest, &entry.path)))
+            && !(archive
+                && (entry.path == Path::new("givn/commands.yaml")
+                    || is_evidence_path(project_root, change, manifest, &entry.path)))
     });
     entries.sort_by(|left, right| left.path.cmp(&right.path));
 

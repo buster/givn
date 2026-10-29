@@ -27,6 +27,7 @@ date: {YYYY-MM-DD}
 decision-makers: {list everyone involved}
 consulted: {list subject-matter experts consulted}
 informed: {list everyone kept up-to-date}
+---
 
 # {Short title representative of solved problem and found solution}
 

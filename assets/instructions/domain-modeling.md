@@ -109,7 +109,7 @@ Examples:
 
   authoritative: the current brief governs this change; the stale policy
     document carries a dated note pointing to it.
-  sweep: a glossary names `TENANT_CATOPIA`, but the code uses a literal;
+  sweep: a glossary names `TENANT_PRIMARY`, but the code uses a literal;
     rename or remove the symbol reference.
   sweep: a risk chapter says a migration backfills rows, but the design says
     it does not; correct the chapter before review.

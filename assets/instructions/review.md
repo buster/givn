@@ -413,7 +413,8 @@ Decision column must be exactly one of `duplicate`, `variant`, or
 clear the finding. For every scenario longer than the gate threshold,
 record a **split-or-keep** decision: write the section with the exact
 heading `## Split-or-keep`, one row per long scenario, each Decision
-either `split` or `keep`. For every removed+added pair, record whether the
+either `split` or `keep` with a brief keep reason. A chosen split must be
+completed before sign-off. For every removed+added pair, record whether the
 new scenario supersedes the removed one or is unrelated. These decisions
 are review evidence, not score thresholds. An overlap finding is
 advisory evidence until its disposition is recorded; the recorded disposition,
@@ -517,7 +518,7 @@ and knows the production paths from `design.md` and `tasks.md`. Run it
 explicitly and record the exact command before review:
 
 ```text
-OUTLINE-COMMAND: givn outline report --path catopia --path app.py
+OUTLINE-COMMAND: givn outline report --path app --path app/main.py
 ```
 
 The command accepts one or more `--path` arguments. It fails when the scope
