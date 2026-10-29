@@ -16,6 +16,7 @@ fn workflow_scripts_project(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    super::archive_proof_support::disable_coverage(env);
     let scripts = [
         (
             "run-tests.sh",
@@ -40,6 +41,14 @@ fn workflow_scripts_project(world: &mut GivnWorld) {
                 .expect("chmod workflow script");
         }
     }
+    let commands = env.path("givn/commands.yaml");
+    let content = std::fs::read_to_string(&commands).expect("read commands.yaml");
+    let updated = crate::common::replace_top_level_key(
+        &content,
+        "verify",
+        "verify:\n  command: \"./run-tests.sh\"\n  e2e_command: \"./run-tests.sh --e2e\"\n",
+    );
+    std::fs::write(commands, updated).expect("write commands.yaml");
 }
 
 #[then("the README has the description open placeholder")]

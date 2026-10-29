@@ -260,9 +260,9 @@ fn run_with_root(
 
     // Exit code: parse errors (1) outrank duplicate titles and empty
     // features (3), which outrank @wip/PENDING (2).
-    let exit_code = if has_parse_error {
+    let exit_code = if has_parse_error || has_use_case_error {
         1
-    } else if has_duplicate || has_empty_feature || has_use_case_error {
+    } else if has_duplicate || has_empty_feature {
         3
     } else if has_wip {
         2

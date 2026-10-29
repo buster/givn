@@ -755,3 +755,309 @@ fn change_with_coverage_proposal(world: &mut GivnWorld) {
     )
     .unwrap();
 }
+
+// --- Literal executable-content duplicate fixtures (0.9.10) ----------------
+
+fn write_pair(env: &TestEnv, left: &str, right: &str) {
+    write_feature(env, "givn/specs/audit/left.feature", left);
+    write_feature(env, "givn/specs/audit/right.feature", right);
+}
+
+fn literal_scenario(title: &str, value: &str) -> String {
+    format!(
+        "Feature: Literal\n\n  Scenario: {title}\n    Given a workspace named \"{value}\"\n    When the action runs\n    Then the command exits 0\n    And stdout contains \"done\"\n"
+    )
+}
+
+#[given(
+    "a spec discovery project whose corpus contains one feature with two scenarios having literally equal supported executable content"
+)]
+fn corpus_literal_equal_in_one_feature(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    write_feature(
+        &env,
+        "givn/specs/audit/audit.feature",
+        "Feature: Literal\n\n  Scenario: Literal first\n    Given a workspace named \"alpha\"\n    When the action runs\n    Then the command exits 0\n    And stdout contains \"done\"\n\n  Scenario: Literal second\n    Given a workspace named \"alpha\"\n    When the action runs\n    Then the command exits 0\n    And stdout contains \"done\"\n",
+    );
+    world.env = Some(env);
+}
+
+#[given(
+    "a spec discovery project whose corpus contains two features with one scenario each having literally equal supported executable content"
+)]
+fn corpus_literal_equal_across_features(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    write_pair(
+        &env,
+        &literal_scenario("Cross one", "alpha"),
+        &literal_scenario("Cross two", "alpha"),
+    );
+    world.env = Some(env);
+}
+
+fn outline_scenario(title: &str, name: &str) -> String {
+    format!(
+        "Feature: Outline\n  Background: Setup\n    Given a prepared workspace\n  Scenario Outline: {title}\n    Given a workspace named \"<name>\"\n    And a configuration:\n      | key | value |\n      | a | b |\n    When the action runs with a payload:\n      \"\"\"\n      body\n      \"\"\"\n    Then the command exits 0\n    @fast\n    Examples:\n      | name |\n      | {name} |\n"
+    )
+}
+
+fn differing_literal_corpus(env: &TestEnv, difference: &str) {
+    let (left, right) = match difference {
+        "a quoted step parameter" => (
+            literal_scenario("Quoted one", "alpha"),
+            literal_scenario("Quoted two", "beta"),
+        ),
+        "a numeric step parameter" => (
+            "Feature: Numeric\n\n  Scenario: Numeric one\n    Given 3 workers\n    When the action runs\n    Then the command exits 0\n".to_string(),
+            "Feature: Numeric\n\n  Scenario: Numeric two\n    Given 4 workers\n    When the action runs\n    Then the command exits 0\n".to_string(),
+        ),
+        "a data-table argument cell" => (
+            "Feature: Table\n\n  Scenario: Table one\n    Given a configuration:\n      | key | value |\n      | a | b |\n    When the action runs\n    Then the command exits 0\n".to_string(),
+            "Feature: Table\n\n  Scenario: Table two\n    Given a configuration:\n      | key | value |\n      | a | c |\n    When the action runs\n    Then the command exits 0\n".to_string(),
+        ),
+        "a docstring argument" => (
+            "Feature: Docstring\n\n  Scenario: Docstring one\n    Given a payload:\n      \"\"\"\n      body\n      \"\"\"\n    When the action runs\n    Then the command exits 0\n".to_string(),
+            "Feature: Docstring\n\n  Scenario: Docstring two\n    Given a payload:\n      \"\"\"\n      changed\n      \"\"\"\n    When the action runs\n    Then the command exits 0\n".to_string(),
+        ),
+        "an Examples value" => (
+            outline_scenario("Examples one", "Ada"),
+            outline_scenario("Examples two", "Grace"),
+        ),
+        other => panic!("unknown executable difference {other}"),
+    };
+    write_pair(env, &left, &right);
+}
+
+#[given("two permanent scenarios whose normalized structural shape matches")]
+fn two_permanent_shape_scenarios(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    write_pair(
+        &env,
+        &literal_scenario("Shape one", "alpha"),
+        &literal_scenario("Shape two", "alpha"),
+    );
+    world.env = Some(env);
+}
+
+#[given(regex = r"^their supported executable content differs only in (.+)$")]
+fn executable_content_differs_only_in(world: &mut GivnWorld, difference: String) {
+    let env = env_of(world);
+    let target = env.root().join("givn/specs/audit");
+    std::fs::remove_dir_all(&target).unwrap();
+    differing_literal_corpus(env, &difference);
+}
+
+#[given("two permanent scenarios with literally equal steps and step arguments")]
+fn two_permanent_equal_scenarios(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    write_feature(
+        &env,
+        "givn/specs/audit/background.feature",
+        "Feature: Background\n\n  Background: First setup\n    Given a prepared workspace\n\n  Scenario: Setup one\n    Given a workspace named \"alpha\"\n    When the action runs\n    Then the command exits 0\n",
+    );
+    write_feature(
+        &env,
+        "givn/specs/audit/other.feature",
+        "Feature: Other\n\n  Background: Second setup\n    Given another prepared workspace\n\n  Scenario: Setup two\n    Given a workspace named \"alpha\"\n    When the action runs\n    Then the command exits 0\n",
+    );
+    world.env = Some(env);
+}
+
+#[given("their supported Background setup differs")]
+fn background_setup_differs(_world: &mut GivnWorld) {
+    // The two-feature fixture above already carries distinct Backgrounds.
+}
+
+#[given("two permanent Scenario Outlines with different titles and file paths")]
+fn two_equal_outlines(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    write_feature(
+        &env,
+        "givn/specs/audit/one.feature",
+        &outline_scenario("Outline one", "Ada"),
+    );
+    write_feature(
+        &env,
+        "givn/specs/audit/two.feature",
+        &outline_scenario("Outline two", "Ada"),
+    );
+    world.env = Some(env);
+}
+
+#[given(
+    "their supported Backgrounds, step keywords, step text, tables, docstrings, and Examples are literally equal"
+)]
+fn equal_outline_content(_world: &mut GivnWorld) {}
+
+#[given(
+    "a spec discovery project with several exact and structural matches across different files and titles"
+)]
+fn corpus_several_matches(world: &mut GivnWorld) {
+    let env = make_bare_root();
+    write_feature(
+        &env,
+        "givn/specs/audit/alpha.feature",
+        &literal_scenario("Alpha one", "alpha")
+            .replace("When the action runs", "When the first action runs"),
+    );
+    write_feature(
+        &env,
+        "givn/specs/audit/beta.feature",
+        &literal_scenario("Beta one", "alpha"),
+    );
+    write_feature(
+        &env,
+        "givn/specs/audit/gamma.feature",
+        &literal_scenario("Gamma one", "alpha")
+            .replace("When the action runs", "When the second action runs"),
+    );
+    write_feature(
+        &env,
+        "givn/specs/audit/delta.feature",
+        &literal_scenario("Delta one", "alpha"),
+    );
+    world.env = Some(env);
+}
+
+#[when("the user audits the unchanged corpus twice in text format and twice in JSON format")]
+fn audit_twice_text_and_json(world: &mut GivnWorld) {
+    let env = env_of(world);
+    let text_one = run_givn(env, &["spec", "duplicates"]);
+    let text_two = run_givn(env, &["spec", "duplicates"]);
+    let json_one = run_givn(env, &["spec", "duplicates", "--format", "json"]);
+    let json_two = run_givn(env, &["spec", "duplicates", "--format", "json"]);
+    assert!(text_one.status.success() && text_two.status.success());
+    assert!(json_one.status.success() && json_two.status.success());
+    world.additional_output = Some(
+        serde_json::json!({
+            "text_one": String::from_utf8_lossy(&text_one.stdout),
+            "text_two": String::from_utf8_lossy(&text_two.stdout),
+            "json_one": String::from_utf8_lossy(&json_one.stdout),
+            "json_two": String::from_utf8_lossy(&json_two.stdout),
+        })
+        .to_string(),
+    );
+    world.last_output = Some(text_two);
+}
+
+fn audit_text(world: &GivnWorld) -> String {
+    String::from_utf8_lossy(&world.last_output.as_ref().expect("audit output").stdout).into_owned()
+}
+
+#[then("stdout contains both audit endpoints")]
+fn stdout_has_both_endpoints(world: &mut GivnWorld) {
+    let out = audit_text(world);
+    assert!(out.contains("Literal first"), "{out}");
+    assert!(out.contains("Literal second"), "{out}");
+    assert_eq!(out.matches("audit.feature").count(), 2, "{out}");
+}
+
+#[given("the scenarios have different titles and file paths")]
+fn scenarios_have_distinct_endpoints(_world: &mut GivnWorld) {
+    // The cross-feature fixture writes distinct titles in distinct files.
+}
+
+#[then("both distinct titles and file paths identify the match endpoints")]
+fn both_titles_and_paths(world: &mut GivnWorld) {
+    let out = audit_text(world);
+    for needle in ["Cross one", "Cross two", "left.feature", "right.feature"] {
+        assert!(out.contains(needle), "missing {needle}: {out}");
+    }
+}
+
+#[then(regex = r#"^the pair is not labelled "([^"]+)"$"#)]
+fn pair_not_labelled(world: &mut GivnWorld, label: String) {
+    let out = audit_text(world);
+    assert!(!out.contains(&label), "unexpected {label}: {out}");
+}
+
+#[then("the pair is reported as a structural match")]
+fn pair_structural(world: &mut GivnWorld) {
+    let out = audit_text(world);
+    assert!(out.contains("same_assertion_shape"), "{out}");
+}
+
+#[then(
+    "the report describes the structural match as advisory rather than proof of equivalent behavior"
+)]
+fn structural_is_advisory(world: &mut GivnWorld) {
+    let out = audit_text(world);
+    assert!(out.contains("advisory"), "{out}");
+    assert!(
+        out.contains("not proof") || out.contains("rather than proof"),
+        "{out}"
+    );
+}
+
+#[then(regex = r#"^the pair is labelled "([^"]+)"$"#)]
+fn pair_labelled(world: &mut GivnWorld, label: String) {
+    let out = audit_text(world);
+    assert!(out.contains(&label), "missing {label}: {out}");
+}
+
+#[then("both text audit reports are identical")]
+fn text_reports_identical(world: &mut GivnWorld) {
+    let value: serde_json::Value =
+        serde_json::from_str(world.additional_output.as_ref().expect("audit reports"))
+            .expect("report state");
+    assert_eq!(value["text_one"], value["text_two"]);
+    assert!(
+        value["text_one"].as_str().is_some_and(
+            |text| text.contains("exact_duplicate") && text.contains("same_assertion_shape")
+        ),
+        "{value}"
+    );
+}
+
+#[then("both JSON audit reports are identical")]
+fn json_reports_identical(world: &mut GivnWorld) {
+    let value: serde_json::Value =
+        serde_json::from_str(world.additional_output.as_ref().expect("audit reports"))
+            .expect("report state");
+    assert_eq!(value["json_one"], value["json_two"]);
+}
+
+#[then("match endpoints and match ordering do not depend on filesystem enumeration order")]
+fn ordering_deterministic(world: &mut GivnWorld) {
+    let value: serde_json::Value =
+        serde_json::from_str(world.additional_output.as_ref().expect("audit reports"))
+            .expect("report state");
+    let matches: Vec<serde_json::Value> =
+        serde_json::from_str(value["json_one"].as_str().expect("json one"))
+            .expect("valid json report");
+    let mut sorted = matches.clone();
+    sorted.sort_by_key(|item| {
+        (
+            item["left_file"].as_str().unwrap_or("").to_string(),
+            item["left_title"].as_str().unwrap_or("").to_string(),
+            item["right_file"].as_str().unwrap_or("").to_string(),
+            item["right_title"].as_str().unwrap_or("").to_string(),
+            item["kind"].as_str().unwrap_or("").to_string(),
+        )
+    });
+    let endpoints: Vec<_> = matches
+        .iter()
+        .map(|item| {
+            (
+                item["left_file"].as_str().unwrap_or("").to_string(),
+                item["left_title"].as_str().unwrap_or("").to_string(),
+                item["right_file"].as_str().unwrap_or("").to_string(),
+                item["right_title"].as_str().unwrap_or("").to_string(),
+                item["kind"].as_str().unwrap_or("").to_string(),
+            )
+        })
+        .collect();
+    let expected: Vec<_> = sorted
+        .iter()
+        .map(|item| {
+            (
+                item["left_file"].as_str().unwrap_or("").to_string(),
+                item["left_title"].as_str().unwrap_or("").to_string(),
+                item["right_file"].as_str().unwrap_or("").to_string(),
+                item["right_title"].as_str().unwrap_or("").to_string(),
+                item["kind"].as_str().unwrap_or("").to_string(),
+            )
+        })
+        .collect();
+    assert_eq!(endpoints, expected);
+}

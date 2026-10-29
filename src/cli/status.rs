@@ -27,17 +27,26 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
         if !change_dir.exists() {
             let archived_dir = project_root.join("givn/archive").join(id);
             if archived_dir.exists() {
+                let proof = archive_state(&project_root, id);
                 if json {
                     println!(
                         "{}",
                         serde_json::to_string_pretty(&serde_json::json!({
                             "id": id,
                             "archived": true,
+                            "archive_status": proof.as_str(),
                             "scm": scm,
                         }))?
                     );
                 } else {
                     println!("Change '{id}': archived");
+                    match proof {
+                        ArchiveState::Proven => println!("Archive: proven archive"),
+                        ArchiveState::PendingCandidate => println!(
+                            "Archive: pending archive candidate — no current proof; \
+                             resume: givn archive --change {id}"
+                        ),
+                    }
                 }
                 return Ok(());
             }
@@ -113,6 +122,45 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// The cheap archive proof state projected for an archived change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ArchiveState {
+    Proven,
+    PendingCandidate,
+}
+
+impl ArchiveState {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Proven => "proven",
+            Self::PendingCandidate => "pending-candidate",
+        }
+    }
+}
+
+/// A proven receipt names the same change, binds the candidate to the tested
+/// revision and records at least one verification scope. Anything else is a
+/// pending candidate, never a counterfeit proven archive.
+fn archive_state(project_root: &std::path::Path, id: &str) -> ArchiveState {
+    if !matches!(
+        crate::proof::read_status(project_root, id),
+        crate::proof::ArchiveProof::Proven
+    ) {
+        return ArchiveState::PendingCandidate;
+    }
+    let Some(receipt) = crate::proof::read_receipt(&project_root.join("givn/archive").join(id))
+    else {
+        return ArchiveState::PendingCandidate;
+    };
+    let matching_revision = receipt.candidate_revision.is_some()
+        && receipt.candidate_revision == receipt.tested_revision;
+    if receipt.change == id && matching_revision && !receipt.scopes.is_empty() {
+        ArchiveState::Proven
+    } else {
+        ArchiveState::PendingCandidate
+    }
 }
 
 /// The backend name for machine-readable output.

@@ -378,6 +378,57 @@ fn check_scenario_commits(
     Ok(())
 }
 
+/// The no-behavior-change route still checks identities that do not depend on
+/// delta scenarios: the proposal names this change and every delta use-case
+/// document names its own directory.
+fn check_change_identity(change_dir: &std::path::Path) -> Result<()> {
+    let id = change_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_default();
+    if let Ok(proposal) = std::fs::read_to_string(change_dir.join("proposal.md"))
+        && let Some(title) = proposal
+            .lines()
+            .map(str::trim)
+            .find_map(|line| line.strip_prefix("# Proposal:"))
+    {
+        let declared = title.trim();
+        if !declared.is_empty() && declared != id && !declared.contains("{{CHANGE_ID}}") {
+            anyhow::bail!(
+                "change identity mismatch: proposal.md declares '{declared}' but the change directory is '{id}'"
+            );
+        }
+    }
+    let specs = change_dir.join("specs");
+    let Ok(entries) = std::fs::read_dir(&specs) else {
+        return Ok(());
+    };
+    let mut documents: Vec<std::path::PathBuf> = entries
+        .flatten()
+        .map(|entry| entry.path().join("usecase.md"))
+        .filter(|path| path.is_file())
+        .collect();
+    documents.sort();
+    for path in documents {
+        let text = std::fs::read_to_string(&path)?;
+        if let Ok(doc) = crate::gherkin::usecase_md::parse_usecase_md(&text) {
+            let directory = path
+                .parent()
+                .and_then(|parent| parent.file_name())
+                .and_then(|name| name.to_str())
+                .unwrap_or_default();
+            if doc.id != directory {
+                anyhow::bail!(
+                    "change identity mismatch: use-case document '{}' declares '{}' but lives under '{directory}'",
+                    path.display(),
+                    doc.id
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Report a missing README-impact decision before review. The review integrity
 /// gate remains the blocking authority.
 fn preflight_readme_impact(change_dir: &std::path::Path) {
@@ -401,14 +452,17 @@ fn run_change_verification(
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
     preflight_readme_impact(&change_dir);
+    let not_applicable = crate::proof::change_verification_not_applicable(&change_dir)?;
     let backend = crate::scm::select(project_root)?;
-    check_scenario_commits(&backend, &change_dir)?;
-    if crate::proof::change_verification_not_applicable(&change_dir)? {
+    if not_applicable {
         println!(
             "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
         );
+        check_change_identity(&change_dir)?;
+        check_scenario_commits(&backend, &change_dir)?;
         return Ok(());
     }
+    check_scenario_commits(&backend, &change_dir)?;
     let offending: Vec<String> = backend
         .dirty_entries()?
         .iter()
@@ -497,11 +551,12 @@ fn check_change_receipt(
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
     if crate::proof::change_verification_not_applicable(&change_dir)? {
-        let backend = crate::scm::select(project_root)?;
-        check_scenario_commits(&backend, &change_dir)?;
         println!(
             "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
         );
+        check_change_identity(&change_dir)?;
+        let backend = crate::scm::select(project_root)?;
+        check_scenario_commits(&backend, &change_dir)?;
         return Ok(());
     }
     let receipt = crate::proof::ChangeReceipt::read(&change_dir).map_err(|error| {
