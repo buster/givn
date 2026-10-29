@@ -7,4 +7,4 @@ description: Break down implementation into a scenario-by-scenario RED/GREEN/REF
 
 Write the implementation task list (`tasks.md`) for change `<change-id>`.
 
-The rules for this step are served by `givn instructions tasks` — load the instruction and follow it.
+The rules for this step are served by `givn instructions tasks --change <CHANGE>` — load the instruction and follow it.
