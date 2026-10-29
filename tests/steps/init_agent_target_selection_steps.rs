@@ -196,12 +196,54 @@ fn consumer_runs(world: &mut GivnWorld, cmd: String) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let mut argv: Vec<&str> = cmd.split_whitespace().collect();
-    if argv.first() == Some(&"givn") {
-        argv.remove(0);
+    let argv = crate::steps::parse_command(&cmd);
+    let args: Vec<&str> = argv.iter().map(String::as_str).collect();
+    let output = if argv.first().is_some_and(|arg| arg == "commit") {
+        consumer_commit(env, world, &args)
+    } else {
+        crate::common::run_givn(env, &args)
+    };
+    world.last_output = Some(output);
+}
+
+/// `givn commit` inherits the harness attribution environment in real use.
+/// Replay it from the scenario state and strip any ambient harness context
+/// from the test process.
+fn consumer_commit(
+    env: &crate::common::TestEnv,
+    world: &GivnWorld,
+    args: &[&str],
+) -> std::process::Output {
+    let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_givn"));
+    command
+        .args(args)
+        .current_dir(env.root())
+        .env_remove("GIVN_ATTRIBUTION_ACTIVE")
+        .env_remove("GIVN_ATTRIBUTION_LLM")
+        .env_remove("GIVN_ATTRIBUTION_REASONING")
+        .env_remove("GIVN_ATTRIBUTION_HARNESS")
+        .env_remove("GIT_COMMITTER_NAME")
+        .env("FOSSIL_USER", "fixture");
+    if let Some(context) = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.context.as_ref())
+    {
+        command.env("GIVN_ATTRIBUTION_ACTIVE", "1");
+        if let Some(value) = &context.llm {
+            command.env("GIVN_ATTRIBUTION_LLM", value);
+        }
+        if let Some(value) = &context.reasoning {
+            command.env("GIVN_ATTRIBUTION_REASONING", value);
+        }
+        if let Some(value) = &context.harness {
+            command.env("GIVN_ATTRIBUTION_HARNESS", value);
+        }
+        if let (Some(llm), Some(harness)) = (&context.llm, &context.harness) {
+            command.env("GIT_COMMITTER_NAME", format!("LLM: {llm} via {harness}"));
+        }
     }
-    let out = crate::common::run_givn(env, &argv);
-    world.last_output = Some(out);
+    command.output().expect("spawn givn subprocess")
 }
 
 #[given("a Fossil checkout without a givn/ directory")]
@@ -230,9 +272,9 @@ fn then_no_githooks_directory(world: &mut GivnWorld) {
 #[then("the generated guidance names the commit path of the active backend")]
 fn then_guidance_names_commit_path(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root");
-    let skill = env.root().join(".opencode/skills/givn-implement/SKILL.md");
-    let text = std::fs::read_to_string(&skill)
-        .unwrap_or_else(|e| panic!("read generated skill {}: {e}", skill.display()));
+    let guidance = env.root().join("AGENTS.md");
+    let text = std::fs::read_to_string(&guidance)
+        .unwrap_or_else(|e| panic!("read generated guidance {}: {e}", guidance.display()));
     assert!(
         text.contains("givn commit"),
         "the generated guidance does not name `givn commit`"
@@ -242,11 +284,12 @@ fn then_guidance_names_commit_path(world: &mut GivnWorld) {
 #[then("the generated guidance states that a raw fossil commit carries no attribution")]
 fn then_guidance_states_fossil_limitation(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root");
-    let skill = env.root().join(".opencode/skills/givn-implement/SKILL.md");
-    let text = std::fs::read_to_string(&skill)
-        .unwrap_or_else(|e| panic!("read generated skill {}: {e}", skill.display()));
+    let guidance = env.root().join("AGENTS.md");
+    let text = std::fs::read_to_string(&guidance)
+        .unwrap_or_else(|e| panic!("read generated guidance {}: {e}", guidance.display()));
+    let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(
-        text.contains("carries no attribution"),
+        normalized.contains("raw Fossil check-in is not"),
         "the generated guidance does not state the Fossil limitation"
     );
 }

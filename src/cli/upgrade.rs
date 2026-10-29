@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 
 /// Refresh managed project files and, when required, prepare the migration plan.
 ///
@@ -22,7 +22,8 @@ pub fn run() -> Result<()> {
     let existing = std::fs::read_to_string(&config_path)?;
     validate_upgrade_config(&existing)?;
     let source_version = active_config_version(&existing);
-    let target_version = env!("CARGO_PKG_VERSION");
+    let seam = read_test_seam(&project_root)?;
+    let target_version = upgrade_target_version(seam.as_ref());
 
     if let Some(change_id) = crate::cli::migration::pending_migration_change(&project_root) {
         println!(
@@ -32,9 +33,9 @@ pub fn run() -> Result<()> {
     }
 
     if let Some(source) = source_version.as_deref() {
-        let bundles = crate::cli::migration::migration_path(source, target_version)?;
+        let bundles = migration_route(&project_root, seam.as_ref(), source, &target_version)?;
         if !bundles.is_empty() {
-            let change_id = crate::cli::migration::aggregate_migration_id(source, target_version);
+            let change_id = crate::cli::migration::aggregate_migration_id(source, &target_version);
             if crate::cli::migration::migration_exists(&project_root, &change_id) {
                 println!(
                     "Migration change '{change_id}' already exists; project is already prepared for migration."
@@ -46,7 +47,7 @@ pub fn run() -> Result<()> {
                 &config_path,
                 &existing,
                 source,
-                target_version,
+                &target_version,
                 &bundles,
             );
         }
@@ -61,7 +62,7 @@ pub fn run() -> Result<()> {
         &config_path,
         &existing,
         source_version.as_deref(),
-        target_version,
+        &target_version,
         &commit_message,
     )? {
         Some(hash) => println!(
@@ -72,6 +73,59 @@ pub fn run() -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// The explicit test-only seam for synthetic future routes. Fixtures write
+/// this file; it is never part of a real project's configuration contract.
+const TEST_UPGRADE_SEAM: &str = ".givn-test/upgrade.yaml";
+
+#[derive(Debug, Default, serde::Deserialize)]
+struct TestUpgradeSeam {
+    target_version: Option<String>,
+    catalog: Option<String>,
+}
+
+fn read_test_seam(project_root: &std::path::Path) -> Result<Option<TestUpgradeSeam>> {
+    if !cfg!(debug_assertions) {
+        return Ok(None);
+    }
+    let path = project_root.join(TEST_UPGRADE_SEAM);
+    if !path.exists() {
+        return Ok(None);
+    }
+    let yaml = std::fs::read_to_string(&path)
+        .with_context(|| format!("read test-only upgrade seam '{}'", path.display()))?;
+    let seam: TestUpgradeSeam = serde_yaml_ng::from_str(&yaml)
+        .with_context(|| format!("parse test-only upgrade seam '{}'", path.display()))?;
+    Ok(Some(seam))
+}
+
+/// The target contract for this upgrade. Production resolves the binary's
+/// version; the test-only seam simulates a later target for synthetic future
+/// routes without shipping a fabricated route in the catalog.
+fn upgrade_target_version(seam: Option<&TestUpgradeSeam>) -> String {
+    seam.and_then(|seam| seam.target_version.clone())
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| env!("CARGO_PKG_VERSION").to_string())
+}
+
+/// Resolve the declared route from an explicit synthetic catalog when the
+/// test-only seam supplies one; shipped catalogs remain authoritative in
+/// production.
+fn migration_route(
+    project_root: &std::path::Path,
+    seam: Option<&TestUpgradeSeam>,
+    source: &str,
+    target: &str,
+) -> Result<Vec<crate::cli::migration::MigrationBundle>> {
+    match seam.and_then(|seam| seam.catalog.as_deref()) {
+        Some(catalog) if !catalog.trim().is_empty() => {
+            let catalog = project_root.join(catalog);
+            let catalog = crate::cli::migration::load_catalog_from_path(&catalog)?;
+            crate::cli::migration::migration_path_with_catalog(source, target, &catalog)
+        }
+        _ => crate::cli::migration::migration_path(source, target),
+    }
 }
 
 /// Read the active version marker without interpreting commented scaffold
@@ -145,9 +199,11 @@ pub(crate) fn validate_upgrade_config(existing: &str) -> Result<()> {
         anyhow::bail!(
             "givn upgrade refused: the retired configuration key '{retired}' requires a manual \
              transition to '{replacement}'. Givn 0.9.10 does not automatically migrate retired \
-             configuration and accepts no compatibility alias. The supported migration baseline \
-             is 1.0; review the communication_policy, challenge, and skills-only transitions by \
-             hand, then run `givn upgrade` again. No files were changed."
+             configuration and accepts no compatibility alias. This is not the version marker: \
+             0.9.10 accepts current-format configuration carrying a 0.x marker. The supported \
+             migration baseline is 1.0; review the communication_policy, challenge, and \
+             skills-only transitions by hand, then run `givn upgrade` again. No files were \
+             changed."
         );
     }
 

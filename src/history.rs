@@ -1070,6 +1070,48 @@ pub fn ensure_ignored(root: &Path) {
     }
 }
 
+/// Report a local recording path that is still tracked or present in reachable
+/// history. Ignoring a path does not remove tracked files or historical
+/// recordings; the reporter installation/synchronization report says so and
+/// never claims the history is clean. No automatic history rewrite is
+/// performed.
+pub fn warn_tracked_recordings(root: &Path) {
+    let Ok(backend) = crate::scm::select(root) else {
+        return;
+    };
+    let Ok(entries) = backend.content_paths() else {
+        return;
+    };
+    let mut tracked: Vec<String> = entries
+        .into_iter()
+        .map(|entry| entry.path.to_string_lossy().into_owned())
+        .filter(|path| path == "givn/history" || path.starts_with("givn/history/"))
+        .collect();
+    tracked.sort();
+    tracked.dedup();
+    if tracked.is_empty() {
+        return;
+    }
+    println!("  recording: ignoring a path does not remove tracked files or historical recordings");
+    for path in &tracked {
+        println!("    - tracked local recording: {path}");
+    }
+    match backend.history_occurrences(&tracked) {
+        Ok(occurrences) if !occurrences.is_empty() => {
+            let revisions: usize = occurrences.iter().map(|(_, count)| count).sum();
+            println!(
+                "  recording: {revisions} reachable revision(s) still contain a local recording; history is not clean"
+            );
+            println!("  recording: no automatic history rewrite was performed");
+        }
+        _ => {
+            println!(
+                "  recording: the tracked recording is present in the current revision; history is not clean"
+            );
+        }
+    }
+}
+
 /// Start timestamps for process-per-hook harnesses, keyed by the harness's own
 /// call id: written atomically, pruned by age and at session end, no payload
 /// content.
