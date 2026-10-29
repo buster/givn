@@ -92,6 +92,7 @@ fn print_graph(manifest: &Manifest, state: Option<&ChangeState>) {
         Some(s) => {
             println!("Change: {}", s.id);
             println!("Stage:  {}", s.stage_label());
+            println!("Verification: {}", s.verification);
         }
         None => println!("Workflow:"),
     }
@@ -130,7 +131,9 @@ fn print_graph(manifest: &Manifest, state: Option<&ChangeState>) {
     if let Some(s) = state {
         println!();
         match s.next_required() {
-            None => println!("All required artifacts complete. Ready to archive."),
+            None => println!(
+                "All required artifacts complete. Archive prerequisites and merged-candidate verification still apply."
+            ),
             Some(next) => println!("Next required:  {}", next.id),
         }
     }
@@ -178,6 +181,7 @@ fn print_json(manifest: &Manifest, state: Option<&ChangeState>) -> Result<()> {
     if let Some(s) = state {
         out["id"] = serde_json::json!(s.id);
         out["stage"] = serde_json::json!(s.stage_label());
+        out["verification"] = serde_json::json!(s.verification);
         out["all_required_done"] = serde_json::json!(s.all_required_done());
         out["next_required"] = s
             .next_required()

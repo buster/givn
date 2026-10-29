@@ -1,5 +1,5 @@
 use crate::config::overlay::load_effective;
-use crate::gherkin::merge::{apply_deltas, merge_file, merge_file_retry};
+use crate::gherkin::merge::{merge_file, merge_file_retry, validate_feature_merge};
 use crate::gherkin::parse::{collect_feature_files, has_e2e_scenarios};
 use crate::proof::{ArchiveProof, SCOPE_E2E, SCOPE_REGULAR};
 use crate::state::{ArtifactStatus, ChangeState};
@@ -48,7 +48,9 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     let archive_target = project_root.join("givn/archive").join(change);
     let specs_dir = project_root.join("givn/specs");
 
-    cleanup_stale_temporaries(&project_root, &change_dir, &archive_target)?;
+    if change_dir.exists() {
+        crate::proof::change_verification_not_applicable(&change_dir)?;
+    }
 
     let backend = crate::scm::select(&project_root)?;
 
@@ -133,11 +135,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         //     when a custom apply.requires omits it.
         ensure_design_review_gate(&change_dir, &manifest)?;
 
-        let features_path = if crate::state::is_skipped("specs", &change_dir) {
-            manifest.verify.features_path.clone()
-        } else {
-            change_dir.join("specs").to_string_lossy().into_owned()
-        };
+        let features_path = change_dir.join("specs").to_string_lossy().into_owned();
 
         // 1a. Delta step definitions must already bind in the permanent test
         //     tree; archive merges features and narratives only.
@@ -148,7 +146,9 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
             "[{}] Running archive gate hooks...",
             crate::subprocess::local_timestamp()
         );
-        crate::hooks::run_archive_gate_hooks(&manifest, &features_path)?;
+        let mut hooks_manifest = manifest.clone();
+        crate::cli::check::remove_verification_hooks(&mut hooks_manifest);
+        crate::hooks::run_archive_gate_hooks(&hooks_manifest, &features_path)?;
         println!(
             "[{}] ✓ Gate hooks passed",
             crate::subprocess::local_timestamp()
@@ -192,6 +192,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
             merge_plan,
             merge_targets,
         )?;
+        cleanup_stale_temporaries(&project_root, &change_dir, &archive_target)?;
         move_change_to_archive(&change_dir, &archive_target)?;
 
         let receipt = crate::proof::read_receipt(&archive_target)
@@ -250,6 +251,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         let mut merge_applied = false;
         if merge_needed {
             let plan = plan_from_receipt(&project_root, &archive_target, change, &receipt)?;
+            cleanup_stale_temporaries(&project_root, &change_dir, &archive_target)?;
             merge_applied =
                 apply_merge_plan(&project_root, &archive_target, change, &plan, &receipt)?;
         }
@@ -273,31 +275,32 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     let started_at_unix = crate::proof::unix_now();
     let mut scopes = std::collections::BTreeMap::new();
 
-    let regular_path = crate::proof::result_path(&archive_target, SCOPE_REGULAR);
-    let (regular, regular_seconds) = run_scope(
-        &project_root,
-        &manifest.verify.command,
-        SCOPE_REGULAR,
-        &regular_path,
-    )?;
-    scopes.insert(
-        SCOPE_REGULAR.to_string(),
-        crate::proof::ScopeOutcome::passed(&regular, regular_seconds),
+    println!(
+        "Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks."
     );
+    let regular = verify_archive_scope(
+        &project_root,
+        &backend,
+        &manifest,
+        change,
+        &archive_target,
+        SCOPE_REGULAR,
+        &manifest.verify.command,
+    )?;
+    scopes.insert(SCOPE_REGULAR.to_string(), regular);
 
     let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
     if merged_has_e2e {
-        let e2e_path = crate::proof::result_path(&archive_target, SCOPE_E2E);
-        let (e2e, e2e_seconds) = run_scope(
+        let e2e = verify_archive_scope(
             &project_root,
-            &manifest.verify.e2e_command,
+            &backend,
+            &manifest,
+            change,
+            &archive_target,
             SCOPE_E2E,
-            &e2e_path,
+            &manifest.verify.e2e_command,
         )?;
-        scopes.insert(
-            SCOPE_E2E.to_string(),
-            crate::proof::ScopeOutcome::passed(&e2e, e2e_seconds),
-        );
+        scopes.insert(SCOPE_E2E.to_string(), e2e);
     } else {
         scopes.insert(
             SCOPE_E2E.to_string(),
@@ -307,9 +310,12 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
 
     // 9. Coverage runs once against the candidate, without rollback.
     let coverage = if manifest.addons.coverage {
-        Some(crate::cli::coverage_gate::run_coverage_gate(
+        Some(verify_archive_coverage(
             &project_root,
+            &backend,
             &manifest,
+            change,
+            &archive_target,
         )?)
     } else {
         None
@@ -877,7 +883,9 @@ fn build_merge_plan(
                     feature.scenarios.len()
                 );
             }
-            let Some(usecase_dir) = resolve_capability_usecase(&specs_root, &cap) else {
+            let Some(usecase_dir) =
+                crate::spec::owner::resolve_capability_owner(&specs_root, &cap)?
+            else {
                 if validate {
                     bail!(
                         "archive blocked: '{}' retires capability '{cap}' but no such \
@@ -911,8 +919,7 @@ fn build_merge_plan(
         let target = permanent_dir.join(format!("{cap}.feature"));
         if validate {
             let permanent_text = std::fs::read_to_string(&target).ok();
-            let deltas = crate::gherkin::delta::delta_scenarios(&feature);
-            apply_deltas(permanent_text.as_deref(), &deltas, &feature.name)?;
+            validate_feature_merge(permanent_text.as_deref(), &feature)?;
         }
         plan.push(MergeEntry {
             relative: rel,
@@ -1124,9 +1131,6 @@ fn run_static_review_gates(
     crate::overlap::analysis::run_review_overlap_gate(project_root, change)?;
     crate::cli::check::check_retirement_disclosed(project_root, change)?;
     crate::spec::routing_table::check_routing_consistency(project_root, change)?;
-    if manifest.addons.outline {
-        crate::outline::gate::enforce(project_root, change)?;
-    }
     println!(
         "[{}] ✓ Static review gates passed",
         crate::subprocess::local_timestamp()
@@ -1307,31 +1311,8 @@ fn recover_proven_finalization(
     if receipt.status != crate::proof::STATUS_PROVEN {
         bail!("archive blocked: '{change}' is already proven");
     }
-    let head = backend.revision()?;
-    if receipt.tested_revision.as_deref() == Some(head.as_str()) {
-        println!(
-            "[{}] Finalization was not published; republishing the proven receipt...",
-            crate::subprocess::local_timestamp()
-        );
-        backend.publish(
-            &finalization_evidence_paths(project_root, manifest, change),
-            &format!("chore({change}): prove archive"),
-        )?;
-        print_archived(change, archive_target);
-        return Ok(true);
-    }
-    crate::proof::Receipt::write_pending_progress(
-        archive_target,
-        change,
-        receipt
-            .started_at_unix
-            .unwrap_or_else(crate::proof::unix_now),
-        receipt.merge_completed,
-        receipt.merged_deltas,
-        receipt.merge_in_progress,
-        receipt.merge_plan,
-        receipt.merge_targets,
-    )?;
+    ensure_clean(backend, project_root, change, manifest, Witness::Project)?;
+    crate::proof::Receipt::resume_pending(archive_target)?;
     println!(
         "[{}] The proven receipt names an older revision; resuming verification...",
         crate::subprocess::local_timestamp()
@@ -1421,6 +1402,12 @@ fn ensure_change_receipt(
     change_dir: &Path,
     change: &str,
 ) -> Result<()> {
+    if crate::proof::change_verification_not_applicable(change_dir)? {
+        println!(
+            "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
+        );
+        return Ok(());
+    }
     let receipt = crate::proof::ChangeReceipt::read(change_dir).map_err(|error| {
         anyhow::anyhow!(
             "archive blocked: {error}. Run `givn check tasks --change {change}` before archiving."
@@ -1511,6 +1498,96 @@ fn ensure_e2e_configured(
 
 /// Run one verification scope and validate its fail-closed result. Returns
 /// the parsed result and the wall-clock seconds the scope took.
+#[allow(clippy::too_many_arguments)]
+fn verify_archive_scope(
+    project_root: &Path,
+    backend: &crate::scm::Backend,
+    manifest: &crate::config::manifest::Manifest,
+    change: &str,
+    archive: &Path,
+    scope: &str,
+    command: &str,
+) -> Result<crate::proof::ScopeOutcome> {
+    let before = crate::proof::VerificationInputs::capture_archive(
+        project_root,
+        backend,
+        change,
+        manifest,
+        command,
+        scope,
+    )?;
+    let path = crate::proof::result_path(archive, scope);
+    let receipt = crate::proof::read_receipt(archive).context("archive receipt missing")?;
+    if receipt.reusable_scope(scope, &before, &path) {
+        println!(
+            "  reusing passed {scope} verification (tested at {})",
+            receipt.scope_evidence[scope].inputs.revision
+        );
+        return Ok(receipt.scopes[scope].clone());
+    }
+    let (result, seconds) = run_scope(project_root, command, scope, &path)?;
+    let current = load_effective()?;
+    let current_command = if scope == SCOPE_REGULAR {
+        &current.verify.command
+    } else {
+        &current.verify.e2e_command
+    };
+    let after = crate::proof::VerificationInputs::capture_archive(
+        project_root,
+        backend,
+        change,
+        &current,
+        current_command,
+        scope,
+    )?;
+    before.ensure_unchanged(&after)?;
+    let outcome = crate::proof::ScopeOutcome::passed(&result, seconds);
+    crate::proof::Receipt::record_scope(archive, scope, outcome.clone(), before, &path)?;
+    Ok(outcome)
+}
+
+fn verify_archive_coverage(
+    project_root: &Path,
+    backend: &crate::scm::Backend,
+    manifest: &crate::config::manifest::Manifest,
+    change: &str,
+    archive: &Path,
+) -> Result<crate::proof::CoverageOutcome> {
+    let command = serde_json::to_string(&manifest.coverage)?;
+    let before = crate::proof::VerificationInputs::capture_archive(
+        project_root,
+        backend,
+        change,
+        manifest,
+        &command,
+        "coverage",
+    )?;
+    let receipt = crate::proof::read_receipt(archive).context("archive receipt missing")?;
+    if receipt
+        .coverage_inputs
+        .as_ref()
+        .is_some_and(|inputs| inputs.reusable_for(&before))
+        && let Some(outcome) = receipt.coverage
+    {
+        println!("  reusing passed coverage measurement");
+        return Ok(outcome);
+    }
+    let outcome = crate::cli::coverage_gate::run_coverage_gate(project_root, manifest)?;
+    let current = load_effective()?;
+    let command = serde_json::to_string(&current.coverage)?;
+    let after = crate::proof::VerificationInputs::capture_archive(
+        project_root,
+        backend,
+        change,
+        &current,
+        &command,
+        "coverage",
+    )?;
+    before.ensure_unchanged(&after)?;
+    crate::proof::Receipt::record_coverage(archive, outcome.clone(), before)?;
+    Ok(outcome)
+}
+
 fn run_scope(
     project_root: &Path,
     command: &str,
@@ -1520,7 +1597,7 @@ fn run_scope(
     if let Some(parent) = result_path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let _ = std::fs::remove_file(result_path);
+    crate::proof::remove_previous_output(result_path)?;
     let absolute = if result_path.is_absolute() {
         result_path.to_path_buf()
     } else {
@@ -1538,6 +1615,7 @@ fn run_scope(
         &[
             ("GIVN_FEATURES", "givn/specs"),
             ("GIVN_RESULT_FILE", &result_file),
+            ("GIVN_RESULT_SCOPE", scope),
         ],
         Some(project_root),
         &format!("{scope} verification"),
@@ -1707,39 +1785,6 @@ fn holds_feature_files(dir: &std::path::Path) -> Result<bool> {
     Ok(false)
 }
 
-/// Resolve which use-case directory an existing capability lives in, by
-/// scanning `givn/specs/*/<cap>.feature`. Returns None if the capability
-/// doesn't exist yet anywhere (a genuinely new capability — the caller
-/// then decides placement; see the `## Capability Routing` section in
-/// proposal.md).
-fn resolve_capability_usecase(
-    specs_root: &std::path::Path,
-    cap: &str,
-) -> Option<std::path::PathBuf> {
-    let entries = std::fs::read_dir(specs_root).ok()?;
-    for entry in entries.flatten() {
-        let usecase_dir = entry.path();
-        if !usecase_dir.is_dir()
-            || usecase_dir
-                .file_name()
-                .is_some_and(|name| name == "fragments")
-        {
-            continue;
-        }
-        let candidate = usecase_dir.join(format!("{cap}.feature"));
-        if candidate.exists() {
-            return Some(usecase_dir);
-        }
-    }
-    // Fragment capabilities live under givn/specs/fragments/ with
-    // fragment.md as their narrative; retirements and merges must reach them.
-    let fragments = specs_root.join("fragments");
-    if fragments.join(format!("{cap}.feature")).exists() {
-        return Some(fragments);
-    }
-    None
-}
-
 /// Handle one parsed delta feature: validate its capability tag, then
 /// either retire the capability directory (`@givn.retired`) or merge the
 /// delta into the permanent spec. Extracted from `run`'s merge loop so the
@@ -1774,7 +1819,7 @@ fn resolve_permanent_dir(
     cap: &str,
 ) -> Result<std::path::PathBuf> {
     let specs_root = project_root.join("givn/specs");
-    if let Some(dir) = resolve_capability_usecase(&specs_root, cap) {
+    if let Some(dir) = crate::spec::owner::resolve_capability_owner(&specs_root, cap)? {
         return Ok(dir);
     }
     let usecase = routing_usecase_for_new_capability(change_root, cap).ok_or_else(|| {
@@ -1801,7 +1846,7 @@ fn process_delta_file(
     // An existing capability lives in the use-case directory that already
     // contains it; a brand-new capability is placed by its proposal's
     // routing decision (the archive blocks when none is recorded).
-    let existing_dir = resolve_capability_usecase(&specs_root, &cap);
+    let existing_dir = crate::spec::owner::resolve_capability_owner(&specs_root, &cap)?;
 
     if crate::gherkin::delta::is_retired_feature(delta_feature) {
         if !delta_feature.scenarios.is_empty() {
@@ -1963,6 +2008,15 @@ fn record_retirement(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scope_runner_receives_its_declared_environment() {
+        let root = tempfile::TempDir::new().unwrap();
+        let result = root.path().join("result.json");
+        let command = "printf '{\"scope\":\"%s\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}' \"$GIVN_RESULT_SCOPE\" > \"$GIVN_RESULT_FILE\"";
+        run_scope(root.path(), command, "regular", &result).unwrap();
+    }
+
     use crate::gherkin::parse::parse_str;
 
     const PERMANENT_SPEC: &str = r#"

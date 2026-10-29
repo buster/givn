@@ -157,6 +157,7 @@ fn print_summary(state: &ChangeState) {
 fn print_detail(state: &ChangeState) {
     println!("Change: {}", state.id);
     println!("Stage:  {}", state.stage_label());
+    println!("Verification: {}", state.verification);
     println!();
 
     // Artifact checklist.
@@ -223,7 +224,9 @@ fn print_detail(state: &ChangeState) {
     // Next required step.
     match state.next_required() {
         None => {
-            println!("All required artifacts complete. Ready to archive.");
+            println!(
+                "All required artifacts complete. Archive prerequisites and merged-candidate verification still apply."
+            );
             println!("  Run: givn archive --change {}", state.id);
         }
         Some(next) => {
@@ -252,6 +255,7 @@ fn summary_json(state: &ChangeState) -> serde_json::Value {
         "stage": state.stage_label(),
         "next_required": next,
         "all_required_done": state.all_required_done(),
+        "verification": state.verification,
     })
 }
 
@@ -298,6 +302,7 @@ fn print_json(state: &ChangeState, scm: &str) -> Result<()> {
         "scm": scm,
         "stage": state.stage_label(),
         "all_required_done": state.all_required_done(),
+        "verification": state.verification,
         "next_required": next,
         "optional_pending": optional_pending,
         "artifacts": artifacts,
