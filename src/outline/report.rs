@@ -13,7 +13,7 @@ pub const RULES_VERSION: u32 = 1;
 
 pub fn render_human(assessment: &Assessment) -> String {
     if assessment.files.is_empty() {
-        return "outline report — no production sources, 0 files, 0 units, 0 hints\nNo production sources found in the requested scope.\n"
+        return "outline report — no supported production sources, 0 files, 0 units, 0 hints\nNo supported production sources found in the requested scope.\n"
             .to_string();
     }
     let hints = assessment
@@ -59,16 +59,15 @@ pub fn render_human(assessment: &Assessment) -> String {
         ));
         out.push_str(&render_outline(unit, &index));
         out.push_str(&format!(
-            "  metrics (hint): code lines {}; methods {}; public methods {}; fields {}; LCOM4 {}; TCC {}\n",
+            "  metrics (hint): code lines {}; methods {}; public methods {}; fields {}; LCOM4 {}; tight class cohesion {}; method complexity {}; method nesting {}\n",
             unit.metrics.code_lines,
             unit.metrics.methods,
             unit.metrics.public_methods,
             unit.metrics.fields,
             unit.metrics.lcom4,
-            unit.metrics
-                .tcc_permille
-                .map(|value| format!("{:.3}", value as f64 / 1000.0))
-                .unwrap_or_else(|| "undefined".to_string()),
+            permille_label(unit.metrics.tcc_permille),
+            count_label(unit.metrics.max_method_complexity),
+            count_label(unit.metrics.max_method_nesting),
         ));
         if !unit.evidence.is_empty() {
             out.push_str("  evidence:\n");
@@ -331,9 +330,9 @@ fn unit_json(unit: &ClassifiedUnit) -> Value {
             "public_surface": unit.metrics.public_surface,
             "lcom4": unit.metrics.lcom4,
             "tcc_permille": unit.metrics.tcc_permille,
-            "lcc_permille": unit.metrics.lcc_permille,
             "max_method_code_lines": unit.metrics.max_method_code_lines,
             "max_method_complexity": unit.metrics.max_method_complexity,
+            "max_method_nesting": unit.metrics.max_method_nesting,
             "files": unit.metrics.files,
         },
         "evidence": unit.evidence.iter().map(evidence_json).collect::<Vec<_>>(),
@@ -444,6 +443,18 @@ fn metric_json(value: MetricValue) -> Value {
     }
 }
 
+fn permille_label(value: Option<u32>) -> String {
+    value
+        .map(|value| format!("{:.3}", value as f64 / 1000.0))
+        .unwrap_or_else(|| "unavailable".to_string())
+}
+
+fn count_label(value: Option<u32>) -> String {
+    value
+        .map(|value| value.to_string())
+        .unwrap_or_else(|| "unavailable".to_string())
+}
+
 fn languages_label(assessment: &Assessment) -> String {
     let mut languages = std::collections::BTreeSet::new();
     for file in &assessment.files {
@@ -488,6 +499,7 @@ mod tests {
         AnalyzerCapabilities, Call, CallShape, FileStatus, Language, OutlineItem, ReceiverEvidence,
         RepoPath, Resolution, UnitId,
     };
+    use serde_json::json;
 
     fn call(callee: &str, resolution: Resolution, target: Option<&str>) -> Call {
         Call {
@@ -533,9 +545,9 @@ mod tests {
                 public_surface: 2,
                 lcom4: 1,
                 tcc_permille: Some(1000),
-                lcc_permille: Some(1000),
                 max_method_code_lines: 20,
-                max_method_complexity: 3,
+                max_method_complexity: Some(3),
+                max_method_nesting: Some(2),
                 files: 1,
             },
             method_findings: vec![],
@@ -608,9 +620,9 @@ mod tests {
             public_surface: 1,
             lcom4: 0,
             tcc_permille: None,
-            lcc_permille: None,
             max_method_code_lines: 1,
-            max_method_complexity: 1,
+            max_method_complexity: Some(1),
+            max_method_nesting: Some(1),
             files: 1,
         }
     }
@@ -649,6 +661,133 @@ mod tests {
             outline,
             evidence: vec![],
         }
+    }
+
+    fn assessment_with_metrics(metrics: UnitMetrics) -> Assessment {
+        let path = RepoPath::new("src/empty.rs");
+        let unit_id = UnitId("type:src/empty.rs::Empty".to_string());
+        Assessment {
+            capabilities: AnalyzerCapabilities {
+                languages: vec![Language::Rust],
+                supported_constructs: vec![],
+                limitations: vec![],
+                resolution_labels: vec![],
+            },
+            files: vec![AnalyzedFile {
+                language: Language::Rust,
+                path: path.clone(),
+                physical_lines: 10,
+                lines: vec![],
+                status: FileStatus::Analyzed,
+                unit_ids: vec![unit_id.clone()],
+                excluded_spans: vec![],
+            }],
+            units: vec![ClassifiedUnit {
+                unit_id,
+                language: Language::Rust,
+                kind: UnitKind::Type(TypeKind::Struct),
+                name: "Empty".to_string(),
+                path,
+                files: vec![RepoPath::new("src/empty.rs")],
+                classification: Classification::WithinLimits,
+                metrics,
+                method_findings: vec![],
+                method_names: vec![],
+                methods: vec![],
+                outline: vec![],
+                evidence: vec![],
+            }],
+            diagnostics: vec![],
+            unsupported: vec![],
+        }
+    }
+
+    #[test]
+    fn unavailable_measurements_are_unavailable_not_zero() {
+        let mut metrics = empty_metrics();
+        metrics.methods = 0;
+        metrics.public_methods = 0;
+        metrics.public_surface = 0;
+        metrics.max_method_code_lines = 0;
+        metrics.max_method_complexity = None;
+        metrics.max_method_nesting = None;
+        metrics.tcc_permille = None;
+        let assessment = assessment_with_metrics(metrics);
+
+        let text = render_human(&assessment).to_lowercase();
+        assert!(
+            text.contains("tight class cohesion unavailable"),
+            "tight class cohesion is not marked unavailable: {text}"
+        );
+        assert!(
+            text.contains("method complexity unavailable"),
+            "method complexity is not marked unavailable: {text}"
+        );
+        assert!(
+            text.contains("method nesting unavailable"),
+            "method nesting is not marked unavailable: {text}"
+        );
+
+        let json: Value = serde_json::from_str(&render_json(
+            &assessment,
+            &SourceScope {
+                languages: vec![Language::Rust],
+                roots: vec![std::path::PathBuf::from("src")],
+                include_test_sources: false,
+            },
+        ))
+        .expect("valid JSON");
+        let metrics_json = &json["units"][0]["metrics"];
+        assert!(
+            metrics_json["tcc_permille"].is_null(),
+            "tight class cohesion is not null: {metrics_json}"
+        );
+        assert!(
+            metrics_json["max_method_complexity"].is_null(),
+            "method complexity is not null: {metrics_json}"
+        );
+        assert!(
+            metrics_json["max_method_nesting"].is_null(),
+            "method nesting is not null: {metrics_json}"
+        );
+        assert_ne!(
+            metrics_json["max_method_complexity"],
+            json!(0),
+            "unavailable complexity is reported as zero"
+        );
+    }
+
+    #[test]
+    fn loose_class_cohesion_is_not_reported() {
+        let mut metrics = empty_metrics();
+        metrics.tcc_permille = Some(1000);
+        let assessment = assessment_with_metrics(metrics);
+
+        let text = render_human(&assessment).to_lowercase();
+        assert!(
+            text.contains("tight class cohesion"),
+            "tight class cohesion is missing: {text}"
+        );
+        assert!(
+            !text.contains("lcc") && !text.contains("loose class cohesion"),
+            "loose class cohesion is reported: {text}"
+        );
+
+        let json: Value = serde_json::from_str(&render_json(
+            &assessment,
+            &SourceScope {
+                languages: vec![Language::Rust],
+                roots: vec![std::path::PathBuf::from("src")],
+                include_test_sources: false,
+            },
+        ))
+        .expect("valid JSON");
+        let metrics_json = &json["units"][0]["metrics"];
+        assert!(
+            metrics_json.get("lcc_permille").is_none(),
+            "LCC is reported: {metrics_json}"
+        );
+        assert_eq!(metrics_json["tcc_permille"], json!(1000));
     }
 
     #[test]

@@ -33,6 +33,8 @@ impl SourceAnalyzer for PythonAnalyzer {
                 Limitation::PythonDynamicCalls,
                 Limitation::PythonTypeInference,
                 Limitation::NonUtf8File,
+                Limitation::StructuralCallOrderNotRuntimeTrace,
+                Limitation::UncertainCallEdges,
             ],
             resolution_labels: vec![
                 Resolution::SameFile,
@@ -330,7 +332,7 @@ fn methods_from(unit: &Value, path: RepoPath) -> Vec<Method> {
                     start_line: line(method, "start_line"),
                     end_line: line(method, "end_line"),
                 },
-                flow: Flow::Block(Vec::new()),
+                flow: Flow::Unavailable,
                 field_accesses: method["field_accesses"]
                     .as_array()
                     .into_iter()

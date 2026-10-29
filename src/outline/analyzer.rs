@@ -62,3 +62,28 @@ fn unique<T: PartialEq>(left: Vec<T>, right: Vec<T>) -> Vec<T> {
     }
     values
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn capabilities_disclose_structural_analysis_limits() {
+        let capabilities = outline_analyzer().capabilities();
+        let limitations = capabilities
+            .limitations
+            .iter()
+            .map(|limitation| limitation.label())
+            .collect::<Vec<_>>()
+            .join("; ")
+            .to_lowercase();
+        assert!(
+            limitations.contains("structural call order is not a complete runtime trace"),
+            "runtime-trace limitation missing: {limitations}"
+        );
+        assert!(
+            limitations.contains("uncertain or omitted call edges limit conclusions"),
+            "uncertain-edge limitation missing: {limitations}"
+        );
+    }
+}

@@ -44,6 +44,8 @@ impl SourceAnalyzer for SynAnalyzer {
                 Limitation::ItemMacros,
                 Limitation::IncludeMacro,
                 Limitation::NonUtf8File,
+                Limitation::StructuralCallOrderNotRuntimeTrace,
+                Limitation::UncertainCallEdges,
             ],
             resolution_labels: vec![
                 Resolution::SameFile,

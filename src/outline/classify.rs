@@ -197,10 +197,10 @@ fn decide(unit: &SourceUnit, metrics: &UnitMetrics) -> (Classification, Vec<Evid
                 Comparison::GreaterThan,
             ));
         }
-        if metrics.max_method_complexity > 50 {
+        if let Some(complexity) = metrics.max_method_complexity.filter(|value| *value > 50) {
             items.push(evidence(
                 "method-complexity",
-                MetricValue::Count(metrics.max_method_complexity as u64),
+                MetricValue::Count(complexity as u64),
                 MetricValue::Count(50),
                 Comparison::GreaterThan,
             ));
@@ -350,7 +350,9 @@ fn classify_module(
 
 fn over_method_limit(metrics: &UnitMetrics) -> bool {
     metrics.max_method_code_lines > 100
-        || metrics.max_method_complexity > 50
+        || metrics
+            .max_method_complexity
+            .is_some_and(|complexity| complexity > 50)
         || !metrics.method_findings().is_empty()
 }
 
@@ -360,7 +362,10 @@ impl UnitMetrics {
         if self.max_method_code_lines > 100 {
             findings.push(MethodFinding::MethodLength);
         }
-        if self.max_method_complexity > 50 {
+        if self
+            .max_method_complexity
+            .is_some_and(|complexity| complexity > 50)
+        {
             findings.push(MethodFinding::Complexity);
         }
         findings
@@ -423,9 +428,9 @@ mod fidelity_tests {
             public_surface: 51,
             lcom4: 1,
             tcc_permille: None,
-            lcc_permille: None,
             max_method_code_lines: 1,
-            max_method_complexity: 1,
+            max_method_complexity: Some(1),
+            max_method_nesting: Some(1),
             files: 1,
         };
         let (classification, evidence) = decide(&unit, &metrics);

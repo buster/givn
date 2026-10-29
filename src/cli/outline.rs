@@ -50,11 +50,25 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
     let capabilities = analyzer.capabilities();
     let analysis = outline::analyze(&request, analyzer.as_ref())?;
     if analysis.files.is_empty() {
+        let scope = roots
+            .iter()
+            .map(|root| root.display().to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        let unsupported = outline::scan::unsupported_production_sources(&project_root, &roots)?;
+        if unsupported.is_empty() {
+            bail!(
+                "outline report: no supported production sources found in: {scope}; \
+                 supported source languages: Rust, Python"
+            );
+        }
         bail!(
-            "outline report: no production sources found in: {}",
-            roots
+            "outline report: no supported production sources found in: {scope}; \
+             supported source languages: Rust, Python; the scope contains production sources \
+             in unsupported languages: {}",
+            unsupported
                 .iter()
-                .map(|root| root.display().to_string())
+                .map(|path| path.as_str())
                 .collect::<Vec<_>>()
                 .join(", ")
         );

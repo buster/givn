@@ -21,6 +21,10 @@ const PYTHON_EXCLUDED_DIRS: &[&str] = &[
     "node_modules",
 ];
 
+/// Source extensions that are production code but outside the supported
+/// Rust/Python analyzers.
+const UNSUPPORTED_SOURCE_EXTENSIONS: &[&str] = &["go", "java"];
+
 #[derive(Clone, Debug)]
 pub struct ScannedSource {
     pub path: RepoPath,
@@ -77,6 +81,83 @@ pub fn discover(
     Ok(sources)
 }
 
+/// Discover unsupported production source files under the requested roots.
+///
+/// Used only to distinguish an empty scope from a scope that contains sources
+/// no analyzer can read; it never feeds analysis.
+pub fn unsupported_production_sources(
+    project_root: &Path,
+    roots: &[PathBuf],
+) -> Result<Vec<RepoPath>> {
+    let canonical_root = project_root
+        .canonicalize()
+        .with_context(|| format!("resolve project root {}", project_root.display()))?;
+    let mut files = Vec::new();
+    for root in roots {
+        let path = project_root.join(root);
+        if path.exists() {
+            walk_unsupported(&canonical_root, &path, &mut files)?;
+        }
+    }
+    files.sort();
+    files.dedup();
+    Ok(files
+        .iter()
+        .map(|path| {
+            let relative = path.strip_prefix(&canonical_root).unwrap_or(path);
+            RepoPath::new(relative.to_string_lossy().into_owned())
+        })
+        .collect())
+}
+
+fn walk_unsupported(project_root: &Path, dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
+    let canonical = match dir.canonicalize() {
+        Ok(path) => path,
+        Err(_) => return Ok(()),
+    };
+    if !canonical.starts_with(project_root) {
+        return Ok(());
+    }
+    if canonical.is_file() {
+        if is_unsupported_source(&canonical) {
+            out.push(canonical);
+        }
+        return Ok(());
+    }
+
+    let mut entries: Vec<_> = std::fs::read_dir(&canonical)?
+        .filter_map(Result::ok)
+        .collect();
+    entries.sort_by_key(|entry| entry.file_name());
+    for entry in entries {
+        let path = entry.path();
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if path.is_dir() {
+            if EXCLUDED_DIRS.contains(&name.as_ref()) || name.as_ref() == "node_modules" {
+                continue;
+            }
+            walk_unsupported(project_root, &path, out)?;
+        } else if is_unsupported_source(&path) {
+            walk_unsupported(project_root, &path, out)?;
+        }
+    }
+    Ok(())
+}
+
+fn is_unsupported_source(path: &Path) -> bool {
+    let Some(extension) = path.extension().and_then(|extension| extension.to_str()) else {
+        return false;
+    };
+    if !UNSUPPORTED_SOURCE_EXTENSIONS.contains(&extension.to_lowercase().as_str()) {
+        return false;
+    }
+    !path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.ends_with("_test.go"))
+}
+
 fn walk(
     project_root: &Path,
     dir: &Path,
@@ -128,14 +209,6 @@ fn walk(
 struct ScannedSourcePath {
     absolute: PathBuf,
     language: Language,
-}
-
-/// Whether a repo path is a production source file for one of the languages.
-///
-/// Mirrors discovery: excluded directories and Python test modules never count
-/// as production scope, so the review gate does not fail on them.
-pub fn is_production_source(path: &str, languages: &[Language]) -> bool {
-    language_for_path(Path::new(path), languages).is_some()
 }
 
 fn excluded_dir(name: &str, language: Language) -> bool {
@@ -265,29 +338,27 @@ fn marked_lines(
 mod tests {
     use super::*;
 
+    fn language(path: &str, languages: &[Language]) -> Option<Language> {
+        language_for_path(Path::new(path), languages)
+    }
+
     #[test]
     fn production_scope_is_language_specific() {
-        assert!(is_production_source(
-            "src/build/engine.rs",
-            &[Language::Rust]
-        ));
-        assert!(!is_production_source(
-            "src/build/engine.py",
-            &[Language::Python]
-        ));
-        assert!(!is_production_source(
-            "src/.venv/lib/helper.py",
-            &[Language::Python]
-        ));
-        assert!(!is_production_source(
-            "src/test_helper.py",
-            &[Language::Python]
-        ));
-        assert!(!is_production_source(
-            "src/helper_test.py",
-            &[Language::Python]
-        ));
-        assert!(is_production_source("src/helper.py", &[Language::Python]));
-        assert!(!is_production_source("tests/helper.rs", &[Language::Rust]));
+        assert_eq!(
+            language("src/build/engine.rs", &[Language::Rust]),
+            Some(Language::Rust)
+        );
+        assert_eq!(language("src/build/engine.py", &[Language::Python]), None);
+        assert_eq!(
+            language("src/.venv/lib/helper.py", &[Language::Python]),
+            None
+        );
+        assert_eq!(language("src/test_helper.py", &[Language::Python]), None);
+        assert_eq!(language("src/helper_test.py", &[Language::Python]), None);
+        assert_eq!(
+            language("src/helper.py", &[Language::Python]),
+            Some(Language::Python)
+        );
+        assert_eq!(language("tests/helper.rs", &[Language::Rust]), None);
     }
 }

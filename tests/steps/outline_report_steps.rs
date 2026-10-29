@@ -9,13 +9,10 @@ use cucumber::{given, then, when};
 
 #[given("a Givn project with the outline experiment disabled")]
 fn outline_disabled_project(world: &mut GivnWorld) {
-    let env = common::make_init_root();
-    let out = common::run_givn(&env, &["addons", "disable", "outline"]);
-    assert!(
-        out.status.success(),
-        "givn addons disable outline failed: {}",
-        String::from_utf8_lossy(&out.stderr)
-    );
+    let env = common::make_bare_root();
+    std::fs::create_dir_all(env.path("givn")).expect("create givn dir");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  outline: false\n")
+        .expect("write config");
     world.env = Some(env);
 }
 
@@ -90,7 +87,7 @@ fn no_production_sources(world: &mut GivnWorld) {
 fn stderr_says_no_sources(world: &mut GivnWorld) {
     let stderr = crate::steps::stderr(world).to_lowercase();
     assert!(
-        stderr.contains("no production sources"),
+        stderr.contains("no supported production sources"),
         "expected the empty-scope message, got: {stderr}"
     );
 }
@@ -137,9 +134,7 @@ fn every_unit_has_one(world: &mut GivnWorld) {
 
 #[given("a Givn project with the outline experiment enabled")]
 fn outline_enabled_project(world: &mut GivnWorld) {
-    let env = common::make_init_root();
-    crate::steps::outline_report_support::enable_outline(&env);
-    world.env = Some(env);
+    world.env = Some(outline_project());
 }
 
 #[given("a production source unit with a data-only enum over the readable size")]
@@ -1458,5 +1453,334 @@ fn json_signature_contains(world: &mut GivnWorld, expected: String) {
             .iter()
             .any(|signature| signature.contains(&expected)),
         "no signature contains {expected}: {signatures:?}"
+    );
+}
+
+fn outline_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    std::fs::create_dir_all(env.path("givn")).expect("create givn dir");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  outline: true\n")
+        .expect("write config");
+    env
+}
+
+#[given(
+    regex = r#"^the requested scope contains only production source files written in (Go|Java)$"#
+)]
+fn only_unsupported_production_sources(world: &mut GivnWorld, language: String) {
+    let env = outline_project();
+    let (relative, source) = match language.as_str() {
+        "Go" => ("src/main.go", "package main\n\nfunc main() {}\n"),
+        "Java" => ("src/Main.java", "class Main {}\n"),
+        other => panic!("unsupported fixture language {other}"),
+    };
+    crate::steps::outline_report_support::write_source(&env, relative, source);
+    world.env = Some(env);
+}
+
+#[then("stderr names the requested scope")]
+fn stderr_names_requested_scope(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains('.'),
+        "the requested scope is not named: {stderr}"
+    );
+}
+
+#[then("stderr says there are no supported production sources")]
+fn stderr_says_no_supported_sources(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world).to_lowercase();
+    assert!(
+        stderr.contains("no supported production sources"),
+        "expected the supported-scope message, got: {stderr}"
+    );
+}
+
+#[then("stderr names Rust and Python as the supported source languages")]
+fn stderr_names_supported_languages(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world).to_lowercase();
+    assert!(
+        stderr.contains("rust") && stderr.contains("python"),
+        "the supported languages are not named: {stderr}"
+    );
+}
+
+#[then("stderr does not claim that no production sources exist")]
+fn stderr_does_not_claim_no_sources(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world).to_lowercase();
+    assert!(
+        !stderr.contains("no production sources"),
+        "the message claims no production sources exist: {stderr}"
+    );
+}
+
+#[then("the report labels the finding as advisory rather than a review or archive verdict")]
+fn report_labels_finding_advisory(world: &mut GivnWorld) {
+    let report = report_text(world).to_lowercase();
+    assert!(
+        report.contains("advisory"),
+        "the report does not label the finding advisory: {report}"
+    );
+    assert!(
+        !report.contains("review: pass")
+            && !report.contains("review: fail")
+            && !report.contains("archive: pass")
+            && !report.contains("archive: fail"),
+        "the report presents a review or archive verdict: {report}"
+    );
+}
+
+#[then("the JSON report does not present classifications as review or archive verdicts")]
+fn json_has_no_verdict(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let text = value.to_string().to_lowercase();
+    assert!(
+        !text.contains("verdict")
+            && !text.contains("outline: pass")
+            && !text.contains("outline: fail"),
+        "the JSON report carries a verdict: {text}"
+    );
+}
+
+#[then("the JSON report names Rust and Python as the supported source languages")]
+fn json_names_supported_languages(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let languages = value["capabilities"]["languages"]
+        .as_array()
+        .expect("languages array")
+        .iter()
+        .filter_map(|language| language.as_str())
+        .map(str::to_lowercase)
+        .collect::<Vec<_>>();
+    assert!(
+        languages.contains(&"rust".to_string()) && languages.contains(&"python".to_string()),
+        "Rust and Python are not named: {languages:?}"
+    );
+}
+
+#[then("the limitations state that structural call order is not a complete runtime trace")]
+fn json_runtime_trace_limitation(world: &mut GivnWorld) {
+    let limitations = json_limitations(world);
+    assert!(
+        limitations.contains("structural call order is not a complete runtime trace"),
+        "runtime-trace limitation missing: {limitations}"
+    );
+}
+
+#[then("the limitations state that uncertain or omitted call edges limit conclusions")]
+fn json_uncertain_edges_limitation(world: &mut GivnWorld) {
+    let limitations = json_limitations(world);
+    assert!(
+        limitations.contains("uncertain or omitted call edges limit conclusions"),
+        "uncertain-edge limitation missing: {limitations}"
+    );
+}
+
+fn json_limitations(world: &GivnWorld) -> String {
+    let value = json_output(world);
+    value["capabilities"]["limitations"]
+        .as_array()
+        .expect("limitations array")
+        .iter()
+        .filter_map(|limitation| limitation.as_str())
+        .collect::<Vec<_>>()
+        .join("; ")
+        .to_lowercase()
+}
+
+#[given(
+    regex = r#"^a supported production source unit for which (tight class cohesion|method complexity|method nesting) is unavailable$"#
+)]
+fn unit_with_unavailable_measurement(world: &mut GivnWorld, measurement: String) {
+    let env = outline_project();
+    match measurement.as_str() {
+        "tight class cohesion" => crate::steps::outline_report_support::write_source(
+            &env,
+            "src/loose.rs",
+            "pub struct Loose;\n\nimpl Loose {\n    pub fn first(&self) -> u64 { 1 }\n    pub fn second(&self) -> u64 { 2 }\n}\n",
+        ),
+        "method complexity" | "method nesting" => {
+            crate::steps::outline_report_support::write_source(
+                &env,
+                "src/spec.rs",
+                "pub trait Spec {\n    fn execute(&self) -> u64;\n}\n",
+            )
+        }
+        other => panic!("unsupported fixture measurement {other}"),
+    }
+    world.env = Some(env);
+}
+
+#[when("the developer requests the outline report in text and JSON form")]
+fn developer_requests_text_and_json(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let text = common::run_givn(env, &["outline", "report"]);
+    assert!(
+        text.status.success(),
+        "text report failed: {}",
+        String::from_utf8_lossy(&text.stderr)
+    );
+    let json = common::run_givn(env, &["outline", "report", "--json"]);
+    assert!(
+        json.status.success(),
+        "JSON report failed: {}",
+        String::from_utf8_lossy(&json.stderr)
+    );
+    world.additional_output = Some(format!(
+        "{}\u{0}{}",
+        String::from_utf8_lossy(&text.stdout),
+        String::from_utf8_lossy(&json.stdout)
+    ));
+}
+
+fn text_and_json(world: &GivnWorld) -> (String, serde_json::Value) {
+    let combined = world
+        .additional_output
+        .as_deref()
+        .expect("text and JSON reports were requested");
+    let (text, json) = combined.split_once('\u{0}').expect("text and JSON");
+    (
+        text.to_string(),
+        serde_json::from_str(json).expect("valid JSON"),
+    )
+}
+
+fn measurement_key(measurement: &str) -> &'static str {
+    match measurement {
+        "tight class cohesion" => "tcc_permille",
+        "method complexity" => "max_method_complexity",
+        "method nesting" => "max_method_nesting",
+        other => panic!("unsupported measurement {other}"),
+    }
+}
+
+fn measurement_unit(measurement: &str) -> &'static str {
+    match measurement {
+        "tight class cohesion" => "Loose",
+        "method complexity" | "method nesting" => "Spec",
+        other => panic!("unsupported measurement {other}"),
+    }
+}
+
+fn json_unit_opt<'a>(value: &'a serde_json::Value, name: &str) -> Option<&'a serde_json::Value> {
+    value["units"]
+        .as_array()
+        .expect("units array")
+        .iter()
+        .find(|unit| unit["name"] == name)
+}
+
+fn json_unit<'a>(value: &'a serde_json::Value, name: &str) -> &'a serde_json::Value {
+    json_unit_opt(value, name).unwrap_or_else(|| panic!("no unit named {name}: {value}"))
+}
+
+#[then(
+    regex = r#"^the text report marks (tight class cohesion|method complexity|method nesting) as unavailable$"#
+)]
+fn text_report_marks_unavailable(world: &mut GivnWorld, measurement: String) {
+    let (text, _) = text_and_json(world);
+    let text = text.to_lowercase();
+    assert!(
+        text.contains(&format!("{measurement} unavailable")),
+        "{measurement} is not marked unavailable: {text}"
+    );
+}
+
+#[then(
+    regex = r#"^the JSON report represents (tight class cohesion|method complexity|method nesting) as null$"#
+)]
+fn json_report_represents_null(world: &mut GivnWorld, measurement: String) {
+    let (_, value) = text_and_json(world);
+    let key = measurement_key(&measurement);
+    let metrics = &json_unit(&value, measurement_unit(&measurement))["metrics"];
+    assert!(
+        metrics[key].is_null(),
+        "{measurement} is not null: {metrics}"
+    );
+}
+
+#[then("neither report represents the unavailable measurement as zero")]
+fn neither_report_reports_zero(world: &mut GivnWorld) {
+    let (text, value) = text_and_json(world);
+    let text = text.to_lowercase();
+    for measurement in [
+        "tight class cohesion",
+        "method complexity",
+        "method nesting",
+    ] {
+        let key = measurement_key(measurement);
+        for unit in value["units"].as_array().expect("units array") {
+            if unit["metrics"][key].is_null() {
+                assert_ne!(
+                    unit["metrics"][key],
+                    serde_json::json!(0),
+                    "{measurement} is reported as zero"
+                );
+            }
+        }
+        if let Some(rest) = text.split(&format!("{measurement} ")).nth(1) {
+            let rendered = rest.split(';').next().unwrap_or_default().trim();
+            assert_ne!(
+                rendered, "0",
+                "{measurement} is reported as zero instead of unavailable"
+            );
+        }
+    }
+}
+
+#[given("a production source unit with measured tight class cohesion")]
+fn measured_tight_class_cohesion(world: &mut GivnWorld) {
+    let env = outline_project();
+    crate::steps::outline_report_support::write_source(
+        &env,
+        "src/tight.rs",
+        "pub struct Tight {\n    value: u64,\n}\n\nimpl Tight {\n    pub fn first(&self) -> u64 { self.value }\n    pub fn second(&self) -> u64 { self.value }\n}\n",
+    );
+    world.env = Some(env);
+}
+
+#[given("loose class cohesion is not independently measured")]
+fn loose_class_cohesion_unmeasured(_world: &mut GivnWorld) {}
+
+#[then("neither report includes an LCC measurement")]
+fn neither_report_includes_lcc(world: &mut GivnWorld) {
+    let (text, value) = text_and_json(world);
+    let text = text.to_lowercase();
+    assert!(
+        !text.contains("lcc") && !text.contains("loose class cohesion"),
+        "the text report includes LCC: {text}"
+    );
+    let metrics = value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|unit| &unit["metrics"]);
+    for metric in metrics {
+        assert!(
+            metric.get("lcc_permille").is_none(),
+            "the JSON report includes LCC: {metric}"
+        );
+    }
+}
+
+#[then("neither report presents tight class cohesion as loose class cohesion")]
+fn tight_cohesion_is_not_loose(world: &mut GivnWorld) {
+    let (text, value) = text_and_json(world);
+    let text = text.to_lowercase();
+    assert!(
+        text.contains("tight class cohesion") && !text.contains("loose class cohesion"),
+        "tight class cohesion is relabeled: {text}"
+    );
+    let metrics = &json_unit(&value, "Tight")["metrics"];
+    assert!(
+        !metrics["tcc_permille"].is_null(),
+        "tight class cohesion is not measured: {metrics}"
+    );
+    assert!(
+        metrics.get("lcc_permille").is_none(),
+        "loose class cohesion is presented: {metrics}"
     );
 }

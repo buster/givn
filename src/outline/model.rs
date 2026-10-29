@@ -104,6 +104,8 @@ pub enum Limitation {
     NonUtf8File,
     PythonDynamicCalls,
     PythonTypeInference,
+    StructuralCallOrderNotRuntimeTrace,
+    UncertainCallEdges,
 }
 
 impl Limitation {
@@ -114,6 +116,10 @@ impl Limitation {
             Self::NonUtf8File => "non-utf8-file",
             Self::PythonDynamicCalls => "python-dynamic-calls",
             Self::PythonTypeInference => "python-type-inference",
+            Self::StructuralCallOrderNotRuntimeTrace => {
+                "structural call order is not a complete runtime trace"
+            }
+            Self::UncertainCallEdges => "uncertain or omitted call edges limit conclusions",
         }
     }
 }
@@ -395,4 +401,5 @@ pub enum Flow {
     ShortCircuit(Box<Flow>, Box<Flow>),
     Return(Option<Box<Flow>>),
     Call(CallId),
+    Unavailable,
 }
