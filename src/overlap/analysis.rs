@@ -114,6 +114,7 @@ pub fn scan_tree(root: &Path) -> Vec<Finding> {
     // Needs the raw filesystem, not the scenario list — call with root.
     findings.extend(singleton_usecases(root));
     findings.extend(use_case_graph_findings(root));
+    findings.extend(delta_usecase_findings(root));
     findings.extend(crate::gherkin::interaction::interaction_gate_findings(root));
     findings.sort_by(|a, b| {
         kind_order(a).cmp(&kind_order(b)).then_with(|| {
@@ -428,8 +429,7 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
                         level: "error".to_string(),
                         files: vec![path.display().to_string()],
                         titles: vec![format!(
-                            "{relation} target '{}' does not resolve in its declared namespace",
-                            target.id()
+                            "{relation} target '{target}' does not resolve in its declared namespace"
                         )],
                         contradiction: false,
                     });
@@ -495,6 +495,63 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
             )],
             contradiction: false,
         });
+    }
+    findings
+}
+
+/// Active delta narratives are part of the change's specification identity.
+/// A malformed or misnamed delta use-case document is a blocking finding even
+/// when its capability has no permanent owner yet.
+fn delta_usecase_findings(root: &Path) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    let changes_root = root.join("givn/changes");
+    let Ok(changes) = std::fs::read_dir(&changes_root) else {
+        return findings;
+    };
+    for change in changes.flatten() {
+        let specs = change.path().join("specs");
+        let Ok(entries) = std::fs::read_dir(&specs) else {
+            continue;
+        };
+        let mut documents: Vec<std::path::PathBuf> = entries
+            .flatten()
+            .map(|entry| entry.path().join("usecase.md"))
+            .filter(|path| path.is_file())
+            .collect();
+        documents.sort();
+        for path in documents {
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                continue;
+            };
+            match crate::gherkin::usecase_md::parse_usecase_md(&text) {
+                Ok(doc) => {
+                    let directory = path
+                        .parent()
+                        .and_then(|parent| parent.file_name())
+                        .and_then(|name| name.to_str())
+                        .unwrap_or_default();
+                    if doc.id != directory {
+                        findings.push(Finding {
+                            kind: "usecase_invalid".to_string(),
+                            level: "error".to_string(),
+                            files: vec![path.display().to_string()],
+                            titles: vec![format!(
+                                "use-case ID '{}' does not match directory '{directory}'",
+                                doc.id
+                            )],
+                            contradiction: false,
+                        });
+                    }
+                }
+                Err(error) => findings.push(Finding {
+                    kind: "usecase_invalid".to_string(),
+                    level: "error".to_string(),
+                    files: vec![path.display().to_string()],
+                    titles: vec![format!("usecase.md does not parse: {error}")],
+                    contradiction: false,
+                }),
+            }
+        }
     }
     findings
 }

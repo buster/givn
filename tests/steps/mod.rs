@@ -1146,10 +1146,7 @@ fn stdout_line_matches(world: &mut GivnWorld, n: usize, needle: String) {
 
 #[given(regex = r#"^a change "([^"]+)" exists with all required artifacts complete$"#)]
 fn change_all_required_done(world: &mut GivnWorld, id: String) {
-    let env = world
-        .env
-        .as_ref()
-        .expect("a project root is required first");
+    let env = world.env.get_or_insert_with(common::make_init_root);
     let change_dir = env.path(&format!("givn/changes/{}", id));
     if !change_dir.exists() {
         let out = common::run_givn(env, &["new", &id]);

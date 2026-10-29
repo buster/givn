@@ -62,7 +62,7 @@ pub(crate) fn inspect_verification(change_dir: &Path, manifest: &Manifest) -> St
     }
     let path = change_dir.join(crate::proof::CHANGE_RECEIPT_FILE);
     if !path.exists() {
-        return "missing".to_owned();
+        return "not checked".to_owned();
     }
     let inspected = (|| -> anyhow::Result<crate::proof::ProofStatus> {
         let project_root = change_dir
@@ -159,10 +159,23 @@ impl ChangeState {
             .all(|a| a.status == ArtifactStatus::Done || a.status == ArtifactStatus::Skipped)
     }
 
+    /// Whether the change carries a current pass, an explicit not-applicable
+    /// declaration, or documentation-only reuse of a current pass.
+    pub fn verification_is_current(&self) -> bool {
+        matches!(
+            self.verification.as_str(),
+            "current" | "documentation-only reuse" | "not applicable"
+        )
+    }
+
     /// Human-readable stage label derived from manifest-aware state.
     pub fn stage_label(&self) -> String {
         if self.all_required_done() {
-            "ready-to-archive".to_string()
+            if self.verification_is_current() {
+                "verified".to_string()
+            } else {
+                "verification-pending".to_string()
+            }
         } else if let Some(next) = self.next_required() {
             // Find the previous done artifact to describe current stage.
             let done_count = self
@@ -571,7 +584,7 @@ mod tests {
         let manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
         assert_eq!(
             super::inspect_verification(root.path(), &manifest),
-            "missing"
+            "not checked"
         );
         std::fs::write(root.path().join("proposal.md"), "Behavior change: none").unwrap();
         std::fs::write(root.path().join(".givn-skip"), "specs").unwrap();

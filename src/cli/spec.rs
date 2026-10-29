@@ -70,9 +70,14 @@ pub fn run_duplicates(json: bool) -> Result<()> {
         matches.len()
     );
     for m in &matches {
+        let qualification = if m.kind == "exact_duplicate" {
+            ""
+        } else {
+            " (advisory: structural match, not proof of equivalent behavior)"
+        };
         println!(
-            "  [{}] '{}' ({}) <> '{}' ({})",
-            m.kind, m.left_title, m.left_file, m.right_title, m.right_file
+            "  [{}]{} '{}' ({}) <> '{}' ({})",
+            m.kind, qualification, m.left_title, m.left_file, m.right_title, m.right_file
         );
     }
     Ok(())

@@ -71,6 +71,15 @@ pub enum RelationshipTarget {
     Fragment(String),
 }
 
+impl std::fmt::Display for RelationshipTarget {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Usecase(id) => write!(formatter, "usecase: {id}"),
+            Self::Fragment(id) => write!(formatter, "fragment: {id}"),
+        }
+    }
+}
+
 impl RelationshipTarget {
     pub fn id(&self) -> &str {
         match self {

@@ -27,6 +27,27 @@ fn change_id(world: &GivnWorld) -> String {
         .expect("a change id is required")
 }
 
+fn current_change_id(world: &GivnWorld) -> String {
+    if let Some(id) = world.last_change_id.clone() {
+        return id;
+    }
+    let root = project_root(world);
+    let mut ids: Vec<String> = std::fs::read_dir(root.join("givn/changes"))
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|entry| entry.path().is_dir())
+        .filter_map(|entry| entry.file_name().to_str().map(str::to_string))
+        .collect();
+    ids.sort();
+    assert_eq!(
+        ids.len(),
+        1,
+        "exactly one active change is required: {ids:?}"
+    );
+    ids.remove(0)
+}
+
 fn project_root(world: &GivnWorld) -> std::path::PathBuf {
     world
         .env
@@ -1219,7 +1240,7 @@ fn clean_project_with_passing_change(world: &mut GivnWorld) {
 
 #[given("the change has no verification receipt")]
 fn change_has_no_receipt(world: &mut GivnWorld) {
-    let id = world.last_change_id.clone().expect("a change id");
+    let id = current_change_id(world);
     let path = change_dir_for(world, &id).join("verification/tasks-verification.json");
     if path.exists() {
         std::fs::remove_file(&path).expect("remove verification receipt");
@@ -2217,4 +2238,1087 @@ fn review_fixture_independent_local_findings(world: &mut GivnWorld) {
         &["alpha-capability"],
         &[("alpha-capability", "NEW in review-diagnostics-demo")],
     );
+}
+
+// --- 0.9.10 fresh-verification and gate fixtures ---------------------------
+
+fn workflow_env(world: &GivnWorld) -> &common::TestEnv {
+    world.env.as_ref().expect("a fixture project is required")
+}
+
+fn set_ready_proposal(world: &GivnWorld, id: &str) {
+    std::fs::write(
+        change_dir_for(world, id).join("proposal.md"),
+        "# Proposal: fixture\n\n## Capability Routing\n\n\
+         | Proposed capability | Route's recommendation | Decision | Rationale |\n\
+         |---|---|---|---|\n\
+         | demo-cap | EXTEND demo-cap | `EXTEND demo-cap` | fixture |\n",
+    )
+    .expect("write ready proposal");
+}
+
+fn review_ready_change(world: &mut GivnWorld, id: &str) {
+    crate::steps::archive_proof_support::ready_change(world, id, false, "pass");
+    std::fs::write(
+        project_root(world).join("givn/specs/demo-cap/demo-cap.feature"),
+        "Feature: Demo Capability\n\n  Scenario: Existing permanent scenario\n    Given an existing thing\n    Then it works\n",
+    )
+    .expect("write permanent fixture feature");
+    set_ready_proposal(world, id);
+    common::commit_fixture(workflow_env(world));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, id);
+}
+
+fn verification_ready_change(world: &mut GivnWorld, id: &str) {
+    crate::steps::archive_proof_support::ready_change(world, id, false, "pass");
+    set_ready_proposal(world, id);
+    let change = change_dir_for(world, id);
+    let _ = std::fs::remove_file(change.join("verification/tasks-verification.json"));
+    let _ = std::fs::remove_file(change.join("verification/tasks-result.json"));
+    common::commit_fixture(workflow_env(world));
+}
+
+fn write_workflow_runner(world: &GivnWorld, body: &str) {
+    let path = workflow_env(world).path("emit-result.sh");
+    std::fs::write(&path, body).expect("write workflow runner");
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
+        .expect("chmod workflow runner");
+}
+
+fn commit_workflow_runner(world: &GivnWorld) {
+    common::commit_fixture(workflow_env(world));
+}
+
+fn valid_runner(mutation: &str) -> String {
+    format!(
+        r#"#!/bin/sh
+{mutation}
+printf '{{"scope":"change","total":2,"passed":2,"failed":0,"skipped":0}}\n' > "$GIVN_RESULT_FILE"
+"#
+    )
+}
+
+#[given("a change ready for changed-scenario verification")]
+fn change_ready_for_verification(world: &mut GivnWorld) {
+    verification_ready_change(world, "verify-demo");
+}
+
+#[given("a change ready for changed-scenario verification with a stale passing runner result")]
+fn change_with_stale_result(world: &mut GivnWorld) {
+    verification_ready_change(world, "verify-demo");
+    let result = change_dir_for(world, "verify-demo").join("verification/tasks-result.json");
+    std::fs::create_dir_all(result.parent().expect("result parent")).expect("create result dir");
+    std::fs::write(
+        &result,
+        "{\"scope\":\"change\",\"total\":2,\"passed\":2,\"failed\":0,\"skipped\":0}\n",
+    )
+    .expect("write stale result");
+    write_workflow_runner(
+        world,
+        r#"#!/bin/sh
+if [ -e "$GIVN_RESULT_FILE" ]; then
+  printf 'saw-stale' > runner-saw-stale-result
+fi
+exit 0
+"#,
+    );
+    commit_workflow_runner(world);
+}
+
+#[given("the runner exits successfully without writing a result")]
+fn runner_exits_without_result(_world: &mut GivnWorld) {
+    // The stale-result fixture's runner already exits 0 without writing.
+}
+
+#[given(regex = r#"^the runner exits successfully and writes fresh output that is (.+)$"#)]
+fn runner_writes_invalid_output(world: &mut GivnWorld, kind: String) {
+    let kind = match kind.as_str() {
+        "malformed" => "malformed",
+        "reporting failures" => "failed",
+        "reporting skipped scenarios" => "skipped",
+        "reporting zero scenarios" => "zero",
+        "reporting counts that do not reconcile" => "unreconciled",
+        "reporting a different scope" => "wrong-scope",
+        other => panic!("unknown invalid output {other}"),
+    };
+    crate::steps::archive_proof_support::write_result_runner(workflow_env(world), kind);
+    let runner = r#"#!/bin/sh
+kind=__KIND__
+scope=$1
+if [ -z "${GIVN_RESULT_FILE:-}" ]; then exit 0; fi
+case "$kind" in
+    malformed) printf '{"scope":' > "$GIVN_RESULT_FILE"; exit 0 ;;
+    failed) total=2; passed=1; failed=1; skipped=0 ;;
+    skipped) total=2; passed=1; failed=0; skipped=1 ;;
+    zero) total=0; passed=0; failed=0; skipped=0 ;;
+    unreconciled) total=3; passed=2; failed=0; skipped=0 ;;
+    wrong-scope) scope=regular; total=2; passed=2; failed=0; skipped=0 ;;
+    *) total=2; passed=2; failed=0; skipped=0 ;;
+esac
+printf '{"scope":"%s","total":%s,"passed":%s,"failed":%s,"skipped":%s}\n' "$scope" "$total" "$passed" "$failed" "$skipped" > "$GIVN_RESULT_FILE"
+"#;
+    write_workflow_runner(world, &runner.replace("__KIND__", kind));
+    commit_workflow_runner(world);
+}
+
+#[given("the runner produces fresh valid passing output")]
+fn runner_produces_valid_output(_world: &mut GivnWorld) {
+    // The mutation fixtures rewrite the runner in the next Given.
+}
+
+#[given(regex = r#"^the (.+) changes during execution and remains changed afterward$"#)]
+fn runner_changes_input(world: &mut GivnWorld, input: String) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a verification change id");
+    let mutation = match input.as_str() {
+        "tested revision" => "git update-ref HEAD $(git commit-tree $(git write-tree) -p HEAD -m 'fixture: runner revision')".to_string(),
+        "selected delta feature" => format!(
+            "printf '\\n  @givn.added\\n  Scenario: Runner changed delta\\n    Given x\\n    Then y\\n' >> givn/changes/{id}/specs/demo-cap/demo-cap.feature"
+        ),
+        "runner command" => "sed -i 's|command: \"./emit-result.sh regular\"|command: \"./emit-result.sh regular \"|' givn/commands.yaml".to_string(),
+        "relevant source file" => "printf '\\n// runner mutation\\n' >> tests/steps/demo_steps.rs".to_string(),
+        other => panic!("unknown mutated input {other}"),
+    };
+    write_workflow_runner(world, &valid_runner(&mutation));
+    commit_workflow_runner(world);
+}
+
+#[then("stdout reports passed change-scoped verification")]
+fn stdout_reports_passed_change_verification(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(text.contains("change verification receipt:"), "{text}");
+    assert!(text.contains("0 failed"), "{text}");
+}
+
+#[then(
+    "the change contains a passed receipt bound to the revision, selected features, runner command and relevant inputs captured before execution"
+)]
+fn receipt_bound_to_inputs(world: &mut GivnWorld) {
+    let id = current_change_id(world);
+    let change = change_dir_for(world, &id);
+    let receipt = givn::proof::ChangeReceipt::read(&change).expect("read change receipt");
+    assert_eq!(receipt.status, "passed");
+    assert!(!receipt.head.is_empty());
+    assert!(!receipt.features_digest.is_empty());
+    assert!(!receipt.command_digest.is_empty());
+    assert!(receipt.tested_content_digest.is_some());
+    assert_eq!(
+        receipt.content_scope.as_deref(),
+        Some(givn::proof::CONTENT_SCOPE)
+    );
+    assert_eq!(receipt.result.total, receipt.result.passed);
+}
+
+#[then("the stale result was absent when execution began")]
+fn stale_result_absent_at_start(world: &mut GivnWorld) {
+    assert!(
+        !workflow_env(world).path("runner-saw-stale-result").exists(),
+        "runner observed the stale result file"
+    );
+}
+
+#[then("the command exits non-zero because fresh runner output is missing")]
+fn exits_because_output_missing(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("runner result"), "{stderr}");
+}
+
+#[then("no passed verification receipt is issued")]
+fn no_passed_receipt(world: &mut GivnWorld) {
+    let id = current_change_id(world);
+    let path = change_dir_for(world, &id).join("verification/tasks-verification.json");
+    assert!(!path.exists(), "a verification receipt was issued");
+}
+
+#[then("the command exits non-zero and names the invalid runner result")]
+fn names_invalid_runner_result(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("runner result"), "{stderr}");
+}
+
+#[then("the command exits non-zero because the tested inputs changed")]
+fn exits_because_inputs_changed(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("tested inputs changed"), "{stderr}");
+}
+
+#[then("no passed verification receipt is issued for the changed inputs")]
+fn no_receipt_for_changed_inputs(world: &mut GivnWorld) {
+    no_passed_receipt(world);
+}
+
+// --- No-behavior-change route ---------------------------------------------
+
+fn write_no_behavior_change(world: &mut GivnWorld, id: &str, proposal_identity: &str, tasks: &str) {
+    world.env = Some(common::make_init_root());
+    let out = common::run_givn(workflow_env(world), &["new", id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let change = change_dir_for(world, id);
+    std::fs::write(
+        change.join("proposal.md"),
+        format!("# Proposal: {proposal_identity}\n\nBehavior change: none\n"),
+    )
+    .expect("write no-behavior proposal");
+    std::fs::write(change.join(".givn-skip"), "specs\n").expect("write skip");
+    std::fs::write(change.join("design.md"), "# Design\n").expect("write design");
+    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write design-review");
+    std::fs::write(change.join("tasks.md"), tasks).expect("write tasks");
+    std::fs::write(
+        change.join("review.md"),
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
+    )
+    .expect("write review");
+    std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").expect("write arc42");
+    write_recording_runner(world);
+    common::commit_fixture(workflow_env(world));
+    world.last_change_id = Some(id.to_string());
+}
+
+fn write_recording_runner(world: &GivnWorld) {
+    let path = workflow_env(world).path("record-runner.sh");
+    std::fs::write(
+        &path,
+        "#!/bin/sh\nprintf 'invoked' > verification-invoked\nexit 9\n",
+    )
+    .expect("write recording runner");
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755))
+        .expect("chmod recording runner");
+    let commands = workflow_env(world).path("givn/commands.yaml");
+    let content = std::fs::read_to_string(&commands).expect("read commands.yaml");
+    let updated = common::replace_top_level_key(
+        &content,
+        "verify",
+        "verify:\n  command: \"./record-runner.sh\"\n  e2e_command: \"./record-runner.sh\"\n",
+    );
+    std::fs::write(commands, updated).expect("write commands.yaml");
+}
+
+#[given(
+    "a committed change explicitly declares no behavior change and contains no delta feature files"
+)]
+fn committed_no_behavior_change(world: &mut GivnWorld) {
+    write_no_behavior_change(
+        world,
+        "maintenance-demo",
+        "maintenance-demo",
+        "- [x] COMMIT: a1b2c3d4 -- maintenance\n",
+    );
+}
+
+#[given("a committed change explicitly declares no behavior change and has no delta feature files")]
+fn committed_no_behavior_change_short(world: &mut GivnWorld) {
+    committed_no_behavior_change(world);
+}
+
+#[given("all applicable identity and integrity checks pass")]
+fn identity_and_integrity_pass(world: &mut GivnWorld) {
+    let id = current_change_id(world);
+    let proposal = std::fs::read_to_string(change_dir_for(world, &id).join("proposal.md"))
+        .expect("read proposal");
+    assert!(proposal.contains(&format!("# Proposal: {id}")));
+}
+
+#[given("the project records every verification command invocation")]
+fn project_records_verification(world: &mut GivnWorld) {
+    if !workflow_env(world).path("record-runner.sh").exists() {
+        write_recording_runner(world);
+        common::commit_fixture(workflow_env(world));
+        if let Some(id) = world.last_change_id.clone() {
+            let receipt = change_dir_for(world, &id).join("verification/tasks-verification.json");
+            if receipt.exists() {
+                crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
+            }
+        }
+    }
+}
+
+#[then("changed-scenario verification is reported as not applicable")]
+fn verification_not_applicable(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(
+        text.contains("changed-scenario verification: not applicable"),
+        "{text}"
+    );
+}
+
+#[then("no replacement scenario is required")]
+fn no_replacement_scenario(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(!text.contains("missing delta specs"), "{text}");
+}
+
+#[then("neither a changed-scenario runner nor a permanent full-suite runner executes")]
+fn no_runner_executes(world: &mut GivnWorld) {
+    assert!(
+        !workflow_env(world).path("verification-invoked").exists(),
+        "a verification command executed"
+    );
+}
+
+#[given("a change has no delta feature files and no explicit no-behavior-change declaration")]
+fn no_delta_and_no_declaration(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    let out = common::run_givn(workflow_env(world), &["new", "maintenance-demo"]);
+    assert!(out.status.success());
+    let change = change_dir_for(world, "maintenance-demo");
+    std::fs::write(change.join("proposal.md"), "# Proposal: maintenance-demo\n")
+        .expect("write proposal");
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- maintenance\n",
+    )
+    .expect("write tasks");
+    write_recording_runner(world);
+    common::commit_fixture(workflow_env(world));
+    world.last_change_id = Some("maintenance-demo".to_string());
+}
+
+#[then("the command exits non-zero and explains the missing declaration or delta specs")]
+fn explains_missing_declaration(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("missing delta specs"), "{stderr}");
+    assert!(stderr.contains("Behavior change: none"), "{stderr}");
+}
+
+#[then("no permanent full-suite runner executes as a substitute")]
+fn no_full_suite_substitute(world: &mut GivnWorld) {
+    assert!(!workflow_env(world).path("verification-invoked").exists());
+}
+
+#[given(
+    regex = r#"^the change has (a mismatched change identity|a checked task with a placeholder revision)$"#
+)]
+fn no_behavior_integrity_failure(world: &mut GivnWorld, failure: String) {
+    let id = current_change_id(world);
+    let change = change_dir_for(world, &id);
+    match failure.as_str() {
+        "a mismatched change identity" => {
+            std::fs::write(
+                change.join("proposal.md"),
+                "# Proposal: another-change\n\nBehavior change: none\n",
+            )
+            .expect("write mismatched identity");
+        }
+        "a checked task with a placeholder revision" => {
+            std::fs::write(
+                change.join("tasks.md"),
+                "- [x] Scenario: Maintenance task\n  - [x] COMMIT: ___ -- placeholder\n",
+            )
+            .expect("write placeholder tasks");
+        }
+        other => panic!("unknown identity failure {other}"),
+    }
+    common::commit_fixture(workflow_env(world));
+}
+
+#[then(regex = r#"^the command exits non-zero and names the applicable integrity failure$"#)]
+fn names_integrity_failure(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("change identity mismatch") || stderr.contains("placeholder revision"),
+        "{stderr}"
+    );
+}
+
+// --- Review routes --------------------------------------------------------
+
+#[given("a change explicitly declares no behavior change and has no delta feature files")]
+fn review_no_behavior_change(world: &mut GivnWorld) {
+    write_no_behavior_change(
+        world,
+        "maintenance-demo",
+        "maintenance-demo",
+        "- [x] COMMIT: a1b2c3d4 -- maintenance\n",
+    );
+}
+
+#[given("changed-scenario verification is recorded as not applicable")]
+fn recorded_not_applicable(world: &mut GivnWorld) {
+    let id = current_change_id(world);
+    assert!(
+        givn::proof::change_verification_not_applicable(&change_dir_for(world, &id))
+            .expect("not-applicable inspection")
+    );
+}
+
+#[given("the completed review and all applicable integrity checks pass")]
+fn review_and_integrity_pass(world: &mut GivnWorld) {
+    let id = current_change_id(world);
+    let review =
+        std::fs::read_to_string(change_dir_for(world, &id).join("review.md")).expect("read review");
+    assert!(review.contains("REVIEW: PASS"));
+}
+
+#[then("the command succeeds without requiring a changed-scenario receipt")]
+fn succeeds_without_receipt(world: &mut GivnWorld) {
+    assert_eq!(output(world).status.code(), Some(0), "{}", stderr(world));
+    assert!(
+        !change_dir_for(world, &current_change_id(world))
+            .join("verification/tasks-verification.json")
+            .exists()
+    );
+}
+
+#[then("no verification suite executes")]
+fn no_suite_executes(world: &mut GivnWorld) {
+    assert!(!workflow_env(world).path("verification-invoked").exists());
+}
+
+#[given("a change has current applicable verification evidence")]
+fn current_verification_evidence(world: &mut GivnWorld) {
+    review_ready_change(world, "test-change");
+}
+
+#[given("the completed review and applicable integrity checks pass")]
+fn review_and_integrity_pass_short(world: &mut GivnWorld) {
+    review_and_integrity_pass(world);
+}
+
+#[then("neither change-scoped nor full-suite verification executes")]
+fn no_verification_executes(world: &mut GivnWorld) {
+    let change = change_dir_for(world, &current_change_id(world));
+    assert!(!change.join("verification/tasks-result.json").exists());
+    assert!(!change.join("verification/invocations.log").exists());
+}
+
+#[then("no future archive receipt is required")]
+fn no_archive_receipt_required(world: &mut GivnWorld) {
+    let root = project_root(world);
+    assert!(!root.join("givn/archive/test-change").exists());
+}
+
+#[given("a change is ready for changed-scenario verification and its review has not been written")]
+fn verification_without_review(world: &mut GivnWorld) {
+    verification_ready_change(world, "verify-demo");
+    let change = change_dir_for(world, "verify-demo");
+    let _ = std::fs::remove_file(change.join("review.md"));
+    common::commit_fixture(workflow_env(world));
+}
+
+#[given("no archive candidate or archive receipt exists")]
+fn no_archive_candidate(world: &mut GivnWorld) {
+    assert!(
+        !project_root(world)
+            .join("givn/archive/verify-demo")
+            .exists()
+    );
+    assert!(
+        !change_dir_for(world, "verify-demo")
+            .join("givn/archive/verify-demo")
+            .exists()
+    );
+}
+
+#[given("the runner writes fresh valid passing results for stable inputs")]
+fn runner_writes_valid_stable(world: &mut GivnWorld) {
+    write_workflow_runner(
+        world,
+        "#!/bin/sh\nprintf '{\"scope\":\"change\",\"total\":2,\"passed\":2,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
+    );
+    commit_workflow_runner(world);
+}
+
+#[then("the command succeeds and records passed verification evidence")]
+fn succeeds_with_evidence(world: &mut GivnWorld) {
+    assert_eq!(output(world).status.code(), Some(0), "{}", stderr(world));
+    let receipt = givn::proof::ChangeReceipt::read(&change_dir_for(world, "verify-demo"))
+        .expect("read receipt");
+    assert_eq!(receipt.status, "passed");
+}
+
+#[then("it does not require a completed review or future archive proof")]
+fn no_review_or_archive_proof(world: &mut GivnWorld) {
+    assert!(
+        !change_dir_for(world, "verify-demo")
+            .join("review.md")
+            .exists()
+    );
+}
+
+// --- Batch traceability ---------------------------------------------------
+
+fn batch_change(world: &mut GivnWorld) {
+    verification_ready_change(world, "verify-demo");
+}
+
+#[given("a change checks two scenarios in one named behavior batch")]
+fn two_scenarios_one_batch(world: &mut GivnWorld) {
+    batch_change(world);
+    let id = current_change_id(world);
+    common::git_commit_all(workflow_env(world), "feat: Batch first-and-second");
+    let hash = common::git(workflow_env(world), &["rev-parse", "HEAD"]).stdout;
+    let hash = String::from_utf8_lossy(&hash).trim().to_string();
+    std::fs::write(
+        change_dir_for(world, &id).join("tasks.md"),
+        format!(
+            "- [x] Scenario: First scenario\n  - [x] COMMIT: {hash} -- Batch: first-and-second\n\
+             - [x] Scenario: Second scenario\n  - [x] COMMIT: {hash} -- Batch: first-and-second\n"
+        ),
+    )
+    .expect("write batch tasks");
+    common::commit_fixture(workflow_env(world));
+    world.last_change_id = Some(id);
+}
+
+#[given("both checked scenarios record the same reachable revision")]
+fn same_reachable_revision(world: &mut GivnWorld) {
+    let tasks =
+        std::fs::read_to_string(change_dir_for(world, &current_change_id(world)).join("tasks.md"))
+            .expect("read tasks");
+    assert_eq!(tasks.matches("COMMIT:").count(), 2);
+}
+
+#[given("human review confirms that revision contains their implementation or regression tests")]
+fn human_review_confirms(_world: &mut GivnWorld) {}
+
+#[given("the revision message names the behavior batch")]
+fn revision_names_batch(world: &mut GivnWorld) {
+    let tasks =
+        std::fs::read_to_string(change_dir_for(world, &current_change_id(world)).join("tasks.md"))
+            .expect("read tasks");
+    assert!(tasks.contains("first-and-second"));
+}
+
+#[given("applicable change verification passes")]
+fn applicable_verification_passes(world: &mut GivnWorld) {
+    // The fixture runner emits a passing change-scope result.
+    assert!(workflow_env(world).path("emit-result.sh").exists());
+}
+
+#[then("the command succeeds and reports that scenario revisions passed")]
+fn reports_scenario_revisions(world: &mut GivnWorld) {
+    assert_eq!(output(world).status.code(), Some(0), "{}", stderr(world));
+    assert!(stdout(world).contains("scenario commits passed"));
+}
+
+#[then("no separate revision or production edit per scenario is required")]
+fn no_separate_revision(_world: &mut GivnWorld) {}
+
+#[then("no automated semantic diff classifier is required")]
+fn no_semantic_classifier(_world: &mut GivnWorld) {}
+
+#[given("a checked scenario records a revision that is not reachable from the current revision")]
+fn unreachable_revision(world: &mut GivnWorld) {
+    verification_ready_change(world, "verify-demo");
+    let env = workflow_env(world);
+    let branch =
+        String::from_utf8_lossy(&common::git(env, &["rev-parse", "--abbrev-ref", "HEAD"]).stdout)
+            .trim()
+            .to_string();
+    assert!(
+        common::git(env, &["checkout", "-q", "-b", "side"])
+            .status
+            .success()
+    );
+    common::git_commit_all(env, "feat: Side work");
+    let hash = String::from_utf8_lossy(&common::git(env, &["rev-parse", "HEAD"]).stdout)
+        .trim()
+        .to_string();
+    assert!(
+        common::git(env, &["checkout", "-q", &branch])
+            .status
+            .success()
+    );
+    std::fs::write(
+        change_dir_for(world, "verify-demo").join("tasks.md"),
+        format!(
+            "- [x] Scenario: Unreachable scenario\n  - [x] COMMIT: {hash} -- Unreachable scenario\n"
+        ),
+    )
+    .expect("write unreachable tasks");
+    common::commit_fixture(workflow_env(world));
+}
+
+#[given("all other applicable task checks pass")]
+fn other_task_checks_pass(world: &mut GivnWorld) {
+    assert!(
+        change_dir_for(world, &current_change_id(world))
+            .join("tasks.md")
+            .exists()
+    );
+}
+
+#[then("the command exits non-zero and names the scenario and its unreachable revision")]
+fn names_unreachable_revision(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("Unreachable scenario"), "{stderr}");
+    assert!(stderr.contains("not reachable from HEAD"), "{stderr}");
+}
+
+#[given(
+    "a completed batch records its actual execution evidence and reachable implementation or regression-test revision"
+)]
+fn completed_batch_evidence(world: &mut GivnWorld) {
+    review_ready_change(world, "verify-demo");
+}
+
+#[given("all applicable verification and review checks pass")]
+fn all_verification_review_pass(world: &mut GivnWorld) {
+    assert!(
+        change_dir_for(world, &current_change_id(world))
+            .join("verification/tasks-verification.json")
+            .exists()
+    );
+}
+
+#[given("the batch has no separate RED, GREEN or REFACTOR revisions")]
+fn no_tdd_revisions(world: &mut GivnWorld) {
+    let log = common::git(workflow_env(world), &["log", "--format=%s"]);
+    let text = String::from_utf8_lossy(&log.stdout).to_lowercase();
+    assert!(!text.contains("red:") && !text.contains("green:") && !text.contains("refactor:"));
+}
+
+#[then("the command succeeds without a retrospective commit-shape or TDD-order gate")]
+fn no_tdd_gate(world: &mut GivnWorld) {
+    assert_eq!(output(world).status.code(), Some(0), "{}", stderr(world));
+    let text = format!("{}{}", stdout(world), stderr(world));
+    assert!(!text.contains("TDD"), "{text}");
+}
+
+// --- Archive static gates -------------------------------------------------
+
+#[then("the command exits non-zero and names the missing README impact decision")]
+fn names_missing_readme_impact(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("README impact decision"), "{stderr}");
+}
+
+#[then("the active change and permanent specs are unchanged")]
+fn active_change_and_specs_unchanged(world: &mut GivnWorld) {
+    let root = project_root(world);
+    assert!(
+        root.join("givn/changes/integrity-hook-and-archive-gate")
+            .is_dir()
+    );
+    let permanent = root.join("givn/specs/test-cap/test-cap.feature");
+    assert_eq!(
+        std::fs::read_to_string(permanent).expect("read permanent spec"),
+        "Feature: Test Capability\n"
+    );
+}
+
+// --- Preservation comparison ----------------------------------------------
+
+fn preservation_usecase(id: &str, capability: &str) -> String {
+    format!(
+        "# Use case: {id}\n\n\
+         ## Level\n\n!\n\n\
+         ## Actors\n\n- Operator\n\n\
+         ## Goal\n\nPreserve behavior.\n\n\
+         ## Trigger\n\nThe operator asks.\n\n\
+         ## Preconditions\n\n- A project exists.\n\n\
+         ## Main flow\n\n1. Act.\n\n\
+         ## Extensions\n\n- none\n\n\
+         ## Rules\n\n- none\n\n\
+         ## Examples\n\n- none\n\n\
+         ## Minimal guarantee\n\nInspectable.\n\n\
+         ## Success guarantee\n\nPreserved.\n\n\
+         ## Personas\n\n- none\n\n\
+         ## Capabilities\n\n- {capability}\n\n\
+         ## Interactions\n\n- none\n\n\
+         ## Includes\n\n- none\n\n\
+         ## Extends\n\n- none\n\n\
+         ## Out of scope\n\nNothing.\n\n\
+         ## Diagram\n\n```mermaid\nflowchart LR\n  A --> B\n```\n"
+    )
+}
+
+fn preservation_snapshot(
+    usecase: &str,
+    feature_name: &str,
+    feature_body: &str,
+) -> givn::spec::coverage::CoverageSnapshot {
+    let root = tempfile::TempDir::new().expect("snapshot tempdir");
+    let dir = root.path().join(format!("givn/specs/{usecase}"));
+    std::fs::create_dir_all(&dir).expect("create snapshot specs");
+    std::fs::write(
+        dir.join("usecase.md"),
+        preservation_usecase(usecase, "capability"),
+    )
+    .expect("write snapshot usecase");
+    std::fs::write(dir.join(format!("{feature_name}.feature")), feature_body)
+        .expect("write snapshot feature");
+    givn::spec::coverage::snapshot(root.path()).expect("snapshot behavior")
+}
+
+fn preservation_feature(tag: &str, examples_tag: &str) -> String {
+    format!(
+        r#"{tag}
+Feature: Preserve
+  Background: Setup
+    Given a prepared workspace
+  @tagged
+  Scenario Outline: Preserved behavior
+    Given input "<value>":
+      """text
+      body
+      """
+      | key | value |
+      | a | b |
+    When the action runs
+    Then the result is <value>
+    {examples_tag}
+    Examples:
+      | value |
+      | one |
+"#
+    )
+}
+
+fn base_preservation() -> String {
+    preservation_feature("@fast", "@examples")
+}
+
+fn setup_preservation(world: &mut GivnWorld, before: &str, after: &str) {
+    world.env = Some(common::make_init_root());
+    let change = project_root(world).join("givn/changes/migration-test");
+    std::fs::create_dir_all(&change).expect("create migration change");
+    let before = preservation_snapshot("old", "capability", before);
+    let after = preservation_snapshot("old", "capability", after);
+    std::fs::write(
+        change.join("coverage-before.json"),
+        serde_json::to_string(&before).unwrap(),
+    )
+    .expect("write before snapshot");
+    std::fs::write(
+        change.join("coverage-after.json"),
+        serde_json::to_string(&after).unwrap(),
+    )
+    .expect("write after snapshot");
+}
+
+#[given("matching before and after behavior snapshots for a supported Gherkin feature")]
+fn matching_preservation_snapshots(world: &mut GivnWorld) {
+    let base = base_preservation();
+    setup_preservation(world, &base, &base);
+}
+
+#[given(
+    "matching before and after behavior snapshots including supported Backgrounds, tags, docstrings, tables and Examples"
+)]
+fn matching_full_preservation_snapshots(world: &mut GivnWorld) {
+    matching_preservation_snapshots(world);
+}
+
+#[given(regex = r#"^only the (.+) differs without an explicit retirement$"#)]
+fn preservation_content_differs(world: &mut GivnWorld, content: String) {
+    let before = base_preservation();
+    let after = match content.as_str() {
+        "Background setup" => before.replace("a prepared workspace", "another prepared workspace"),
+        "inherited execution tags" => before.replace("@fast", "@slow"),
+        "step docstring payload" => before.replace("body", "changed body"),
+        "step data table cell" => before.replace("| a | b |", "| a | c |"),
+        "Scenario Outline Examples value" => before.replace("| one |", "| two |"),
+        "Examples execution tags" => before.replace("@examples", "@other"),
+        other => panic!("unknown executable content {other}"),
+    };
+    setup_preservation(world, &before, &after);
+}
+
+#[given("only feature paths differ between the snapshots")]
+fn preservation_paths_differ(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    let change = project_root(world).join("givn/changes/migration-test");
+    std::fs::create_dir_all(&change).expect("create migration change");
+    let base = base_preservation();
+    let before = preservation_snapshot("old", "capability", &base);
+    let after = preservation_snapshot("new", "capability", &base);
+    std::fs::write(
+        change.join("coverage-before.json"),
+        serde_json::to_string(&before).unwrap(),
+    )
+    .expect("write before snapshot");
+    std::fs::write(
+        change.join("coverage-after.json"),
+        serde_json::to_string(&after).unwrap(),
+    )
+    .expect("write after snapshot");
+}
+
+#[then("preservation comparison reports missing or changed behavior")]
+fn preservation_reports_missing(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("migration coverage regression"), "{stderr}");
+    let comparison =
+        project_root(world).join("givn/changes/migration-test/coverage-comparison.json");
+    let text = std::fs::read_to_string(comparison).expect("read comparison");
+    let value: serde_json::Value = serde_json::from_str(&text).expect("comparison json");
+    assert!(
+        value["missing_behavior"]
+            .as_array()
+            .is_some_and(|entries| !entries.is_empty()),
+        "{text}"
+    );
+}
+
+#[then("preservation comparison passes without an extra verification suite")]
+fn preservation_passes(world: &mut GivnWorld) {
+    assert_eq!(output(world).status.code(), Some(0), "{}", stderr(world));
+    assert!(stdout(world).contains("migration coverage passed"));
+    assert!(!project_root(world).join("verification-invoked").exists());
+}
+
+#[then(
+    "the result claims supported executable-content preservation rather than semantic equivalence"
+)]
+fn preservation_claim(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(text.contains("executable-content preservation"), "{text}");
+    assert!(text.contains("not semantic equivalence"), "{text}");
+}
+
+// --- Actual verdict recognition -------------------------------------------
+
+fn verdict_ready_review(world: &mut GivnWorld) {
+    review_ready_change(world, "verify-demo");
+    std::fs::write(
+        change_dir_for(world, "verify-demo").join("review.md"),
+        "README-IMPACT: none\n",
+    )
+    .expect("write review without verdict");
+    common::commit_fixture(workflow_env(world));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, "verify-demo");
+}
+
+#[given(
+    "a change has current applicable verification evidence and otherwise complete review evidence"
+)]
+fn verification_and_complete_review(world: &mut GivnWorld) {
+    verdict_ready_review(world);
+}
+
+#[given("a change has otherwise valid review evidence")]
+fn otherwise_valid_review(world: &mut GivnWorld) {
+    verdict_ready_review(world);
+}
+
+fn append_review(world: &GivnWorld, text: &str) {
+    let path = change_dir_for(world, &current_change_id(world)).join("review.md");
+    let mut review = std::fs::read_to_string(&path).unwrap_or_default();
+    review.push_str(text);
+    std::fs::write(path, review).expect("append review");
+}
+
+#[given(regex = r#"^its review contains a real verdict "([^"]+)"$"#)]
+fn review_real_verdict(world: &mut GivnWorld, verdict: String) {
+    append_review(world, &format!("\n{verdict}\n"));
+    common::commit_fixture(workflow_env(world));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &current_change_id(world));
+}
+
+#[given(
+    regex = r#"^its review contains "([^"]+)" only inside (an HTML comment|a fenced code example)$"#
+)]
+fn review_verdict_example(world: &mut GivnWorld, verdict: String, context: String) {
+    let block = if context == "an HTML comment" {
+        format!("\n<!-- {verdict} -->\n")
+    } else {
+        format!("\n```\n{verdict}\n```\n")
+    };
+    append_review(world, &block);
+    common::commit_fixture(workflow_env(world));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &current_change_id(world));
+}
+
+#[given(
+    "its review contains actual verdict declarations \"VERDICT: PASS\" and \"VERDICT: FAIL\" outside comments and fences"
+)]
+fn review_conflicting_verdicts(world: &mut GivnWorld) {
+    append_review(world, "\nVERDICT: PASS\nVERDICT: FAIL\n");
+    common::commit_fixture(workflow_env(world));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &current_change_id(world));
+}
+
+#[given("its review contains only \"This review does not PASS\" instead of a verdict declaration")]
+fn review_negated_verdict(world: &mut GivnWorld) {
+    let path = change_dir_for(world, &current_change_id(world)).join("review.md");
+    std::fs::write(path, "README-IMPACT: none\n\nThis review does not PASS\n")
+        .expect("write negated review");
+    common::commit_fixture(workflow_env(world));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &current_change_id(world));
+}
+
+#[then("the command exits non-zero because the actual verdict is FAIL")]
+fn actual_verdict_fail(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("actual verdict is FAIL"), "{stderr}");
+}
+
+#[then("the command succeeds without reporting conflicting verdicts")]
+fn succeeds_without_conflict(world: &mut GivnWorld) {
+    assert_eq!(output(world).status.code(), Some(0), "{}", stderr(world));
+    assert!(!stderr(world).contains("conflicting"));
+}
+
+#[then("the command exits non-zero and reports conflicting verdicts")]
+fn conflicting_verdicts(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(stderr.contains("conflicting actual verdicts"), "{stderr}");
+}
+
+#[then("the command exits non-zero because a valid actual verdict is missing")]
+fn missing_actual_verdict(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("missing a valid actual verdict"),
+        "{stderr}"
+    );
+}
+
+// --- Independent cheap failures -------------------------------------------
+
+#[given(
+    "a change has a malformed use-case title, a checked task with a placeholder revision and a missing README impact decision"
+)]
+fn independent_cheap_failures(world: &mut GivnWorld) {
+    review_ready_change(world, "verify-demo");
+    let change = change_dir_for(world, "verify-demo");
+    std::fs::write(change.join("review.md"), "# Review\n\nREVIEW: PASS\n")
+        .expect("write review without README impact");
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] Scenario: Broken task\n  - [x] COMMIT: ___ -- placeholder\n",
+    )
+    .expect("write placeholder tasks");
+    let usecase = change.join("specs/demo-cap/usecase.md");
+    std::fs::create_dir_all(usecase.parent().expect("usecase parent")).expect("create usecase dir");
+    std::fs::write(&usecase, "# Use Case: Demo Cap\n\n## Level\n\n!\n")
+        .expect("write malformed usecase");
+    let result = change.join("verification/tasks-result.json");
+    let _ = std::fs::remove_file(result);
+    common::commit_fixture(workflow_env(world));
+    crate::steps::archive_proof_support::refresh_change_receipt(world, "verify-demo");
+}
+
+#[then("the command exits non-zero and reports all three independent failures together")]
+fn reports_three_failures(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_ne!(out.status.code(), Some(0));
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("use-case") || stderr.contains("Use Case"),
+        "{stderr}"
+    );
+    assert!(stderr.contains("placeholder revision"), "{stderr}");
+    assert!(stderr.contains("README impact decision"), "{stderr}");
+}
+
+#[then("capability checks requiring the malformed use-case identity are reported as not performed")]
+fn capability_checks_deferred(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(
+        text.contains("capability checks requiring valid specification identity: not performed"),
+        "{text}"
+    );
+}
+
+#[then("no dependent success is fabricated and no expensive verification executes")]
+fn no_dependent_success(world: &mut GivnWorld) {
+    let text = format!("{}{}", stdout(world), stderr(world));
+    assert!(!text.contains("overlap dispositions passed"), "{text}");
+    assert!(
+        !text.contains("capability routing decisions do not match"),
+        "{text}"
+    );
+    assert!(
+        !change_dir_for(world, &current_change_id(world))
+            .join("verification/tasks-result.json")
+            .exists()
+    );
+}
+
+// --- Bare check guidance --------------------------------------------------
+
+#[given("a givn project whose configured hooks and verification commands record execution")]
+fn project_records_hooks_and_verification(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    let env = workflow_env(world);
+    let hook = env.path("record-hook.sh");
+    std::fs::write(&hook, "#!/bin/sh\nprintf 'hook' > hook-invoked\n").expect("write hook");
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&hook, std::fs::Permissions::from_mode(0o755)).expect("chmod hook");
+    write_recording_runner(world);
+    let config = env.path("givn/config.yaml");
+    let content = std::fs::read_to_string(&config).expect("read config");
+    std::fs::write(
+        config,
+        format!(
+            "{content}\nartifacts:\n  - id: proposal\n    post:\n      - \"./record-hook.sh\"\n"
+        ),
+    )
+    .expect("write config hook");
+    common::commit_fixture(env);
+}
+
+#[when("the consumer invokes `givn check`")]
+fn consumer_invokes_bare_check(world: &mut GivnWorld) {
+    let out = common::run_givn(workflow_env(world), &["check"]);
+    world.last_output = Some(out);
+}
+
+#[then("terminal output explains that no checks were executed")]
+fn terminal_explains_no_checks(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(text.contains("No checks were executed"), "{text}");
+}
+
+#[then("terminal output lists explicit check commands and labels which execute runners")]
+fn terminal_lists_checks(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(text.contains("givn check tasks"), "{text}");
+    assert!(
+        text.contains("executes changed-scenario verification"),
+        "{text}"
+    );
+    assert!(
+        text.contains("without running verification suites") || text.contains("checks evidence"),
+        "{text}"
+    );
+}
+
+#[then("no configured hook or runner executes")]
+fn no_hook_or_runner(world: &mut GivnWorld) {
+    let env = workflow_env(world);
+    assert!(!env.path("hook-invoked").exists());
+    assert!(!env.path("verification-invoked").exists());
+}
+
+#[when("the developer runs the migration coverage check")]
+fn developer_runs_migration_coverage(world: &mut GivnWorld) {
+    let out = common::run_givn(
+        workflow_env(world),
+        &["check", "migration", "--change", "migration-test"],
+    );
+    world.last_output = Some(out);
 }
