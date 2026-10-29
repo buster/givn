@@ -1,8 +1,8 @@
 # Architecture impact: prepare-0-9-10
 
-This is the planning assessment, not a claim that implementation or durable-document reconciliation is complete. Existing project chapters supply the baseline; update affected facts alongside implementation and complete this assessment before final review/archive. The operator requested phase-by-phase commits and implementation after design review. Do not fabricate completed chapter updates to satisfy a marker.
+Implementation and documentation reconciliation are complete. All twelve affected chapters under `docs/arc42/` were updated in `bf248e84`; the change assessment below records the resulting architectural impact without treating an unarchived change as published.
 
-| # | Chapter | Affected | Planned update / present assessment |
+| # | Chapter | Affected | Implemented update |
 |---|---|---|---|
 | 1 | introduction-and-goals | Yes | Concise trustworthy guidance, retained modularity/Personas, lean fix-forward workflow. |
 | 2 | architecture-constraints | Yes | Explicit-path commits, skills-only, configuration authority and future1.0 migration baseline. |
@@ -40,4 +40,4 @@ No ADR drafted here: existing-owner search identifies amendment targets, not new
 
 ## Status
 
-STATUS: PARTIAL
+STATUS: DONE
