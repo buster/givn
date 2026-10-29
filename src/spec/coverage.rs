@@ -110,15 +110,20 @@ pub fn snapshot(root: &Path) -> Result<CoverageSnapshot> {
             )
         };
         let feature_path = relative.to_string_lossy().replace('\\', "/");
-        for scenario in feature.scenarios {
-            let behavior_hash = behavior_hash(&scenario);
-            let e2e = scenario.tags.iter().any(|tag| tag == "e2e");
+        crate::gherkin::parse::validate_supported_feature(&feature)?;
+        for scenario in &feature.scenarios {
+            let behavior_hash = feature_behavior_hash(&feature, scenario);
+            let e2e = feature
+                .tags
+                .iter()
+                .chain(&scenario.tags)
+                .any(|tag| tag == "e2e");
             let interaction = interactions.get(&scenario.name).cloned();
             entries.push(CoverageEntry {
                 feature_path: feature_path.clone(),
                 usecase: usecase.clone(),
                 capability: capability.clone(),
-                scenario: scenario.name,
+                scenario: scenario.name.clone(),
                 behavior_hash,
                 e2e,
                 interaction,
@@ -331,16 +336,12 @@ fn parse_fragment_id(path: &Path) -> Result<String> {
     Ok(doc.id)
 }
 
-fn behavior_hash(scenario: &gherkin::Scenario) -> String {
-    let mut canonical = scenario.keyword.clone();
-    canonical.push('|');
-    canonical.push_str(&scenario.name);
-    for step in &scenario.steps {
-        canonical.push('|');
-        canonical.push_str(step.keyword.trim());
-        canonical.push('|');
-        canonical.push_str(&step.value);
-    }
+fn feature_behavior_hash(feature: &gherkin::Feature, scenario: &gherkin::Scenario) -> String {
+    let canonical = serde_json::to_string(&(
+        &scenario.name,
+        crate::gherkin::content::executable_content(feature, scenario),
+    ))
+    .expect("executable content is serializable");
     let digest = Sha256::digest(canonical.as_bytes());
     digest.iter().map(|byte| format!("{byte:02x}")).collect()
 }
@@ -355,6 +356,55 @@ fn number(value: &serde_json::Value, key: &str) -> Result<u64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn behavior_hash_covers_arguments_and_retains_scenario_identity() {
+        let source = "Feature: Catalog\n  Scenario Outline: Read\n    Given payload\n      \"\"\"json\n      body\n      \"\"\"\n    When mapping\n      | key | value |\n      | a | b |\n    Then visible <name>\n    @api\n    Examples:\n      | name |\n      | Ada |\n";
+        let original = gherkin::Feature::parse(source, GherkinEnv::default()).unwrap();
+        for (from, to) in [
+            ("body", "changed"),
+            ("json", "text"),
+            ("| a | b |", "| a | c |"),
+            ("Ada", "Grace"),
+            ("@api", "@slow"),
+            ("Read", "Renamed"),
+        ] {
+            let changed =
+                gherkin::Feature::parse(source.replace(from, to), GherkinEnv::default()).unwrap();
+            assert_ne!(
+                feature_behavior_hash(&original, &original.scenarios[0]),
+                feature_behavior_hash(&changed, &changed.scenarios[0]),
+                "ignored change: {from}"
+            );
+        }
+    }
+
+    #[test]
+    fn behavior_hash_covers_inherited_setup_and_execution_tags() {
+        let source = "@api\nFeature: Catalog\n  Background: Setup\n    Given user one\n  @fast\n  Scenario: Read\n    Then visible\n";
+        let original = gherkin::Feature::parse(source, GherkinEnv::default()).unwrap();
+        for (from, to) in [
+            ("user one", "user two"),
+            ("@api", "@slow"),
+            ("@fast", "@other"),
+        ] {
+            let changed =
+                gherkin::Feature::parse(source.replace(from, to), GherkinEnv::default()).unwrap();
+            assert_ne!(
+                feature_behavior_hash(&original, &original.scenarios[0]),
+                feature_behavior_hash(&changed, &changed.scenarios[0])
+            );
+        }
+        let authoring = gherkin::Feature::parse(
+            source.replace("@fast", "@fast @wip @givn.modified"),
+            GherkinEnv::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            feature_behavior_hash(&original, &original.scenarios[0]),
+            feature_behavior_hash(&authoring, &authoring.scenarios[0])
+        );
+    }
 
     #[test]
     fn moved_behavior_matches_without_path_identity() {

@@ -31,6 +31,16 @@ pub fn parse_file(path: &Path) -> ParseResult {
     let env = GherkinEnv::default();
     match Feature::parse_path(path, env) {
         Ok(feature) => {
+            if let Err(error) = validate_supported_feature(&feature) {
+                return ParseResult {
+                    feature: None,
+                    errors: vec![LintError {
+                        kind: LintKind::ParseError,
+                        message: error.to_string(),
+                        line: Some(feature.position.line),
+                    }],
+                };
+            }
             let errors = collect_wip(&feature);
             ParseResult {
                 feature: Some(feature),
@@ -49,6 +59,48 @@ pub fn parse_file(path: &Path) -> ParseResult {
             }
         }
     }
+}
+
+pub fn validate_supported_feature(feature: &Feature) -> anyhow::Result<()> {
+    let path = feature
+        .path
+        .as_deref()
+        .unwrap_or_else(|| Path::new("<feature>"));
+    if let Some(rule) = feature.rules.first() {
+        anyhow::bail!(
+            "unsupported Rule '{}' in {}: English Feature-level scenarios only",
+            rule.name,
+            path.display()
+        );
+    }
+    if feature.keyword != "Feature" {
+        anyhow::bail!(
+            "unsupported non-English dialect ('{}') in {}: English Gherkin only",
+            feature.keyword,
+            path.display()
+        );
+    }
+    Ok(())
+}
+
+pub fn parse_supported_source(source: &str, path: &Path) -> anyhow::Result<Feature> {
+    for line in source.lines().map(str::trim) {
+        if let Some(dialect) = line.strip_prefix("# language:").map(str::trim) {
+            if dialect != "en" {
+                anyhow::bail!(
+                    "unsupported dialect '{dialect}' in {}: English Gherkin only",
+                    path.display()
+                );
+            }
+        } else if !line.is_empty() && !line.starts_with('#') {
+            break;
+        }
+    }
+    let mut feature = Feature::parse(source, GherkinEnv::default())
+        .map_err(|error| anyhow::anyhow!("failed to parse {}: {error}", path.display()))?;
+    feature.path = Some(path.to_path_buf());
+    validate_supported_feature(&feature)?;
+    Ok(feature)
 }
 
 /// Build a human-friendly parse-error message with the offending source line
@@ -166,7 +218,12 @@ pub fn parse_str(input: &str) -> Result<Feature, ParseError> {
 fn collect_wip(feature: &Feature) -> Vec<LintError> {
     let mut errors = Vec::new();
     for scenario in &feature.scenarios {
-        if scenario.tags.iter().any(|t| t == "wip") {
+        if feature
+            .tags
+            .iter()
+            .chain(&scenario.tags)
+            .any(|t| t == "wip")
+        {
             errors.push(LintError {
                 kind: LintKind::Wip,
                 message: format!("scenario '{}' is tagged @wip", scenario.name),
@@ -201,10 +258,12 @@ fn collect_wip(feature: &Feature) -> Vec<LintError> {
 pub fn has_e2e_scenarios(dir: &Path) -> bool {
     for path in collect_feature_files(dir) {
         if let Ok(feature) = Feature::parse_path(&path, GherkinEnv::default())
-            && feature
-                .scenarios
-                .iter()
-                .any(|s| s.tags.iter().any(|t| t == "e2e"))
+            && !feature.scenarios.is_empty()
+            && (feature.tags.iter().any(|tag| tag == "e2e")
+                || feature
+                    .scenarios
+                    .iter()
+                    .any(|s| s.tags.iter().any(|t| t == "e2e")))
         {
             return true;
         }
@@ -239,6 +298,32 @@ fn collect_recursive(dir: &Path, acc: &mut Vec<std::path::PathBuf>) {
 #[cfg(test)]
 mod e2e_detection_tests {
     use super::has_e2e_scenarios;
+
+    #[test]
+    fn supported_source_refuses_named_dialect_and_rule_with_path() {
+        let path = std::path::Path::new("specs/catalog.feature");
+        let error =
+            super::parse_supported_source("# language: fr\nFonctionnalité: Catalogue\n", path)
+                .unwrap_err()
+                .to_string();
+        assert!(error.contains("fr"));
+        assert!(error.contains("specs/catalog.feature"));
+        let error = super::parse_supported_source(
+            "Feature: Catalog\n  Rule: Restricted\n    Scenario: Read\n      Then visible\n",
+            path,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(error.contains("Rule 'Restricted'"));
+        assert!(error.contains("specs/catalog.feature"));
+        assert!(
+            super::parse_supported_source(
+                "# language: en\nFeature: Catalog\n  Scenario: Read\n    Then visible\n",
+                path
+            )
+            .is_ok()
+        );
+    }
     use std::fs;
 
     #[test]
@@ -250,6 +335,17 @@ mod e2e_detection_tests {
         )
         .unwrap();
 
+        assert!(has_e2e_scenarios(dir.path()));
+    }
+
+    #[test]
+    fn inherited_e2e_tag_is_detected() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::write(
+            dir.path().join("catalog.feature"),
+            "@e2e\nFeature: Catalog\n  Scenario: Read\n    Then visible\n",
+        )
+        .unwrap();
         assert!(has_e2e_scenarios(dir.path()));
     }
 

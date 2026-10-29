@@ -11,7 +11,7 @@ use crate::gherkin::delta::{DeltaOp, DeltaScenario, strip_givn_tags};
 ///
 /// The merge works at the text level rather than on a parsed AST, to preserve
 /// formatting and comments in the permanent spec files.
-use anyhow::Result;
+use anyhow::{Result, bail};
 use gherkin::{Feature, Scenario};
 
 /// Apply a set of delta scenarios to the permanent feature text.
@@ -59,6 +59,9 @@ fn apply_deltas_mode(
     delta_feature_name: &str,
     mode: MergeMode,
 ) -> Result<String> {
+    if let Some(text) = permanent_text.filter(|text| !text.trim().is_empty()) {
+        crate::gherkin::parse::parse_supported_source(text, std::path::Path::new("<permanent>"))?;
+    }
     // Parse the permanent feature (or start from an empty scenario list).
     let mut perm_scenarios: Vec<ScenarioText> = match permanent_text {
         Some(text) if !text.trim().is_empty() => parse_scenarios_from_text(text)?,
@@ -131,7 +134,8 @@ fn apply_deltas_mode(
     let mut output = feature_header;
     for scenario in &perm_scenarios {
         output.push('\n');
-        output.push_str(&scenario.text);
+        output.push_str(scenario.text.trim_matches('\n'));
+        output.push('\n');
     }
     if !output.ends_with('\n') {
         output.push('\n');
@@ -167,12 +171,94 @@ pub fn merge_file_retry(permanent_path: &std::path::Path, delta_feature: &Featur
     merge_file_mode(permanent_path, delta_feature, MergeMode::Retry)
 }
 
+pub fn validate_feature_merge(permanent_text: Option<&str>, delta_feature: &Feature) -> Result<()> {
+    apply_feature_mode(permanent_text, delta_feature, MergeMode::Strict).map(|_| ())
+}
+
+pub fn apply_feature_deltas(
+    permanent_text: Option<&str>,
+    delta_feature: &Feature,
+) -> Result<String> {
+    apply_feature_mode(permanent_text, delta_feature, MergeMode::Strict)
+}
+
+fn apply_feature_mode(
+    permanent_text: Option<&str>,
+    delta_feature: &Feature,
+    mode: MergeMode,
+) -> Result<String> {
+    crate::gherkin::parse::validate_supported_feature(delta_feature)?;
+    let permanent = permanent_text
+        .filter(|text| !text.trim().is_empty())
+        .map(|text| {
+            crate::gherkin::parse::parse_supported_source(text, std::path::Path::new("<permanent>"))
+        })
+        .transpose()?;
+    if let (Some(permanent), Some(background)) = (&permanent, &delta_feature.background)
+        && crate::gherkin::content::background_content(permanent.background.as_ref())
+            != crate::gherkin::content::background_content(Some(background))
+    {
+        bail!(
+            "conflicting Background '{}' in feature '{}'",
+            background.name,
+            delta_feature.name
+        );
+    }
+    let mut scenarios = delta_feature.scenarios.clone();
+    for scenario in &mut scenarios {
+        for tag in strip_givn_tags(&delta_feature.tags) {
+            if !scenario.tags.contains(&tag) {
+                scenario.tags.push(tag);
+            }
+        }
+    }
+    let deltas: Vec<_> = scenarios
+        .iter()
+        .map(|scenario| DeltaScenario {
+            scenario,
+            op: crate::gherkin::delta::delta_op(scenario),
+        })
+        .collect();
+    let baseline = if permanent.is_none() {
+        let mut header = String::new();
+        let tags = strip_givn_tags(&delta_feature.tags);
+        if !tags.is_empty() {
+            header.push_str(&format!(
+                "{}\n",
+                tags.iter()
+                    .map(|tag| format!("@{tag}"))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            ));
+        }
+        header.push_str(&format!("Feature: {}\n", delta_feature.name));
+        if let Some(description) = &delta_feature.description {
+            for line in description.lines() {
+                header.push_str(&format!("  {line}\n"));
+            }
+        }
+        if let Some(background) = &delta_feature.background {
+            header.push_str(&format!("\n  Background: {}\n", background.name));
+            render_steps(&mut header, &background.steps);
+        }
+        Some(header)
+    } else {
+        None
+    };
+    apply_deltas_mode(
+        baseline.as_deref().or(permanent_text),
+        &deltas,
+        &delta_feature.name,
+        mode,
+    )
+}
+
 fn merge_file_mode(
     permanent_path: &std::path::Path,
     delta_feature: &Feature,
     mode: MergeMode,
 ) -> Result<()> {
-    use crate::gherkin::delta::{delta_scenarios, is_delta_feature};
+    use crate::gherkin::delta::is_delta_feature;
 
     if !is_delta_feature(delta_feature) {
         return Err(GivnError::MergeError(format!(
@@ -182,19 +268,14 @@ fn merge_file_mode(
         .into());
     }
 
-    let deltas = delta_scenarios(delta_feature);
     let permanent_text = if permanent_path.exists() {
         Some(std::fs::read_to_string(permanent_path)?)
     } else {
         None
     };
 
-    let new_text = apply_deltas_mode(
-        permanent_text.as_deref(),
-        &deltas,
-        &delta_feature.name,
-        mode,
-    )?;
+    let new_text = apply_feature_mode(permanent_text.as_deref(), delta_feature, mode)
+        .map_err(|error| anyhow::anyhow!("{}: {error}", permanent_path.display()))?;
 
     // Ensure parent directory exists.
     if let Some(parent) = permanent_path.parent() {
@@ -220,90 +301,109 @@ struct ScenarioText {
     text: String,
 }
 
-/// Parse the permanent feature text into a list of scenario text blocks.
-/// This is a simple line-based parser that splits on "Scenario:" / "Scenario Outline:" lines.
-fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
-    let mut scenarios = Vec::new();
-    let mut current_title: Option<String> = None;
-    let mut current_lines: Vec<String> = Vec::new();
-    let mut pending_tags: Vec<String> = Vec::new();
-
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("Feature:") {
-            pending_tags.clear();
-        }
-        if trimmed.starts_with('@') {
-            pending_tags.push(line.to_string());
-            continue;
-        }
-        if trimmed.starts_with("Scenario:") || trimmed.starts_with("Scenario Outline:") {
-            // Save previous scenario.
-            if let Some(title) = current_title.take() {
-                scenarios.push(ScenarioText {
-                    title,
-                    text: current_lines.join("\n"),
-                });
-                current_lines.clear();
-            }
-            // Extract title.
-            let title = trimmed
-                .split_once(':')
-                .map(|x| x.1)
-                .unwrap_or("")
-                .trim()
-                .to_string();
-            current_title = Some(title);
-            current_lines = std::mem::take(&mut pending_tags);
-        }
-        if current_title.is_some() {
-            current_lines.push(line.to_string());
-        }
-    }
-    // Flush the last scenario.
-    if let Some(title) = current_title {
-        scenarios.push(ScenarioText {
-            title,
-            text: current_lines.join("\n"),
-        });
-    }
-
-    Ok(scenarios)
-}
-
-/// Extract everything before the first Scenario: line (the feature header).
-fn extract_feature_header(text: &str) -> String {
-    let mut header = Vec::new();
-    let mut feature_seen = false;
-    for line in text.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("Scenario:") || trimmed.starts_with("Scenario Outline:") {
+fn scenario_start(lines: &[&str], scenario: &Scenario) -> usize {
+    let mut start = scenario.position.line - 1;
+    while start > 0 {
+        let previous = lines[start - 1].trim();
+        if previous.starts_with('@') || previous.is_empty() || previous.starts_with('#') {
+            start -= 1;
+        } else {
             break;
         }
-        // A tag after the Feature line belongs to the first scenario. Keep
-        // feature-level tags before Feature, but do not carry stale
-        // first-scenario tags into a modified merge target.
-        if feature_seen && trimmed.starts_with('@') {
-            continue;
+    }
+    start
+}
+
+/// Parse the permanent feature text into a list of scenario text blocks.
+fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
+    let feature =
+        crate::gherkin::parse::parse_supported_source(text, std::path::Path::new("<permanent>"))?;
+    let lines: Vec<_> = text.lines().collect();
+    Ok(feature
+        .scenarios
+        .iter()
+        .enumerate()
+        .map(|(index, scenario)| {
+            let start = scenario_start(&lines, scenario);
+            let end = feature
+                .scenarios
+                .get(index + 1)
+                .map_or(lines.len(), |next| scenario_start(&lines, next));
+            ScenarioText {
+                title: scenario.name.clone(),
+                text: lines[start..end].join("\n"),
+            }
+        })
+        .collect())
+}
+
+fn extract_feature_header(text: &str) -> String {
+    let feature =
+        Feature::parse(text, gherkin::GherkinEnv::default()).expect("validated permanent feature");
+    let lines: Vec<_> = text.lines().collect();
+    let end = feature
+        .scenarios
+        .first()
+        .map_or(lines.len(), |scenario| scenario_start(&lines, scenario));
+    format!("{}\n", lines[..end].join("\n").trim_end())
+}
+
+fn render_steps(out: &mut String, steps: &[gherkin::Step]) {
+    for step in steps {
+        out.push_str(&format!("    {} {}\n", step.keyword, step.value));
+
+        // Docstring (the crate stores content already dedented, with the
+        // newline that follows the opening delimiter still present).
+        if let Some(doc) = step.docstring() {
+            let delimiter = if doc.contains("\"\"\"") {
+                "```"
+            } else {
+                "\"\"\""
+            };
+            out.push_str(&format!("      {delimiter}"));
+            let content = if let Some(content) = doc.strip_prefix('\n') {
+                out.push('\n');
+                content
+            } else if let Some((media_type, content)) = doc.split_once('\n') {
+                out.push_str(media_type);
+                out.push('\n');
+                content
+            } else {
+                out.push_str(doc);
+                out.push('\n');
+                ""
+            };
+            if !content.is_empty() {
+                for line in content.lines() {
+                    if line.is_empty() {
+                        out.push('\n');
+                    } else {
+                        if doc.starts_with('\n') {
+                            out.push_str(&format!("      {line}\n"));
+                        } else {
+                            out.push_str(line);
+                            out.push('\n');
+                        }
+                    }
+                }
+            }
+            out.push_str(&format!("      {delimiter}\n"));
         }
-        header.push(line);
-        if trimmed.starts_with("Feature:") {
-            feature_seen = true;
+
+        // Data table.
+        if let Some(table) = step.table() {
+            for row in &table.rows {
+                let cells: Vec<String> = row.iter().map(|cell| escape_cell(cell)).collect();
+                out.push_str(&format!("      | {} |\n", cells.join(" | ")));
+            }
         }
     }
-    // Trim trailing blank lines from header.
-    while header
-        .last()
-        .map(|l: &&str| l.trim().is_empty())
-        .unwrap_or(false)
-    {
-        header.pop();
-    }
-    if header.is_empty() {
-        String::new()
-    } else {
-        format!("{}\n", header.join("\n"))
-    }
+}
+
+fn escape_cell(cell: &str) -> String {
+    cell.replace('\\', "\\\\")
+        .replace('|', "\\|")
+        .replace('\n', "\\n")
 }
 
 /// Render a scenario to text, stripping all @givn.* tags.
@@ -320,35 +420,7 @@ fn render_scenario_stripped(scenario: &Scenario) -> String {
     // Scenario line.
     out.push_str(&format!("  {}: {}\n", scenario.keyword, scenario.name));
 
-    // Steps.
-    for step in &scenario.steps {
-        out.push_str(&format!("    {} {}\n", step.keyword, step.value));
-
-        // Docstring (the crate stores content already dedented, with the
-        // newline that follows the opening delimiter still present).
-        if let Some(doc) = step.docstring() {
-            out.push_str("      \"\"\"\n");
-            let content = doc.strip_prefix('\n').unwrap_or(doc.as_str());
-            if !content.is_empty() {
-                for line in content.lines() {
-                    if line.is_empty() {
-                        out.push('\n');
-                    } else {
-                        out.push_str(&format!("      {line}\n"));
-                    }
-                }
-            }
-            out.push_str("      \"\"\"\n");
-        }
-
-        // Data table.
-        if let Some(table) = step.table() {
-            for row in &table.rows {
-                let cells: Vec<&str> = row.iter().map(|c| c.as_str()).collect();
-                out.push_str(&format!("      | {} |\n", cells.join(" | ")));
-            }
-        }
-    }
+    render_steps(&mut out, &scenario.steps);
 
     for examples in &scenario.examples {
         let clean_tags = strip_givn_tags(&examples.tags);
@@ -370,7 +442,7 @@ fn render_scenario_stripped(scenario: &Scenario) -> String {
         }
         if let Some(table) = &examples.table {
             for row in &table.rows {
-                let cells: Vec<&str> = row.iter().map(|cell| cell.as_str()).collect();
+                let cells: Vec<String> = row.iter().map(|cell| escape_cell(cell)).collect();
                 out.push_str(&format!("      | {} |\n", cells.join(" | ")));
             }
         }
@@ -384,6 +456,102 @@ mod tests {
     use super::*;
     use crate::gherkin::delta::DeltaOp;
     use crate::gherkin::parse::parse_str;
+
+    #[test]
+    fn supported_new_feature_keeps_setup_and_inherited_tags() {
+        let feature = parse_str("@givn.delta @catalog @e2e\nFeature: Catalog\n  Background: Session\n    Given signed in\n      \"\"\"json\n      {\"ok\": true}\n      \"\"\"\n  @givn.added @api\n  Scenario: Read\n    Then visible\n").unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("catalog.feature");
+        merge_file(&path, &feature).unwrap();
+        let merged = parse_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        assert!(merged.background.is_some(), "new feature lost Background");
+        assert!(merged.tags.contains(&"e2e".into()));
+        assert!(merged.scenarios[0].tags.contains(&"api".into()));
+        assert_eq!(
+            merged.background.unwrap().steps[0].docstring,
+            feature.background.unwrap().steps[0].docstring
+        );
+    }
+
+    #[test]
+    fn existing_background_arguments_and_unaffected_tags_survive() {
+        let permanent = "@e2e\nFeature: Catalog\n  Background: Setup\n    Given payload\n      \"\"\"\n      Scenario: setup payload\n      @literal\n      \"\"\"\n    And mapping\n      | a | b |\n  @keep\n  Scenario: Keep\n    Then unchanged\n  Scenario: Read\n    Then visible\n";
+        let delta = parse_str("@givn.delta @catalog @api\nFeature: Catalog\n  @givn.modified @fast\n  Scenario: Read\n    Then updated\n").unwrap();
+        let result = apply_feature_deltas(Some(permanent), &delta).unwrap();
+        let merged = parse_str(&result).unwrap();
+        let original = parse_str(permanent).unwrap();
+        assert_eq!(
+            crate::gherkin::content::background_content(merged.background.as_ref()),
+            crate::gherkin::content::background_content(original.background.as_ref())
+        );
+        assert_eq!(merged.scenarios.len(), 2);
+        assert_eq!(merged.scenarios[0].tags, ["keep"]);
+        assert!(merged.tags.contains(&"e2e".into()));
+        assert!(merged.scenarios[1].tags.contains(&"api".into()));
+        assert!(merged.scenarios[1].tags.contains(&"fast".into()));
+        let mut same_background = delta.clone();
+        same_background.background = original.background;
+        assert!(validate_feature_merge(Some(permanent), &same_background).is_ok());
+    }
+
+    #[test]
+    fn conflicting_background_refuses_without_writing() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("catalog.feature");
+        let permanent = "Feature: Catalog\n  Background: Session\n    Given original session\n  Scenario: Read\n    Then visible\n  Scenario: Keep\n    Then unchanged\n";
+        std::fs::write(&path, permanent).unwrap();
+        let feature = parse_str("@givn.delta @catalog\nFeature: Catalog\n  Background: Session\n    Given different session\n  @givn.modified\n  Scenario: Read\n    Then updated\n").unwrap();
+        let result = merge_file(&path, &feature);
+        assert!(result.is_err(), "conflicting Background accepted");
+        assert_eq!(std::fs::read_to_string(path).unwrap(), permanent);
+    }
+
+    #[test]
+    fn unsupported_publication_refuses_without_creating_parent() {
+        for source in [
+            "@givn.delta @catalog\nFeature: Catalog\n  Rule: Restricted\n    Scenario: Read\n      Then visible\n",
+            "# language: fr\n@givn.delta @catalog\nFonctionnalité: Catalogue\n  Scénario: Lire\n    Alors visible\n",
+        ] {
+            let feature = parse_str(source).unwrap();
+            let dir = tempfile::tempdir().unwrap();
+            let path = dir.path().join("new/catalog.feature");
+            assert!(
+                merge_file(&path, &feature).is_err(),
+                "unsupported feature accepted: {source}"
+            );
+            assert!(!path.parent().unwrap().exists());
+        }
+    }
+
+    #[test]
+    fn supported_arguments_round_trip_without_phantom_structure() {
+        let source = "@givn.delta @catalog\nFeature: Catalog\n  @givn.added\n  Scenario Outline: Read\n    Given payload <name>\n      \"\"\"json\n      Scenario: payload heading\n      Background: payload heading\n      @literal\n      ```\n      \"\"\"\n    When mapping\n      | key | value |\n      | a\\|b | c\\\\d |\n      | empty | |\n      | multiline | a\\nb |\n    Then visible\n    @api\n    Examples: First\n      | name |\n      | a\\|b |\n    @slow\n    Examples: Second\n      | name |\n      | c |\n";
+        let feature = parse_str(source).unwrap();
+        let deltas = crate::gherkin::delta::delta_scenarios(&feature);
+        let first = apply_deltas(None, &deltas, "Catalog").unwrap();
+        let second = apply_deltas(Some(&first), &[], "Catalog").unwrap();
+        let merged = parse_str(&second).unwrap();
+        assert_eq!(
+            merged.scenarios.len(),
+            1,
+            "payload created phantom scenario"
+        );
+        let expected = &feature.scenarios[0];
+        let actual = &merged.scenarios[0];
+        assert_eq!(actual.steps[0].docstring, expected.steps[0].docstring);
+        assert_eq!(
+            actual.steps[1].table.as_ref().unwrap().rows,
+            expected.steps[1].table.as_ref().unwrap().rows
+        );
+        assert_eq!(actual.examples.len(), 2);
+        for (actual, expected) in actual.examples.iter().zip(&expected.examples) {
+            assert_eq!(actual.tags, expected.tags);
+            assert_eq!(
+                actual.table.as_ref().unwrap().rows,
+                expected.table.as_ref().unwrap().rows
+            );
+        }
+    }
 
     const PERMANENT: &str = r#"Feature: User auth
 
