@@ -8,9 +8,9 @@ auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
 - For every user-facing question, follow the effective dialog policy from
   `givn instructions dialog`; load it once per context before the first
   question, including clarification and confirmation outside a named
-  workflow, and pass the obligation explicitly to fresh delegated contexts.
-  This obligation applies with optional addons disabled and outside any named
-  skill; the presenting agent remains responsible for the question.
+  workflow, and pass the obligation explicitly when work is handed to another
+  context. This obligation applies with optional addons disabled and outside
+  any named skill; the presenting agent remains responsible for the question.
 - Run `givn status --change <CHANGE>` for a full artifact checklist of an
   active change (includes task progress and pending task descriptions).
 {{RESIDENT_RULES}}

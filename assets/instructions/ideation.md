@@ -451,10 +451,17 @@ Authoring requirements for the contract:
 
 ## Quality reviews
 
-A fresh-context subagent runs a quality review at each phase boundary; one
-reviewer per boundary, findings advisory, the user arbitrates:
+A quality review runs at each phase boundary in the current context by default;
+when the topic records one independent review context, use it. One reviewer per
+boundary, findings advisory, the user arbitrates:
 
-**Delegated contexts:** a fresh delegated context does not inherit the parent's loaded policy. Pass the obligation explicitly — for every user-facing question, follow the effective policy from `givn instructions dialog`; load it in the fresh context before the first question. The presenting agent remains responsible for the question, and a question tool's recommendation or option label does not replace context and answer consequences.
+**Handing work to another context:** a context that did not receive this
+conversation does not inherit the loaded policy. If work is handed to another
+context, pass the obligation explicitly — for every user-facing question,
+follow the effective policy from `givn instructions dialog`; load it there
+before the first question. The presenting agent remains responsible for the
+question, and a question tool's recommendation or option label does not replace
+context and answer consequences.
 
 - Frame: research protocol completeness, stakeholder list with interests.
 - Event Storming: symmetry of cause and effect, missing event partners, a

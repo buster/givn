@@ -65,7 +65,8 @@ When verify fails and infrastructure is sound:
 
 ## Reverse review epilogue
 
-After all tasks are checked, a review subagent:
+After all tasks are checked, perform the review in the change's recorded review
+context (`givn instructions review`):
 
 - Applies reverse-mode rules (`givn instructions review-reverse`):
   - Classifies coverage gaps from the most recent measured evidence — the

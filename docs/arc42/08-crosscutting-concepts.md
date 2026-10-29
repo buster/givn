@@ -1228,4 +1228,32 @@ map (`src/cli/instructions.rs`); the two maps are kept identical or share one
 helper. A project that has not enabled the experiment receives the unchanged
 review instruction.
 
+### 8.26b The Review Context Record
+
+Givn does not prescribe an execution topology. The default is a self-review in
+the current context, recorded as `Review kind: self-review`; a self-review is
+not an independent review and is never labeled as one. A major change, or a
+user request recorded at proposal time, may use exactly one fresh review
+context — one review subagent, one separate reviewer session, or one human
+reviewer. That one context covers both the design-review and final-review
+obligations. No planning, design, hardening, coverage, implementation, or
+additional review context is started.
+
+The proposal records the requested kind. `design-review.md` and `review.md`
+record the performed kind, the author, and the reviewer context. A proposal
+recording `independent` accepts only an independent review record whose
+reviewer context differs from the author. A self-review is accepted when no
+independence is recorded. A gate that requires independence accepts only
+`Review kind: independent`; a self-review is never upgraded by inference.
+Design-review and final review must name the same reviewer context for an
+independent review. The outline gate's `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER`
+identity check is a separate record and is unchanged.
+
+A legacy record with no `Review kind` line keeps its existing gate result, so
+the policy does not retroactively fail changes that predate it. The one
+exception is a proposal that records `independent`: that record is
+authoritative, and the gate fails clearly when the review record is a
+self-review. If independence is required but no fresh context is available,
+the reviewer asks the user; there is no silent fallback.
+
 *[Architecture documentation index](README.md)*

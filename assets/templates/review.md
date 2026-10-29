@@ -1,5 +1,9 @@
 # Review: {{CHANGE_ID}}
 
+Review kind: self-review
+Author: <author id>
+Reviewer context: <reviewer id>
+
 ## Implementation Evidence Check (do this first)
 
 **Step definition scan** — every step definition file checked for empty/no-op
@@ -180,7 +184,7 @@ evidence in the table:
 |---|---|---|---|---|---|---|
 | | | | | | | |
 
-- [ ] Every chapter marked affected by either the independent review or
+- [ ] Every chapter marked affected by either the review or
       `arc42.md` was opened and checked for stale, contradictory, or placeholder
       content.
 - [ ] Every Arc42 fact or architecture decision relevant to this change is

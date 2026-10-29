@@ -11,24 +11,29 @@ contradicts the plan is a finding, not a design input.
 Do not write `tasks.md` before this review signs off. The task list follows the
 reviewed plan.
 
-## Mandatory, non-skippable, fresh context
+## Mandatory, non-skippable
 
-Never skip this step. Never run it as a continuation of the session that wrote
-the design, and never spawn it from the designing context — a model grilling
-its own just-written plan confirms its own assumptions instead of finding
-blind spots. Spawn both subagents via the Task tool into a genuinely fresh
-context. If the harness lets you choose a model or reasoning-effort tier for
-the grilling subagent, choose the most capable one available and set
-reasoning/thinking effort to high — a fast tier that rubber-stamps is worse
-than no review, because it creates false confidence.
+Never skip this step. By default, perform it in the current context. If the
+change records `Review kind: independent`, perform it in the one review context
+described by `givn instructions review`; the same context also performs the
+final review. Do not start a separate design-review context.
+
+Record the review context at the top of `design-review.md`, outside any code
+fence:
+
+```text
+Review kind: self-review | independent
+Author: <author id>
+Reviewer context: <reviewer id>
+```
 
 **Two phases, both required:**
 
 ### 1. Grilling — relentless interrogation of the plan
 
-A grilling subagent reads the full plan and produces a ranked list of questions
-with recommended answers. The orchestrator then presents the questions to the
-user one at a time, waits for each answer, and records the outcome.
+A reviewer reads the full plan and produces a ranked list of questions with
+recommended answers. The author then presents the questions to the user one at
+a time, waits for each answer, and records the outcome.
 
 Required branches — cover every one (or explicitly record "no issue found"):
 
@@ -164,7 +169,7 @@ and record the finding — do not burden the user with it.
 
 ### 2. Hardening — fix what grilling found
 
-After all questions are answered, a hardening subagent applies decisions:
+After all questions are answered, the author applies the decisions:
 
 - Update `design.md` if any tech decisions changed.
 - Add missing scenarios to `specs/**/*.feature` with `@givn.added @wip` if any
@@ -183,8 +188,8 @@ After all questions are answered, a hardening subagent applies decisions:
 - Grilling is complete only when every branch has been walked and every question
   answered or flagged as a blocker.
 - Sign off by writing `DESIGN-REVIEW: PASS` at the end of `design-review.md`
-  only when every grilling question is resolved and all hardening edits are
-  applied.
+  only when every grilling question is resolved, the review context is
+  recorded, and all hardening edits are applied.
 {{#if addons.architecture_principles}}
   With this addon enabled, also require every carried decision to record its
   default, trigger, switch cost, and owner, and every declared contract to pass

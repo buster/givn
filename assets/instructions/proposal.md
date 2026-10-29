@@ -28,6 +28,11 @@ language that a non-technical stakeholder can read and validate.
   ideation change seed, read its `usecase.md` and record the ID, source topic,
   and confirmed affected Persona IDs. Never invent or auto-promote Personas;
   do not copy Persona biographies into the proposal.
+- **Review kind (required).** Record `Review kind: self-review` (the default)
+  or `Review kind: independent` in the proposal. Independence is requested at
+  proposal time and the recorded kind is authoritative after a restart. A
+  major change records its reason. If the major-change classification is
+  ambiguous, ask the user one question; never infer it silently.
 - **Seed stamping.** When the change originates from an ideation change seed,
   record the seed path in the proposal's Use-Case Context and set the seed's
   status line to `Status: proposed by <change-id>`. The seed's original text
@@ -64,10 +69,9 @@ language that a non-technical stakeholder can read and validate.
 ## Step orchestration (propose)
 
 **Audience: the agent running the propose step.** Artifact authors follow the
-artifact rules above; this section owns only the step's sequencing. The propose
-step is an orchestrator — it creates the scaffold and delegates production of
-the planning artifacts through `design` to one **thinking architect subagent**;
-it does not write the artifacts itself.
+artifact rules above; this section owns only the step's sequencing. Work in the
+current context; the user or harness may split the steps across sessions, and
+the artifacts remain the handoff mechanism.
 
 1. Resolve the change ID (derive a kebab-case ID from a plain description) and
    create the change:
@@ -80,25 +84,19 @@ it does not write the artifacts itself.
 3. Load the served instruction for every artifact in the sequence **up to and
    including `design`** (stop before `design-review` if it appears in the
    sequence; otherwise stop before `tasks`) via
-   `givn instructions <artifact-id> --change <id>`. Capture the full output.
-4. Spawn the architect subagent (Task tool; fall back to a prose description of
-   the delegation when the tool is unavailable) with a self-contained prompt:
-   the change ID, the user's request, the artifact sequence, and the full
-   served instruction text for every artifact in the pass. The architect
-   thinks through requirements, constraints, and decisions before writing, and
-   writes each artifact by following its served instruction.
-5. Stop after `design` and after any custom artifact that precedes
-   `design-review`/`tasks` in the sequence. The architect must not produce
-   `design-review`, `tasks`, or `review`.
+   `givn instructions <artifact-id> --change <id>`.
+4. Write each artifact in the current context by following its served
+   instruction. Think through requirements, constraints, and decisions before
+   writing. Stop after `design` and after any custom artifact that precedes
+   `design-review`/`tasks` in the sequence. Do not produce `design-review`,
+   `tasks`, or `review` in this pass.
 
-**Critical ambiguities go to the user — the architect does not guess.**
+**Critical ambiguities go to the user — do not guess.**
 
 ### Sequencing and integrity
 
-`design-review` is mandatory and must run as its own step, in a fresh context,
-after the architect subagent's work is done — never continued from the same
-session that wrote the design, and never spawned from the proposing
-orchestrator's context. Tell the user to run `/givn-design-review <change-id>`
-now; a
-subagent that just wrote the design cannot credibly stress-test its own plan.
-Only after `design-review` signs off does the task-list step run.
+`design-review` is mandatory and runs as its own step after the design is
+written. Use the review context recorded in the proposal: a `self-review` is
+performed in the current context; an `independent` review uses the one review
+context described by `givn instructions review`. Only after `design-review`
+signs off does the task-list step run.
