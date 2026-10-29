@@ -15,7 +15,9 @@ pub fn install(project_root: &Path) -> Result<()> {
     if let Ok(crate::scm::Backend::Fossil(_)) = crate::scm::select(project_root) {
         // Fossil has no hook mechanism givn can extend; attribution exists
         // only through `givn commit`.
-        println!("  commit attribution: givn commit path only (raw fossil commit is not stamped)");
+        println!(
+            "  commit attribution: givn commit path only with explicit file paths (raw fossil commit is not stamped)"
+        );
         return Ok(());
     }
     let shared_dir = project_root.join(".githooks");

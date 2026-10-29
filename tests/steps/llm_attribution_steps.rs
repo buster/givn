@@ -13,6 +13,9 @@ pub(crate) struct GitAttributionState {
     pub(crate) last_output: Option<Output>,
     pub(crate) context: Option<AttributionContext>,
     pub(crate) commits: Vec<String>,
+    pub(crate) requested_path: Option<String>,
+    pub(crate) snapshot: Option<String>,
+    pub(crate) revision_before: Option<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -226,6 +229,13 @@ fn then_message_has_only_coauthor_attribution(world: &mut GivnWorld) {
     then_message_has_complete_attribution(world);
 }
 
+#[then(regex = r#"^the revision message remains "([^"]+)" without managed attribution trailers$"#)]
+fn then_revision_message_remains(world: &mut GivnWorld, expected: String) {
+    let message = latest_revision_message(world);
+    assert_eq!(message.trim(), expected);
+    assert!(!message.contains(" with Givn "), "{message}");
+}
+
 #[then(regex = r##"^the commit message remains "([^"]+)"$"##)]
 fn then_message_remains(world: &mut GivnWorld, expected: String) {
     let root = world.env.as_ref().expect("project root").root();
@@ -339,7 +349,7 @@ pub(crate) fn git(root: &std::path::Path, args: &[&str]) -> Output {
         .expect("run git")
 }
 
-fn make_executable(path: &std::path::Path) {
+pub(crate) fn make_executable(path: &std::path::Path) {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -760,4 +770,668 @@ fn then_installation_report(world: &mut GivnWorld) {
 fn then_preservation_report(world: &mut GivnWorld) {
     let output = world.last_output.as_ref().unwrap();
     assert!(String::from_utf8_lossy(&output.stdout).contains("existing user hook preserved"));
+}
+
+// --- Explicit-path publication and safe hook scenarios ---------------------
+
+fn attribution_state(world: &mut GivnWorld) -> &mut GitAttributionState {
+    world
+        .git_attribution
+        .get_or_insert_with(GitAttributionState::default)
+}
+
+fn head_revision(env: &common::TestEnv) -> String {
+    match env.backend() {
+        common::BackendKind::Git => {
+            String::from_utf8_lossy(&git(&env.root(), &["rev-parse", "HEAD"]).stdout)
+                .trim()
+                .to_string()
+        }
+        common::BackendKind::Fossil => givn::fossil::FossilCheckout::at(&env.root())
+            .revision()
+            .expect("read Fossil revision"),
+    }
+}
+
+/// The paths the latest revision changed, as `<status>\t<path>` lines.
+fn revision_changes(env: &common::TestEnv) -> Vec<String> {
+    match env.backend() {
+        common::BackendKind::Git => String::from_utf8_lossy(
+            &git(
+                &env.root(),
+                &[
+                    "diff-tree",
+                    "--root",
+                    "--no-commit-id",
+                    "--name-status",
+                    "-r",
+                    "HEAD",
+                ],
+            )
+            .stdout,
+        )
+        .lines()
+        .map(|line| {
+            let mut fields = line.splitn(2, '\t');
+            format!(
+                "{}\t{}",
+                fields.next().unwrap_or_default(),
+                fields.next().unwrap_or_default()
+            )
+        })
+        .collect(),
+        common::BackendKind::Fossil => {
+            let checkout = givn::fossil::FossilCheckout::at(&env.root());
+            let revision = checkout.revision().expect("read Fossil revision");
+            let parent = checkout
+                .parent_revision(&revision)
+                .expect("read Fossil parent")
+                .expect("Fossil parent");
+            String::from_utf8_lossy(
+                &common::fossil(
+                    env,
+                    &["diff", "--from", &parent, "--to", "current", "--brief"],
+                )
+                .stdout,
+            )
+            .lines()
+            .filter_map(|line| {
+                let (status, path) = line.split_once(char::is_whitespace)?;
+                Some(format!("{status}\t{}", path.trim()))
+            })
+            .collect()
+        }
+    }
+}
+
+fn collect_fixture_files(root: &std::path::Path, relative: &str, out: &mut Vec<String>) {
+    let directory = root.join(relative);
+    let Ok(entries) = std::fs::read_dir(&directory) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if matches!(
+            name.as_str(),
+            ".git" | ".fslckout" | ".fossil" | ".fixture-bin"
+        ) || (relative == "givn" && name == "history")
+        {
+            continue;
+        }
+        let child = if relative.is_empty() {
+            name
+        } else {
+            format!("{relative}/{name}")
+        };
+        let path = entry.path();
+        if path.is_dir() {
+            collect_fixture_files(root, &child, out);
+        } else {
+            out.push(child);
+        }
+    }
+}
+
+/// Index/worktree state for the byte-for-byte preservation assertions.
+fn workspace_snapshot(env: &common::TestEnv) -> String {
+    let mut files = Vec::new();
+    collect_fixture_files(&env.root(), "", &mut files);
+    files.sort();
+    let mut snapshot = String::new();
+    for relative in files {
+        let content = std::fs::read(env.path(&relative)).unwrap_or_default();
+        snapshot.push_str(&relative);
+        snapshot.push('\u{1f}');
+        snapshot.push_str(&String::from_utf8_lossy(&content));
+        snapshot.push('\n');
+    }
+    match env.backend() {
+        common::BackendKind::Git => {
+            snapshot.push_str(&String::from_utf8_lossy(
+                &git(&env.root(), &["status", "--porcelain=v1", "-uall"]).stdout,
+            ));
+            snapshot.push_str(&String::from_utf8_lossy(
+                &git(&env.root(), &["diff", "--cached", "--name-status"]).stdout,
+            ));
+        }
+        common::BackendKind::Fossil => {
+            snapshot.push_str(&String::from_utf8_lossy(
+                &common::fossil(env, &["changes", "--differ"]).stdout,
+            ));
+            snapshot.push_str(&String::from_utf8_lossy(
+                &common::fossil(env, &["extras"]).stdout,
+            ));
+        }
+    }
+    snapshot
+}
+
+fn git_head(env: &common::TestEnv) -> String {
+    String::from_utf8_lossy(&git(&env.root(), &["rev-parse", "HEAD"]).stdout)
+        .trim()
+        .to_string()
+}
+
+#[given(regex = r#"^changed "([^"]+)" beside unrelated staged and unstaged work$"#)]
+fn given_changed_beside_unrelated_work(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().expect("project root");
+    std::fs::write(env.path(&path), "selected working content").expect("write selected path");
+    std::fs::write(env.path("staged-other.txt"), "staged unrelated content")
+        .expect("write staged other");
+    assert!(
+        git(&env.root(), &["add", "staged-other.txt"])
+            .status
+            .success()
+    );
+    std::fs::write(env.path("unstaged-other.txt"), "unstaged unrelated content")
+        .expect("write unstaged other");
+    attribution_state(world).requested_path = Some(path);
+}
+
+#[then("the command succeeds and reports the created revision")]
+fn then_reports_created_revision(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(
+        output.status.success(),
+        "commit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout).contains("committed revision"));
+}
+
+#[then("the revision contains only the supplied path")]
+fn then_revision_contains_only_supplied_path(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let path = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.requested_path.clone())
+        .expect("requested path");
+    let changed: Vec<String> = revision_changes(env)
+        .into_iter()
+        .map(|line| {
+            line.split_once('\t')
+                .map(|(_, p)| p.to_string())
+                .unwrap_or(line)
+        })
+        .collect();
+    assert_eq!(changed, vec![path]);
+}
+
+#[then("unrelated index entries and working changes remain unchanged")]
+fn then_unrelated_work_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let staged =
+        String::from_utf8_lossy(&git(&env.root(), &["diff", "--cached", "--name-status"]).stdout)
+            .to_string();
+    assert_eq!(staged.trim(), "A\tstaged-other.txt");
+    assert_eq!(
+        std::fs::read_to_string(env.path("staged-other.txt")).unwrap(),
+        "staged unrelated content"
+    );
+    assert_eq!(
+        std::fs::read_to_string(env.path("unstaged-other.txt")).unwrap(),
+        "unstaged unrelated content"
+    );
+    let status = String::from_utf8_lossy(&git(&env.root(), &["status", "--porcelain=v1"]).stdout)
+        .to_string();
+    assert!(status.contains("?? unstaged-other.txt"), "{status}");
+}
+
+#[given(regex = r#"^a Git project without attribution context and with a changed "([^"]+)"$"#)]
+fn given_git_without_context(world: &mut GivnWorld, path: String) {
+    world.env = Some(common::make_init_root());
+    attribution_state(world).requested_path = Some(path.clone());
+    std::fs::write(
+        world.env.as_ref().unwrap().path(&path),
+        "selected working content",
+    )
+    .expect("write selected path");
+}
+
+#[given(
+    regex = r#"^an initialized "?(Git|Fossil)"? project with modified tracked files and an untracked file$"#
+)]
+fn given_initialized_with_modified_and_untracked(world: &mut GivnWorld, backend: String) {
+    let env = if backend == "Git" {
+        common::make_init_root()
+    } else {
+        common::make_fossil_root()
+    };
+    std::fs::write(env.path("tracked.txt"), "tracked base").expect("write tracked");
+    common::commit_fixture(&env);
+    std::fs::write(env.path("tracked.txt"), "tracked modified").expect("modify tracked");
+    std::fs::write(env.path("untracked.txt"), "untracked content").expect("write untracked");
+    attribution_state(world).revision_before = Some(head_revision(&env));
+    attribution_state(world).snapshot = Some(workspace_snapshot(&env));
+    world.env = Some(env);
+}
+
+#[given("unrelated pending selections have been recorded")]
+fn given_pending_selections(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    match env.backend() {
+        common::BackendKind::Git => {
+            assert!(git(&env.root(), &["add", "untracked.txt"]).status.success());
+        }
+        common::BackendKind::Fossil => {
+            assert!(
+                common::fossil(env, &["add", "untracked.txt"])
+                    .status
+                    .success()
+            );
+        }
+    }
+    attribution_state(world).snapshot = Some(workspace_snapshot(env));
+}
+
+#[then("the command exits nonzero and explains that explicit paths are required")]
+fn then_explicit_paths_required(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(!output.status.success(), "commit unexpectedly succeeded");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("explicit paths are required"), "{stderr}");
+}
+
+#[then("no revision is created and no file is staged or added")]
+fn then_no_revision_or_staging(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let before = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.revision_before.clone())
+        .expect("revision before");
+    assert_eq!(head_revision(env), before);
+}
+
+#[then("existing pending selections and all working changes remain unchanged")]
+fn then_pending_selections_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let before = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.snapshot.clone())
+        .expect("workspace snapshot");
+    assert_eq!(workspace_snapshot(env), before);
+}
+
+#[given(
+    regex = r#"^a Git project where "([^"]+)" has staged content and a different working version$"#
+)]
+fn given_staged_and_working_versions(world: &mut GivnWorld, path: String) {
+    world.env = Some(common::make_init_root());
+    let env = world.env.as_ref().unwrap();
+    std::fs::write(env.path(&path), "staged version").expect("write staged version");
+    assert!(git(&env.root(), &["add", &path]).status.success());
+    std::fs::write(env.path(&path), "working version").expect("write working version");
+    attribution_state(world).requested_path = Some(path);
+}
+
+#[then(regex = r#"^the revision contains the selected working version of "([^"]+)" only$"#)]
+fn then_revision_has_working_version(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().expect("project root");
+    let shown = git(&env.root(), &["show", &format!("HEAD:{path}")]);
+    assert!(shown.status.success());
+    assert_eq!(String::from_utf8_lossy(&shown.stdout), "working version");
+    let changed: Vec<String> = revision_changes(env)
+        .into_iter()
+        .map(|line| {
+            line.split_once('\t')
+                .map(|(_, p)| p.to_string())
+                .unwrap_or(line)
+        })
+        .collect();
+    assert_eq!(changed, vec![path]);
+}
+
+#[then(regex = r#"^the unrelated staged content of "([^"]+)" is unchanged$"#)]
+fn then_unrelated_staged_content_unchanged(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().expect("project root");
+    let staged = String::from_utf8_lossy(
+        &git(
+            &env.root(),
+            &["diff", "--cached", "--name-status", "--", &path],
+        )
+        .stdout,
+    )
+    .to_string();
+    assert!(staged.contains('A') && staged.contains(&path), "{staged}");
+    let shown = git(&env.root(), &["show", &format!(":{path}")]);
+    assert!(shown.status.success());
+    assert_eq!(
+        String::from_utf8_lossy(&shown.stdout),
+        "unrelated staged content"
+    );
+}
+
+#[then("no staged content of another path is included in the revision")]
+fn then_no_other_staged_content(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let path = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.requested_path.clone())
+        .expect("requested path");
+    let changed: Vec<String> = revision_changes(env)
+        .into_iter()
+        .map(|line| {
+            line.split_once('\t')
+                .map(|(_, p)| p.to_string())
+                .unwrap_or(line)
+        })
+        .collect();
+    assert_eq!(changed, vec![path]);
+}
+
+#[given(
+    regex = r#"^an initialized "?(Git|Fossil)"? project whose requested path cannot be isolated safely from unrelated pending work$"#
+)]
+fn given_unisolatable_project(world: &mut GivnWorld, backend: String) {
+    let env = if backend == "Git" {
+        let env = common::make_init_root();
+        std::fs::write(env.path("batch.txt"), "base").expect("write base");
+        common::git_commit_all(&env, "fixture: base");
+        let branch = String::from_utf8_lossy(
+            &git(&env.root(), &["rev-parse", "--abbrev-ref", "HEAD"]).stdout,
+        )
+        .trim()
+        .to_string();
+        assert!(
+            git(&env.root(), &["checkout", "-q", "-b", "other"])
+                .status
+                .success()
+        );
+        std::fs::write(env.path("batch.txt"), "theirs").expect("write theirs");
+        common::git_commit_all(&env, "fixture: theirs");
+        assert!(
+            git(&env.root(), &["checkout", "-q", &branch])
+                .status
+                .success()
+        );
+        std::fs::write(env.path("batch.txt"), "ours").expect("write ours");
+        common::git_commit_all(&env, "fixture: ours");
+        let merged = git(&env.root(), &["merge", "other"]);
+        assert!(!merged.status.success(), "expected a merge conflict");
+        env
+    } else {
+        let env = common::make_fossil_root();
+        std::fs::write(env.path("batch.txt"), "base").expect("write base");
+        assert!(common::fossil(&env, &["add", "batch.txt"]).status.success());
+        common::fossil_commit_all(&env, "fixture: base");
+        assert!(
+            common::fossil(&env, &["branch", "new", "other", "current"])
+                .status
+                .success()
+        );
+        assert!(common::fossil(&env, &["update", "other"]).status.success());
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        std::fs::write(env.path("batch.txt"), "theirs").expect("write theirs");
+        common::fossil_commit_all(&env, "fixture: theirs");
+        assert!(common::fossil(&env, &["update", "trunk"]).status.success());
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        std::fs::write(env.path("batch.txt"), "ours").expect("write ours");
+        common::fossil_commit_all(&env, "fixture: ours");
+        let merged = common::fossil(&env, &["merge", "other"]);
+        assert!(merged.status.success(), "fossil merge failed");
+        env
+    };
+    attribution_state(world).requested_path = Some("batch.txt".to_string());
+    attribution_state(world).revision_before = Some(head_revision(&env));
+    attribution_state(world).snapshot = Some(workspace_snapshot(&env));
+    world.env = Some(env);
+}
+
+#[when("the consumer commits only the requested path")]
+fn when_commit_requested_path(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let path = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.requested_path.clone())
+        .expect("requested path");
+    world.last_output = Some(common::run_givn(
+        env,
+        &["commit", &path, "-m", "fix: selected path"],
+    ));
+}
+
+#[then("the command refuses before creating a revision")]
+fn then_refuses_before_revision(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(!output.status.success(), "commit unexpectedly succeeded");
+    let env = world.env.as_ref().expect("project root");
+    let before = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.revision_before.clone())
+        .expect("revision before");
+    assert_eq!(head_revision(env), before);
+}
+
+#[then("pending selections and working changes remain unchanged")]
+fn then_pending_and_working_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let before = world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.snapshot.clone())
+        .expect("workspace snapshot");
+    assert_eq!(workspace_snapshot(env), before);
+}
+
+#[then("the diagnostic explains the isolation problem")]
+fn then_isolation_diagnostic(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("unmerged index") || stderr.contains("pending merge"),
+        "{stderr}"
+    );
+}
+
+#[given(
+    "an initialized Git project with no attribution context and an unavailable attribution helper"
+)]
+fn given_unavailable_helper(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    attribution_state(world);
+}
+
+#[when("the consumer creates a human Git commit")]
+fn when_human_commit_without_helper(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let bin_dir = env.path(".fixture-bin");
+    std::fs::create_dir_all(&bin_dir).expect("create fixture bin directory");
+    let git_path = which_git();
+    std::os::unix::fs::symlink(&git_path, bin_dir.join("git")).expect("link git into fixture bin");
+    std::fs::write(env.path("human.txt"), "human content").expect("write human content");
+    assert!(git(&env.root(), &["add", "human.txt"]).status.success());
+    let start = std::time::Instant::now();
+    let output = std::process::Command::new(&git_path)
+        .args(["commit", "-m", "human message"])
+        .current_dir(env.root())
+        .env("PATH", &bin_dir)
+        .env_remove("GIVN_ATTRIBUTION_ACTIVE")
+        .env_remove("GIVN_ATTRIBUTION_LLM")
+        .env_remove("GIVN_ATTRIBUTION_REASONING")
+        .env_remove("GIVN_ATTRIBUTION_HARNESS")
+        .output()
+        .expect("spawn human commit");
+    assert!(
+        start.elapsed() < std::time::Duration::from_secs(5),
+        "the hook waited indefinitely for the unavailable helper"
+    );
+    world.last_output = Some(output);
+}
+
+fn which_git() -> PathBuf {
+    let path = std::env::var_os("PATH").unwrap_or_default();
+    std::env::split_paths(&path)
+        .map(|dir| dir.join("git"))
+        .find(|candidate| candidate.is_file())
+        .expect("git executable on PATH")
+}
+
+#[given(regex = r#"^an initialized "?(Git|Fossil)"? project with a tracked file "([^"]+)"$"#)]
+fn given_tracked_file(world: &mut GivnWorld, backend: String, path: String) {
+    let env = if backend == "Git" {
+        common::make_init_root()
+    } else {
+        common::make_fossil_root()
+    };
+    std::fs::write(env.path(&path), "obsolete content").expect("write tracked file");
+    common::commit_fixture(&env);
+    world.env = Some(env);
+}
+
+#[given(regex = r#"^the developer has deleted "([^"]+)" with no unrelated pending work$"#)]
+fn given_deleted_tracked_file(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().expect("project root");
+    std::fs::remove_file(env.path(&path)).expect("delete tracked file");
+}
+
+#[then(regex = r#"^the command exits 0 and the revision records the deletion of "([^"]+)" only$"#)]
+fn then_revision_records_deletion(world: &mut GivnWorld, path: String) {
+    let output = crate::steps::output(world);
+    assert!(
+        output.status.success(),
+        "commit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let env = world.env.as_ref().expect("project root");
+    let changes = revision_changes(env);
+    assert_eq!(changes.len(), 1, "{changes:?}");
+    let (status, changed) = changes[0].split_once('\t').expect("status and path");
+    assert!(status.starts_with('D'), "{changes:?}");
+    assert_eq!(changed, path);
+}
+
+#[then(regex = r#"^"([^"]+)" remains absent from the working tree$"#)]
+fn then_absent_from_working_tree(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().expect("project root");
+    assert!(!env.path(&path).exists());
+}
+
+#[given(regex = r#"^an initialized Git project with a working change to "([^"]+)"$"#)]
+fn given_git_working_change(world: &mut GivnWorld, path: String) {
+    world.env = Some(common::make_init_root());
+    let env = world.env.as_ref().unwrap();
+    std::fs::write(env.path(&path), "selected working content").expect("write working change");
+    attribution_state(world).requested_path = Some(path);
+}
+
+#[given(regex = r#"^"([^"]+)" has an unrelated staged (addition|deletion|change)$"#)]
+fn given_unrelated_staged_operation(world: &mut GivnWorld, path: String, operation: String) {
+    let env = world.env.as_ref().expect("project root");
+    if operation != "deletion" {
+        std::fs::write(env.path(&path), "unrelated staged content").expect("write other");
+        assert!(git(&env.root(), &["add", &path]).status.success());
+    } else {
+        std::fs::write(env.path(&path), "unrelated content").expect("write other");
+        assert!(git(&env.root(), &["add", &path]).status.success());
+        assert!(
+            git(&env.root(), &["commit", "-m", "fixture: other"])
+                .status
+                .success()
+        );
+        std::fs::remove_file(env.path(&path)).expect("delete other");
+        assert!(
+            git(&env.root(), &["add", "-A", "--", &path])
+                .status
+                .success()
+        );
+    }
+    let snapshot = workspace_snapshot(env);
+    let revision = git_head(env);
+    attribution_state(world).snapshot = Some(snapshot);
+    attribution_state(world).revision_before = Some(revision);
+}
+
+#[then(
+    "the command either commits only the selected working content or refuses an isolation conflict before mutation"
+)]
+fn then_commit_or_isolation_refusal(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    let env = world.env.as_ref().expect("project root");
+    if output.status.success() {
+        let path = world
+            .git_attribution
+            .as_ref()
+            .and_then(|state| state.requested_path.clone())
+            .expect("requested path");
+        let shown = git(&env.root(), &["show", &format!("HEAD:{path}")]);
+        assert_eq!(
+            String::from_utf8_lossy(&shown.stdout),
+            "selected working content"
+        );
+    } else {
+        let before = world
+            .git_attribution
+            .as_ref()
+            .and_then(|state| state.revision_before.clone())
+            .expect("revision before");
+        assert_eq!(git_head(env), before);
+    }
+}
+
+#[then(
+    regex = r#"^the staged (addition|deletion) of "([^"]+)" and its working state remain unchanged$"#
+)]
+fn then_staged_operation_unchanged(world: &mut GivnWorld, operation: String, path: String) {
+    let env = world.env.as_ref().expect("project root");
+    let staged = String::from_utf8_lossy(
+        &git(
+            &env.root(),
+            &["diff", "--cached", "--name-status", "--", &path],
+        )
+        .stdout,
+    )
+    .to_string();
+    if operation != "deletion" {
+        assert_eq!(staged.trim(), format!("A\t{path}"));
+        assert_eq!(
+            std::fs::read_to_string(env.path(&path)).unwrap(),
+            "unrelated staged content"
+        );
+        let shown = git(&env.root(), &["show", &format!(":{path}")]);
+        assert_eq!(
+            String::from_utf8_lossy(&shown.stdout),
+            "unrelated staged content"
+        );
+    } else {
+        assert_eq!(staged.trim(), format!("D\t{path}"));
+        assert!(!env.path(&path).exists());
+    }
+}
+
+#[then(regex = r#"^a successful revision contains no addition or deletion of "([^"]+)"$"#)]
+fn then_successful_revision_excludes(world: &mut GivnWorld, path: String) {
+    if !crate::steps::output(world).status.success() {
+        return;
+    }
+    let env = world.env.as_ref().expect("project root");
+    for change in revision_changes(env) {
+        assert!(
+            !change.ends_with(&format!("\t{path}")),
+            "the revision touched {path}: {change}"
+        );
+    }
+}
+
+#[then(
+    "an isolation refusal creates no revision and leaves all index entries and working changes unchanged"
+)]
+fn then_isolation_refusal_unchanged(world: &mut GivnWorld) {
+    if crate::steps::output(world).status.success() {
+        return;
+    }
+    let env = world.env.as_ref().expect("project root");
+    let state = world.git_attribution.as_ref().expect("attribution state");
+    assert_eq!(
+        git_head(env),
+        state.revision_before.clone().expect("revision before")
+    );
+    assert_eq!(
+        workspace_snapshot(env),
+        state.snapshot.clone().expect("snapshot")
+    );
 }

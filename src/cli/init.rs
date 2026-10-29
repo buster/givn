@@ -184,7 +184,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     match crate::scm::select(&project_root) {
         Ok(crate::scm::Backend::Fossil(_)) => {
             println!(
-                "  commit attribution: givn commit path only (raw fossil commit is not stamped)"
+                "  commit attribution: givn commit path only with explicit file paths (raw fossil commit is not stamped)"
             )
         }
         _ => println!("  commit attribution: .githooks/commit-msg (best effort)"),
