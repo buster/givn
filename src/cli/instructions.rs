@@ -2,6 +2,20 @@ use crate::config::overlay::load_effective;
 use crate::state::{ChangeState, list_archived, list_changes};
 use anyhow::{Result, bail};
 
+/// Instruction ids served outside the artifact manifest. They resolve through
+/// the same cascade and are named in the unknown-id diagnostic.
+const POLICY_INSTRUCTION_IDS: &[&str] = &[
+    "dialog",
+    "dialog-examples",
+    "challenge",
+    "dev-principles",
+    "domain-modeling",
+    "architecture-principles",
+    "review-reverse",
+    "specs-reverse",
+    "tasks-reverse",
+];
+
 /// Show instructions.
 ///
 /// `givn instructions <artifact>` — unchanged: resolves the instruction for
@@ -41,7 +55,8 @@ fn run_artifact(
         // context is required, so a canonical policy is reachable in any
         // initialized project. An unresolvable id keeps the artifact error.
         let content = crate::config::cascade::resolve_instruction(artifact).map_err(|_| {
-            let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+            let mut known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+            known.extend(POLICY_INSTRUCTION_IDS);
             anyhow::anyhow!(
                 "unknown artifact '{}'. Known artifacts: {}",
                 artifact,
@@ -129,21 +144,15 @@ fn extension_rules(project_root: &std::path::Path, artifact: &str) -> Vec<String
 /// blocks against. Mirrors the sync render path's flags; the names match
 /// `render::KNOWN_ADDON_KEYS`.
 fn addon_flags(manifest: &crate::config::manifest::Manifest) -> Vec<(&'static str, bool)> {
-    vec![
-        ("arc42", manifest.addons.arc42),
-        ("domain_modeling", manifest.addons.domain_modeling),
-        ("dev_principles", manifest.addons.dev_principles),
-        (
-            "architecture_principles",
-            manifest.addons.architecture_principles,
-        ),
-        ("grill_me", manifest.addons.grill_me),
-        ("grill_with_docs", manifest.addons.grill_with_docs),
-        ("absolute_mode", manifest.addons.absolute_mode),
-        ("readme", manifest.addons.readme),
-        ("coverage", manifest.addons.coverage),
-        ("outline", manifest.addons.outline),
-    ]
+    crate::skills::render::KNOWN_ADDON_KEYS
+        .iter()
+        .map(|key| {
+            (
+                *key,
+                crate::skills::render::manifest_addon_enabled(manifest, key),
+            )
+        })
+        .collect()
 }
 
 /// `givn instructions` with no artifact — the generic, context-aware entry point.
@@ -292,8 +301,8 @@ fn report_no_active_changes(
             println!();
         }
         if unproven.is_empty() {
-            println!("Next: run `{next_command}` to start one, or `/givn-propose <description>`");
-            println!("(as a skill) to plan and scaffold it in one pass.");
+            println!("Next: run `{next_command}` to start one, or invoke the `givn-propose`");
+            println!("skill (OMP: `/skill:givn-propose`) to plan and scaffold it in one pass.");
         } else {
             println!("Next: run `{next_command}` to resume the candidate.");
         }
@@ -429,7 +438,7 @@ fn report_change(
         }
         println!("Next: run `{next_command}`");
         if let Some(skill) = next_skill {
-            println!("  (as a skill in your AI agent: `/{skill}`)");
+            println!("  (load the `{skill}` skill; in OMP: `/skill:{skill}`)");
         }
     }
     Ok(())
@@ -501,7 +510,7 @@ fn describe_next_step(state: &ChangeState) -> (String, String, Option<String>) {
     }
 }
 
-/// Map a manifest artifact id to its conventional slash-command/skill name.
+/// Map a manifest artifact id to its conventional skill name.
 fn artifact_to_skill(artifact_id: &str) -> String {
     match artifact_id {
         "proposal" => "givn-propose".to_string(),
@@ -521,15 +530,21 @@ fn generic_overview() -> String {
  linked ideation topic before changing a capability; consult confirmed \
  Personas as review lenses, not as Gherkin actors. Workflow: \
  propose → spec → design → design-review → tasks → implement → review → \
- archive. Skills/slash-commands are named `/givn-<step>` (e.g. `/givn-propose`, \
-`/givn-implement`). Run `givn status` or `givn status --change <id>` for a \
-full checklist view with pending tasks, or `givn instructions <artifact>` for \
-that artifact's writing instructions. For every user-facing question, follow \
-the effective dialog policy from `givn instructions dialog`; load it once per \
-context before the first question (once per context rather than rereading \
-before every question), including clarification and confirmation outside a \
-named workflow, and pass the obligation explicitly when work is handed \
-to another context."
+ archive. Generated guidance is skills-only; no `/givn-*` command files are \
+ installed. Claude Code and OpenCode use their native skill invocation, the \
+ neutral `.agents` target uses skill discovery, OMP uses `/skill:givn-<step>`, \
+ and Maki uses an explicit request or an agent-selected skill. Run `givn status` \
+ or `givn status --change <id>` for a full checklist view with pending tasks, \
+ or `givn instructions <artifact>` for that artifact's writing instructions. \
+ For every user-facing question, follow the effective dialog policy from \
+ `givn instructions dialog`; load it once per context before the first \
+ question (once per context rather than rereading before every question), \
+ including clarification and confirmation outside a named workflow, and pass \
+ the obligation explicitly when work is handed to another context. This \
+ obligation applies with optional addons disabled and outside any named \
+ skill. Before the first question of a policy-indexed type, read that type's companion examples \
+ from `givn instructions dialog-examples`; the policy is not loaded \
+ automatically."
         .to_string()
 }
 

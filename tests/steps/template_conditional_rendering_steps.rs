@@ -121,6 +121,101 @@ fn givn_project_unbalanced_command_conditional(world: &mut GivnWorld) {
     .expect("write command override template");
 }
 
+#[given(
+    "a Givn project with a project-owned skill template containing a conditional on the arc42 addon"
+)]
+fn given_project_owned_skill_conditional_on_arc42(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    let dir = support::env(world).path("givn/skills/givn-review");
+    std::fs::create_dir_all(&dir).expect("create skill override dir");
+    std::fs::write(
+        dir.join("SKILL.md.tmpl"),
+        "---\nname: givn-review\ndescription: fixture override\n---\n\n# givn-review\n\n{{#if addons.arc42}}\nArc42 implementation conformance\n{{/if}}\n\nThe rules for this step are served by `givn instructions review`.\n",
+    )
+    .expect("write conditional skill override");
+}
+
+#[given(regex = r#"^the arc42 addon is "(enabled|disabled)"$"#)]
+fn given_arc42_state(world: &mut GivnWorld, state: String) {
+    support::set_addon(world, "arc42", state == "enabled");
+}
+
+#[given("a Givn project with a project skill template that contains an unbalanced conditional")]
+fn given_unbalanced_skill_conditional(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    let dir = support::env(world).path("givn/skills/givn-review");
+    std::fs::create_dir_all(&dir).expect("create skill override dir");
+    std::fs::write(
+        dir.join("SKILL.md.tmpl"),
+        "---\nname: givn-review\ndescription: fixture override\n---\n\n# givn-review\n\nbody\n{{/if}}\n",
+    )
+    .expect("write unbalanced skill override");
+}
+
+#[then(
+    regex = r#"^the generated skill "(includes|omits)" the override's conditional Arc42 content$"#
+)]
+fn then_override_conditional_content(world: &mut GivnWorld, outcome: String) {
+    let texts = support::skill_texts(world, "givn-review");
+    assert!(!texts.is_empty(), "no generated review skill was found");
+    for text in texts {
+        let present = text.contains("Arc42 implementation conformance");
+        assert_eq!(
+            present,
+            outcome == "includes",
+            "override conditional outcome was {outcome}:\n{text}"
+        );
+    }
+}
+
+#[then("the project-owned skill template remains byte-for-byte unchanged")]
+fn then_project_skill_template_unchanged(world: &mut GivnWorld) {
+    let path = support::env(world).path("givn/skills/givn-review/SKILL.md.tmpl");
+    let content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read project skill template {}: {error}", path.display()));
+    assert!(
+        content.contains("Arc42 implementation conformance") || content.contains("{{/if}}"),
+        "the project-owned skill template was rewritten:\n{content}"
+    );
+}
+
+#[then("no Givn command files are generated")]
+fn then_no_command_files(world: &mut GivnWorld) {
+    let root = support::env(world).root();
+    for target in [".opencode", ".agents", ".claude", ".omp", ".maki"] {
+        let commands = root.join(target).join("commands");
+        let generated: Vec<_> = std::fs::read_dir(&commands)
+            .map(|entries| {
+                entries
+                    .flatten()
+                    .map(|entry| entry.path())
+                    .filter(|path| path.extension().is_some_and(|ext| ext == "md"))
+                    .collect()
+            })
+            .unwrap_or_default();
+        assert!(
+            generated.is_empty(),
+            "generated command files found under {target}: {generated:?}"
+        );
+    }
+}
+
+#[then("no generated review command exists")]
+fn then_no_review_command(world: &mut GivnWorld) {
+    assert!(
+        support::command_text(world, "givn-review").is_none(),
+        "a generated review command exists"
+    );
+}
+
+#[then("no generated design-review command exists")]
+fn then_no_design_review_command(world: &mut GivnWorld) {
+    assert!(
+        support::command_text(world, "givn-design-review").is_none(),
+        "a generated design-review command exists"
+    );
+}
+
 // --- When -------------------------------------------------------------------
 
 #[when("a consumer synchronizes skills through the Givn CLI")]
@@ -375,6 +470,7 @@ fn served_design_review_contains_contracts_branch(world: &mut GivnWorld) {
 // --- Then: universal residual scan ------------------------------------------
 
 #[then("no generated skill or command mentions any disabled addon")]
+#[then("no generated skill mentions any disabled addon")]
 fn no_generated_mentions_disabled_addon(world: &mut GivnWorld) {
     let files = support::all_generated_files(world);
     assert!(

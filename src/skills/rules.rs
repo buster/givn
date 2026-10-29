@@ -235,17 +235,13 @@ pub fn strict_rules(project_root: &Path) -> Result<Vec<String>> {
 }
 
 /// The fenced ignore entries. They are prefix patterns, not per-file paths,
-/// so the tracked block never enumerates individual skill or command names.
+/// so the tracked block never enumerates individual skill names.
 pub fn ignore_entries() -> Vec<String> {
     vec![
         ".opencode/skills/givn-*/".to_string(),
         ".agents/skills/givn-*/".to_string(),
         ".claude/skills/givn-*/".to_string(),
         ".omp/skills/givn-*/".to_string(),
-        ".opencode/commands/givn-*.md".to_string(),
-        ".opencode/commands/grill-*.md".to_string(),
-        ".omp/commands/givn-*.md".to_string(),
-        ".omp/commands/grill-*.md".to_string(),
         ".opencode/plugins/givn-attribution.js".to_string(),
         ".opencode/plugins/givn-timeline.js".to_string(),
         ".claude/hooks/givn-attribution.sh".to_string(),
@@ -255,8 +251,6 @@ pub fn ignore_entries() -> Vec<String> {
         ".omp/hooks/pre/givn-timeline.js".to_string(),
         ".maki/lua/givn-timeline.lua".to_string(),
         ".maki/skills/givn-*/".to_string(),
-        ".maki/commands/givn-*.md".to_string(),
-        ".maki/commands/grill-*.md".to_string(),
         ".githooks/commit-msg".to_string(),
     ]
 }
@@ -280,11 +274,6 @@ pub fn is_rule_path(relative: &str) -> bool {
     // The two merged Maki files (`.maki/plugin.toml`, `.maki/init.lua`) are
     // user-owned: they are deliberately absent here, so a merged file never
     // becomes a strict rule.
-    for prefix in [".opencode/commands/", ".omp/commands/", ".maki/commands/"] {
-        if let Some(name) = relative.strip_prefix(prefix) {
-            return name.starts_with("givn-") || name.starts_with("grill-");
-        }
-    }
     for prefix in [
         ".opencode/skills/",
         ".agents/skills/",
@@ -586,8 +575,6 @@ mod tests {
             ".opencode/skills/givn-propose/SKILL.md",
             ".agents/skills/givn-spec/SKILL.md",
             ".claude/skills/givn-review/SKILL.md",
-            ".opencode/commands/givn-design.md",
-            ".opencode/commands/grill-me.md",
             ".opencode/plugins/givn-attribution.js",
             ".opencode/plugins/givn-timeline.js",
             ".claude/hooks/givn-attribution.sh",
@@ -596,7 +583,6 @@ mod tests {
             ".omp/hooks/pre/givn-timeline.js",
             ".maki/lua/givn-timeline.lua",
             ".maki/skills/givn-propose/SKILL.md",
-            ".maki/commands/givn-design.md",
             ".githooks/commit-msg",
         ];
         for path in rules {

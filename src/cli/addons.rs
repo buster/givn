@@ -19,8 +19,8 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
         default_enabled: true,
     },
     AddonSpec {
-        id: "absolute_mode",
-        description: "Absolute Mode communication policy — manages a fenced block in AGENTS.md",
+        id: "communication_policy",
+        description: "Communication policy — manages a fenced presentation block in AGENTS.md; the dialog obligation is independent of this addon",
         default_enabled: true,
     },
     AddonSpec {
@@ -44,13 +44,8 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
         default_enabled: true,
     },
     AddonSpec {
-        id: "grill_me",
-        description: "Command — Socratically grill the current plan/design, one question at a time",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "grill_with_docs",
-        description: "Command — grill the plan/design, citing a source in the project's own docs for every challenge",
+        id: "challenge",
+        description: "Skill — research proposals, tests, specs, design, code, and whole changes before asking unresolved decisions; no lifecycle gate",
         default_enabled: true,
     },
     AddonSpec {
@@ -65,24 +60,21 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
     },
 ];
 
-/// `givn addons list` — print all known addons and their enabled/disabled status.
+/// `givn addons list` — print all known addons and their effective enabled state.
+///
+/// The listing resolves the same effective manifest every other command uses:
+/// the embedded defaults, then the project overlay. An omitted addon in a
+/// partial block therefore reports its resolved default, not "absent".
 pub fn run_list() -> Result<()> {
     let project_root = std::env::current_dir()?;
     let config_path = project_root.join("givn/config.yaml");
-
-    // Read enabled state from config (if it exists).
-    let enabled = if config_path.exists() {
-        let yaml = std::fs::read_to_string(&config_path)?;
-        parse_enabled_addons(&yaml)
-    } else {
-        std::collections::HashMap::new()
-    };
+    let manifest = crate::config::overlay::load_effective()?;
 
     println!("Available addons:\n");
     for addon in KNOWN_ADDONS {
         let id = addon.id;
         let description = addon.description;
-        let state = if *enabled.get(id).unwrap_or(&addon.default_enabled) {
+        let state = if manifest.addons.get(id).unwrap_or(addon.default_enabled) {
             "enabled "
         } else {
             "disabled"
@@ -96,6 +88,7 @@ pub fn run_list() -> Result<()> {
         println!("Tip: run `givn init` first to create givn/config.yaml, then");
         println!("     `givn addons enable <name>` to enable an addon.");
     } else {
+        println!("These are effective values: omitted keys use the enabled default.");
         println!("Use `givn addons enable <name>` or `givn addons disable <name>`");
         println!("to toggle an addon. Changes are written to givn/config.yaml.");
     }
@@ -120,7 +113,13 @@ pub fn enable_scaffold(name: &str) -> Result<()> {
     set_addon(&std::env::current_dir()?, name, true)?;
     println!("enabled addon '{name}' in givn/config.yaml");
     println!();
+    scaffold_enabled(name)
+}
 
+/// Materialize one addon's one-time files without changing its stored setting.
+/// `givn init --force` uses this after restoring the project's explicit addon
+/// choices, so a disabled addon is never scaffolded.
+pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
     // Addon-specific scaffolding.
     if name == "arc42" {
         scaffold_arc42()?;
@@ -130,12 +129,10 @@ pub fn enable_scaffold(name: &str) -> Result<()> {
         println!("Next steps:");
         println!("  givn status              — see the updated workflow");
         println!("  givn eject {name}:instruction   — customise the instruction (optional)");
-    } else if name == "absolute_mode" {
-        let project_root = std::env::current_dir()?;
-        crate::cli::absolute_mode::apply(&project_root)?;
-        println!("Wrote the Absolute Mode policy block to AGENTS.md.");
-        println!("Only the fenced <!-- givn:begin:absolute-mode --> block was added;");
-        println!("the rest of AGENTS.md is untouched.");
+    } else if name == "communication_policy" {
+        println!(
+            "The managed communication policy block follows this setting on the next `givn skills sync`."
+        );
     } else if name == "readme" {
         let count = crate::cli::readme::scaffold_readme()?;
         if count > 0 {
@@ -233,10 +230,9 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
     if name == "arc42" {
         println!("The '{name}' artifact is no longer part of the workflow.");
         println!("Existing docs/arc42/ files are not deleted.");
-    } else if name == "absolute_mode" {
-        let project_root = std::env::current_dir()?;
-        crate::cli::absolute_mode::remove(&project_root)?;
-        println!("Removed the Absolute Mode block from AGENTS.md.");
+    } else if name == "communication_policy" {
+        println!("The managed communication block is removed on the next `givn skills sync`.");
+        println!("The mandatory dialog obligation is unchanged.");
         println!("Any other content in AGENTS.md was left untouched.");
     } else if name == "readme" {
         println!("The 'readme' addon is disabled. The existing README.md is not deleted.");
@@ -245,10 +241,7 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
         println!("The coverage fence in README.md is preserved.");
     } else if is_skill_addon(name) {
         remove_skill_addon_files(name);
-        println!("Removed the '{name}' skill files from .agents/, .claude/, .opencode/, .maki/.");
-    } else if is_command_addon(name) {
-        remove_command_addon_files(name);
-        println!("Removed the '{name}' command file from .opencode/commands/ and .maki/commands/.");
+        println!("Removed the '{name}' skill files from every agent target.");
     }
 
     Ok(())
@@ -258,11 +251,71 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
 
 fn validate_addon_name(name: &str) -> Result<()> {
     if KNOWN_ADDONS.iter().any(|addon| addon.id == name) {
-        Ok(())
-    } else {
-        let known: Vec<&str> = KNOWN_ADDONS.iter().map(|addon| addon.id).collect();
-        bail!("unknown addon '{name}'. Known addons: {}", known.join(", "))
+        return Ok(());
     }
+    if let Some(replacement) = crate::config::manifest::Addons::replacement_for_retired(name) {
+        bail!(
+            "retired addon '{name}' is not supported. Rename it manually to '{replacement}' in \
+             givn/config.yaml — givn 0.9.10 does not convert retired configuration or accept a \
+             compatibility alias. The supported migration baseline is 1.0; review the \
+             communication_policy, challenge, and skills-only transitions by hand. \
+             No files were changed."
+        );
+    }
+    let known: Vec<&str> = KNOWN_ADDONS.iter().map(|addon| addon.id).collect();
+    bail!("unknown addon '{name}'. Known addons: {}", known.join(", "))
+}
+
+/// The project's explicit addon choices, in registry order. Used by
+/// `givn init --force` to restore those choices after re-rendering the
+/// managed scaffold. Retired or non-boolean settings are refused before any
+/// write instead of being silently dropped.
+pub(crate) fn explicit_addon_settings(content: &str) -> Result<Vec<(String, bool)>> {
+    let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(content)
+        .map_err(|e| anyhow::anyhow!("givn/config.yaml is not valid YAML: {e}"))?;
+    let Some(root) = document.as_mapping() else {
+        return Ok(Vec::new());
+    };
+    let Some(addons) = root.get("addons") else {
+        return Ok(Vec::new());
+    };
+    let Some(addons) = addons.as_mapping() else {
+        bail!(
+            "the addons setting in givn/config.yaml must be a block mapping; no files were changed"
+        );
+    };
+    for key in addons.keys() {
+        let Some(key) = key.as_str() else {
+            bail!("addon settings must use string keys; no files were changed");
+        };
+        validate_addon_name(key)?;
+    }
+    let mut settings = Vec::new();
+    for addon in KNOWN_ADDONS {
+        let Some(value) = addons.get(addon.id) else {
+            continue;
+        };
+        let Some(enabled) = value.as_bool() else {
+            bail!(
+                "addon '{}' must be true or false in givn/config.yaml; no files were changed",
+                addon.id
+            );
+        };
+        settings.push((addon.id.to_string(), enabled));
+    }
+    Ok(settings)
+}
+
+/// Render explicit addon choices as an ordinary block mapping.
+pub(crate) fn addons_block(settings: &[(String, bool)]) -> String {
+    if settings.is_empty() {
+        return String::new();
+    }
+    let mut block = String::from("addons:\n");
+    for (name, enabled) in settings {
+        block.push_str(&format!("  {name}: {enabled}\n"));
+    }
+    block
 }
 
 /// Write an explicit `false` for every known add-on. `givn init --no-addons`
@@ -275,137 +328,191 @@ pub(crate) fn disable_all(project_root: &std::path::Path) -> Result<()> {
     Ok(())
 }
 
-/// Write `addons.<name>: <value>` into givn/config.yaml.
-///
-/// Strategy (line-based, preserves all other content):
-///   1. If `addons:` block already exists with the key → replace the value line.
-///   2. If `addons:` block exists without the key → insert the key after `addons:`.
-///   3. If no `addons:` block exists → append a new block at the end.
+/// Write `addons.<name>: <value>` into givn/config.yaml without changing any
+/// other setting. Ordinary block mappings are edited in place; flow-style or
+/// otherwise ambiguous structures are refused before the file is written.
 fn set_addon(project_root: &std::path::Path, name: &str, enabled: bool) -> Result<()> {
     let config_path = project_root.join("givn/config.yaml");
-
     if !config_path.exists() {
         bail!("givn/config.yaml not found. Run `givn init` first.");
     }
-
     let content = std::fs::read_to_string(&config_path)?;
-    let value_str = if enabled { "true" } else { "false" };
-    let key_line = format!("  {name}: {value_str}");
-
-    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
-
-    // Case 1: key already exists (uncommented) — replace its value in place.
-    for line in &mut lines {
-        let trimmed = line.trim_start();
-        if trimmed.starts_with(&format!("{name}:"))
-            && !line.trim_start_matches(' ').starts_with('#')
-        {
-            // We're inside addons block if the key is indented.
-            if line.starts_with("  ") && !line.starts_with("   ") {
-                *line = key_line.clone();
-                std::fs::write(&config_path, lines.join("\n") + "\n")?;
-                return Ok(());
-            }
-        }
+    let updated = edit_addons_block(&content, name, enabled)?;
+    let parsed: serde_yaml_ng::Value = serde_yaml_ng::from_str(&updated)
+        .map_err(|e| anyhow::anyhow!("refusing to write invalid givn/config.yaml: {e}"))?;
+    let actual = parsed
+        .get("addons")
+        .and_then(|value| value.as_mapping())
+        .and_then(|addons| addons.get(name))
+        .and_then(|value| value.as_bool());
+    if actual != Some(enabled) {
+        bail!(
+            "refusing to write givn/config.yaml: the edited addon '{name}' did not resolve to \
+             the requested value; no files were changed"
+        );
     }
-
-    // Case 2: `addons:` block exists (uncommented) — insert/replace key inside it.
-    for i in 0..lines.len() {
-        let trimmed = lines[i].trim();
-        if trimmed == "addons:" {
-            // Check if the key exists commented-out on the next few lines.
-            // Uncomment it, or insert after `addons:`.
-            let mut inserted = false;
-            for (_, line) in lines.iter_mut().enumerate().skip(i + 1) {
-                // Stop if we hit a new top-level key.
-                if !line.is_empty() && !line.starts_with(' ') && !line.starts_with('#') {
-                    break;
-                }
-                // Uncomment or replace a commented version of this key.
-                if line.contains(&format!("{name}:")) {
-                    *line = key_line.clone();
-                    inserted = true;
-                    break;
-                }
-            }
-            if !inserted {
-                lines.insert(i + 1, key_line.clone());
-            }
-            std::fs::write(&config_path, lines.join("\n") + "\n")?;
-            return Ok(());
-        }
-    }
-
-    // Case 3: no `addons:` block at all — look for commented-out addons block
-    // and uncomment it, or append a new one.
-    for i in 0..lines.len() {
-        if lines[i].trim_start_matches('#').trim() == "addons:" {
-            // Found a commented `# addons:` — uncomment the block.
-            lines[i] = "addons:".to_string();
-            // Uncomment or insert the specific key on the next line.
-            let mut key_set = false;
-            for (_, line) in lines.iter_mut().enumerate().skip(i + 1) {
-                if line
-                    .trim_start_matches([' ', '#'])
-                    .starts_with(&format!("{name}:"))
-                {
-                    *line = key_line.clone();
-                    key_set = true;
-                    break;
-                }
-                // Stop at next non-comment, non-blank, non-indented line.
-                if !line.is_empty() && !line.starts_with(' ') && !line.starts_with('#') {
-                    break;
-                }
-            }
-            if !key_set {
-                lines.insert(i + 1, key_line.clone());
-            }
-            std::fs::write(&config_path, lines.join("\n") + "\n")?;
-            return Ok(());
-        }
-    }
-
-    // Append a fresh addons block.
-    if !lines.last().map(|l| l.is_empty()).unwrap_or(true) {
-        lines.push(String::new());
-    }
-    lines.push("addons:".to_string());
-    lines.push(key_line);
-    std::fs::write(&config_path, lines.join("\n") + "\n")?;
+    std::fs::write(&config_path, updated)?;
     Ok(())
 }
 
-/// Parse which addons are enabled from config YAML (simple line scan,
-/// no full YAML parse — avoids clobbering comments).
-pub(crate) fn parse_enabled_addons(yaml: &str) -> std::collections::HashMap<String, bool> {
-    let mut result = std::collections::HashMap::new();
-    let mut in_addons = false;
+fn active_addons_lines(lines: &[&str]) -> Vec<usize> {
+    let mut found = Vec::new();
+    for (index, line) in lines.iter().enumerate() {
+        if line.is_empty() || line.starts_with([' ', '\t', '#']) {
+            continue;
+        }
+        let Some((key, _)) = line.split_once(':') else {
+            continue;
+        };
+        if key.trim() == "addons" {
+            found.push(index);
+        }
+    }
+    found
+}
 
-    for line in yaml.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with('#') {
-            continue;
+fn leading_spaces(line: &str) -> usize {
+    line.len() - line.trim_start_matches(' ').len()
+}
+
+fn edit_addons_block(content: &str, name: &str, enabled: bool) -> Result<String> {
+    let lines: Vec<&str> = content.lines().collect();
+    let addons_lines = active_addons_lines(&lines);
+    if addons_lines.len() > 1 {
+        bail!(
+            "givn/config.yaml has multiple active addons blocks; refusing to edit. Keep exactly \
+             one addons block and edit givn/config.yaml manually. No files were changed."
+        );
+    }
+
+    let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(content)
+        .map_err(|e| anyhow::anyhow!("givn/config.yaml is not valid YAML: {e}"))?;
+    let root = document
+        .as_mapping()
+        .ok_or_else(|| anyhow::anyhow!("givn/config.yaml must be a YAML mapping"))?;
+    let value = if enabled { "true" } else { "false" };
+
+    let Some(start) = addons_lines.first().copied() else {
+        if root.get("addons").is_some() {
+            bail!(
+                "the addons setting in givn/config.yaml is not an ordinary block mapping; \
+                 refusing to edit. Edit givn/config.yaml manually. No files were changed."
+            );
         }
-        if trimmed == "addons:" {
-            in_addons = true;
-            continue;
-        }
-        if in_addons {
-            // Stop if we hit a new top-level key (non-indented, non-blank).
-            if !line.is_empty() && !line.starts_with(' ') {
-                break;
-            }
-            // Parse `  <name>: true|false`.
-            if let Some(rest) = trimmed.strip_suffix(": true") {
-                result.insert(rest.to_string(), true);
-            } else if let Some(rest) = trimmed.strip_suffix(": false") {
-                result.insert(rest.to_string(), false);
-            }
+        let mut updated = content.trim_end().to_string();
+        updated.push_str(&format!("\n\naddons:\n  {name}: {value}\n"));
+        return Ok(updated);
+    };
+
+    let colon = lines[start]
+        .find(':')
+        .ok_or_else(|| anyhow::anyhow!("malformed addons line in givn/config.yaml"))?;
+    let rest = lines[start][colon + 1..].trim();
+    if !rest.is_empty() && !rest.starts_with('#') {
+        bail!(
+            "the addons setting in givn/config.yaml is not an ordinary block mapping (flow \
+             style, anchor, or inline value); refusing to edit. Rewrite it as an indented block \
+             and edit givn/config.yaml manually. No files were changed."
+        );
+    }
+    match root.get("addons").and_then(|value| value.as_mapping()) {
+        Some(_) => {}
+        None => {
+            bail!(
+                "the addons setting in givn/config.yaml is not a block mapping; refusing to edit. \
+                 Edit givn/config.yaml manually. No files were changed."
+            )
         }
     }
 
-    result
+    let mut end = start + 1;
+    while end < lines.len() {
+        let line = lines[end];
+        if line.is_empty()
+            || line.trim_start().starts_with('#')
+            || line.starts_with(' ')
+            || line.starts_with('\t')
+        {
+            end += 1;
+        } else {
+            break;
+        }
+    }
+
+    let child_indent = (start + 1..end)
+        .find_map(|index| {
+            let line = lines[index];
+            let trimmed = line.trim_start();
+            (!trimmed.is_empty() && !trimmed.starts_with('#'))
+                .then(|| leading_spaces(line))
+                .filter(|indent| *indent > 0)
+        })
+        .unwrap_or(2);
+
+    let mut matches = Vec::new();
+    for (index, line) in lines.iter().enumerate().take(end).skip(start + 1) {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with('#') || leading_spaces(line) != child_indent {
+            continue;
+        }
+        if let Some((key, _)) = trimmed.split_once(':')
+            && key.trim() == name
+        {
+            matches.push(index);
+        }
+    }
+    if matches.len() > 1 {
+        bail!(
+            "givn/config.yaml sets addon '{name}' more than once; refusing to edit. Keep one \
+             setting and edit givn/config.yaml manually. No files were changed."
+        );
+    }
+
+    let mut updated = lines
+        .iter()
+        .map(|line| line.to_string())
+        .collect::<Vec<_>>();
+    if let Some(index) = matches.first().copied() {
+        let line = lines[index];
+        let indent = " ".repeat(child_indent);
+        let Some((_, after_colon)) = line.trim_start().split_once(':') else {
+            bail!("malformed addon line for '{name}' in givn/config.yaml");
+        };
+        let (before_comment, comment) = match after_colon.find('#') {
+            Some(hash) => (&after_colon[..hash], &after_colon[hash..]),
+            None => (after_colon, ""),
+        };
+        let current = before_comment.trim();
+        if current != "true" && current != "false" {
+            bail!(
+                "addon '{name}' in givn/config.yaml does not use a true/false value; refusing to \
+                 edit. Edit givn/config.yaml manually. No files were changed."
+            );
+        }
+        let comment = if comment.is_empty() {
+            String::new()
+        } else {
+            format!(" {}", comment)
+        };
+        updated[index] = format!("{indent}{name}: {value}{comment}");
+    } else {
+        if root
+            .get("addons")
+            .and_then(|value| value.as_mapping())
+            .is_some_and(|mapping| mapping.contains_key(name))
+        {
+            bail!(
+                "addon '{name}' in givn/config.yaml uses a shape this tool cannot safely edit; \
+                 refusing to edit. Edit givn/config.yaml manually. No files were changed."
+            );
+        }
+        updated.insert(
+            start + 1,
+            format!("{}{name}: {value}", " ".repeat(child_indent)),
+        );
+    }
+
+    Ok(format!("{}\n", updated.join("\n")))
 }
 
 /// Map from addon name to the generated skill name (or None if not a skill addon).
@@ -413,25 +520,13 @@ fn addon_skill_name(name: &str) -> Option<&'static str> {
     match name {
         "domain_modeling" => Some("givn-domain-modeling"),
         "dev_principles" => Some("givn-dev-principles"),
-        _ => None,
-    }
-}
-
-/// Map from addon name to the generated command name (or None if not a command addon).
-fn addon_command_name(name: &str) -> Option<&'static str> {
-    match name {
-        "grill_me" => Some("grill-me"),
-        "grill_with_docs" => Some("grill-with-docs"),
+        "challenge" => Some("givn-challenge"),
         _ => None,
     }
 }
 
 fn is_skill_addon(name: &str) -> bool {
     addon_skill_name(name).is_some()
-}
-
-fn is_command_addon(name: &str) -> bool {
-    addon_command_name(name).is_some()
 }
 
 /// Delete generated skill directories from all target locations for a skill addon.
@@ -448,44 +543,9 @@ fn remove_skill_addon_files(addon: &str) {
     }
 }
 
-/// Delete the generated command file for a command addon.
-fn remove_command_addon_files(addon: &str) {
-    let Some(cmd_name) = addon_command_name(addon) else {
-        return;
-    };
-    let project_root = std::env::current_dir().expect("current dir");
-    for base in &[".opencode", ".omp", ".maki"] {
-        let file = project_root.join(format!("{base}/commands/{cmd_name}.md"));
-        if file.exists() {
-            let _ = std::fs::remove_file(&file);
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parse_enabled_addons_finds_true() {
-        let yaml = "addons:\n  arc42: true\n";
-        let map = parse_enabled_addons(yaml);
-        assert_eq!(map.get("arc42"), Some(&true));
-    }
-
-    #[test]
-    fn parse_enabled_addons_finds_false() {
-        let yaml = "addons:\n  arc42: false\n";
-        let map = parse_enabled_addons(yaml);
-        assert_eq!(map.get("arc42"), Some(&false));
-    }
-
-    #[test]
-    fn parse_enabled_addons_ignores_comments() {
-        let yaml = "# addons:\n#   arc42: true\nverify:\n  command: cargo test\n";
-        let map = parse_enabled_addons(yaml);
-        assert!(map.is_empty());
-    }
 
     #[test]
     fn validate_addon_name_rejects_unknown() {
@@ -512,8 +572,8 @@ mod tests {
         assert!(validate_addon_name("domain_modeling").is_ok());
         assert!(validate_addon_name("dev_principles").is_ok());
         assert!(validate_addon_name("architecture_principles").is_ok());
-        assert!(validate_addon_name("grill_me").is_ok());
-        assert!(validate_addon_name("grill_with_docs").is_ok());
+        assert!(validate_addon_name("communication_policy").is_ok());
+        assert!(validate_addon_name("challenge").is_ok());
     }
 
     #[test]
@@ -526,17 +586,145 @@ mod tests {
             addon_skill_name("dev_principles"),
             Some("givn-dev-principles")
         );
-        assert_eq!(addon_skill_name("grill_me"), None);
+        assert_eq!(addon_skill_name("challenge"), Some("givn-challenge"));
         assert_eq!(addon_skill_name("arc42"), None);
     }
 
+    fn config_fixture(content: &str) -> (tempfile::TempDir, std::path::PathBuf) {
+        let directory = tempfile::tempdir().unwrap();
+        let givn = directory.path().join("givn");
+        std::fs::create_dir(&givn).unwrap();
+        let path = givn.join("config.yaml");
+        std::fs::write(&path, content).unwrap();
+        (directory, path)
+    }
+
     #[test]
-    fn addon_command_name_maps_correctly() {
-        assert_eq!(addon_command_name("grill_me"), Some("grill-me"));
-        assert_eq!(
-            addon_command_name("grill_with_docs"),
-            Some("grill-with-docs")
+    fn addon_edits_refuse_flow_style_addons_before_writing() {
+        let content = "givn_config_version: \"0.9.9\"\naddons: {challenge: true}\n";
+        let (directory, path) = config_fixture(content);
+        let error = set_addon(directory.path(), "challenge", false).unwrap_err();
+        assert!(error.to_string().contains("block"), "{error}");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), content);
+    }
+
+    #[test]
+    fn addon_edits_refuse_anchored_addons_before_writing() {
+        let content = "addons: &defaults\n  challenge: true\n";
+        let (directory, path) = config_fixture(content);
+        let error = set_addon(directory.path(), "challenge", false).unwrap_err();
+        assert!(error.to_string().contains("block"), "{error}");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), content);
+    }
+
+    #[test]
+    fn addon_edits_refuse_duplicate_addons_sections_before_writing() {
+        let content = "addons:\n  challenge: true\naddons:\n  outline: false\n";
+        let (directory, path) = config_fixture(content);
+        let error = set_addon(directory.path(), "challenge", false).unwrap_err();
+        assert!(error.to_string().contains("addons"), "{error}");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), content);
+    }
+
+    #[test]
+    fn addon_edits_change_only_the_key_inside_the_addons_block() {
+        let content = "\
+givn_config_version: \"0.9.9\"
+other:
+  challenge: true
+addons:
+  challenge: true # keep project choice
+  outline: false
+";
+        let (directory, _) = config_fixture(content);
+        set_addon(directory.path(), "challenge", false).unwrap();
+        let updated = std::fs::read_to_string(directory.path().join("givn/config.yaml")).unwrap();
+        assert!(
+            updated.contains("other:\n  challenge: true"),
+            "a same-named key outside addons must not change: {updated}"
         );
-        assert_eq!(addon_command_name("domain_modeling"), None);
+        assert!(
+            updated.contains("  challenge: false # keep project choice"),
+            "the intended addon key must change and keep its comment: {updated}"
+        );
+        assert!(updated.contains("  outline: false"), "{updated}");
+        assert_eq!(updated.matches("challenge:").count(), 2, "{updated}");
+    }
+
+    #[test]
+    fn addon_edits_leave_the_commented_template_untouched() {
+        let content = "\
+givn_config_version: \"0.9.9\"
+# addons:
+#   challenge: true
+";
+        let (directory, _) = config_fixture(content);
+        set_addon(directory.path(), "challenge", false).unwrap();
+        let updated = std::fs::read_to_string(directory.path().join("givn/config.yaml")).unwrap();
+        assert!(
+            updated.contains("# addons:\n#   challenge: true"),
+            "commented documentation must stay commented: {updated}"
+        );
+        assert!(
+            updated.contains("addons:\n  challenge: false"),
+            "a fresh active addons block must be appended: {updated}"
+        );
+    }
+
+    #[test]
+    fn disable_all_writes_an_explicit_false_for_every_current_addon() {
+        let content = "givn_config_version: \"0.9.9\"\n";
+        let (directory, path) = config_fixture(content);
+        disable_all(directory.path()).unwrap();
+        let updated = std::fs::read_to_string(&path).unwrap();
+        for addon in KNOWN_ADDONS {
+            assert!(
+                updated.contains(&format!("  {}: false", addon.id)),
+                "{} must be explicitly disabled: {updated}",
+                addon.id
+            );
+        }
+        assert!(
+            updated.contains("  communication_policy: false"),
+            "{updated}"
+        );
+        assert!(updated.contains("  challenge: false"), "{updated}");
+    }
+
+    #[test]
+    fn retired_addon_names_name_their_manual_replacement() {
+        for (retired, replacement) in [
+            ("absolute_mode", "communication_policy"),
+            ("grill_me", "challenge"),
+            ("grill_with_docs", "challenge"),
+        ] {
+            let error = validate_addon_name(retired).expect_err("retired addon must be refused");
+            let message = error.to_string();
+            assert!(message.contains(retired), "{message}");
+            assert!(message.contains(replacement), "{message}");
+            assert!(message.contains("manual"), "{message}");
+        }
+    }
+    #[test]
+    fn addon_registry_matches_the_manifest_schema_and_defaults() {
+        let manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        assert_eq!(
+            KNOWN_ADDONS.len(),
+            crate::config::manifest::Addons::NAMES.len()
+        );
+        for addon in KNOWN_ADDONS {
+            assert_eq!(
+                manifest.addons.get(addon.id),
+                Some(addon.default_enabled),
+                "registry entry '{}' does not match the manifest schema",
+                addon.id
+            );
+        }
+        for name in crate::config::manifest::Addons::NAMES {
+            assert!(
+                KNOWN_ADDONS.iter().any(|addon| addon.id == name),
+                "manifest addon '{name}' is missing from the registry"
+            );
+        }
     }
 }

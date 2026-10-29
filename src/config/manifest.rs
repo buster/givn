@@ -268,15 +268,14 @@ impl Default for Coverage {
 /// Addon switches. Every switch is enabled by default; an explicit `false`
 /// opts one add-on out.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct Addons {
     /// Enable the arc42 documentation artifact.
     #[serde(default = "enabled_by_default")]
     pub arc42: bool,
-    /// Enable the Absolute Mode communication policy. When true, givn
-    /// manages a fenced `<!-- givn:begin:absolute-mode -->` block in the
-    /// project's AGENTS.md containing the policy text.
+    /// Enable the managed communication policy block in AGENTS.md.
     #[serde(default = "enabled_by_default")]
-    pub absolute_mode: bool,
+    pub communication_policy: bool,
     /// Enable the readme scaffolding addon. When true, `givn init` and
     /// `givn addons enable readme` write an initial README.md to the
     /// project root from the embedded template.
@@ -300,16 +299,64 @@ pub struct Addons {
     /// external boundaries. Enabled by default; a project may disable it.
     #[serde(default = "enabled_by_default")]
     pub architecture_principles: bool,
-    /// Command — Socratically grill the current plan/design, one question at a time.
+    /// Skill — challenge proposals, tests, specs, design, code, and whole
+    /// changes without adding a lifecycle gate.
     #[serde(default = "enabled_by_default")]
-    pub grill_me: bool,
-    /// Command — grill the plan/design, citing a source in the project's own
-    /// docs for every challenge.
-    #[serde(default = "enabled_by_default")]
-    pub grill_with_docs: bool,
+    pub challenge: bool,
     /// Outline report. Enabled by default; a project may disable it.
     #[serde(default = "enabled_by_default")]
     pub outline: bool,
+}
+
+impl Addons {
+    /// Every current addon id in registry order.
+    pub const NAMES: [&'static str; 9] = [
+        "arc42",
+        "communication_policy",
+        "readme",
+        "coverage",
+        "domain_modeling",
+        "dev_principles",
+        "architecture_principles",
+        "challenge",
+        "outline",
+    ];
+
+    /// Retired addon ids and their manual replacements. No alias is accepted.
+    pub const RETIRED: [(&'static str, &'static str); 3] = [
+        ("absolute_mode", "communication_policy"),
+        ("grill_me", "challenge"),
+        ("grill_with_docs", "challenge"),
+    ];
+
+    /// The effective state of every current addon.
+    pub fn entries(&self) -> [(&'static str, bool); 9] {
+        [
+            ("arc42", self.arc42),
+            ("communication_policy", self.communication_policy),
+            ("readme", self.readme),
+            ("coverage", self.coverage),
+            ("domain_modeling", self.domain_modeling),
+            ("dev_principles", self.dev_principles),
+            ("architecture_principles", self.architecture_principles),
+            ("challenge", self.challenge),
+            ("outline", self.outline),
+        ]
+    }
+
+    /// The effective state of one known addon.
+    pub fn get(&self, name: &str) -> Option<bool> {
+        self.entries()
+            .into_iter()
+            .find_map(|(id, enabled)| (id == name).then_some(enabled))
+    }
+
+    /// The manual replacement for a retired addon id.
+    pub fn replacement_for_retired(name: &str) -> Option<&'static str> {
+        Self::RETIRED
+            .into_iter()
+            .find_map(|(retired, replacement)| (retired == name).then_some(replacement))
+    }
 }
 
 fn enabled_by_default() -> bool {
@@ -320,14 +367,13 @@ impl Default for Addons {
     fn default() -> Self {
         Self {
             arc42: true,
-            absolute_mode: true,
+            communication_policy: true,
             readme: true,
             coverage: true,
             domain_modeling: true,
             dev_principles: true,
             architecture_principles: true,
-            grill_me: true,
-            grill_with_docs: true,
+            challenge: true,
             outline: true,
         }
     }
@@ -396,6 +442,71 @@ mod tests {
                 "config.yaml.tmpl must reference the schema field '{field}'"
             );
         }
+    }
+
+    #[test]
+    fn embedded_manifest_uses_the_renamed_addon_contract() {
+        let manifest = Manifest::load_embedded().unwrap();
+        let yaml = serde_yaml_ng::to_string(&manifest).unwrap();
+        assert!(yaml.contains("communication_policy: true"), "{yaml}");
+        assert!(yaml.contains("challenge: true"), "{yaml}");
+        assert!(!yaml.contains("absolute_mode"), "{yaml}");
+        assert!(!yaml.contains("grill_me"), "{yaml}");
+        assert!(!yaml.contains("grill_with_docs"), "{yaml}");
+    }
+
+    #[test]
+    fn config_template_documents_only_the_renamed_addon_contract() {
+        let template = include_str!("../../assets/config.yaml.tmpl");
+        assert!(
+            template.contains("communication_policy: true"),
+            "config template must document communication_policy"
+        );
+        assert!(
+            template.contains("challenge: true"),
+            "config template must document challenge"
+        );
+        assert!(
+            !template.contains("absolute_mode"),
+            "config template must not mention the retired absolute_mode addon"
+        );
+        assert!(
+            !template.contains("grill_me") && !template.contains("grill_with_docs"),
+            "config template must not mention retired grill addons"
+        );
+        let lines: Vec<&str> = template.lines().collect();
+        assert!(
+            !lines.windows(4).any(|window| {
+                window[0].contains("- id: review")
+                    && window.iter().any(|line| line.contains("remove: true"))
+            }),
+            "config template must not advertise removing the protected review artifact"
+        );
+        assert!(
+            !template.contains("generates: refactor.md"),
+            "config template must not show a scalar generates field"
+        );
+    }
+
+    #[test]
+    fn commands_template_ships_fail_closed_runner_sentinels() {
+        let template = include_str!("../../assets/commands.yaml.tmpl");
+        assert!(
+            template.contains("command: \"givn missing-testrunner\""),
+            "verify.command must ship the explicit unconfigured sentinel"
+        );
+        assert!(
+            template.contains("e2e_command: \"givn missing-e2e-runner\""),
+            "verify.e2e_command must ship an explicit unconfigured sentinel"
+        );
+        let active: Vec<&str> = template
+            .lines()
+            .filter(|line| !line.trim_start().starts_with('#'))
+            .collect();
+        assert!(
+            !active.iter().any(|line| line.contains("./run-tests.sh")),
+            "the active commands template must not assume a project runner script exists"
+        );
     }
 
     #[test]

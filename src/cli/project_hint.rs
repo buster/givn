@@ -1,7 +1,7 @@
 /// The always-on `givn-project` block in AGENTS.md: a short pointer telling
 /// any agent working in this project that it uses givn, and to run
 /// `givn instructions` for context-aware next steps. Unlike the
-/// `absolute_mode` addon, this is unconditional — always applied on
+/// `communication_policy` addon, this is unconditional — always applied on
 /// `givn init` and kept current on every `givn skills sync`, independent of
 /// any addon flag.
 use anyhow::{Context, Result};

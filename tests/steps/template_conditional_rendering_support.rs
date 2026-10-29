@@ -124,7 +124,7 @@ pub fn command_text(world: &GivnWorld, name: &str) -> Option<String> {
         .then(|| std::fs::read_to_string(&path).expect("read generated command file"))
 }
 
-/// Every generated skill and command markdown file across the present targets.
+/// Every generated skill markdown file across the present targets.
 pub fn all_generated_files(world: &GivnWorld) -> Vec<PathBuf> {
     let mut out = Vec::new();
     let root = env(world).root();
@@ -142,15 +142,6 @@ pub fn all_generated_files(world: &GivnWorld) -> Vec<PathBuf> {
                         out.push(path);
                     }
                 }
-            }
-        }
-    }
-    let commands = root.join(".opencode/commands");
-    if commands.is_dir() {
-        for entry in std::fs::read_dir(&commands).expect("read commands dir") {
-            let path = entry.expect("commands dir entry").path();
-            if path.extension().map(|e| e == "md").unwrap_or(false) {
-                out.push(path);
             }
         }
     }

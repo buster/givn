@@ -1,13 +1,15 @@
 use crate::config::overlay::load_effective;
 use crate::skills::render::{
-    SkillContext, default_skill_names, render_template, resolve_skill_template,
+    SkillContext, default_skill_names, manifest_addon_enabled, render_template,
+    resolve_skill_template,
 };
 use anyhow::{Context, Result};
-/// Write rendered skills and commands to the configured target locations:
+/// Write rendered skills to the configured target locations:
 /// - `.opencode/skills/<name>/SKILL.md` when `opencode` is selected
 /// - `.agents/skills/<name>/SKILL.md` when `agents` is selected
 /// - `.claude/skills/<name>/SKILL.md` when `claude` is selected
-/// - `.opencode/commands/<name>.md` when `opencode` is selected
+/// - `.omp/skills/<name>/SKILL.md` when `omp` is selected
+/// - `.maki/skills/<name>/SKILL.md` when `maki` is selected
 ///
 /// The target set comes from the `skills:` block of `givn/config.yaml`
 /// (default: `[opencode]`). See the agent-integration architecture documentation.
@@ -15,23 +17,23 @@ use anyhow::{Context, Result};
 /// `AGENTS.md` at the repo root is otherwise user-owned. The only exception:
 /// givn manages its own fenced `<!-- givn:begin:* -->` blocks inside it:
 /// - `givn-project` — always present, a short pointer to `givn instructions`.
-/// - `absolute-mode` — present only when that addon is enabled.
+/// - `communication-policy` — present only when that addon is enabled.
 ///
 /// Both are kept current on every call to `sync`.
 use std::path::Path;
 
-/// A canonical agent target for generated skills/commands.
+/// A canonical agent target for generated skills.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AgentTarget {
-    /// `.opencode/` — opencode skills mirror + slash commands.
+    /// `.opencode/` — opencode skills mirror.
     Opencode,
     /// `.agents/` — the neutral skills location.
     Agents,
     /// `.claude/` — Claude Code skills mirror.
     Claude,
-    /// `.omp/` — the omp (Oh My Pi) skills, commands, and hook location.
+    /// `.omp/` — the omp (Oh My Pi) skills and hook location.
     Omp,
-    /// `.maki/` — the Maki skills, commands, reporter module, and its merged
+    /// `.maki/` — the Maki skills, reporter module, and its merged
     /// `plugin.toml` grants / `init.lua` fence.
     Maki,
 }
@@ -71,14 +73,6 @@ impl AgentTarget {
     /// Name shown in the init prompt (fully-qualified directory form).
     pub fn display(&self) -> &'static str {
         self.dir()
-    }
-
-    /// Whether this target owns a `<dir>/commands/` slash-command directory.
-    pub fn owns_commands(&self) -> bool {
-        matches!(
-            self,
-            AgentTarget::Opencode | AgentTarget::Omp | AgentTarget::Maki
-        )
     }
 
     /// Resolve a (possibly dotted) name to a target.
@@ -150,6 +144,8 @@ pub fn add_targets(project_root: &Path, additions: &[AgentTarget]) -> Result<Vec
     let content = std::fs::read_to_string(&config_path)
         .with_context(|| format!("failed to read {}", config_path.display()))?;
 
+    validate_skills_yaml(&content)?;
+
     let mut merged = configured_targets(project_root)?;
     for t in additions {
         if !merged.contains(t) {
@@ -205,7 +201,54 @@ pub fn add_targets(project_root: &Path, additions: &[AgentTarget]) -> Result<Vec
     Ok(merged)
 }
 
-/// Regenerate all skills and commands in the project.
+/// Refuse YAML presentations this line-preserving editor cannot update safely.
+fn validate_skills_yaml(content: &str) -> Result<()> {
+    let mut skills_sections = 0usize;
+    let mut in_skills = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') || trimmed.is_empty() {
+            continue;
+        }
+        if trimmed == "skills:" {
+            skills_sections += 1;
+            in_skills = true;
+            if skills_sections > 1 {
+                anyhow::bail!(
+                    "unsupported YAML: givn/config.yaml contains more than one active skills section; edit it by hand"
+                );
+            }
+            continue;
+        }
+        if trimmed.starts_with("skills:") {
+            anyhow::bail!(
+                "unsupported YAML: the skills section is not a block mapping; edit givn/config.yaml by hand"
+            );
+        }
+        if !in_skills {
+            continue;
+        }
+        if !line.starts_with(' ') {
+            in_skills = false;
+            continue;
+        }
+        if let Some(value) = trimmed.strip_prefix("targets:") {
+            let value = value.trim();
+            if value.is_empty()
+                || value.starts_with('&')
+                || value.starts_with('*')
+                || value.starts_with('{')
+            {
+                anyhow::bail!(
+                    "unsupported YAML: the skills targets value cannot be updated safely; edit givn/config.yaml by hand"
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Regenerate all skills in the project.
 pub fn sync(project_root: &Path) -> Result<()> {
     crate::cli::git::install(project_root)?;
 
@@ -221,8 +264,11 @@ pub fn sync(project_root: &Path) -> Result<()> {
     if domain_skill {
         skill_names.push("givn-domain-modeling");
     }
-    if manifest.addons.dev_principles {
+    if manifest_addon_enabled(&manifest, "dev_principles") {
         skill_names.push("givn-dev-principles");
+    }
+    if manifest_addon_enabled(&manifest, "challenge") {
+        skill_names.push("givn-challenge");
     }
 
     // Render and write each skill to the configured targets.
@@ -247,30 +293,9 @@ pub fn sync(project_root: &Path) -> Result<()> {
         println!("  synced skill: {name}");
     }
 
-    // Write slash commands for every command-owning target.
-    let command_targets: Vec<AgentTarget> = targets
-        .iter()
-        .copied()
-        .filter(AgentTarget::owns_commands)
-        .collect();
-    if !command_targets.is_empty() {
-        let mut command_names = default_command_names();
-        if manifest.addons.grill_me {
-            command_names.push("grill-me");
-        }
-        if manifest.addons.grill_with_docs {
-            command_names.push("grill-with-docs");
-        }
-        for name in &command_names {
-            let template = resolve_command_template_for(name)?;
-            let content = render_template(&template, &ctx, &addons)
-                .with_context(|| format!("failed to render command template for '{name}'"))?;
-            for target in &command_targets {
-                write_command(project_root, *target, name, &content)?;
-            }
-            println!("  synced command: /{name}");
-        }
-    }
+    // The generated invocation surface is skills-only. Remove recognizable
+    // Givn command files from earlier releases and leave custom files alone.
+    reconcile_legacy_commands(project_root, &targets)?;
 
     // Self-reconcile: remove managed generated files that are no longer valid
     // for the current configuration.
@@ -281,11 +306,10 @@ pub fn sync(project_root: &Path) -> Result<()> {
 
     // Self-healing AGENTS.md block: keep it present/absent in sync with the
     // addon flag on every init/sync, independent of how it got out of sync.
-    if manifest.addons.absolute_mode {
-        crate::cli::absolute_mode::apply(project_root)?;
-    } else {
-        crate::cli::absolute_mode::remove(project_root)?;
-    }
+    sync_communication_policy(
+        project_root,
+        manifest_addon_enabled(&manifest, "communication_policy"),
+    )?;
 
     // Generated-rules policy: keep the ignore destinations current and make
     // tracked rules local-only. `AGENTS.md` is never staged by Givn.
@@ -315,67 +339,151 @@ fn domain_modeling_present(manifest: &crate::config::manifest::Manifest) -> bool
 
 /// Build the addon-name/enabled map passed into the template renderer.
 fn addon_flags(manifest: &crate::config::manifest::Manifest) -> Vec<(&'static str, bool)> {
-    vec![
-        ("arc42", manifest.addons.arc42),
-        ("domain_modeling", manifest.addons.domain_modeling),
-        ("dev_principles", manifest.addons.dev_principles),
-        (
-            "architecture_principles",
-            manifest.addons.architecture_principles,
-        ),
-        ("grill_me", manifest.addons.grill_me),
-        ("grill_with_docs", manifest.addons.grill_with_docs),
-        ("absolute_mode", manifest.addons.absolute_mode),
-        ("readme", manifest.addons.readme),
-        ("coverage", manifest.addons.coverage),
-        ("outline", manifest.addons.outline),
-    ]
+    crate::skills::render::KNOWN_ADDON_KEYS
+        .iter()
+        .map(|key| (*key, manifest_addon_enabled(manifest, key)))
+        .collect()
 }
 
-/// Remove addon-conditional generated files whose addon is no longer enabled.
-/// Only skills/commands that givn itself manages are touched.
+/// The two managed AGENTS.md block names: the current communication policy and
+/// the retired absolute-mode block replaced during synchronization.
+const COMMUNICATION_BLOCK: &str = "communication-policy";
+const LEGACY_COMMUNICATION_BLOCK: &str = "absolute-mode";
+
+/// Keep the communication-policy block current, remove the retired
+/// absolute-mode block while preserving everything outside both blocks, and
+/// report the replacement so an author can review the outside content.
+fn sync_communication_policy(project_root: &Path, enabled: bool) -> Result<()> {
+    let agents_path = project_root.join("AGENTS.md");
+    let had_legacy = std::fs::read_to_string(&agents_path)
+        .map(|content| content.contains("<!-- givn:begin:absolute-mode -->"))
+        .unwrap_or(false);
+
+    if enabled {
+        let policy =
+            crate::config::embedded::Assets::get_str("addons/communication-policy/policy.md")
+                .ok_or_else(|| anyhow::anyhow!("embedded communication policy asset not found"))?;
+        crate::cli::agents_block::apply(&agents_path, COMMUNICATION_BLOCK, &policy)?;
+    } else {
+        crate::cli::agents_block::remove(&agents_path, COMMUNICATION_BLOCK)?;
+    }
+    crate::cli::agents_block::remove(&agents_path, LEGACY_COMMUNICATION_BLOCK)?;
+
+    if had_legacy {
+        println!(
+            "  communication policy: replaced the retired absolute-mode AGENTS.md block; review the preserved surrounding content"
+        );
+    }
+    Ok(())
+}
+
+/// Remove addon-conditional generated skills whose addon is no longer enabled.
+/// Only skills that givn itself manages are touched.
 fn reconcile_addon_artifacts(
     project_root: &Path,
     manifest: &crate::config::manifest::Manifest,
     targets: &[AgentTarget],
 ) -> Result<()> {
-    if !manifest.addons.domain_modeling || !manifest.addons.arc42 {
+    let disabled = [
+        (
+            "givn-domain-modeling",
+            !manifest.addons.domain_modeling || !manifest.addons.arc42,
+        ),
+        (
+            "givn-dev-principles",
+            !manifest_addon_enabled(manifest, "dev_principles"),
+        ),
+        (
+            "givn-challenge",
+            !manifest_addon_enabled(manifest, "challenge"),
+        ),
+    ];
+    for (skill, remove) in disabled {
+        if !remove {
+            continue;
+        }
         for target in targets {
-            let dir = project_root
-                .join(target.dir())
-                .join("skills/givn-domain-modeling");
+            let dir = project_root.join(target.dir()).join("skills").join(skill);
             if dir.exists() {
                 std::fs::remove_dir_all(&dir)?;
             }
         }
     }
-    if !manifest.addons.dev_principles {
-        for target in targets {
-            let dir = project_root
-                .join(target.dir())
-                .join("skills/givn-dev-principles");
-            if dir.exists() {
-                std::fs::remove_dir_all(&dir)?;
+    Ok(())
+}
+
+/// Names of the command files Givn generated before the skills-only surface.
+fn legacy_command_names() -> Vec<&'static str> {
+    let mut names = default_skill_names();
+    names.push("grill-me");
+    names.push("grill-with-docs");
+    names
+}
+
+/// Whether file bytes are a recognizable Givn-generated command from an
+/// earlier release. A matching filename is never sufficient.
+fn is_generated_legacy_command(content: &str) -> bool {
+    let body = content.trim_start();
+    if !body.starts_with("---") {
+        return false;
+    }
+    let Some(frontmatter_end) = body[3..].find("\n---") else {
+        return false;
+    };
+    let frontmatter = &body[3..3 + frontmatter_end];
+    if !frontmatter.contains("description:") {
+        return false;
+    }
+    let body = &body[3 + frontmatter_end + 4..];
+    body.contains(
+        "**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`",
+    ) || body.contains("this file only triggers the step")
+        || body.contains("This file triggers the step and carries no rules of its own.")
+        || body.contains("When work is handed to another context, pass this block")
+        || body.contains("<!-- givn:generated")
+        || body.contains("Generated by givn")
+}
+
+/// Remove recognizable legacy command files from every selected target. A
+/// custom file with a known command name is preserved and reported for manual
+/// transition; unrelated custom commands are left untouched.
+fn reconcile_legacy_commands(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
+    let known = legacy_command_names();
+    let mut removed = 0usize;
+    let mut custom = Vec::new();
+    for target in targets {
+        let commands = project_root.join(target.dir()).join("commands");
+        if !commands.is_dir() {
+            continue;
+        }
+        for entry in std::fs::read_dir(&commands)? {
+            let path = entry?.path();
+            if path.extension().is_none_or(|extension| extension != "md") {
+                continue;
             }
+            let Some(stem) = path.file_stem().and_then(|stem| stem.to_str()) else {
+                continue;
+            };
+            let content = std::fs::read_to_string(&path)?;
+            if is_generated_legacy_command(&content) {
+                std::fs::remove_file(&path)?;
+                removed += 1;
+            } else if known.contains(&stem) {
+                custom.push(path);
+            }
+        }
+        if std::fs::read_dir(&commands)?.next().is_none() {
+            std::fs::remove_dir(&commands)?;
         }
     }
-    if !manifest.addons.grill_me {
-        for target in targets.iter().filter(|t| t.owns_commands()) {
-            let file = project_root.join(target.dir()).join("commands/grill-me.md");
-            if file.exists() {
-                std::fs::remove_file(&file)?;
-            }
-        }
+    if removed > 0 {
+        println!("  removed {removed} recognizable legacy Givn command file(s)");
     }
-    if !manifest.addons.grill_with_docs {
-        for target in targets.iter().filter(|t| t.owns_commands()) {
-            let file = project_root
-                .join(target.dir())
-                .join("commands/grill-with-docs.md");
-            if file.exists() {
-                std::fs::remove_file(&file)?;
-            }
-        }
+    for path in custom {
+        println!(
+            "  manual transition: preserved custom command {}; Givn no longer generates commands",
+            path.strip_prefix(project_root).unwrap_or(&path).display()
+        );
     }
     Ok(())
 }
@@ -395,8 +503,11 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
     if domain_modeling_present(&manifest) {
         skill_names.push("givn-domain-modeling");
     }
-    if manifest.addons.dev_principles {
+    if manifest_addon_enabled(&manifest, "dev_principles") {
         skill_names.push("givn-dev-principles");
+    }
+    if manifest_addon_enabled(&manifest, "challenge") {
+        skill_names.push("givn-challenge");
     }
 
     for target in &targets {
@@ -421,24 +532,6 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
         }
         if let Some(file) = managed_registration_file(*target) {
             paths.push(project_root.join(file));
-        }
-    }
-
-    for target in targets.iter().filter(|t| t.owns_commands()) {
-        let mut command_names = default_command_names();
-        if manifest.addons.grill_me {
-            command_names.push("grill-me");
-        }
-        if manifest.addons.grill_with_docs {
-            command_names.push("grill-with-docs");
-        }
-        for name in command_names {
-            paths.push(
-                project_root
-                    .join(target.dir())
-                    .join("commands")
-                    .join(format!("{name}.md")),
-            );
         }
     }
 
@@ -927,61 +1020,9 @@ fn write_skill_to_targets(
     Ok(())
 }
 
-/// Write a command file to a command-owning target's `<dir>/commands/`.
-fn write_command(
-    project_root: &Path,
-    target: AgentTarget,
-    name: &str,
-    content: &str,
-) -> Result<()> {
-    let path = project_root
-        .join(target.dir())
-        .join("commands")
-        .join(format!("{name}.md"));
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(&path, content)?;
-    Ok(())
-}
-
-/// Resolve a command template: project override wins over embedded default.
-/// Project override path: `givn/commands/<name>.md`
-/// Embedded path: `commands/<name>.md`
-fn resolve_command_template(name: &str) -> Result<String> {
-    crate::config::cascade::resolve_asset(
-        &format!("commands/{name}.md"),
-        &format!("givn/commands/{name}.md"),
-    )
-}
-
-/// The default opencode command names (one per givn workflow action).
-pub fn default_command_names() -> Vec<&'static str> {
-    vec![
-        "givn-propose",
-        "givn-spec",
-        "givn-design",
-        "givn-tasks",
-        "givn-implement",
-        "givn-review",
-        "givn-archive",
-        "givn-explore",
-        "givn-design-review",
-        "givn-steps",
-        "givn-reverse-engineer",
-        "givn-characterize",
-        "givn-ideation",
-    ]
-}
-
 /// Resolve a skill template by name.
 fn resolve_skill_template_for(name: &str) -> Result<String> {
     resolve_skill_template(name)
-}
-
-/// Resolve a command template by name.
-fn resolve_command_template_for(name: &str) -> Result<String> {
-    resolve_command_template(name)
 }
 
 /// Validate SKILL.md frontmatter (name matches dir, description present and bounded).
@@ -1029,14 +1070,94 @@ mod tests {
     }
 
     #[test]
-    fn all_command_templates_are_embedded() {
-        for name in default_command_names() {
-            let key = format!("commands/{name}.md");
+    fn all_skill_templates_are_embedded() {
+        let mut names = default_skill_names();
+        names.extend([
+            "givn-domain-modeling",
+            "givn-dev-principles",
+            "givn-challenge",
+        ]);
+        for name in names {
+            let key = format!("skills/{name}/SKILL.md.tmpl");
             assert!(
                 Assets::get(&key).is_some(),
-                "embedded command template missing: {key}"
+                "embedded skill template missing: {key}"
             );
         }
+    }
+
+    #[test]
+    fn no_command_templates_are_embedded() {
+        assert!(
+            Assets::iter().all(|path| !path.starts_with("commands/")),
+            "command templates are still shipped"
+        );
+    }
+
+    #[test]
+    fn generated_legacy_command_detection_requires_generated_bytes() {
+        let generated = "---\ndescription: demo\n---\n\n**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.\n";
+        assert!(is_generated_legacy_command(generated));
+        let custom = "---\ndescription: house rule\n---\n\nDo the thing.\n";
+        assert!(!is_generated_legacy_command(custom));
+        assert!(!is_generated_legacy_command("plain text"));
+    }
+
+    #[test]
+    fn target_edits_refuse_flow_mapping_and_anchors_before_writing() {
+        for content in [
+            "skills: {targets: [opencode]}\n",
+            "skills: &defaults\n  targets: [opencode]\n",
+            "skills:\n  targets: *defaults\n",
+            "skills:\n  targets:\n    - opencode\n",
+            "skills:\n  targets: [opencode]\nskills:\n  targets: [claude]\n",
+        ] {
+            assert!(
+                validate_skills_yaml(content).is_err(),
+                "unsupported YAML was accepted: {content}"
+            );
+        }
+        assert!(validate_skills_yaml("skills:\n  targets: [opencode]\nother: kept\n").is_ok());
+    }
+
+    #[test]
+    fn communication_policy_replaces_legacy_block_and_preserves_outside_content() {
+        let dir = tempfile::tempdir().unwrap();
+        let agents = dir.path().join("AGENTS.md");
+        std::fs::write(
+            &agents,
+            "Human intro\n\n<!-- givn:begin:absolute-mode -->\nOLD\n<!-- givn:end:absolute-mode -->\n\nHuman tail\n",
+        )
+        .unwrap();
+        sync_communication_policy(dir.path(), true).unwrap();
+        let content = std::fs::read_to_string(&agents).unwrap();
+        assert!(content.contains("Human intro") && content.contains("Human tail"));
+        assert!(content.contains("<!-- givn:begin:communication-policy -->"));
+        assert!(!content.contains("OLD"));
+        assert!(!content.contains("absolute-mode"));
+    }
+
+    #[test]
+    fn legacy_command_reconciliation_removes_generated_and_preserves_custom() {
+        let dir = tempfile::tempdir().unwrap();
+        let commands = dir.path().join(".opencode/commands");
+        std::fs::create_dir_all(&commands).unwrap();
+        let generated = "---\ndescription: legacy\n---\n\n**Dialog policy:** for every user-facing question, follow the effective policy from `givn instructions dialog`; load it before this context's first question.\n";
+        std::fs::write(commands.join("givn-propose.md"), generated).unwrap();
+        std::fs::write(
+            commands.join("givn-review.md"),
+            "---\ndescription: custom\n---\n\nTeam-specific review command.\n",
+        )
+        .unwrap();
+        std::fs::write(
+            commands.join("team-release.md"),
+            "---\ndescription: custom\n---\n\nTeam release command.\n",
+        )
+        .unwrap();
+        reconcile_legacy_commands(dir.path(), &[AgentTarget::Opencode]).unwrap();
+        assert!(!commands.join("givn-propose.md").exists());
+        assert!(commands.join("givn-review.md").exists());
+        assert!(commands.join("team-release.md").exists());
     }
 
     /// The development reporter set is keyed to the targets that execute the

@@ -1,8 +1,8 @@
 use anyhow::{Result, bail};
 
-/// Regenerate skills and agent commands from current templates.
+/// Regenerate skills from current templates.
 /// `AGENTS.md` is otherwise user-owned: givn writes to it only inside its
-/// own fenced `<!-- givn:begin:* -->` blocks (e.g. the `absolute_mode`
+/// own fenced `<!-- givn:begin:* -->` blocks (e.g. the communication-policy
 /// addon), and only when the corresponding addon is enabled.
 pub fn run_sync() -> Result<()> {
     let project_root = std::env::current_dir()?;
@@ -11,17 +11,12 @@ pub fn run_sync() -> Result<()> {
         anyhow::bail!("givn/ not found. Run `givn init` first.");
     }
 
-    println!("Syncing skills and agent commands...");
+    println!("Syncing skills...");
     crate::skills::targets::sync(&project_root)?;
     let targets = crate::config::overlay::load_skills_targets(&project_root)?;
     println!("\nDone. Generated:");
     for name in &targets {
         println!("  .{name}/skills/   (skills for {name})");
-    }
-    for name in &targets {
-        if name == "opencode" || name == "omp" {
-            println!("  .{name}/commands/ ({name} slash commands)");
-        }
     }
 
     Ok(())
@@ -72,7 +67,7 @@ pub fn run_targets_add(names: &[String]) -> Result<()> {
             .join(", ")
     );
 
-    println!("\nSyncing skills and agent commands...");
+    println!("\nSyncing skills...");
     crate::skills::targets::sync(&project_root)?;
 
     Ok(())

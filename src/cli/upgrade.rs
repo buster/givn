@@ -20,6 +20,7 @@ pub fn run() -> Result<()> {
     }
 
     let existing = std::fs::read_to_string(&config_path)?;
+    validate_upgrade_config(&existing)?;
     let source_version = active_config_version(&existing);
     let target_version = env!("CARGO_PKG_VERSION");
 
@@ -88,6 +89,71 @@ pub(crate) fn active_config_version(content: &str) -> Option<String> {
     })
 }
 
+/// Refuse configuration that needs manual repair before any managed write.
+///
+/// A 0.x version marker alone is not a configuration-format defect: 0.9.10
+/// accepts manually prepared current-format configuration with that marker.
+/// Malformed YAML, retired addon keys, and executable settings misplaced in
+/// config.yaml are refused with the 1.0 baseline and manual-transition paths.
+pub(crate) fn validate_upgrade_config(existing: &str) -> Result<()> {
+    let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(existing).map_err(|error| {
+        anyhow::anyhow!(
+            "givn upgrade refused: givn/config.yaml is malformed and must be repaired manually \
+             before upgrading ({error}). This is not the version marker: 0.9.10 accepts current-format \
+             configuration carrying a 0.x marker. The supported migration \
+             baseline is 1.0. Repair the YAML and run `givn upgrade` again. No files were changed."
+        )
+    })?;
+    let Some(root) = document.as_mapping() else {
+        anyhow::bail!(
+            "givn upgrade refused: givn/config.yaml must be a YAML mapping. This is not caused \
+             by the 0.x version marker; the supported migration baseline is 1.0. Repair it \
+             manually. No files were changed."
+        );
+    };
+
+    for key in ["verify", "run", "coverage"] {
+        if root.contains_key(key) {
+            anyhow::bail!(
+                "givn upgrade refused: '{key}' is executable configuration and belongs in \
+                 givn/commands.yaml, not givn/config.yaml. Move the '{key}' block manually; the \
+                 supported migration baseline is 1.0. No files were changed."
+            );
+        }
+    }
+
+    let mut retired = Vec::new();
+    for key in root.keys() {
+        if let Some(key) = key.as_str()
+            && crate::config::manifest::Addons::replacement_for_retired(key).is_some()
+        {
+            retired.push(key.to_string());
+        }
+    }
+    if let Some(addons) = root.get("addons").and_then(|value| value.as_mapping()) {
+        for key in addons.keys() {
+            if let Some(key) = key.as_str()
+                && crate::config::manifest::Addons::replacement_for_retired(key).is_some()
+            {
+                retired.push(key.to_string());
+            }
+        }
+    }
+    if let Some(retired) = retired.first() {
+        let replacement = crate::config::manifest::Addons::replacement_for_retired(retired)
+            .unwrap_or("the current setting");
+        anyhow::bail!(
+            "givn upgrade refused: the retired configuration key '{retired}' requires a manual \
+             transition to '{replacement}'. Givn 0.9.10 does not automatically migrate retired \
+             configuration and accepts no compatibility alias. The supported migration baseline \
+             is 1.0; review the communication_policy, challenge, and skills-only transitions by \
+             hand, then run `givn upgrade` again. No files were changed."
+        );
+    }
+
+    Ok(())
+}
+
 /// Upgrade the config content:
 /// 1. Extract user-owned (uncommented) lines, grouped by top-level key.
 /// 2. Re-render the template.
@@ -98,6 +164,7 @@ pub(crate) fn active_config_version(content: &str) -> Option<String> {
 /// 4. Any user group whose key is not active in the fresh scaffold (e.g.
 ///    `addons:`, which ships commented-out) is appended at the end.
 pub fn upgrade_config(existing: &str, version: &str) -> Result<String> {
+    validate_upgrade_config(existing)?;
     // Extract user-owned lines (uncommented, non-empty, not the version marker).
     let user_lines: Vec<String> = existing
         .lines()
@@ -234,18 +301,14 @@ mod tests {
     }
 
     #[test]
-    fn upgrade_preserves_user_verify_as_override() {
+    fn upgrade_preserves_user_apply_as_override() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
-        // Simulate an older project config that still has verify.command set.
-        // The template no longer ships verify: (it moved to commands.yaml),
-        // so append the old-school verify block as the user would have had it.
         let mut user_config = fresh.clone();
-        user_config.push_str("\nverify:\n  command: \"cargo test\"\n");
+        user_config.push_str("\napply:\n  requires: [tasks]\n");
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
         assert!(
-            upgraded.contains("cargo test"),
-            "user verify.command must be preserved as override, got:\n{}",
-            upgraded
+            upgraded.contains("requires: [tasks]"),
+            "user apply override must be preserved, got:\n{upgraded}"
         );
     }
 
@@ -253,7 +316,7 @@ mod tests {
     fn upgrade_produces_valid_yaml_with_user_overrides() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
         let mut user_config = fresh.clone();
-        user_config.push_str("\nverify:\n  command: \"./gradlew test\"\n");
+        user_config.push_str("\napply:\n  requires: [tasks]\n");
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
 
         let parsed: Result<serde_yaml_ng::Value, _> = serde_yaml_ng::from_str(&upgraded);
@@ -263,21 +326,21 @@ mod tests {
             parsed.err()
         );
         assert!(
-            upgraded.contains("./gradlew test"),
+            upgraded.contains("requires: [tasks]"),
             "user override must be preserved"
         );
     }
 
     #[test]
-    fn upgrade_migrates_verify_to_user_overrides() {
+    fn upgrade_preserves_user_rules_override() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
         let mut user_config = fresh.clone();
-        user_config.push_str("\nverify:\n  command: \"./gradlew test\"\n");
+        user_config.push_str("\nrules: versioned\n");
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
 
         assert!(
-            upgraded.contains("./gradlew test"),
-            "user verify.command must be in the upgraded output"
+            upgraded.contains("rules: versioned"),
+            "user rules override must be in the upgraded output"
         );
     }
 
@@ -285,7 +348,6 @@ mod tests {
     fn upgrade_preserves_addons_with_user_overrides() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
         let mut user_config = fresh.clone();
-        user_config.push_str("\nverify:\n  command: \"./gradlew test\"\n");
         user_config.push_str("\naddons:\n  arc42: true\n");
 
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
@@ -296,7 +358,6 @@ mod tests {
             "upgraded config.yaml must be valid YAML: {:?}",
             parsed.err()
         );
-        assert!(upgraded.contains("./gradlew test"));
         assert!(upgraded.contains("arc42: true"));
     }
 
@@ -313,5 +374,64 @@ mod tests {
             active_config_version("givn_config_version: 0.2.0\n").as_deref(),
             Some("0.2.0")
         );
+    }
+
+    #[test]
+    fn upgrade_accepts_a_0_x_version_marker_on_current_format_configuration() {
+        let existing = "\
+givn_config_version: \"0.7.0\"
+addons:
+  outline: false
+";
+        let upgraded = upgrade_config(existing, "0.9.10").unwrap();
+        let parsed: serde_yaml_ng::Value = serde_yaml_ng::from_str(&upgraded).unwrap();
+        assert_eq!(
+            parsed.get("givn_config_version").and_then(|v| v.as_str()),
+            Some("0.9.10")
+        );
+        assert!(upgraded.contains("outline: false"), "{upgraded}");
+    }
+
+    #[test]
+    fn upgrade_refuses_retired_addon_configuration_before_writing() {
+        for (retired, replacement) in [
+            ("absolute_mode", "communication_policy"),
+            ("grill_me", "challenge"),
+            ("grill_with_docs", "challenge"),
+        ] {
+            let existing = format!("givn_config_version: \"0.7.0\"\naddons:\n  {retired}: true\n");
+            let error = upgrade_config(&existing, "0.9.10")
+                .expect_err("retired configuration must require manual transition");
+            let message = error.to_string();
+            assert!(message.contains(retired), "{message}");
+            assert!(message.contains(replacement), "{message}");
+            assert!(message.contains("manual"), "{message}");
+            assert!(message.contains("1.0"), "{message}");
+        }
+    }
+
+    #[test]
+    fn upgrade_refuses_malformed_configuration_before_writing() {
+        let existing = "givn_config_version: \"0.7.0\"\naddons: [unclosed\n";
+        let error = upgrade_config(existing, "0.9.10")
+            .expect_err("malformed configuration must be refused");
+        let message = error.to_string();
+        assert!(message.contains("malformed"), "{message}");
+        assert!(message.contains("not the version marker"), "{message}");
+    }
+
+    #[test]
+    fn upgrade_refuses_executable_configuration_misplaced_in_config_yaml() {
+        let existing = "\
+givn_config_version: \"0.7.0\"
+verify:
+  command: \"cargo test\"
+";
+        let error = upgrade_config(existing, "0.9.10")
+            .expect_err("command configuration belongs in commands.yaml");
+        let message = error.to_string();
+        assert!(message.contains("verify"), "{message}");
+        assert!(message.contains("givn/commands.yaml"), "{message}");
+        assert!(message.contains("manual"), "{message}");
     }
 }

@@ -21,7 +21,152 @@ use anyhow::{Result, bail};
 /// `review` is the sign-off gate the whole workflow funnels into.
 const PROTECTED_ARTIFACTS: &[&str] = &["review"];
 
+/// Top-level keys owned by `givn/commands.yaml`.
+const COMMAND_KEYS: &[&str] = &["verify", "run", "coverage"];
+
+/// Top-level keys owned by `givn/config.yaml`.
+const POLICY_KEYS: &[&str] = &[
+    "artifacts",
+    "apply",
+    "addons",
+    "skills",
+    "rules",
+    "extensions",
+    "record",
+    "givn_config_version",
+];
+
 pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
+    validate_addon_keys(overlay_yaml)?;
+    apply_parsed(base, overlay_yaml)
+}
+
+/// Apply `givn/config.yaml`, which owns policy, artifact, addon, target, and
+/// extension settings. Executable command and runtime settings belong in
+/// `givn/commands.yaml` and are refused here instead of being silently
+/// applied from the wrong file.
+pub fn apply_config(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
+    validate_config_ownership(overlay_yaml)?;
+    apply(base, overlay_yaml)
+}
+
+/// Apply `givn/commands.yaml` with its dedicated schema: only `verify`, `run`,
+/// and `coverage` are accepted. Policy, addon, artifact, and apply keys are
+/// refused before any value is applied.
+pub fn apply_commands(base: Manifest, commands_yaml: &str) -> Result<Manifest> {
+    validate_commands_ownership(commands_yaml)?;
+    let overlay: CommandsDoc = serde_yaml_ng::from_str(commands_yaml)
+        .map_err(|e| anyhow::anyhow!("failed to parse givn/commands.yaml: {e}"))?;
+    let mut result = base;
+    if let Some(v) = overlay.verify {
+        result.verify = v;
+    }
+    if let Some(r) = overlay.run {
+        result.run = r;
+    }
+    if let Some(c) = overlay.coverage {
+        result.coverage = c;
+    }
+    Ok(result)
+}
+
+fn parse_overlay_value(overlay_yaml: &str) -> Option<serde_yaml_ng::Value> {
+    serde_yaml_ng::from_str(overlay_yaml).ok()
+}
+
+fn validate_addon_keys(overlay_yaml: &str) -> Result<()> {
+    let Some(document) = parse_overlay_value(overlay_yaml) else {
+        return Ok(());
+    };
+    let Some(root) = document.as_mapping() else {
+        return Ok(());
+    };
+    let Some(addons) = root.get("addons") else {
+        return Ok(());
+    };
+    let Some(addons) = addons.as_mapping() else {
+        return Ok(());
+    };
+    for key in addons.keys() {
+        let Some(key) = key.as_str() else {
+            bail!("addons settings must use string keys");
+        };
+        if Addons::NAMES.contains(&key) {
+            continue;
+        }
+        if let Some(replacement) = Addons::replacement_for_retired(key) {
+            bail!(
+                "retired addon setting 'addons.{key}' is not supported. Rename it manually to \
+                 'addons.{replacement}' — givn 0.9.10 does not convert retired configuration or \
+                 accept a compatibility alias. The supported migration baseline is 1.0; review \
+                 the communication_policy, challenge, and skills-only transitions by hand. \
+                 No files were changed."
+            );
+        }
+        bail!(
+            "unknown addon '{key}' in the addons block. Known addons: {}. Retired addons \
+             requiring manual transition: {}. No files were changed.",
+            Addons::NAMES.join(", "),
+            Addons::RETIRED
+                .iter()
+                .map(|(retired, replacement)| format!("{retired} -> {replacement}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    Ok(())
+}
+
+fn validate_config_ownership(overlay_yaml: &str) -> Result<()> {
+    let Some(document) = parse_overlay_value(overlay_yaml) else {
+        return Ok(());
+    };
+    let Some(root) = document.as_mapping() else {
+        return Ok(());
+    };
+    for key in COMMAND_KEYS {
+        if root.contains_key(*key) {
+            bail!(
+                "'{key}' is executable configuration and belongs in givn/commands.yaml, not \
+                 givn/config.yaml. Move the '{key}' block manually; the supported migration \
+                 baseline is 1.0. No files were changed."
+            );
+        }
+    }
+    Ok(())
+}
+
+fn validate_commands_ownership(commands_yaml: &str) -> Result<()> {
+    let Some(document) = parse_overlay_value(commands_yaml) else {
+        return Ok(());
+    };
+    let Some(root) = document.as_mapping() else {
+        return Ok(());
+    };
+    for key in root.keys() {
+        let Some(key) = key.as_str() else {
+            bail!("givn/commands.yaml must use string top-level keys");
+        };
+        if COMMAND_KEYS.contains(&key) {
+            continue;
+        }
+        if POLICY_KEYS.contains(&key) {
+            bail!(
+                "'{key}' is policy, artifact, or addon configuration and belongs in \
+                 givn/config.yaml, not givn/commands.yaml. Move the '{key}' block manually. \
+                 No files were changed."
+            );
+        }
+        bail!(
+            "unknown key '{key}' in givn/commands.yaml. This file only accepts verify, run, \
+             and coverage; policy, addon, artifact, and apply settings belong in givn/config.yaml. \
+             No files were changed."
+        );
+    }
+    Ok(())
+}
+
+fn apply_parsed(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
     // Parse the overlay as a Manifest (using lenient defaults for missing fields).
     let overlay: OverlayDoc = serde_yaml_ng::from_str(overlay_yaml)
         .map_err(|e| anyhow::anyhow!("failed to parse givn/config.yaml: {e}"))?;
@@ -126,7 +271,7 @@ pub fn load_effective() -> Result<Manifest> {
 
     let manifest = if config_path.exists() {
         let yaml = std::fs::read_to_string(&config_path)?;
-        apply(base, &yaml)?
+        apply_config(base, &yaml)?
     } else {
         base
     };
@@ -134,7 +279,7 @@ pub fn load_effective() -> Result<Manifest> {
     let commands_path = project_root.join("givn/commands.yaml");
     if commands_path.exists() {
         let yaml = std::fs::read_to_string(&commands_path)?;
-        apply(manifest, &yaml)
+        apply_commands(manifest, &yaml)
     } else {
         Ok(manifest)
     }
@@ -374,6 +519,17 @@ fn arc42_artifact() -> Artifact {
     }
 }
 
+/// Dedicated `givn/commands.yaml` schema. Its authority is limited to the
+/// executable command and runtime settings; policy and artifact settings are
+/// refused before deserialization.
+#[derive(Debug, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CommandsDoc {
+    verify: Option<Verify>,
+    run: Option<Run>,
+    coverage: Option<Coverage>,
+}
+
 /// Lenient overlay document — only fields that are explicitly overridden need to be present.
 #[derive(Debug, serde::Deserialize)]
 pub(crate) struct OverlayDoc {
@@ -525,8 +681,33 @@ pub(crate) struct OverlayArtifact {
 }
 
 #[cfg(test)]
+pub(crate) fn test_cwd_lock() -> &'static std::sync::Mutex<()> {
+    static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| std::sync::Mutex::new(()))
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
+
+    struct RestoreCwd(std::path::PathBuf);
+
+    impl Drop for RestoreCwd {
+        fn drop(&mut self) {
+            let _ = std::env::set_current_dir(&self.0);
+        }
+    }
+
+    fn project_with(config: &str, commands: &str) -> (tempfile::TempDir, RestoreCwd) {
+        let directory = tempfile::tempdir().unwrap();
+        let givn = directory.path().join("givn");
+        std::fs::create_dir(&givn).unwrap();
+        std::fs::write(givn.join("config.yaml"), config).unwrap();
+        std::fs::write(givn.join("commands.yaml"), commands).unwrap();
+        let restore = RestoreCwd(std::env::current_dir().unwrap());
+        std::env::set_current_dir(directory.path()).unwrap();
+        (directory, restore)
+    }
 
     #[test]
     fn empty_overlay_returns_base_unchanged() {
@@ -667,21 +848,17 @@ artifacts:
     }
 
     #[test]
-    fn addons_absolute_mode_flag_is_set_on_effective_manifest() {
-        // Regression: enabling absolute_mode in givn/config.yaml must be
-        // visible on the effective manifest returned by load_effective().
-        // Previously only `arc42` was copied from the overlay onto the
-        // result; every other addon flag (here: absolute_mode) was
-        // silently dropped, so `givn skills sync` always saw it as
-        // disabled and deleted the AGENTS.md block on every sync even
-        // though `givn addons enable absolute_mode` had just written it.
+    fn addons_communication_policy_flag_is_set_on_effective_manifest() {
         let base = Manifest::load_embedded().unwrap();
-        assert!(!base.addons.absolute_mode, "must be disabled by default");
-
-        let result = apply(base, "addons:\n  absolute_mode: true").unwrap();
         assert!(
-            result.addons.absolute_mode,
-            "addons.absolute_mode must be true after overlay enables it"
+            base.addons.communication_policy,
+            "all addons are enabled by default"
+        );
+
+        let result = apply(base, "addons:\n  communication_policy: true").unwrap();
+        assert!(
+            result.addons.communication_policy,
+            "addons.communication_policy must be true after overlay enables it"
         );
     }
 
@@ -689,8 +866,8 @@ artifacts:
     fn addons_architecture_principles_flag_is_set_on_effective_manifest() {
         let base = Manifest::load_embedded().unwrap();
         assert!(
-            !base.addons.architecture_principles,
-            "must be disabled by default"
+            base.addons.architecture_principles,
+            "all addons are enabled by default"
         );
 
         let result = apply(base, "addons:\n  architecture_principles: true").unwrap();
@@ -701,11 +878,11 @@ artifacts:
     }
 
     #[test]
-    fn addons_absolute_mode_and_arc42_can_both_be_enabled() {
+    fn addons_communication_policy_and_arc42_can_both_be_enabled() {
         let base = Manifest::load_embedded().unwrap();
-        let result = apply(base, "addons:\n  arc42: true\n  absolute_mode: true").unwrap();
+        let result = apply(base, "addons:\n  arc42: true\n  communication_policy: true").unwrap();
         assert!(result.addons.arc42);
-        assert!(result.addons.absolute_mode);
+        assert!(result.addons.communication_policy);
         assert!(result.artifacts.iter().any(|a| a.id == "arc42-docs"));
     }
 
@@ -739,12 +916,13 @@ artifacts:
     }
 
     #[test]
-    fn addons_absolute_mode_defaults_to_false_with_no_overlay_addons_block() {
-        // No `addons:` key at all in the overlay must leave the default
-        // (false) untouched, not reset it or panic.
+    fn addons_keep_the_all_addons_default_with_no_overlay_addons_block() {
+        // No `addons:` key at all in the overlay must leave the all-enabled
+        // default untouched, not reset it or panic.
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "{}").unwrap();
-        assert!(!result.addons.absolute_mode);
+        assert!(result.addons.communication_policy);
+        assert!(result.addons.challenge);
     }
 
     #[test]
@@ -801,6 +979,79 @@ artifacts:
     }
 
     #[test]
+    fn partial_addons_block_keeps_renamed_defaults_enabled() {
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  outline: false").unwrap();
+        let yaml = serde_yaml_ng::to_string(&result).unwrap();
+        assert!(!result.addons.outline);
+        assert!(
+            yaml.contains("communication_policy: true"),
+            "omitted communication_policy must keep the all-enabled default: {yaml}"
+        );
+        assert!(
+            yaml.contains("challenge: true"),
+            "omitted challenge must keep the all-enabled default: {yaml}"
+        );
+    }
+
+    #[test]
+    fn retired_addon_keys_are_refused_with_manual_transition_guidance() {
+        for (retired, replacement) in [
+            ("absolute_mode", "communication_policy"),
+            ("grill_me", "challenge"),
+            ("grill_with_docs", "challenge"),
+        ] {
+            let base = Manifest::load_embedded().unwrap();
+            let error = apply(base, &format!("addons:\n  {retired}: true"))
+                .expect_err("a retired addon key must be refused");
+            let message = error.to_string();
+            assert!(message.contains(retired), "{message}");
+            assert!(message.contains(replacement), "{message}");
+            assert!(message.contains("manual"), "{message}");
+        }
+    }
+
+    #[test]
+    fn load_effective_refuses_executable_settings_owned_by_commands_yaml() {
+        let _lock = test_cwd_lock().lock().unwrap();
+        let (_directory, _restore) = project_with(
+            "givn_config_version: \"0.9.9\"\nverify:\n  command: \"cargo test\"\n",
+            "",
+        );
+        let error = load_effective().expect_err("config.yaml must not own verify");
+        let message = error.to_string();
+        assert!(message.contains("verify"), "{message}");
+        assert!(message.contains("givn/commands.yaml"), "{message}");
+    }
+
+    #[test]
+    fn load_effective_refuses_policy_settings_owned_by_config_yaml() {
+        let _lock = test_cwd_lock().lock().unwrap();
+        let (_directory, _restore) = project_with(
+            "givn_config_version: \"0.9.9\"\n",
+            "addons:\n  outline: false\n",
+        );
+        let error = load_effective().expect_err("commands.yaml must not own addons");
+        let message = error.to_string();
+        assert!(message.contains("addons"), "{message}");
+        assert!(message.contains("givn/config.yaml"), "{message}");
+    }
+
+    #[test]
+    fn load_effective_resolves_renamed_addon_defaults_after_the_config_overlay() {
+        let _lock = test_cwd_lock().lock().unwrap();
+        let (_directory, _restore) = project_with(
+            "givn_config_version: \"0.9.9\"\naddons:\n  outline: false\n",
+            "",
+        );
+        let manifest = load_effective().unwrap();
+        let yaml = serde_yaml_ng::to_string(&manifest).unwrap();
+        assert!(!manifest.addons.outline);
+        assert!(yaml.contains("communication_policy: true"), "{yaml}");
+        assert!(yaml.contains("challenge: true"), "{yaml}");
+    }
+
+    #[test]
     fn stray_extras_key_parses_and_has_no_effect() {
         // Lenient overlay tolerance (design D1): a document still carrying
         // the retired top-level `extras:` key must parse and change nothing —
@@ -812,5 +1063,102 @@ artifacts:
             serde_yaml_ng::to_string(&base).unwrap(),
             "a stray extras key must leave the effective manifest unchanged"
         );
+    }
+    #[test]
+    fn commands_overlay_accepts_only_inline_executable_settings() {
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply_commands(
+            base,
+            "verify:\n  command: \"cargo test\"\nrun:\n  command: \"./serve\"\n  product_type: cli\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n",
+        )
+        .unwrap();
+        assert_eq!(result.verify.command, "cargo test");
+        assert_eq!(result.run.command, "./serve");
+        assert_eq!(result.coverage.measure_command, "true");
+    }
+
+    #[test]
+    fn commands_overlay_refuses_policy_and_artifact_keys() {
+        for key in [
+            "addons",
+            "artifacts",
+            "apply",
+            "skills",
+            "rules",
+            "extensions",
+            "record",
+            "givn_config_version",
+        ] {
+            let base = Manifest::load_embedded().unwrap();
+            let error = apply_commands(base, &format!("{key}: {{}}"))
+                .expect_err("policy keys must be refused in commands.yaml");
+            let message = error.to_string();
+            assert!(message.contains(key), "{message}");
+            assert!(message.contains("givn/config.yaml"), "{message}");
+        }
+    }
+
+    #[test]
+    fn config_overlay_refuses_executable_keys_owned_by_commands_yaml() {
+        for key in ["verify", "run", "coverage"] {
+            let base = Manifest::load_embedded().unwrap();
+            let error = apply_config(base, &format!("{key}: {{}}"))
+                .expect_err("executable keys must be refused in config.yaml");
+            let message = error.to_string();
+            assert!(message.contains(key), "{message}");
+            assert!(message.contains("givn/commands.yaml"), "{message}");
+        }
+    }
+
+    #[test]
+    fn config_template_examples_are_supported_by_the_overlay_parser() {
+        let base = Manifest::load_embedded().unwrap();
+        let custom = apply(
+            base.clone(),
+            "artifacts:\n  - id: refactor\n    remove: true\n",
+        )
+        .unwrap();
+        assert!(
+            !custom
+                .artifacts
+                .iter()
+                .any(|artifact| artifact.id == "refactor")
+        );
+
+        let optional = apply(
+            base.clone(),
+            "artifacts:\n  - id: review\n    optional: true\n",
+        )
+        .unwrap();
+        assert!(
+            optional
+                .artifacts
+                .iter()
+                .find(|artifact| artifact.id == "review")
+                .unwrap()
+                .optional
+        );
+
+        let added = apply(
+            base,
+            "artifacts:\n  - id: refactor\n    generates: [\"refactor.md\"]\n    requires: [tasks]\n    template: refactor.md\n",
+        )
+        .unwrap();
+        assert!(
+            added
+                .artifacts
+                .iter()
+                .any(|artifact| artifact.id == "refactor")
+        );
+    }
+
+    #[test]
+    fn shipped_templates_pass_their_own_schemas() {
+        let base = Manifest::load_embedded().unwrap();
+        let config =
+            include_str!("../../assets/config.yaml.tmpl").replace("{{GIVN_VERSION}}", "0.9.10");
+        apply_config(base.clone(), &config).expect("config template must parse as config.yaml");
+        apply_commands(base, include_str!("../../assets/commands.yaml.tmpl"))
+            .expect("commands template must parse as commands.yaml");
     }
 }

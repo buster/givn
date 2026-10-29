@@ -51,9 +51,6 @@ pub mod local_only_rules_steps;
 pub mod outline_report_e2e_steps;
 pub mod outline_report_steps;
 pub mod outline_report_support;
-pub mod outline_review_gate_e2e_steps;
-pub mod outline_review_gate_steps;
-pub mod outline_review_gate_support;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_e2e_steps;
 pub mod prose_consolidation_steps;
@@ -205,9 +202,6 @@ pub struct GivnWorld {
     #[allow(dead_code)] // Tasks E5–E9 read it.
     pub(crate) development_report_e2e:
         Option<development_report_e2e_steps::DevelopmentReportE2eState>,
-    /// State for the outline review gate fixtures: the last report, the
-    /// rationale metadata, and the history hashes the assertions need.
-    pub(crate) outline_gate: outline_review_gate_steps::GateState,
 }
 
 /// A readiness probe running on a background thread.
@@ -1281,12 +1275,12 @@ fn manifest_equals_default(world: &mut GivnWorld) {
         "addons.dev_principles differs"
     );
     assert_eq!(
-        m.addons.grill_me, default.addons.grill_me,
-        "addons.grill_me differs"
+        m.addons.challenge, default.addons.challenge,
+        "addons.challenge differs"
     );
     assert_eq!(
-        m.addons.grill_with_docs, default.addons.grill_with_docs,
-        "addons.grill_with_docs differs"
+        m.addons.communication_policy, default.addons.communication_policy,
+        "addons.communication_policy differs"
     );
 }
 
@@ -1381,10 +1375,10 @@ fn manifest_skill_addons_enabled(world: &mut GivnWorld) {
         m.addons.dev_principles,
         "expected dev_principles addon to be enabled"
     );
-    assert!(m.addons.grill_me, "expected grill_me addon to be enabled");
+    assert!(m.addons.challenge, "expected challenge addon to be enabled");
     assert!(
-        m.addons.grill_with_docs,
-        "expected grill_with_docs addon to be enabled"
+        m.addons.communication_policy,
+        "expected communication_policy addon to be enabled"
     );
 }
 
