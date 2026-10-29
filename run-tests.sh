@@ -14,11 +14,17 @@ fi
 # run. There is deliberately no path sniffing here.
 FEATURES_PATH=${GIVN_FEATURES:-givn/specs}
 
-# Verification scope declaration for the archive result contract.
-case "${1:-}" in
-    --e2e) result_scope=e2e ;;
-    *) result_scope=regular ;;
-esac
+# Verification scope declaration for the archive result contract. A caller
+# that supplies the scope (change verification) owns it; otherwise derive the
+# archive scope from the runner argument.
+if [ -n "${GIVN_RESULT_SCOPE:-}" ]; then
+    result_scope=$GIVN_RESULT_SCOPE
+else
+    case "${1:-}" in
+        --e2e) result_scope=e2e ;;
+        *) result_scope=regular ;;
+    esac
+fi
 
 # Test runner: cargo-nextest by default; GIVN_TEST_RUNNER=cargo falls back
 # to plain `cargo test`. The cucumber runner receives the tag expression via
