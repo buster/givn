@@ -75,26 +75,24 @@ auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
 - For every user-facing question, follow the effective dialog policy from
   `givn instructions dialog`; load it once per context before the first
   question, including clarification and confirmation outside a named
-  workflow, and pass the obligation explicitly to fresh delegated contexts.
-  This obligation applies with optional addons disabled and outside any named
-  skill; the presenting agent remains responsible for the question.
+  workflow, and pass the obligation explicitly when work is handed to another
+  context. This obligation applies with optional addons disabled and outside
+  any named skill; the presenting agent remains responsible for the question.
 - Run `givn status --change <CHANGE>` for a full artifact checklist of an
   active change (includes task progress and pending task descriptions).
-- Tick off each scenario task when its batch evidence is complete — not when
-  the code merely compiles. Never batch-check boxes at the end.
-- One atomic `givn commit` per coherent behavior batch, not per scenario. A
-  test-first commit may contain tests and step glue; a later implementation
-  commit may satisfy several scenarios. The revision message carries the
-  release note as its subject and names the batch in the body. A raw Git
-  commit is stamped by the hook, a raw Fossil check-in is not.
-- Each checked scenario records `TEST-FIRST:` evidence and a `COMMIT:` revision
-  with a `Batch: <name>` label. A shared revision is allowed when every
-  scenario sharing it has test-first evidence. The commit message must name
-  the batch. A comment-only, tag-only, task-only, or feature-only change is
-  not evidence.
-- Do not force a production diff per scenario. Tests may pass immediately
-  when they protect a distinct requirement; keep them and record the test-first
-  evidence. Deduplicate or parameterize genuine repetition.
+- Tick off each scenario task when its batch is complete — not when the code
+  merely compiles. Never batch-check boxes at the end.
+- One atomic `givn commit` per coherent behavior batch, not per scenario. The
+  revision message carries the release note as its message subject and names the batch
+  in the body. For a single-scenario batch, the scenario title goes in the message body.
+  A raw Git commit is stamped by the hook, a raw Fossil check-in is
+  not.
+- Each checked scenario records the batch `COMMIT:` revision. The commit must
+  contain the scenario's implementation or regression test; a comment-only,
+  tag-only, task-only, or feature-only change is not evidence.
+- Tests may pass immediately when they protect a distinct requirement. Do not
+  force a production diff per scenario. Deduplicate or parameterize genuine
+  repetition.
 - The full workflow, available commands, and skills are documented in the
   output of these commands — this block is intentionally just a pointer.
 <!-- givn:end:givn-project -->

@@ -528,8 +528,8 @@ that artifact's writing instructions. For every user-facing question, follow \
 the effective dialog policy from `givn instructions dialog`; load it once per \
 context before the first question (once per context rather than rereading \
 before every question), including clarification and confirmation outside a \
-named workflow, and pass the obligation explicitly to fresh delegated \
-contexts."
+named workflow, and pass the obligation explicitly when work is handed \
+to another context."
         .to_string()
 }
 

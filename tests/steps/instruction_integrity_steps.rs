@@ -1528,7 +1528,8 @@ fn startup_json_carries_dialog_obligation(world: &mut GivnWorld) {
     let overview = value["overview"].as_str().unwrap_or_default();
     assert!(
         overview.contains("load it once per context before the first question")
-            && overview.contains("pass the obligation explicitly to fresh delegated contexts"),
+            && overview
+                .contains("pass the obligation explicitly when work is handed to another context"),
         "startup JSON overview does not carry the dialog obligation: {overview}"
     );
 }
