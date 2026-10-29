@@ -41,6 +41,7 @@
 | enable-commit-attribution | inspect attribution installation | Consumer sees the commit attribution installation report |
 | enable-commit-attribution | upgrade missing attribution plumbing | Consumer upgrades an existing project with attribution plumbing missing |
 | enable-commit-attribution | initialize Fossil attribution | Consumer initializes a Fossil project and receives the givn commit path without a hook |
+| measure-coverage-per-project | inspect initialized test and coverage scripts | An initialized project documents reusable test and coverage scripts |
 
 ## Diagram
 

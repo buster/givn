@@ -70,6 +70,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the bootstrap owns that obligation independently of optional addons and named skills
     And the policy is loaded once per context and reloaded if lost
     And the startup guidance still explains how to begin a change
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: The characterization guidance requests the reverse review from Givn

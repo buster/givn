@@ -11,6 +11,7 @@ Feature: Initialize skills-only project integrations
     And no Givn command file is generated
     And the managed startup block requires loading the effective dialog policy before the first question in each context independently of addons
     And human-authored instructions remain unchanged
+    And the terminal transcript is captured for this scenario
 
   @givn.modified @e2e
   Scenario: Consumer re-syncs skills after init and the selection is honoured
@@ -23,6 +24,7 @@ Feature: Initialize skills-only project integrations
     And recognizable generated legacy commands are removed without generating replacements
     And custom commands and human-authored instructions remain byte-for-byte unchanged
     And the startup block is refreshed once without changing the persisted selection or unrelated configuration
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: Skills and commands are not installed to an agent excluded from the selection

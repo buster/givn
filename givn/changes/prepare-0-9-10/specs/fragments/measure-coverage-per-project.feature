@@ -8,3 +8,5 @@ Feature: Measure coverage per project
     Then givn/commands.yaml contains `measure_command: "./measure-coverage.sh"`
     And givn/commands.yaml contains `merge_command: "./merge-coverages.sh"`
     And the README documents the configured runner and coverage scripts
+    And the terminal transcript is captured for this scenario
+

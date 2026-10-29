@@ -19,12 +19,18 @@ fn write_transcript(world: &GivnWorld, title: &str, argv: &str) {
         .expect("the scenario must run the real CLI first");
     let slug = givn::integrity_hook::scenario_slug(title);
     let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let active = root.join("givn/changes/review-friction-hardening");
-    let dir = if active.exists() {
-        active.join("evidence/visual").join(&slug)
-    } else {
-        root.join("target/review-friction-hardening-evidence")
+    let features = std::env::var("GIVN_FEATURES").unwrap_or_default();
+    let change = features
+        .strip_prefix("givn/changes/")
+        .and_then(|rest| rest.split('/').next())
+        .filter(|id| !id.is_empty());
+    let dir = if let Some(change) = change {
+        root.join("givn/changes")
+            .join(change)
+            .join("evidence/visual")
             .join(&slug)
+    } else {
+        root.join("target/terminal-evidence").join(&slug)
     };
     std::fs::create_dir_all(&dir).expect("create transcript directory");
     let cwd = world
@@ -43,9 +49,14 @@ fn write_transcript(world: &GivnWorld, title: &str, argv: &str) {
 
 #[then("the terminal transcript is captured for this scenario")]
 fn capture_review_transcript(world: &mut GivnWorld) {
-    write_transcript(
-        world,
-        "Consumer runs review and receives every use-case schema problem in one pass",
-        "givn check review --change review-diagnostics-demo",
-    );
+    let title = world
+        .scenario_title
+        .clone()
+        .unwrap_or_else(|| "unnamed scenario".to_string());
+    let argv = world
+        .last_command
+        .clone()
+        .map(|command| format!("givn {command}"))
+        .unwrap_or_else(|| "givn (scenario invocation)".to_string());
+    write_transcript(world, &title, &argv);
 }

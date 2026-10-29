@@ -1,0 +1,250 @@
+Scenario: Consumer upgrades an existing project with attribution plumbing missing
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmp7xG1Ds
+exit code: 0
+--- stdout ---
+  commit attribution: .githooks/commit-msg
+  Git activation: shared commit-msg hook installed
+  integration: .opencode/plugins/givn-attribution.js
+  integration: .opencode/plugins/givn-timeline.js
+  integration: .claude/hooks/givn-attribution.sh
+  integration: .claude/hooks/givn-timeline.sh
+  integration: .claude/settings.local.json
+  integration: .omp/hooks/pre/givn-attribution.js
+  integration: .omp/hooks/pre/givn-timeline.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced skill: givn-challenge
+  sync: rules: versioned
+  sync: 48 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-challenge/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .omp/skills/givn-archive/SKILL.md
+    - .omp/skills/givn-challenge/SKILL.md
+    - .omp/skills/givn-characterize/SKILL.md
+    - .omp/skills/givn-design-review/SKILL.md
+    - .omp/skills/givn-design/SKILL.md
+    - .omp/skills/givn-dev-principles/SKILL.md
+    - .omp/skills/givn-domain-modeling/SKILL.md
+    - .omp/skills/givn-explore/SKILL.md
+    - .omp/skills/givn-ideation/SKILL.md
+    - .omp/skills/givn-implement/SKILL.md
+    - .omp/skills/givn-propose/SKILL.md
+    - .omp/skills/givn-reverse-engineer/SKILL.md
+    - .omp/skills/givn-review/SKILL.md
+    - .omp/skills/givn-spec/SKILL.md
+    - .omp/skills/givn-steps/SKILL.md
+    - .omp/skills/givn-tasks/SKILL.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-challenge/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  sync: 64 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/hooks/givn-timeline.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-challenge/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .omp/hooks/pre/givn-attribution.js: 2 revision(s)
+    - .omp/hooks/pre/givn-timeline.js: 2 revision(s)
+    - .omp/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-challenge/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-design/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-review/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/plugins/givn-timeline.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-challenge/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+  upgrade: rules: versioned
+  upgrade: 48 tracked rule(s) in the current revision:
+    - .claude/skills/givn-archive/SKILL.md
+    - .claude/skills/givn-challenge/SKILL.md
+    - .claude/skills/givn-characterize/SKILL.md
+    - .claude/skills/givn-design-review/SKILL.md
+    - .claude/skills/givn-design/SKILL.md
+    - .claude/skills/givn-dev-principles/SKILL.md
+    - .claude/skills/givn-domain-modeling/SKILL.md
+    - .claude/skills/givn-explore/SKILL.md
+    - .claude/skills/givn-ideation/SKILL.md
+    - .claude/skills/givn-implement/SKILL.md
+    - .claude/skills/givn-propose/SKILL.md
+    - .claude/skills/givn-reverse-engineer/SKILL.md
+    - .claude/skills/givn-review/SKILL.md
+    - .claude/skills/givn-spec/SKILL.md
+    - .claude/skills/givn-steps/SKILL.md
+    - .claude/skills/givn-tasks/SKILL.md
+    - .omp/skills/givn-archive/SKILL.md
+    - .omp/skills/givn-challenge/SKILL.md
+    - .omp/skills/givn-characterize/SKILL.md
+    - .omp/skills/givn-design-review/SKILL.md
+    - .omp/skills/givn-design/SKILL.md
+    - .omp/skills/givn-dev-principles/SKILL.md
+    - .omp/skills/givn-domain-modeling/SKILL.md
+    - .omp/skills/givn-explore/SKILL.md
+    - .omp/skills/givn-ideation/SKILL.md
+    - .omp/skills/givn-implement/SKILL.md
+    - .omp/skills/givn-propose/SKILL.md
+    - .omp/skills/givn-reverse-engineer/SKILL.md
+    - .omp/skills/givn-review/SKILL.md
+    - .omp/skills/givn-spec/SKILL.md
+    - .omp/skills/givn-steps/SKILL.md
+    - .omp/skills/givn-tasks/SKILL.md
+    - .opencode/skills/givn-archive/SKILL.md
+    - .opencode/skills/givn-challenge/SKILL.md
+    - .opencode/skills/givn-characterize/SKILL.md
+    - .opencode/skills/givn-design-review/SKILL.md
+    - .opencode/skills/givn-design/SKILL.md
+    - .opencode/skills/givn-dev-principles/SKILL.md
+    - .opencode/skills/givn-domain-modeling/SKILL.md
+    - .opencode/skills/givn-explore/SKILL.md
+    - .opencode/skills/givn-ideation/SKILL.md
+    - .opencode/skills/givn-implement/SKILL.md
+    - .opencode/skills/givn-propose/SKILL.md
+    - .opencode/skills/givn-reverse-engineer/SKILL.md
+    - .opencode/skills/givn-review/SKILL.md
+    - .opencode/skills/givn-spec/SKILL.md
+    - .opencode/skills/givn-steps/SKILL.md
+    - .opencode/skills/givn-tasks/SKILL.md
+  upgrade: 64 reachable revision(s) still contain a rule:
+    - .claude/hooks/givn-attribution.sh: 2 revision(s)
+    - .claude/hooks/givn-timeline.sh: 2 revision(s)
+    - .claude/settings.local.json: 2 revision(s)
+    - .claude/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-challenge/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-design/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-review/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .claude/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .githooks/commit-msg: 2 revision(s)
+    - .omp/hooks/pre/givn-attribution.js: 2 revision(s)
+    - .omp/hooks/pre/givn-timeline.js: 2 revision(s)
+    - .omp/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-challenge/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-design/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-review/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .omp/skills/givn-tasks/SKILL.md: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 2 revision(s)
+    - .opencode/plugins/givn-timeline.js: 2 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-challenge/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-domain-modeling/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  upgrade: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+Refreshed commit attribution plumbing and managed Givn files for 0.9.9 in commit 9cfb2b5fa9e5d3fa482c0e641001ce8e525bceeb; no migration change was required.
+
+--- stderr ---
+

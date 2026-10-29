@@ -1,0 +1,46 @@
+Scenario: Synchronized guidance explains how to resolve the deterministic gates
+argv: givn skills
+cwd (fixture project root): /tmp/.tmppIiWUy
+exit code: 0
+--- stdout ---
+Syncing skills...
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  integration: .opencode/plugins/givn-attribution.js
+  integration: .opencode/plugins/givn-timeline.js
+  integration: .claude/hooks/givn-attribution.sh
+  integration: .claude/hooks/givn-timeline.sh
+  integration: .claude/settings.local.json
+  integration: .omp/hooks/pre/givn-attribution.js
+  integration: .omp/hooks/pre/givn-timeline.js
+  integration: .maki/lua/givn-timeline.lua
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  synced skill: givn-challenge
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+  .agents/skills/   (skills for agents)
+  .claude/skills/   (skills for claude)
+  .omp/skills/   (skills for omp)
+  .maki/skills/   (skills for maki)
+
+--- stderr ---
+

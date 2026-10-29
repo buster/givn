@@ -53,6 +53,10 @@ async fn main() {
     let features_path = features_path();
     let writer = GivnWorld::cucumber()
         .fail_on_skipped()
+        .before(|_, _, scenario, world| {
+            world.scenario_title = Some(scenario.name.clone());
+            Box::pin(async {})
+        })
         .filter_run(features_path, |_, _, scenario| {
             !givn::gherkin::delta::is_removed_placeholder(scenario)
         })
@@ -149,6 +153,10 @@ async fn nextest_run(unit: &str) {
     GivnWorld::cucumber()
         .with_default_cli()
         .fail_on_skipped()
+        .before(|_, _, scenario, world| {
+            world.scenario_title = Some(scenario.name.clone());
+            Box::pin(async {})
+        })
         .filter_run_and_exit(features_path(), move |_, _, scenario| {
             !givn::gherkin::delta::is_removed_placeholder(scenario)
                 && scenario.name == scenario_name

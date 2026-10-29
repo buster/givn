@@ -8,6 +8,7 @@ Feature: Bounded declared product readiness
     Then the command exits 0
     And stdout reports readiness at the declared port and readiness path
     And the reported ready outcome follows a successful response through the declared boundary
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: A readiness timeout abandons the start

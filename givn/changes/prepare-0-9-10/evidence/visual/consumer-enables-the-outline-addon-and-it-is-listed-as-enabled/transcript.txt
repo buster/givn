@@ -1,0 +1,33 @@
+Scenario: Consumer enables the outline addon and it is listed as enabled
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpkZ8tuz
+exit code: 0
+--- stdout ---
+enabled addon 'outline' in givn/config.yaml
+
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  integration: .opencode/plugins/givn-attribution.js
+  integration: .opencode/plugins/givn-timeline.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-domain-modeling
+  synced skill: givn-dev-principles
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+--- stderr ---
+

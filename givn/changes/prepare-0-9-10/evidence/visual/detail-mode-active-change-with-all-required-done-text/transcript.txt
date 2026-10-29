@@ -1,0 +1,24 @@
+Scenario: Detail mode — active change with all required done (text)
+argv: givn status
+cwd (fixture project root): /tmp/.tmpKX2kzZ
+exit code: 0
+--- stdout ---
+SCM: git
+Change: done
+Stage:  verification-pending
+Verification: not checked
+
+Artifacts:
+  ✓ proposal
+  ✓ specs
+  ✓ design
+  ✓ arc42-docs  (gates archive)
+  ✓ design-review
+  ✓ tasks  (gates archive)  1/1 tasks
+  ✓ review  (gates archive)
+
+All required artifacts complete. Archive prerequisites and merged-candidate verification still apply.
+  Run: givn archive --change done
+
+--- stderr ---
+

@@ -1,0 +1,80 @@
+Scenario: Consumer runs init non-interactively and gets opencode skills
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpjNeVoV
+exit code: 0
+--- stdout ---
+
+  ________  .__
+ /  _____/  |__|__  __ ____
+/   \  ___  |  \  \/ //    \
+\    \_\  \ |  |\   /|   |  \
+ \______  / |__| \_/ |___|  /
+        \/                \/
+
+  from Given to done.
+  version 0.9.9
+
+────────────────────────────────────────────────────
+
+Scaffolding project...
+
+  created  givn/specs
+  created  givn/changes
+  created  givn/archive
+  wrote    givn/config.yaml
+  skills will be installed to: .opencode
+  wrote    givn/commands.yaml
+
+Disabling addons...
+
+  explicit false written for every addon
+
+Generating skills and agent integrations...
+
+  commit attribution: .githooks/commit-msg
+  Git activation: unavailable (no Git worktree)
+  integration: .opencode/plugins/givn-attribution.js
+  integration: .opencode/plugins/givn-timeline.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: no rule in reachable history
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+  warning: no Git worktree or Fossil checkout found at '/tmp/.tmpjNeVoV'
+  warning: archive and managed upgrade are unavailable until the project is version-controlled
+
+────────────────────────────────────────────────────
+
+Installed:
+
+  givn/config.yaml, givn/{specs,changes,archive}
+  core skills and agent integrations
+  commit attribution: .githooks/commit-msg (best effort)
+  attribution integration: .opencode/plugins/givn-attribution.js
+  addons:  disabled (--no-addons)
+           explicit false written for every addon
+
+────────────────────────────────────────────────────
+
+Ready. Three steps to your first change:
+
+  1. Start a change    givn new <change-id>
+  2. Plan it           /givn-propose  (in your AI agent)
+  3. Implement it      /givn-implement
+
+
+--- stderr ---
+

@@ -80,6 +80,7 @@ Feature: Effective optional addon policy
     Then the command exits 0 and reports that outline is enabled
     And `givn addons list` reports the effective outline state as enabled
     And unrelated addon opt-outs remain unchanged
+    And the terminal transcript is captured for this scenario
 
   @givn.added
   Scenario: Communication policy replaces absolute mode without a compatibility alias

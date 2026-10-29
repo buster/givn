@@ -11,6 +11,7 @@ Feature: Refresh generated guidance
     And the served design and steps instructions retain black-box behavior and distinct requirement coverage
     And generated skills contain no repeated dialog-loading or delegation policy blocks
     And no separately authored agent commands are generated
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: Review instructions require deterministic gate dispositions

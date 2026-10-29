@@ -231,6 +231,7 @@ Each modified E2E title remains in its owning narrative; unchanged existing smok
 | match-guidance-to-enabled-addons | A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed | CLI / existing harness | Retained real-interface subprocess/PTY/harness smoke; reuse existing driver and primary observable assertions |
 | agent-activity-reporting | Consumer installs the agent reporter and its reported activity lands in the record | CLI / existing harness | Retained real-interface subprocess/PTY/harness smoke; reuse existing driver and primary observable assertions |
 
+| measure-coverage-per-project | An initialized project documents reusable test and coverage scripts | CLI subprocess | Fresh initialization fixture; inspect generated commands and README |
 ## Step Definitions
 
 Reuse existing permanent bindings wherever the phrase expresses the same requirement; add discriminating assertions rather than giant output snapshots. New phrases are implemented only in durable tests/steps files, never in delta copies. Each capability has its own regular and, when applicable, separate E2E file; shared fixture support contains no step bindings. tests/steps/mod.rs registers modules and narrow per-capability world state. Do not create one preparation catch-all step file. The second column below matches the actual existing integrity parser; this change corrects contrary template prose.

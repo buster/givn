@@ -1,0 +1,9 @@
+Scenario: Consumer installs the agent reporter and its reported activity lands in the record
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpocgu4z
+exit code: 0
+--- stdout ---
+[{"schema":1,"id":4,"at":"2026-10-29T22:46:08.013Z","scope":{"kind":"change","id":"demo"},"source":"givn","kind":"phase","name":"proposal.md","label":"proposal.md","outcome":"ok","parent":3},{"schema":1,"id":5,"at":"2026-10-29T22:46:28.000Z","scope":{"kind":"change","id":"demo"},"source":"agent","kind":"tool","name":"Bash","label":"cargo test --locked --test features_runner","duration_ms":40,"outcome":"ok","session":"givn-timeline-driver","data":{"duration_source":"host","output_bytes":0,"tool_call_id":"toolu_givn_e2e_1"}},{"schema":1,"id":6,"at":"2026-10-29T22:46:28.000Z","scope":{"kind":"change","id":"demo"},"source":"agent","kind":"question","name":"question","label":"Which repository should the change land in?","duration_ms":20,"outcome":"ok","session":"givn-timeline-driver","data":{"title":"Which repository should the change land in?"}},{"schema":1,"id":7,"at":"2026-10-29T22:46:28.000Z","scope":{"kind":"change","id":"demo"},"source":"agent","kind":"subagent","name":"Architect.Scout","duration_ms":20,"outcome":"ok","session":"givn-timeline-driver","data":{"agent":"Explore","subagent":"Architect.Scout","usage":"unavailable"}},{"schema":1,"id":8,"at":"2026-10-29T22:46:28.000Z","scope":{"kind":"change","id":"demo"},"source":"agent","kind":"turn","name":"turn 1","duration_ms":20,"outcome":"ok","session":"givn-timeline-driver","data":{"index":1,"stop_reason":"finished","usage":"unavailable"}},{"schema":1,"id":9,"at":"2026-10-29T22:46:28.596Z","scope":{"kind":"change","id":"demo"},"source":"givn","kind":"command","name":"history","label":"history ingest","duration_ms":16,"outcome":"ok","data":{"exit_code":0}}]
+
+--- stderr ---
+

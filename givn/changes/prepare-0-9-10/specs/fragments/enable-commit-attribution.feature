@@ -9,6 +9,7 @@ Feature: Accurate attribution installation reports
     And stdout reports the shared Git hook and each selected harness attribution integration
     And the report states that the existing user hook was preserved
     And the installed hook does not dispatch itself
+    And the terminal transcript is captured for this scenario
 
   @givn.modified @e2e
   Scenario: Consumer upgrades an existing project with attribution plumbing missing
@@ -17,6 +18,7 @@ Feature: Accurate attribution installation reports
     Then the command exits 0 and reports refreshed attribution plumbing
     And the managed upgrade revision contains the hook and selected attribution integrations
     And a repeated installation preserves the user hook without duplicating dispatch
+    And the terminal transcript is captured for this scenario
 
   @givn.modified @e2e
   Scenario: Consumer initializes a Fossil project and receives the givn commit path without a hook
@@ -26,3 +28,5 @@ Feature: Accurate attribution installation reports
     And stdout names `givn commit` with explicit file paths as the attribution path
     And no .githooks directory exists
     And generated guidance states that raw Fossil commits are not stamped
+    And the terminal transcript is captured for this scenario
+

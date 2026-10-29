@@ -1,0 +1,10 @@
+Scenario: Exact duplicates in one feature are reported together
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpjrjugY
+exit code: 0
+--- stdout ---
+scanned permanent corpus: 1 exact/structural match(es)
+  [exact_duplicate] 'Literal first' (/tmp/.tmpjrjugY/givn/specs/audit/audit.feature) <> 'Literal second' (/tmp/.tmpjrjugY/givn/specs/audit/audit.feature)
+
+--- stderr ---
+

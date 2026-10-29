@@ -1,0 +1,11 @@
+Scenario: Consumer runs check tasks and receives a change verification receipt
+argv: givn check
+cwd (fixture project root): /tmp/.tmpwdqyIz
+exit code: 0
+--- stdout ---
+Mandatory checks for 'tasks':
+  ✓ change verification receipt: 2 scenario(s), 0 failed, 0 skipped at 598df22d347260b24979d834da61de983f868d20
+  ✓ verify passed
+
+--- stderr ---
+
