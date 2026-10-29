@@ -576,8 +576,9 @@ struct TitleRecovery {
 }
 
 fn recover_title(expected_title: &str, line: &str) -> Option<TitleRecovery> {
-    if line.len() < expected_title.len()
-        || !line[..expected_title.len()].eq_ignore_ascii_case(expected_title)
+    if !line
+        .get(..expected_title.len())?
+        .eq_ignore_ascii_case(expected_title)
     {
         return None;
     }
@@ -977,6 +978,14 @@ flowchart LR
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn unicode_malformed_titles_report_diagnostics_without_panicking() {
+        for title in ["# ééééééé", "# Fragmentééé", "# 用例用例用例"] {
+            assert!(!parse_usecase_md_diagnostics(title).1.is_empty());
+            assert!(!parse_fragment_md_diagnostics(title).1.is_empty());
+        }
+    }
 
     const VALID_LEAF: &str = r#"# Use case: start-project
 

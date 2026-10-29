@@ -49,11 +49,7 @@ pub fn usecase_coverages(root: &Path) -> Result<Vec<UsecaseCoverage>> {
 
     for entry in entries {
         let usecase_dir = entry?.path();
-        if !usecase_dir.is_dir()
-            || usecase_dir
-                .file_name()
-                .is_some_and(|name| name == "fragments")
-        {
+        if !usecase_dir.is_dir() {
             continue;
         }
         let usecase = usecase_dir
@@ -61,21 +57,30 @@ pub fn usecase_coverages(root: &Path) -> Result<Vec<UsecaseCoverage>> {
             .and_then(|name| name.to_str())
             .unwrap_or_default()
             .to_string();
-        let usecase_path = usecase_dir.join("usecase.md");
+        let usecase_path = usecase_dir.join(if usecase == "fragments" {
+            "fragment.md"
+        } else {
+            "usecase.md"
+        });
         if !usecase_path.exists() {
             continue;
         }
-        let doc =
-            crate::gherkin::usecase_md::parse_usecase_md(&std::fs::read_to_string(&usecase_path)?)?;
+        let content = std::fs::read_to_string(&usecase_path)?;
+        let (capabilities, interactions) = if usecase == "fragments" {
+            let doc = crate::gherkin::usecase_md::parse_fragment_md(&content)?;
+            (doc.capabilities, doc.interactions)
+        } else {
+            let doc = crate::gherkin::usecase_md::parse_usecase_md(&content)?;
+            (doc.capabilities, doc.interactions)
+        };
 
-        for capability in doc.capabilities {
+        for capability in capabilities {
             let feature_path = usecase_dir.join(format!("{capability}.feature"));
             let feature = gherkin::Feature::parse_path(&feature_path, GherkinEnv::default())
                 .map_err(|error| {
                     anyhow::anyhow!("failed to parse {}: {error}", feature_path.display())
                 })?;
-            let declared: Vec<String> = doc
-                .interactions
+            let declared: Vec<String> = interactions
                 .iter()
                 .filter(|interaction| interaction.capability == capability)
                 .map(|interaction| interaction.e2e_scenario.clone())
@@ -148,7 +153,7 @@ pub fn interaction_gate_findings(root: &Path) -> Vec<Finding> {
             files: vec![
                 root.join("givn/specs")
                     .join(&coverage.usecase)
-                    .join("usecase.md")
+                    .join(if coverage.usecase == "fragments" { "fragment.md" } else { "usecase.md" })
                     .display()
                     .to_string(),
                 root.join("givn/specs")
@@ -181,6 +186,42 @@ mod tests {
         std::fs::write(usecase.join("usecase.md"), interactions).unwrap();
         std::fs::write(usecase.join("project-run.feature"), feature_text).unwrap();
         root
+    }
+
+    #[test]
+    fn fragment_interactions_match_capability_and_title() {
+        let root = tempfile::TempDir::new().unwrap();
+        let dir = root.path().join("givn/specs/fragments");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("fragment.md"), "# Fragment: support\n\n## Capabilities\n\n- place-order\n- cancel-order\n\n## Interactions\n\n| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| place-order | submit | Consumer submits an order |\n\n## Diagram\n\n```mermaid\nflowchart LR\n A --> B\n```\n").unwrap();
+        std::fs::write(
+            dir.join("place-order.feature"),
+            "Feature: Place\n  Scenario: Internal\n    Given x\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("cancel-order.feature"),
+            "Feature: Cancel\n  @e2e\n  Scenario: Consumer submits an order\n    Given x\n",
+        )
+        .unwrap();
+        let findings = interaction_gate_findings(root.path());
+        assert_eq!(findings.len(), 2, "{findings:?}");
+        assert!(
+            findings
+                .iter()
+                .all(|finding| finding.files[0].ends_with("fragment.md"))
+        );
+        std::fs::write(
+            dir.join("place-order.feature"),
+            "Feature: Place\n  @e2e\n  Scenario: Consumer submits an order\n    Given x\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.join("cancel-order.feature"),
+            "Feature: Cancel\n  Scenario: Internal\n    Given x\n",
+        )
+        .unwrap();
+        assert!(interaction_gate_findings(root.path()).is_empty());
     }
 
     const USECASE: &str = r#"# Use case: project-run
