@@ -1,7 +1,7 @@
 @givn.delta @check-specification-health
 Feature: Check specification health
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: All clean .feature files report a clean summary on stdout
     Given a project root with givn/ initialised
     And a structurally valid specification corpus with one clean feature
@@ -10,7 +10,7 @@ Feature: Check specification health
     And stdout contains a line "givn lint: 1 file(s) checked — clean"
     And the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Explicit relationship namespaces disambiguate equal identifiers
     Given a structurally valid corpus with a use case named "support" and a fragment named "support"
     And another use case Includes "<target>"
@@ -23,7 +23,7 @@ Feature: Check specification health
       | usecase: support  | use case |
       | fragment: support | fragment |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A relationship cannot resolve through the other namespace
     Given a structurally valid corpus containing only a <existing owner> named "support"
     And another use case Includes "<target>"
@@ -36,7 +36,7 @@ Feature: Check specification health
       | fragment       | usecase: support  |
       | use case       | fragment: support |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A fragment cannot be an extension target even when a use case has the same identifier
     Given a structurally valid corpus with a use case named "support" and a fragment named "support"
     And another use case Extends "fragment: support"
@@ -44,7 +44,7 @@ Feature: Check specification health
     Then the command exits 1
     And the findings say that Extends cannot target a fragment
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Cycles follow use-case includes and extends relationships
     Given structurally valid use cases "first" and "second"
     And "first" <relationship> "usecase: second"
@@ -58,7 +58,7 @@ Feature: Check specification health
       | Includes     |
       | Extends      |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A fragment inclusion does not invent an edge to a same-named use case
     Given structurally valid use cases "first" and "support" and a fragment named "support"
     And "first" Includes "fragment: support"
@@ -66,7 +66,7 @@ Feature: Check specification health
     When the user runs `givn lint`
     Then no use-case cycle finding is reported
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Interaction evidence cannot be credited from another capability
     Given a structurally valid <owner> declaring capabilities "place-order" and "cancel-order"
     And its interaction inventory maps "place-order" to "Consumer submits an order"
@@ -81,7 +81,7 @@ Feature: Check specification health
       | use case |
       | fragment |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Fragment interactions are checked in their declaring fragment
     Given a structurally valid fragment declaring capability "show-help"
     And its interaction inventory maps "show-help" to "Consumer requests help"
@@ -90,7 +90,7 @@ Feature: Check specification health
     When the user runs `givn lint`
     Then no missing or unlisted interaction finding is reported for "Consumer requests help"
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A malformed Unicode use-case title produces a diagnostic instead of a panic
     Given an otherwise valid use-case document whose first heading is "<heading>"
     When the user runs `givn lint`

@@ -1,7 +1,7 @@
 @givn.delta @agent-activity-reporting
 Feature: Best-effort bounded agent reporting
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
     Given an initialized project with the installed "<target>" reporter
     And a change "demo" exists with artifact "proposal.md"
@@ -18,7 +18,7 @@ Feature: Best-effort bounded agent reporting
       | claude   |
       | maki     |
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A rejected report never fails the agent action it reports
     Given a change with recorded history whose development record cannot be written
     When the installed reporter observes a completed tool call
@@ -26,7 +26,7 @@ Feature: Best-effort bounded agent reporting
     And the reporting failure neither fails nor indefinitely delays the agent action
     And previously recorded history is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A stalled reporting helper cannot block primary agent work
     Given an installed "<target>" reporter whose helper "<failure>"
     When the agent completes a primary tool action
@@ -45,7 +45,7 @@ Feature: Best-effort bounded agent reporting
       | claude   | does not consume its input           |
       | maki     | does not consume its input           |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Recording guidance does not confuse ignored paths with untracked history
     Given a project whose local recording path was committed before it was ignored
     When the developer reads the reporter installation or synchronization report
@@ -53,7 +53,7 @@ Feature: Best-effort bounded agent reporting
     And the report identifies the existing tracked recording rather than claiming history is clean
     And no automatic history rewrite is performed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Recording warnings disclose sensitivity without promising privacy filtering
     Given a project with an installed development reporter
     When the developer reads the effective recording guidance

@@ -1,7 +1,7 @@
 @givn.delta @initialize-a-project
 Feature: Initialize skills-only project integrations
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer runs init non-interactively and gets opencode skills
     Given a project root without a givn/ directory
     And human-authored agent instructions outside the managed block
@@ -12,7 +12,7 @@ Feature: Initialize skills-only project integrations
     And the managed startup block requires loading the effective dialog policy before the first question in each context independently of addons
     And human-authored instructions remain unchanged
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer re-syncs skills after init and the selection is honoured
     Given an initialized project selecting opencode and claude
     And an older managed startup block beside human-authored instructions
@@ -24,14 +24,14 @@ Feature: Initialize skills-only project integrations
     And custom commands and human-authored instructions remain byte-for-byte unchanged
     And the startup block is refreshed once without changing the persisted selection or unrelated configuration
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Skills and commands are not installed to an agent excluded from the selection
     Given an initialized project selecting only claude
     When the user runs `givn skills sync`
     Then only claude receives generated Givn skills
     And no target receives generated Givn commands
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The omp target receives its own guidance and attribution integration
     Given a project root without a givn/ directory
     When the user runs `givn init --agents omp`
@@ -41,7 +41,7 @@ Feature: Initialize skills-only project integrations
     And the guidance explains invocation as `/skill:givn-propose`
     And no unselected target receives skills
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An omp project keeps the generated omp rules out of the repository
     Given a committed omp project with tracked recognizable generated legacy command files and generated skills
     When the user runs `givn skills sync`
@@ -50,7 +50,7 @@ Feature: Initialize skills-only project integrations
     And installed generated skills and attribution integration are ignored and not tracked
     And no replacement command files are generated
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Every supported target discovers thin skills without generated commands
     Given an initialized project selecting only "<target>"
     When the user runs `givn skills sync`
@@ -68,14 +68,14 @@ Feature: Initialize skills-only project integrations
       | maki     | explicit request                   |
       | maki     | agent-selected skill               |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Maki guidance does not promise generated slash commands
     Given an initialized project selecting maki
     When the user runs `givn skills sync`
     Then the guidance explains explicit requests and agent-selected skills
     And the guidance does not promise a generated `/givn-propose` command
 
-  @givn.added @wip
+  @givn.added
   Scenario: A custom legacy command is preserved and its manual transition is reported
     Given an initialized project with a customized legacy givn-propose command
     When the user runs `givn skills sync`
@@ -83,7 +83,7 @@ Feature: Initialize skills-only project integrations
     And the report names the custom command requiring manual transition
     And a matching filename alone is not treated as evidence of Givn ownership
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Init reentry preserves explicit addon opt-outs
     Given an initialized project with outline and challenge explicitly disabled and other addon settings preserved
     When the user runs `<command>`
@@ -96,7 +96,7 @@ Feature: Initialize skills-only project integrations
       | givn init                                  |
       | givn init --force --agents opencode         |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Required skill synchronization failure leaves an accurately reported partial initialization
     Given a writable new project whose required opencode skill destination cannot be written
     When the user runs `givn init --agents opencode`
@@ -106,7 +106,7 @@ Feature: Initialize skills-only project integrations
     And the report does not declare the project Ready or claim rollback
     And successfully written scaffold files remain available for retry
 
-  @givn.added @wip
+  @givn.added
   Scenario: Retrying skill synchronization completes partial initialization without losing choices
     Given a partially initialized project after required skill synchronization failed
     And the destination has been made writable
@@ -114,7 +114,7 @@ Feature: Initialize skills-only project integrations
     Then the command exits 0 and reports installed skills
     And the persisted target selection and explicit addon opt-outs remain unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A new project declares verification runners as unconfigured
     Given a project root without a givn/ directory or test scripts
     When the user runs `givn init --agents opencode`
@@ -122,7 +122,7 @@ Feature: Initialize skills-only project integrations
     And both verification scopes declare an explicit unconfigured runner sentinel
     And verification configuration does not assume `./run-tests.sh` or `./run-tests.sh --e2e` exists
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: The served runner setup example fulfills the verification contract when executed
     Given a project initialized with unconfigured verification runners
     And a Givn maintainer installs the executable runner and matching configuration from the served setup example without repairs
@@ -144,7 +144,7 @@ Feature: Initialize skills-only project integrations
       | regular | a skipped scenario               | cannot pass verification                                |
       | regular | no selected scenarios            | cannot pass verification                                |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Target selection edits preserve unrelated YAML or refuse before writing
     Given an initialized project with "<presentation>" configuration and unrelated settings
     When the user runs `givn skills targets add claude`

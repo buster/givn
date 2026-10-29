@@ -1,7 +1,7 @@
 @givn.delta @report-change-status
 Feature: Report change status
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Detail mode — active change with all required done (text)
     Given a project root with givn/ initialised
     And a change "done" exists with all required artifacts complete
@@ -13,7 +13,7 @@ Feature: Report change status
     And stdout does not claim "ready-to-archive" or "Ready to archive"
     And the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Status reports receipt freshness separately from artifact completion
     Given a change "done" exists with all required artifacts complete
     And <receipt condition>
@@ -32,7 +32,7 @@ Feature: Report change status
       | tested executable inputs changed after a green receipt  | `givn status --change done --json`        | stale              |
       | no verification receipt exists                          | `givn status --change done --json`        | not checked        |
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Detail mode — archived change (text)
     Given a project root with givn/ initialised
     And a change "old" has a proven archive with a matching archive receipt
@@ -40,7 +40,7 @@ Feature: Report change status
     Then the command exits 0
     And stdout reports a proven archive
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Detail mode — archived change (JSON)
     Given a project root with givn/ initialised
     And a change "old" has a proven archive with a matching archive receipt
@@ -49,7 +49,7 @@ Feature: Report change status
     And stdout mentions "\"id\": \"old\""
     And the JSON status reports a proven archive
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An archive candidate without current proof is not a proven archive
     Given a change "candidate" exists in the archive directory
     And <proof condition>
@@ -65,7 +65,7 @@ Feature: Report change status
       | the archive receipt is missing               | `givn status --change candidate --json`   |
       | the archive receipt is stale                 | `givn status --change candidate --json`   |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Inspecting status never executes verification
     Given a project with complete active artifacts for change "done" and a pending archive candidate "candidate"
     And verification commands record every invocation and fail if invoked

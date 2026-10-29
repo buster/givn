@@ -13,7 +13,7 @@ Feature: Review disposition gates
   Scenario: Review blocks when a delta scenario shape-matches a permanent scenario without disposition
     Given this scenario is removed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Consumer passes review without shape dispositions and receives the net-delta receipt
     Given a change has two short added scenarios with matching shapes and distinct titles
     And the completed review has no shape disposition table
@@ -22,7 +22,7 @@ Feature: Review disposition gates
     Then the command succeeds
     And terminal output reports a net delta of 2 added scenarios
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Shape matches do not block review or archive
     Given an otherwise valid completed change has a short delta scenario shape-matching <matching scenario>
     And its review has no shape disposition entries
@@ -35,7 +35,7 @@ Feature: Review disposition gates
       | another delta scenario | `givn archive --change test-change` |
       | a permanent scenario | `givn archive --change test-change` |
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Review blocks with a clear message when review.md is missing
     Given a change has current applicable verification evidence and passes all other applicable integrity checks
     And the change has no review.md and therefore no required review verdict evidence
@@ -43,7 +43,7 @@ Feature: Review disposition gates
     Then the command exits non-zero and names review.md and the missing required review verdict evidence
     And no shape disposition is required
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Review passes when a long scenario has a split-or-keep entry
     Given a change contains a scenario exceeding the scenario-length limit
     And its review explicitly records "keep" for that scenario with the brief reason "one atomic import requires all setup rows"
@@ -51,7 +51,7 @@ Feature: Review disposition gates
     When the developer runs `givn check review --change test-change`
     Then the command succeeds
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A keep disposition must contain an explicit decision and a reason
     Given a change contains a scenario exceeding the scenario-length limit
     And its review contains <entry> for that scenario
@@ -62,7 +62,7 @@ Feature: Review disposition gates
       | a scenario name without a split or keep decision |
       | a keep decision without a brief reason |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A promised split cannot pass review while the long scenario remains unsplit
     Given a change contains a scenario exceeding the scenario-length limit
     And its review records a split decision for that scenario
@@ -70,7 +70,7 @@ Feature: Review disposition gates
     When the developer runs `givn check review --change test-change`
     Then the command exits non-zero and names the incomplete split
 
-  @givn.added @wip
+  @givn.added
   Scenario: A completed split satisfies the scenario-length disposition
     Given a review records a split decision for a long scenario
     And the delta specs complete that split into independently focused scenarios within the length limit

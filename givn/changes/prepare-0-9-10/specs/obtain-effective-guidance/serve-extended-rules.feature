@@ -1,7 +1,7 @@
 @givn.delta @serve-extended-rules
 Feature: The served instruction carries the built-in rules and the project's extension
 
-  @givn.added @wip
+  @givn.added
   Scenario: Served implementation guidance requires behavioral RED before production edits
     Given a coherent named behavior batch is planned in tasks with scenarios validation and an intended commit boundary
     When the author requests the implementation and steps guidance
@@ -10,7 +10,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And the actual command and short observed failure are recorded compactly in the batch task as they occur
     And minimum implementation is followed by actual GREEN and REFACTOR checks recorded briefly
 
-  @givn.added @wip
+  @givn.added
   Scenario: Immediately passing tests protect existing behavior without a production edit
     Given a distinct requirement already holds before its regression test is written
     When the author reads the implementation guidance for an immediately passing test
@@ -18,7 +18,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And no production edit is made for that requirement
     And another requirement in the same coherent batch may still require behavioral RED and production edits
 
-  @givn.added @wip
+  @givn.added
   Scenario: Skipped RED is admitted rather than reconstructed from history
     Given production behavior was edited before the requirement's behavioral test was run
     When the author reads the test-first evidence guidance
@@ -27,7 +27,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And mutation or discrimination tests cannot be claimed as historical RED
     And separate RED GREEN and REFACTOR commits or retrospective phase-shaped history gates are not required
 
-  @givn.added @wip
+  @givn.added
   Scenario: A coherent behavior batch is completed with its actual explicit-path revision
     Given a behavior batch has completed its actual GREEN and REFACTOR checks
     When the author reads the batch completion guidance
@@ -36,7 +36,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And commit selections name the batch files explicitly rather than implicitly staging all work
     And no production diff is required for each scenario that protects existing behavior
 
-  @givn.added @wip
+  @givn.added
   Scenario: Refactor guidance uses the outline once for supported changed components and their neighbors
     Given a behavior batch changes supported Rust or Python components alongside unsupported Go or Java components
     When the author reads the REFACTOR guidance
@@ -51,7 +51,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And the report is reused until structural changes make its relevant evidence stale
     And nonstructural edits alone do not require rerunning the outline
 
-  @givn.added @wip
+  @givn.added
   Scenario: Unsupported outline languages receive source assessment without a waiver
     Given a behavior batch changes Go or Java components unsupported by the outline
     When the author reads the REFACTOR guidance
@@ -59,14 +59,14 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And unavailable outline support is not failure or a reason for a waiver
     And no outline verdict metric waiver or forced reviewer context is required
 
-  @givn.added @wip
+  @givn.added
   Scenario: Encountered cleanup is a separate GREEN refactoring batch
     Given the author encounters a concrete cleanup opportunity while implementing agreed behavior
     When the author reads the cleanup guidance
     Then the cleanup is made in a separate behavior-preserving refactoring commit with explicit paths and actual GREEN checks
     And the cleanup does not authorize speculative features or a broad abstraction rewrite
 
-  @givn.added @wip
+  @givn.added
   Scenario: Served development guidance requires modular boundaries from the start
     Given a project is about to make its first production implementation
     When the author requests the development principles guidance
