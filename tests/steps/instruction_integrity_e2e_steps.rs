@@ -55,7 +55,8 @@ fn startup_obligation_is_universal(world: &mut GivnWorld) {
     let output = stdout(world);
     assert!(
         output.contains("outside a named workflow")
-            && output.contains("pass the obligation explicitly to fresh delegated contexts"),
+            && output
+                .contains("pass the obligation explicitly when work is handed to another context"),
         "startup guidance does not carry the universal/delegated obligation: {output}"
     );
 }
