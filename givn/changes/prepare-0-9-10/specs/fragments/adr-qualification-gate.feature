@@ -44,6 +44,7 @@ Feature: Concise qualification and canonical routing of architecture decisions
     And the output explains qualification by architectural commitment real alternatives lasting consequence and existing-ADR search
     And the output routes the result to a new amended superseding or non-ADR artifact
     And the output requires qualification once in the change assessment
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: A reviewer requests design-review guidance through the Givn CLI

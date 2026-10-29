@@ -94,6 +94,8 @@ pub mod workflow_enforcement_steps;
 
 #[derive(Debug, Default, World)]
 pub struct GivnWorld {
+    /// The scenario currently executing, set by the runner's before hook.
+    pub(crate) scenario_title: Option<String>,
     /// The temp project root (init'd or bare) for this scenario.
     env: Option<common::TestEnv>,
     /// State for the commit-attribution scenarios.

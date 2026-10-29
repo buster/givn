@@ -1,0 +1,28 @@
+Scenario: A completed maintenance migration can be archived without a product specification
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpYJpwjr
+exit code: 0
+--- stdout ---
+  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)
+[23:46:08] Archiving change 'migrate-1-0-0-to-1-1-0'...
+[23:46:08] Running archive gate hooks...
+[23:46:08] ✓ Gate hooks passed
+[23:46:08] ✓ run declaration passed
+[23:46:08] ✓ README completeness gate passed
+[23:46:08] Running static review gates...
+net delta: 0 added, 0 modified, 0 removed
+net delta json: {"added":0,"modified":0,"removed":0}
+  ✓ overlap dispositions passed
+[23:46:08] ✓ Static review gates passed
+[23:46:08] ✓ Candidate committed
+Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks.
+[23:46:08] Running regular verification: ./emit-result.sh regular
+[23:46:08] ✓ development managed block refreshed
+[23:46:08] ✓ Archived 'migrate-1-0-0-to-1-1-0' to /tmp/.tmpYJpwjr/givn/archive/migrate-1-0-0-to-1-1-0
+Verification receipt: /tmp/.tmpYJpwjr/givn/archive/migrate-1-0-0-to-1-1-0/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+
+--- stderr ---
+

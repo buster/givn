@@ -1,0 +1,9 @@
+Scenario: The started server reports readiness and forwards a clean exit
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmp2CSGf7
+exit code: 0
+--- stdout ---
+givn run: ready at http://127.0.0.1:44403/healthz
+
+--- stderr ---
+

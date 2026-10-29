@@ -1,0 +1,30 @@
+Scenario: A developer runs a outline report and sees the classified units
+argv: givn outline
+cwd (fixture project root): /tmp/.tmpqiKIIm
+exit code: 0
+--- stdout ---
+outline report — rust, 1 files, 2 units, 2 hints
+outline first: method declarations, signatures, and internal calls; metrics are hints
+advisory report: this report does not block review or archive
+
+HINT          type    src/god_type.rs                      type:src/god_type.rs::GodType god-type
+  outline:
+    method [public] fn first(&self) -> u64
+    method [public] fn second(&self) -> u64
+    method [public] fn third(&self) -> u64
+  metrics (hint): code lines 520; methods 3; public methods 3; fields 3; LCOM4 3; tight class cohesion 0.000; method complexity 1; method nesting 0
+  evidence:
+    type-code-lines 520 > 500
+    type-lcom4 3 > 2
+    type-tcc 0 < 500
+
+HINT          module  src/god_type.rs                      module:src/god_type.rs module
+  outline:
+    type GodType [public]
+  metrics (hint): code lines 520; methods 0; public methods 0; fields 0; LCOM4 0; tight class cohesion unavailable; method complexity unavailable; method nesting unavailable
+  evidence:
+    module-code-lines 520 >= 500
+
+
+--- stderr ---
+

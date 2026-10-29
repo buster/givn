@@ -1,0 +1,11 @@
+Scenario: Consumer initializes a project and receives shared attribution plumbing
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpHYbmTE
+exit code: 0
+--- stdout ---
+[main 748a314] human message
+ 1 file changed, 1 insertion(+)
+ create mode 100644 human.txt
+
+--- stderr ---
+

@@ -1,0 +1,11 @@
+Scenario: All clean .feature files report a clean summary on stdout
+argv: givn lint
+cwd (fixture project root): /tmp/.tmp3PevsU
+exit code: 0
+--- stdout ---
+givn lint: 1 file(s) checked — clean
+
+--- stderr ---
+[SHAPE] advisory  /tmp/.tmp3PevsU/givn/specs/clean/clean.feature & /tmp/.tmp3PevsU/givn/specs/clean/clean.feature  scenarios 'Internal clean scenario' and 'clean scenario' share a shape — consider merging
+[WARN ] advisory  /tmp/.tmp3PevsU/givn/specs/clean  use case contains only one capability
+

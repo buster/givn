@@ -1,0 +1,14 @@
+Scenario: Consumer invokes bare check and receives explicit non-executing guidance
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpAYvXwG
+exit code: 0
+--- stdout ---
+No checks were executed. Select an explicit command:
+  givn check tasks --change <change> — executes changed-scenario verification
+  givn check review --change <change> — checks evidence without running verification suites
+  givn check <artifact> --change <change> — runs that artifact's configured hooks
+  givn check migration --change <change> — checks preservation
+  givn check rules — checks rule cleanliness
+
+--- stderr ---
+

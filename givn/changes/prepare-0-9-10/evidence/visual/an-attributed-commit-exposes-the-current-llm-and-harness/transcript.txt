@@ -1,0 +1,9 @@
+Scenario: An attributed commit exposes the current LLM and harness
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpwMNHGs
+exit code: 0
+--- stdout ---
+[23:46:05] committed revision e95a2d7bc1234978cd8f4fb12efe036c3b5c7a9b on the Git backend
+
+--- stderr ---
+

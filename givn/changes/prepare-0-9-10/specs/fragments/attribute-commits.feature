@@ -9,6 +9,7 @@ Feature: Safe attribution and explicit-path revisions
     Then the command exits 0 and reports installed attribution plumbing
     And the checked-in attribution hook and selected harness integrations exist
     And a subsequent human Git commit succeeds and runs the user hook exactly once without recursive dispatch
+    And the terminal transcript is captured for this scenario
 
   @givn.modified @e2e
   Scenario: An attributed commit exposes the current LLM and harness
@@ -20,6 +21,7 @@ Feature: Safe attribution and explicit-path revisions
     And its message contains only the managed co-author attribution
     And the revision contains only the supplied path
     And unrelated index entries and working changes remain unchanged
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: The SCM-neutral commit path attributes a Git revision

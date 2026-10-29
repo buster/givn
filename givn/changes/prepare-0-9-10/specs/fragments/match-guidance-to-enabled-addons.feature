@@ -31,6 +31,7 @@ Feature: Match guidance to enabled addons
     And no generated domain-modeling skill exists
     And no generated skill mentions any disabled addon
     And no Givn command files are generated
+    And the terminal transcript is captured for this scenario
 
   @givn.modified @e2e
   Scenario: A consumer enables the addons a generated section needs and the guidance gains it
@@ -42,6 +43,7 @@ Feature: Match guidance to enabled addons
     And a generated domain-modeling skill exists
     And the generated review skill directs the reviewer to the review instruction
     And no generated review command exists
+    And the terminal transcript is captured for this scenario
 
   @givn.added
   Scenario: An unbalanced conditional in a skill template fails the synchronization

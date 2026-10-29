@@ -1,0 +1,290 @@
+Scenario: An author requests the strict ADR guidance through the Givn CLI
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpgEVatB
+exit code: 0
+--- stdout ---
+# Instruction: arc42-docs
+
+Maintain the project's durable arc42 architecture documentation.
+
+These documents live under the fixed `docs/arc42/` path in the current binary.
+They are **project-level and evolve across changes** — they are not archived with
+the change. Your task is to create missing chapters and update affected ones.
+
+## Diagram policy
+
+Any diagram in any arc42 chapter (component, context, sequence, quality tree,
+flow, deployment topology) MUST be a Mermaid fenced code block
+(` ```mermaid `). ASCII art — inline box-drawing characters, pre-formatted
+text diagrams — is not permitted. A plain directory/file-tree listing is not a
+diagram and may stay as plain text.
+
+## What to do
+
+**First: assess impact against every chapter, not just the obvious ones.**
+Read the current change's `proposal.md`, `specs/`, and `design.md` in full.
+Then walk **all 12 rows** of the table below, in order, and make an explicit
+yes/no decision for each one — do not stop once you've found two or three
+obviously-affected chapters. A change that touches building blocks almost
+always also touches runtime-view (new flows) and often context-and-scope
+(new user-facing surface) or risks-and-technical-debt (every qualified ADR
+"Bad, because..." consequence is a risk or a piece of technical debt by
+definition — if chapter 09 gets a new ADR, chapter 11 needs at least a line).
+Skimming for the first plausible match and stopping there is the failure
+mode this instruction exists to prevent.
+
+**If, after walking all 12 rows, none are affected:** write `arc42.md` in the
+change directory with `STATUS: DONE`, the full 12-row assessment table (see
+`## Output` below) with every row marked "No" and a one-line reason, and an
+overall one-line note (e.g. "Pure tooling change — no architectural impact.").
+You are done.
+
+**If chapters are affected:**
+
+- **If a chapter file does not exist or is still scaffold:** the first
+  completed change must establish all twelve chapters proportionate to the real
+  project. Unfinished scaffold or fabricated completeness does not satisfy the
+  baseline. Specific explicit unknowns and explained inapplicability are
+  acceptable content; a placeholder that pretends to answer is not.
+- **If a chapter file already exists:** update only the sections affected by
+  this change. Do not rewrite unrelated sections. Prefer surgical edits that
+  preserve existing content.
+
+## Architecture Decision Records
+
+### Unit and storage
+
+One architecturally significant decision gets exactly one Architecture Decision
+Record (ADR), and one ADR records exactly one decision. Do not combine several
+decisions in one ADR file or split one decision across several ADR files.
+
+The default storage contract is:
+
+- The ADR body is a separate Markdown file at
+  `docs/arc42/adr/ADR-NNNN-short-slug.md`.
+- `docs/arc42/09-architecture-decisions.md` is the chapter-09 register/index.
+  It contains links, status, date, and short register information; it is not a
+  container for the bodies of multiple ADRs and must not contain a sequence of
+  ADR sections.
+- `docs/arc42/adr/README.md` is the index for the ADR directory. Keep it in
+  sync with the register and the individual files.
+- Historical ADRs may be placed at
+  `docs/arc42/adr/archive/ADR-NNNN-short-slug.md`. Preserve the ADR number and
+  links in both indexes when moving a record there. Do not place an ADR body in
+  `givn/archive/<change>/`; that is the change archive, not the architecture
+  decision archive. A record that fails the qualification gate is not an
+  historical ADR and must not be copied into this archive.
+
+Use the paths above verbatim. The current binary does not implement an
+`arc42.output_dir` override.
+
+Create the ADR directory, individual file, and index entries manually as
+needed. This addon guidance does not provide or claim automatic scaffolding for
+individual ADRs. Do not state that enabling the addon creates ADR files.
+
+### Qualification
+
+Qualify a decision once, concisely, in the change assessment (`arc42.md`)
+before drafting any ADR. Do not repeat a qualification worksheet in the ADR,
+the design, the design review, or a second schema. The assessment answers four
+questions with decision-specific facts:
+
+- **Architectural commitment** - does the choice fix a lasting component or
+  ownership boundary, durable contract, dependency direction, system-wide
+  quality constraint, deployment/data boundary, or compatibility/migration
+  boundary?
+- **Real alternatives** - is there an actual choice between at least two
+  materially different options, rather than a default, obvious implementation,
+  or post-hoc strawman?
+- **Durable consequence** - would reversal require migration, broad code or
+  interface changes, cross-command coordination, or protection of a fundamental
+  invariant? Implementation effort alone is not enough.
+- **Existing decisions** - search the active and archived ADR registers, then
+  choose exactly one route: `NEW_ADR`, `AMEND_ADR`, `SUPERSEDE_ADR`, or no new
+  ADR because an existing lower-level artifact already owns the decision.
+
+An ordinary implementation choice belongs in its appropriate existing artifact:
+a Gherkin specification, `design.md`, an Arc42 chapter, process guidance,
+ordinary project documentation, or the implementation. If one of those is the
+complete home, do not create an ADR. A refinement amends the existing ADR; a
+replacement supersedes it and leaves an explicit replacement link. `Must be
+shared` is supporting evidence only: it never qualifies a candidate by itself.
+
+The ADR owns the decision rationale, its real alternatives, and its
+consequences. Qualification is not another section of the ADR. Do not invent
+alternatives, impact, consequences, participants, or provenance; when a fact is
+unknown, establish it or narrow the decision instead of filling the gap.
+
+This is authoring policy, not runtime enforcement. Project overrides may
+replace this default guidance through the normal asset cascade.
+
+### Falsification examples
+
+Three fail-fast examples make the qualification decisive without becoming
+extra recorded tests. A candidate normally fails when any holds, no matter how
+the four questions were argued; a genuine lasting boundary with real
+alternatives may still qualify. Classify by kind, not count: there is no numeric
+ADR cap, and a foundational change may legitimately mint several genuine ADRs.
+
+1. **Single-change reversibility.** The decision is fully implementable and
+   reversible within one change and touches one component, and it defines no
+   port/adapter boundary, component split, storage boundary, or compatibility
+   boundary. A boundary decision is not local merely because it touches one
+   component. Example: a project identity key split is a data-model decision
+   owned by `design.md` and the glossary.
+2. **No multi-change constraint.** The decision does not constrain at least two
+   future changes or two components, and it defines no port/adapter boundary,
+   component split, storage boundary, or compatibility boundary. A boundary
+   that future adapters or implementations build against is durable. Example: a
+   terminal state value plus its presentation filtering is feature behavior
+   owned by the capability spec and design.
+3. **Product-behavior exclusion.** The candidate is observable workflow
+   behavior ownable by a use case plus Gherkin (who authorizes what, in which
+   order, with which state values). It fails the architectural-commitment
+   question unless it also moves a component, authority, or deployment boundary,
+   and that boundary is stated. Examples: an assumption-and-go-ahead gate and a
+   human evaluation gate are workflow behavior; a change-request entity with
+   crash-safety requirements is a domain entity, not a workflow gate.
+
+These examples explain the concise qualification; they are not three additional
+records a change must produce. A familiar pattern, implementation effort, a
+long discussion, or "it affects the system" is not qualification.
+
+### Consequences and risk debt
+
+An ADR retains both its positive and negative consequences. A routine tradeoff
+is not automatically risk or technical-debt tracking: only an actionable,
+unresolved downside needs an entry in chapter 11 with its location, consequence,
+and remediation or deferral reason. Do not promote every "Bad, because..."
+sentence into debt when nothing actionable remains.
+
+### MADR file contract
+
+Every ADR file uses MADR (Markdown Any Decision Records) and starts with this
+frontmatter:
+
+```yaml
+---
+status: proposed
+date: YYYY-MM-DD
+decision-makers: list everyone involved
+consulted: list subject-matter experts consulted
+informed: list everyone kept up-to-date
+---
+```
+
+The allowed status values are exactly `proposed`, `rejected`, `accepted`,
+`deprecated`, and `superseded by ADR-NNNN`. A superseding status must contain a
+concrete existing ADR ID, for example `superseded by ADR-027` or
+`superseded by ADR-0042`, and that replacement record must be identifiable in
+the indexes. `ADR-NNNN` is only template notation; it must not remain as a
+placeholder in a completed ADR.
+
+The frontmatter must contain real values: an actual ISO date and concrete
+decision-makers, consulted people, and informed people. Use an explicit value
+such as `none` when a list is empty. A completed ADR contains no template
+placeholders, ellipses, generic option names, or unfilled prompts.
+
+Every individual ADR file is written and tailored from the self-contained
+template at `docs/arc42/adr/adr-template.md`. The template embeds the
+frontmatter block, the rationale, alternatives, consequences, and every
+required MADR section, so it is authoritative at authoring time even when this
+instruction is not loaded. It does not carry a second qualification worksheet;
+the concise assessment lives once in the change's `arc42.md`. Copy that template to
+`docs/arc42/adr/ADR-NNNN-short-slug.md` and tailor it to the decision. Use every
+MADR section; do not omit a section because the decision seems small. The
+Context and Problem Statement is 2-4 sentences, Considered Options lists real,
+distinct options rather than strawmen, Decision Outcome is brief and gives the
+chosen option plus its single most important reason, and Consequences contain
+only non-obvious or project-specific effects. Confirmation must be concrete:
+name an automated test, fitness function, lint rule, or specific review
+checkpoint, not merely "we will review it".
+
+## Which chapters to touch
+
+Base the decision on the current change's `proposal.md`, `specs/`, and
+`design.md`. Evaluate every row — a "No" is only valid if you actually
+checked the change's scope against that row and found nothing, not because
+you stopped looking after an earlier row matched:
+
+Arc42 chapter impact and ADR qualification are independent decisions. A change
+may require a chapter update without requiring a new ADR; an affected chapter
+does not by itself qualify an ADR.
+
+| # | If the change introduces or modifies... | Chapter(s) |
+|---|---|---|
+| 1 | Goals, stakeholders, quality attributes | 01 introduction-and-goals, 10 quality-requirements |
+| 2 | Constraints (legal, tech, org) | 02 architecture-constraints |
+| 3 | External systems, interfaces, context, new user-facing surface | 03 context-and-scope |
+| 4 | Major technical strategy or approach | 04 solution-strategy |
+| 5 | New building blocks, modules, components | 05 building-block-view |
+| 6 | New runtime flows, sequences | 06 runtime-view |
+| 7 | Deployment changes | 07 deployment-view |
+| 8 | Cross-cutting concepts (error handling, security, config) | 08 crosscutting-concepts |
+| 9 | Architecture decisions (tradeoffs, ADRs) | 09 architecture-decisions |
+| 10 | New quality scenarios | 10 quality-requirements |
+| 11 | New risks or technical debt (including every "Bad, because..." consequence recorded against a new ADR in chapter 09) | 11 risks-and-technical-debt |
+| 12 | New domain terms | 12 glossary |
+
+Rows are not mutually exclusive: treat correlated rows as a prompt to
+double-check, not evidence that any one of them is affected. An affected
+chapter does not by itself qualify an ADR; apply the concise qualification to
+each candidate, and a change may legitimately have no ADR at all.
+
+The first completed change establishes the real twelve-chapter baseline. Later
+changes maintain only the chapters affected by the implemented change; unchanged
+chapters do not require repeated whole-baseline approval. Update the affected
+chapters so they reflect the implemented change rather than re-approving every
+chapter.
+
+## Output
+
+1. Write or update the chapter files under `docs/arc42/` (one file per chapter).
+2. Update (or create) `docs/arc42/README.md` as the index.
+3. For an architectural decision, update the chapter-09 register and
+   `docs/arc42/adr/README.md`, then create the individual ADR file at the
+   prescribed path by copying and tailoring `docs/arc42/adr/adr-template.md`.
+   Do not paste its body into chapter 09. Use the fixed
+   `docs/arc42/` output path used by the current binary.
+4. Write `arc42.md` in the change directory (`givn/changes/<id>/arc42.md`)
+   containing the **full 12-row assessment table** from the template
+   (`givn eject arc42-docs:template` to see it, or
+   `docs/arc42/README.md`
+   for the chapter list) — every row gets an explicit Yes/No and a one-line
+   reason, not just the rows you decided to update. Rows marked "Yes" also
+   get a one-line summary of what changed. This marker file is what givn
+   tracks as the artifact's completion, and it is what design-review
+   cross-checks against its own independent read of the table — a missing
+   row, or a "No" with no reason, is treated as unverifiable and blocks
+   design-review sign-off.
+
+## Rules
+
+- Write in clear, concise technical prose. Arc42 docs are for humans, not machines.
+- Diagram policy: see the `## Diagram policy` section above. No diagram may use
+  ASCII art.
+- Do not leak implementation detail into specification-layer sections (chapters 1–3).
+- Chapter 9 (architecture decisions) is a register/index, not an ADR container.
+  Each decision has exactly one separate MADR file under `docs/arc42/adr/`, and
+  the chapter-09 register links to it. Each ADR file has its own
+  status/date/decision-makers frontmatter, Qualification, Context and Problem
+  Statement, Decision Drivers, Considered Options, Decision Outcome,
+  Consequences, Confirmation, Pros and Cons of the Options, and More
+  Information sections.
+- No ADR file may be created before the concise change assessment records the
+  architectural commitment, real alternatives, durable consequence, and
+  existing-decision search and routes the candidate to `NEW_ADR`, `AMEND_ADR`,
+  or `SUPERSEDE_ADR`. A single supporting item, including `Must be shared`, is
+  never sufficient. Keep the status and concrete supersession-ID contract from
+  `## MADR file contract`.
+- Do not delete existing content unless it is factually wrong.
+- The marker file (`arc42.md` in the change dir) must end with a `## Status` section
+  containing either `STATUS: DONE` or `STATUS: PARTIAL` on its own line.
+
+**Artifact complete when:** `arc42.md` in the change directory exists and contains
+`STATUS: DONE`.
+
+Skill to load now: `givn-domain-modeling`
+
+--- stderr ---
+

@@ -10,6 +10,7 @@ Feature: prose-consolidation
     And thin skills contain no repeated dialog-loading or delegation boilerplate
     And detailed dialog examples remain available through the policy's companion index
     And synchronization reports skills without separately generated commands
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: Canonical policy requires a rendered-state assertion

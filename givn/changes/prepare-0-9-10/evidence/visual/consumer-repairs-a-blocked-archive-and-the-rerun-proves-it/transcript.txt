@@ -1,0 +1,17 @@
+Scenario: Consumer repairs a blocked archive and the rerun proves it
+argv: givn archive
+cwd (fixture project root): /tmp/.tmpUKSoqF
+exit code: 0
+--- stdout ---
+[23:46:05] Resuming unproven archive candidate 'proof-repair'...
+Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks.
+  reusing passed regular verification (tested at 2e7661e4dcecd4c523c91f3d6413a3eb0411c415)
+[23:46:05] ✓ development managed block refreshed
+[23:46:05] ✓ Archived 'proof-repair' to /tmp/.tmpUKSoqF/givn/archive/proof-repair
+Verification receipt: /tmp/.tmpUKSoqF/givn/archive/proof-repair/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+
+--- stderr ---
+

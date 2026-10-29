@@ -1,0 +1,28 @@
+Scenario: Archiving refreshes the development block
+argv: givn archive
+cwd (fixture project root): /tmp/.tmpE4CrAM
+exit code: 0
+--- stdout ---
+[23:46:07] ✓ change verification receipt passed (2 scenario(s))
+[23:46:07] Archiving change 'readme-demo'...
+[23:46:07] Running archive gate hooks...
+[23:46:07] ✓ Gate hooks passed
+[23:46:07] ✓ run declaration passed
+[23:46:07] ✓ README completeness gate passed
+[23:46:07] Running static review gates...
+net delta: 1 added, 0 modified, 0 removed
+net delta json: {"added":1,"modified":0,"removed":0}
+  ✓ overlap dispositions passed
+[23:46:07] ✓ Static review gates passed
+[23:46:07] ✓ Candidate committed
+Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks.
+[23:46:07] Running regular verification: ./run-tests.sh
+[23:46:07] ✓ development managed block refreshed
+[23:46:07] ✓ Archived 'readme-demo' to /tmp/.tmpE4CrAM/givn/archive/readme-demo
+Verification receipt: /tmp/.tmpE4CrAM/givn/archive/readme-demo/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+
+--- stderr ---
+

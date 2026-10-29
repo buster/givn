@@ -19,6 +19,7 @@ Feature: Managed upgrades with a supported format and a distinct migration basel
     And exactly one allowlist-only managed revision exists and no migration change is created
     And no automatic configuration migration or embedded 0.x migration route is applied
     And project specifications, extensions, and custom replacements are unchanged
+    And the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: A clean Fossil project receives the same managed upgrade revision shape
@@ -170,6 +171,7 @@ Feature: Managed upgrades with a supported format and a distinct migration basel
     When the consumer archives the maintenance migration
     Then the command reports that the maintenance migration was archived successfully
     And the permanent specification tree contains no migration feature
+    And the terminal transcript is captured for this scenario
 
   @givn.added
   Scenario: Upgrade reconciles only recognizable generated commands to skills

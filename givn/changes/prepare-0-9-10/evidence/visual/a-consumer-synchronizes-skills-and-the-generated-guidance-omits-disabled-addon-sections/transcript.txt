@@ -1,0 +1,53 @@
+Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpIqTs2k
+exit code: 0
+--- stdout ---
+Syncing skills...
+  commit attribution: .githooks/commit-msg
+  Git activation: local commit-msg dispatcher installed
+  integration: .opencode/plugins/givn-attribution.js
+  integration: .opencode/plugins/givn-timeline.js
+  synced skill: givn-propose
+  synced skill: givn-spec
+  synced skill: givn-design
+  synced skill: givn-tasks
+  synced skill: givn-implement
+  synced skill: givn-review
+  synced skill: givn-archive
+  synced skill: givn-explore
+  synced skill: givn-design-review
+  synced skill: givn-steps
+  synced skill: givn-reverse-engineer
+  synced skill: givn-characterize
+  synced skill: givn-ideation
+  synced skill: givn-dev-principles
+  synced skill: givn-challenge
+  sync: rules: local-only
+  sync: no tracked rule in the current revision
+  sync: 18 reachable revision(s) still contain a rule:
+    - .githooks/commit-msg: 1 revision(s)
+    - .opencode/plugins/givn-attribution.js: 1 revision(s)
+    - .opencode/plugins/givn-timeline.js: 1 revision(s)
+    - .opencode/skills/givn-archive/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-challenge/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-characterize/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-design/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-dev-principles/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-explore/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-ideation/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-implement/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-propose/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-reverse-engineer/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-review/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-spec/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-steps/SKILL.md: 1 revision(s)
+    - .opencode/skills/givn-tasks/SKILL.md: 1 revision(s)
+  sync: local reachable refs (including remote-tracking); remote repositories and forks are outside the guarantee
+
+Done. Generated:
+  .opencode/skills/   (skills for opencode)
+
+--- stderr ---
+

@@ -1,0 +1,29 @@
+Scenario: Consumer archives a new capability and the merged spec lands in its declared use case
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpb1o2jr
+exit code: 0
+--- stdout ---
+[23:46:05] ✓ change verification receipt passed (2 scenario(s))
+[23:46:05] Archiving change 'grouped-new'...
+[23:46:05] Running archive gate hooks...
+[23:46:05] ✓ Gate hooks passed
+[23:46:05] ✓ run declaration passed
+[23:46:05] ✓ README completeness gate passed
+[23:46:05] Running static review gates...
+net delta: 1 added, 0 modified, 0 removed
+net delta json: {"added":1,"modified":0,"removed":0}
+  ✓ overlap dispositions passed
+[23:46:05] ✓ Static review gates passed
+[23:46:05] ✓ Candidate committed
+Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks.
+[23:46:05] Running regular verification: ./emit-result.sh regular
+[23:46:05] Running e2e verification: ./emit-result.sh e2e
+[23:46:05] ✓ development managed block refreshed
+[23:46:05] ✓ Archived 'grouped-new' to /tmp/.tmpb1o2jr/givn/archive/grouped-new
+Verification receipt: /tmp/.tmpb1o2jr/givn/archive/grouped-new/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+
+--- stderr ---
+

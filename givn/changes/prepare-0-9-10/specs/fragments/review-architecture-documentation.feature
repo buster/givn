@@ -10,6 +10,7 @@ Feature: Review architecture documentation
     And the returned guidance compares Arc42 design tasks and completed implementation against available evidence
     And the guidance requires recording and resolving material conformance mismatches
     And the guidance does not require an unwritten review verdict or future archive receipt as evidence
+    And the terminal transcript is captured for this scenario
 
   @givn.modified @e2e
   Scenario: The review template includes the Arc42 conformance block
@@ -18,6 +19,7 @@ Feature: Review architecture documentation
     Then the command succeeds
     And the ejected template records Arc42 implementation conformance against design tasks and completed implementation
     And the template records evidence and material mismatches without an outline verdict or metric waiver
+    And the terminal transcript is captured for this scenario
 
   @givn.added
   Scenario: The first completed Arc42 change establishes a real twelve-chapter baseline

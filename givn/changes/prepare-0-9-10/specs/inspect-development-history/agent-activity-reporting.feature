@@ -11,6 +11,7 @@ Feature: Best-effort bounded agent reporting
     And the reporter describes the record as best-effort rather than complete
     And local recording paths are gitignored and absent from tracked files and repository history
 
+    And the terminal transcript is captured for this scenario
     Examples:
       | target   |
       | omp      |
