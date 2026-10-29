@@ -83,7 +83,7 @@ Feature: Archive proof
 
   @givn.added @wip
   Scenario: No-behavior-change archive retains merged-candidate verification
-    Given a completed change explicitly declares no behavior change and has no delta feature files
+    Given a completed change declares "Behavior change: none", explicitly skips specs and has no delta feature files
     And changed-scenario verification is recorded as not applicable
     And applicable identity, integrity and review checks pass
     When the developer runs `givn archive --change maintenance-demo`
@@ -99,3 +99,19 @@ Feature: Archive proof
     And the archive carries a proven receipt reusing its passed scope evidence
     And no verification suite runs again
     And the terminal transcript is captured for this scenario
+
+
+  @givn.added @wip
+  Scenario Outline: An inconsistent no-behavior-change archive exemption is refused before mutation
+    Given a completed change declares "Behavior change: none"
+    And the change has <delta state> and <specs disposition>
+    And changed-scenario verification is recorded as not applicable
+    When the developer runs `givn archive --change maintenance-demo`
+    Then the command exits non-zero and names <reason>
+    And no active change, archive receipt or permanent specification is mutated
+    And no merged-candidate verification runner executes
+
+    Examples:
+      | delta state              | specs disposition               | reason                                             |
+      | executable delta features | an explicitly skipped specs artifact | executable deltas contradicting no behavior change |
+      | no delta feature files    | no explicit specs skip               | the missing explicit specs skip                    |
