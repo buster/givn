@@ -168,16 +168,84 @@ Design constraints for every scenario in this batch:
       boilerplate and pointing to the canonical instruction.
 - [x] COMMIT: `f1e0dbf5` -- `docs(givn-workflow-enforcement): review-context guidance` (Batch: review-context-guidance)
 
+## Batch D — outline identity follows the recorded review kind
+
+Design constraints for every scenario in this batch:
+
+- The outline gate reads `Review kind`, `Author`, and `Reviewer context` from
+  `review.md` through `review_context::parse`.
+- Self-review: `OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` match the recorded
+  author and self context; equality is accepted.
+- Independent: `OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` match the recorded
+  author and reviewer; the reviewer differs from the author.
+- A fake or conflicting outline id fails with the recorded value in the
+  message.
+- A legacy record with no `Review kind` keeps the reviewer-differs rule.
+- The outline addon remains an evidence generator; no second context is
+  started for a self-review.
+
+### Scenario: A self-review outline uses the self context
+
+- [x] RED against the pre-fix gate: `Then the review passes` failed with
+      `outline reviewer 'agent' must differ from the author 'agent'`.
+- [x] GREEN: `1 scenario (1 passed)` after the outline gate read the recorded
+      self context.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `dc33067f` -- `fix(givn-workflow-enforcement): outline review context` (Batch: outline-review-context)
+
+### Scenario: An independent outline uses the recorded reviewer context
+
+- [x] RED: passed against the pre-fix gate; kept as regression protection for
+      the independent path.
+- [x] GREEN: `1 scenario (1 passed)` with the recorded reviewer context.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `dc33067f` -- `fix(givn-workflow-enforcement): outline review context` (Batch: outline-review-context)
+
+### Scenario: An outline reviewer that differs from the recorded context is refused
+
+- [x] RED against the pre-fix gate: `Then the review fails` failed because the
+      old gate accepted any differing label.
+- [x] GREEN: `1 scenario (1 passed)` with
+      `does not match the recorded Reviewer context`.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `dc33067f` -- `fix(givn-workflow-enforcement): outline review context` (Batch: outline-review-context)
+
+### Scenario: An outline author that differs from the recorded author is refused
+
+- [x] RED against the pre-fix gate: `Then the review fails` failed because the
+      old gate did not compare the outline author with the review record.
+- [x] GREEN: `1 scenario (1 passed)` with
+      `does not match the recorded Author`.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `dc33067f` -- `fix(givn-workflow-enforcement): outline review context` (Batch: outline-review-context)
+
+### Scenario: A legacy outline without a review kind keeps the reviewer-differs rule
+
+- [x] RED: passed against the pre-fix gate; kept as backward-compatibility
+      protection.
+- [x] GREEN: `1 scenario (1 passed)`.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `dc33067f` -- `fix(givn-workflow-enforcement): outline review context` (Batch: outline-review-context)
+
+### Scenario: A legacy outline with the author as reviewer is refused
+
+- [x] RED: passed against the pre-fix gate; kept as regression protection for
+      the legacy rule.
+- [x] GREEN: `1 scenario (1 passed)` with `must differ from the author`.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `dc33067f` -- `fix(givn-workflow-enforcement): outline review context` (Batch: outline-review-context)
+
 ## Closeout
 
 - [x] `GIVN_FEATURES=givn/changes/bound-review-context/specs ./run-tests.sh --non-e2e`
-      exited 0; `9 scenarios (9 passed)`.
-- [ ] `GIVN_FEATURES=givn/changes/bound-review-context/specs ./run-tests.sh --e2e`
-      exits 0 (or records that no new `@e2e` scenario was added and the existing
-      E2E scope is unchanged).
+      exited 0; `9 scenarios (9 passed)` for the review-context feature and
+      `6 scenarios (6 passed)` for the outline feature.
+- [x] `./run-tests.sh --e2e` exited 0; `112 tests run: 112 passed`.
 - [x] `rg -i 'subagent|sub-agent' assets/instructions assets/commands assets/skills assets/templates assets/agents-project-hint.md`
       matches only `assets/instructions/review.md`.
-- [ ] Every delta step phrase is bound in the permanent test tree.
+- [x] Every delta step phrase is bound in the permanent test tree; the new
+      outline scenarios reuse `tests/steps/outline_review_gate_steps.rs`.
 - [ ] `givn check review --change bound-review-context` passes after the review
       record is written.
 - [ ] `givn archive --change bound-review-context` succeeds.
+
