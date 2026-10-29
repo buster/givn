@@ -17,17 +17,17 @@ pub struct UnitMetrics {
     pub public_surface: u32,
     pub lcom4: u32,
     pub tcc_permille: Option<u32>,
-    pub lcc_permille: Option<u32>,
     pub max_method_code_lines: u32,
-    pub max_method_complexity: u32,
+    pub max_method_complexity: Option<u32>,
+    pub max_method_nesting: Option<u32>,
     pub files: u32,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MethodMetrics {
     pub code_lines: u32,
-    pub complexity: u32,
-    pub nesting: u32,
+    pub complexity: Option<u32>,
+    pub nesting: Option<u32>,
     pub visibility: Visibility,
     pub finding: Option<MethodFinding>,
 }
@@ -114,11 +114,14 @@ pub fn compute_unit(unit: &SourceUnit, analysis: &Analysis) -> UnitMetrics {
         .unwrap_or(0);
     let max_method_complexity = method_metrics
         .iter()
-        .map(|method| method.complexity)
-        .max()
-        .unwrap_or(0);
+        .filter_map(|method| method.complexity)
+        .max();
+    let max_method_nesting = method_metrics
+        .iter()
+        .filter_map(|method| method.nesting)
+        .max();
 
-    let (lcom4, tcc_permille, lcc_permille) = cohesion(unit);
+    let (lcom4, tcc_permille) = cohesion(unit);
     let public_methods = unit
         .methods
         .iter()
@@ -151,9 +154,9 @@ pub fn compute_unit(unit: &SourceUnit, analysis: &Analysis) -> UnitMetrics {
         public_surface: public_methods + public_fields,
         lcom4,
         tcc_permille,
-        lcc_permille,
         max_method_code_lines,
         max_method_complexity,
+        max_method_nesting,
         files: unit.files.len() as u32,
     }
 }
@@ -176,7 +179,7 @@ fn method_metrics(method: &Method, analysis: &Analysis) -> MethodMetrics {
     let nesting = flow_nesting(&method.flow);
     let finding = if code_lines > 100 {
         Some(MethodFinding::MethodLength)
-    } else if complexity > 50 {
+    } else if complexity.is_some_and(|complexity| complexity > 50) {
         Some(MethodFinding::Complexity)
     } else {
         None
@@ -190,10 +193,10 @@ fn method_metrics(method: &Method, analysis: &Analysis) -> MethodMetrics {
     }
 }
 
-/// LCOM4 over production methods and fields, plus TCC/LCC in permille.
-fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>, Option<u32>) {
+/// LCOM4 over production methods and fields, plus TCC in permille.
+fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>) {
     if unit.methods.is_empty() {
-        return (0, None, None);
+        return (0, None);
     }
     if unit.methods.len() == 1 {
         let tcc = if unit.methods[0].field_accesses.is_empty() {
@@ -201,7 +204,7 @@ fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>, Option<u32>) {
         } else {
             Some(1000)
         };
-        return (1, tcc, tcc);
+        return (1, tcc);
     }
 
     let mut nodes = unit.methods.len() + unit.fields.len();
@@ -255,7 +258,7 @@ fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>, Option<u32>) {
         .collect();
     let pairs = with_fields.len() * with_fields.len().saturating_sub(1) / 2;
     if pairs == 0 {
-        return (lcom4, None, None);
+        return (lcom4, None);
     }
     let mut direct = 0usize;
     for (left, right) in with_fields.iter().enumerate() {
@@ -266,7 +269,7 @@ fn cohesion(unit: &SourceUnit) -> (u32, Option<u32>, Option<u32>) {
         }
     }
     let permille = (direct * 1000 / pairs) as u32;
-    (lcom4, Some(permille), Some(permille))
+    (lcom4, Some(permille))
 }
 
 fn find(parent: &mut [usize], node: usize) -> usize {
@@ -284,12 +287,16 @@ fn union(parent: &mut [usize], left: usize, right: usize) {
     }
 }
 
-pub fn flow_complexity(flow: &Flow) -> u32 {
-    1 + flow_decision_points(flow)
+pub fn flow_complexity(flow: &Flow) -> Option<u32> {
+    if matches!(flow, Flow::Unavailable) {
+        return None;
+    }
+    Some(1 + flow_decision_points(flow))
 }
 
 fn flow_decision_points(flow: &Flow) -> u32 {
     match flow {
+        Flow::Unavailable => 0,
         Flow::Block(nodes) => nodes.iter().map(flow_decision_points).sum(),
         Flow::Branch(inner) => 1 + flow_decision_points(inner),
         Flow::Loop(inner) => 1 + flow_decision_points(inner),
@@ -305,13 +312,23 @@ fn flow_decision_points(flow: &Flow) -> u32 {
     }
 }
 
-pub fn flow_nesting(flow: &Flow) -> u32 {
+pub fn flow_nesting(flow: &Flow) -> Option<u32> {
+    if matches!(flow, Flow::Unavailable) {
+        return None;
+    }
+    Some(flow_nesting_value(flow))
+}
+
+fn flow_nesting_value(flow: &Flow) -> u32 {
     match flow {
-        Flow::Block(nodes) => nodes.iter().map(flow_nesting).max().unwrap_or(0),
-        Flow::Branch(inner) | Flow::Loop(inner) | Flow::Try(inner) => 1 + flow_nesting(inner),
-        Flow::Match { bodies, .. } => 1 + bodies.iter().map(flow_nesting).max().unwrap_or(0),
-        Flow::ShortCircuit(left, right) => 1 + flow_nesting(left).max(flow_nesting(right)),
-        Flow::Return(inner) => inner.as_deref().map(flow_nesting).unwrap_or(0),
+        Flow::Unavailable => 0,
+        Flow::Block(nodes) => nodes.iter().map(flow_nesting_value).max().unwrap_or(0),
+        Flow::Branch(inner) | Flow::Loop(inner) | Flow::Try(inner) => 1 + flow_nesting_value(inner),
+        Flow::Match { bodies, .. } => 1 + bodies.iter().map(flow_nesting_value).max().unwrap_or(0),
+        Flow::ShortCircuit(left, right) => {
+            1 + flow_nesting_value(left).max(flow_nesting_value(right))
+        }
+        Flow::Return(inner) => inner.as_deref().map(flow_nesting_value).unwrap_or(0),
         Flow::Call(_) => 0,
     }
 }
@@ -371,7 +388,7 @@ mod fidelity_tests {
             complete: true,
             unsupported: Vec::new(),
         };
-        let (lcom4, _, _) = cohesion(&unit);
+        let (lcom4, _) = cohesion(&unit);
         assert_eq!(lcom4, 2);
     }
 }

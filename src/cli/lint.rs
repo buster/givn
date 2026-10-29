@@ -235,6 +235,7 @@ fn run_with_root(
                     | "use_case_cycle"
                     | "extend_fragment"
                     | "interaction_mismatch"
+                    | "usecase_interaction_invalid"
             ) {
                 total_errors += 1;
                 has_use_case_error = true;
@@ -542,7 +543,8 @@ fn severity_for(kind: &str) -> Severity {
         | "dangling_use_case_ref"
         | "use_case_cycle"
         | "extend_fragment"
-        | "interaction_mismatch" => Severity::Blocking,
+        | "interaction_mismatch"
+        | "usecase_interaction_invalid" => Severity::Blocking,
         "wip" | "e2e_intent" => Severity::Finding,
         _ => Severity::Advisory,
     }
@@ -696,5 +698,13 @@ mod tests {
         )]);
         let code = run_with_root(&project, None, vec![], false).unwrap();
         assert_eq!(code, 0);
+    }
+
+    #[test]
+    fn an_invalid_interaction_structure_is_blocking() {
+        assert_eq!(
+            severity_for("usecase_interaction_invalid"),
+            Severity::Blocking
+        );
     }
 }

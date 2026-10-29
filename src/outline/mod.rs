@@ -2,7 +2,6 @@
 
 pub mod analyzer;
 pub mod classify;
-pub mod gate;
 pub mod metrics;
 pub mod model;
 pub mod report;

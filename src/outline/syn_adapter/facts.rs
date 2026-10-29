@@ -64,7 +64,7 @@ pub(super) fn method_without_body(
         visibility,
         signature: signature(sig),
         span: span_for_ident(&sig.ident, content, file),
-        flow: Flow::Block(Vec::new()),
+        flow: Flow::Unavailable,
         field_accesses: Vec::new(),
         calls: Vec::new(),
         is_trait_default: false,
