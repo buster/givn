@@ -253,12 +253,12 @@ Reuse existing permanent bindings wherever the phrase expresses the same require
 | instruction-integrity | tests/steps/instruction_integrity_steps.rs | tests/steps/instruction_integrity_steps.rs |
 | match-guidance-to-enabled-addons | tests/steps/template_conditional_rendering_steps.rs | tests/steps/template_conditional_rendering_steps.rs |
 | match-guidance-to-enabled-addons | tests/steps/template_conditional_rendering_e2e_steps.rs | tests/steps/template_conditional_rendering_e2e_steps.rs |
-| refresh-generated-guidance | tests/steps/refresh_generated_guidance_steps.rs | tests/steps/refresh_generated_guidance_steps.rs |
-| review-architecture-documentation | tests/steps/review_architecture_documentation_steps.rs | tests/steps/review_architecture_documentation_steps.rs |
+| refresh-generated-guidance | tests/steps/skill_rewrites_steps.rs | tests/steps/skill_rewrites_steps.rs |
+| review-architecture-documentation | tests/steps/arc42_review_alignment_steps.rs | tests/steps/arc42_review_alignment_steps.rs |
 | enable-optional-addons | tests/steps/default_all_addons_steps.rs | tests/steps/default_all_addons_steps.rs |
 | initialize-a-project | tests/steps/init_agent_target_selection_steps.rs | tests/steps/init_agent_target_selection_steps.rs |
 | initialize-a-project | tests/steps/initialize_a_project_e2e_steps.rs | tests/steps/initialize_a_project_e2e_steps.rs |
-| report-change-status | tests/steps/report_change_status_steps.rs | tests/steps/report_change_status_steps.rs |
+| report-change-status | tests/steps/run_command_steps.rs | tests/steps/run_command_steps.rs |
 | agent-activity-reporting | tests/steps/agent_activity_reporting_steps.rs | tests/steps/agent_activity_reporting_steps.rs |
 | readme-enforcement | tests/steps/readme_enforcement_steps.rs | tests/steps/readme_enforcement_steps.rs |
 | serve-extended-rules | tests/steps/serve_extended_rules_steps.rs | tests/steps/serve_extended_rules_steps.rs |
@@ -267,7 +267,7 @@ Reuse existing permanent bindings wherever the phrase expresses the same require
 | describe-the-release | tests/steps/release_steps.rs | tests/steps/release_steps.rs |
 | describe-the-release | tests/steps/release_e2e_steps.rs | tests/steps/release_e2e_steps.rs |
 | apply-a-managed-upgrade | tests/steps/run_upgrade_steps.rs | tests/steps/run_upgrade_steps.rs |
-| check-specification-health | tests/steps/check_specification_health_steps.rs | tests/steps/check_specification_health_steps.rs |
+| check-specification-health | tests/steps/spec_overlap_gates_steps.rs | tests/steps/spec_overlap_gates_steps.rs |
 | givn-workflow-enforcement | tests/steps/workflow_enforcement_steps.rs | tests/steps/workflow_enforcement_steps.rs |
 | givn-workflow-enforcement | tests/steps/workflow_enforcement_e2e_steps.rs | tests/steps/workflow_enforcement_e2e_steps.rs |
 | review-disposition-gates | tests/steps/review_disposition_gates_steps.rs | tests/steps/review_disposition_gates_steps.rs |

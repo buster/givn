@@ -23,7 +23,7 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
         } else {
             bail!(
                 "outline report requires at least one --path; pass the production sources, \
-                 for example: givn outline report --path catopia --path app.py"
+                 for example: givn outline report --path src --path app.py"
             );
         }
     } else {
