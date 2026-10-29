@@ -36,10 +36,11 @@ You are done.
 
 **If chapters are affected:**
 
-- **If a chapter file does not exist:** it was scaffolded as a blank template
-  when arc42 was enabled (`givn addons enable arc42`). Fill it in from the
-  project context; leave placeholder text for sections that cannot be answered
-  yet.
+- **If a chapter file does not exist or is still scaffold:** the first
+  completed change must establish all twelve chapters proportionate to the real
+  project. Unfinished scaffold or fabricated completeness does not satisfy the
+  baseline. Specific explicit unknowns and explained inapplicability are
+  acceptable content; a placeholder that pretends to answer is not.
 - **If a chapter file already exists:** update only the sections affected by
   this change. Do not rewrite unrelated sections. Prefer surgical edits that
   preserve existing content.
@@ -76,215 +77,81 @@ Create the ADR directory, individual file, and index entries manually as
 needed. This addon guidance does not provide or claim automatic scaffolding for
 individual ADRs. Do not state that enabling the addon creates ADR files.
 
-### Qualification gate
+### Qualification
 
-Before writing an ADR or adding it to either index, run the qualification
-procedure below. The result is a strict Boolean contract:
+Qualify a decision once, concisely, in the change assessment (`arc42.md`)
+before drafting any ADR. Do not repeat a qualification worksheet in the ADR,
+the design, the design review, or a second schema. The assessment answers four
+questions with decision-specific facts:
 
-```text
-qualification = alternatives
-              AND architectural_impact
-              AND durable_consequence
-              AND lower_level_artifact
-              AND existing_adr_check
-```
-
-Every mandatory dimension must pass with decision-specific evidence. The MADR
-checklist is evidence for those dimensions; it is not an at-least-one escape
-hatch. `Must be shared` is supporting evidence only and is excluded from the
-Boolean formula. It can never qualify a candidate by itself. Shared evidence
-alone does not qualify an ADR.
-
-The mandatory dimensions are:
-
-- **Real alternatives** - the candidate records one actual choice between at
-  least two materially different options. A default, obvious implementation,
-  or post-hoc strawman is not an alternative.
-- **Architectural impact** - the choice fixes a component/ownership boundary,
-  durable contract, dependency direction, system-wide quality constraint,
-  deployment/data boundary, or compatibility/migration boundary.
-- **Durable consequence** - reversal would require migration, broad code or
+- **Architectural commitment** - does the choice fix a lasting component or
+  ownership boundary, durable contract, dependency direction, system-wide
+  quality constraint, deployment/data boundary, or compatibility/migration
+  boundary?
+- **Real alternatives** - is there an actual choice between at least two
+  materially different options, rather than a default, obvious implementation,
+  or post-hoc strawman?
+- **Durable consequence** - would reversal require migration, broad code or
   interface changes, cross-command coordination, or protection of a fundamental
-  invariant. Implementation effort alone is not enough.
-- **Lower-level artifact classification** - the author has shown that the
-  complete decision rationale is not already correctly owned by a Gherkin
-  specification, `design.md`, an Arc42 chapter, process guidance, ordinary
-  project documentation, or the implementation. If one of those is the proper
-  complete home, this dimension fails and the candidate is routed there.
-- **Existing-ADR check** - the active and archived registers have been searched
-  for the same boundary, decision, refinement, or replacement. The result must
-  select exactly one route: `NEW_ADR`, `AMEND_ADR`, `SUPERSEDE_ADR`, or
-  `CANONICAL_ARTIFACT`.
+  invariant? Implementation effort alone is not enough.
+- **Existing decisions** - search the active and archived ADR registers, then
+  choose exactly one route: `NEW_ADR`, `AMEND_ADR`, `SUPERSEDE_ADR`, or no new
+  ADR because an existing lower-level artifact already owns the decision.
 
-Use all four MADR checklist items in the ADR's `## Qualification` section. Each
-item must have a concrete reason, whether checked or unchecked. A checked item
-is not sufficient unless all five mandatory dimensions pass. The `Must be
-shared` item records supporting context and does not change the result.
+An ordinary implementation choice belongs in its appropriate existing artifact:
+a Gherkin specification, `design.md`, an Arc42 chapter, process guidance,
+ordinary project documentation, or the implementation. If one of those is the
+complete home, do not create an ADR. A refinement amends the existing ADR; a
+replacement supersedes it and leaves an explicit replacement link. `Must be
+shared` is supporting evidence only: it never qualifies a candidate by itself.
 
-If any mandatory dimension fails, do not create an ADR. Route the decision once
-to its canonical artifact. Do not copy the same rationale into the ADR archive,
-an Arc42 chapter, and a process document.
+The ADR owns the decision rationale, its real alternatives, and its
+consequences. Qualification is not another section of the ADR. Do not invent
+alternatives, impact, consequences, participants, or provenance; when a fact is
+unknown, establish it or narrow the decision instead of filling the gap.
 
-### Falsification tests
+This is authoring policy, not runtime enforcement. Project overrides may
+replace this default guidance through the normal asset cascade.
 
-Three fail-fast tests make the gate decisive. A candidate fails the gate when
-any of these holds, no matter how the five dimensions were argued. A decision
-that fixes a component, authority, or deployment boundary with durable
-consequences still qualifies; the tests classify by kind, not count, and there
-is no numeric ADR cap — a foundational change may legitimately mint several
-genuine ADRs.
+### Falsification examples
+
+Three fail-fast examples make the qualification decisive without becoming
+extra recorded tests. A candidate normally fails when any holds, no matter how
+the four questions were argued; a genuine lasting boundary with real
+alternatives may still qualify. Classify by kind, not count: there is no numeric
+ADR cap, and a foundational change may legitimately mint several genuine ADRs.
 
 1. **Single-change reversibility.** The decision is fully implementable and
    reversible within one change and touches one component, and it defines no
    port/adapter boundary, component split, storage boundary, or compatibility
    boundary. A boundary decision is not local merely because it touches one
-   component. Non-example: a project identity key split is a data-model
-   decision owned by `design.md` and the glossary.
-2. **No multi-change constraint.** The decision does not constrain at least
-   two future changes or two components, and it defines no port/adapter
-   boundary, component split, storage boundary, or compatibility boundary. A
-   boundary that future adapters or implementations build against is durable.
-   Non-example: a terminal state value plus its presentation filtering is
-   feature behavior owned by the capability spec and design.
+   component. Example: a project identity key split is a data-model decision
+   owned by `design.md` and the glossary.
+2. **No multi-change constraint.** The decision does not constrain at least two
+   future changes or two components, and it defines no port/adapter boundary,
+   component split, storage boundary, or compatibility boundary. A boundary
+   that future adapters or implementations build against is durable. Example: a
+   terminal state value plus its presentation filtering is feature behavior
+   owned by the capability spec and design.
 3. **Product-behavior exclusion.** The candidate is observable workflow
    behavior ownable by a use case plus Gherkin (who authorizes what, in which
-   order, with which state values). It fails `lower_level_artifact` unless it
-   also moves a component, authority, or deployment boundary, and that
-   boundary is stated in the verdict. Non-examples: an assumption-and-go-ahead gate and a human evaluation gate are workflow behavior; a change-request entity with crash-safety requirements is a domain entity, not a workflow gate.
+   order, with which state values). It fails the architectural-commitment
+   question unless it also moves a component, authority, or deployment boundary,
+   and that boundary is stated. Examples: an assumption-and-go-ahead gate and a
+   human evaluation gate are workflow behavior; a change-request entity with
+   crash-safety requirements is a domain entity, not a workflow gate.
 
-### Qualification exclusions and LLM procedure
+These examples explain the concise qualification; they are not three additional
+records a change must produce. A familiar pattern, implementation effort, a
+long discussion, or "it affects the system" is not qualification.
 
-The four checklist items are evidence prompts, not independent qualification
-criteria. Use them to support the five mandatory dimensions above, but do not
-create an ADR unless every mandatory dimension passes.
+### Consequences and risk debt
 
-1. **Hard to reverse (supporting evidence).** Correcting the decision later
-   would require significant effort, such as touching many parts of the
-   codebase, migrating data, breaking an existing interface, or forcing the
-   team to relearn tooling or patterns. Ask: "How expensive would it be to
-   undo this in six months?"
-2. **Shapes quality attributes (supporting evidence).** The decision directly and materially
-   influences a lasting non-functional constraint or enabler for performance,
-   scalability, security, availability, maintainability, or testability. The
-   effect must be broader than one local implementation. Ask: "Does this
-   decision set a ceiling or a floor on a key quality attribute?"
-3. **Structural (supporting evidence).** The decision defines module or service boundaries, assigns
-   responsibilities, establishes dependency directions, or fixes a public
-   interface or contract such as an API schema, event format, or plugin
-   protocol. Internal restructuring of one class or private package layout
-   does not qualify. Ask: "Does this decision define who owns what and how
-   parts talk to each other?"
-4. **Must be shared (supporting only).** Every developer joining the project must know and
-   respect the decision before contributing effectively. Ignorance would
-   cause systematic violations of a fundamental architecture rule. Ask: "Would
-   a new developer break something fundamental without knowing this?"
-
-These are not qualification criteria by themselves: system relevance,
-implementation effort, a long discussion, or use of a known pattern. "It
-affects the system" is too broad to qualify a decision in a microservice or
-CLI, and effort is not architectural significance. A known pattern does not
-qualify unless all five mandatory dimensions pass.
-
-The following are generally not ADRs unless they introduce a separate durable
-boundary or contract:
-
-- observable behavior with no architectural trade-off -> Gherkin specification;
-- local implementation approach or algorithm detail -> `design.md` and code;
-- current component/runtime/deployment fact -> the corresponding Arc42 chapter
-  and implementation;
-- prompt, workflow, review, test, coverage, licensing, roadmap, or repository
-  policy -> its owning process or project document;
-- a refinement of an existing ADR -> amendment of that ADR, not a new file.
-
-- choosing a logging library;
-- internal variable or method naming;
-- formatting rules such as tabs versus spaces;
-- refactoring the internals of one module without an interface change;
-- choosing an interchangeable HTTP client package without quality-attribute
-  implications.
-
-A port/adapter boundary, a component split, and the durable storage mechanism
-are not local implementation details. Assess each as a candidate. Do not reject
-one because it touches one component or is reversible within one change: that
-boundary is exactly what makes the decision durable for future adapters,
-implementations, or migrations.
-
-System-wide error handling is borderline. Record it as an ADR only when it is
-an enforced, cross-cutting contract that all relevant components must obey. Do
-not record per-endpoint error handling with no shared contract as an ADR.
-
-Examples that normally pass the gate include choosing REST versus gRPC as a
-service API protocol, adopting Event Sourcing instead of CRUD, delegating
-authentication through OAuth2/JWT, establishing a system-wide retry and
-circuit-breaker strategy, defining a layering model, choosing synchronous
-versus asynchronous inter-service communication, adding a plugin system, and
-choosing an ORM or database access strategy. These examples still require all
-five mandatory dimensions; a familiar pattern or technology name is not a
-qualification by itself.
-
-### LLM qualification procedure
-
-An LLM must classify the candidate before drafting an ADR. It must first return
-one structured verdict with the following fields:
-The verdict must record the decision classification and exactly one canonical
-target or ADR relationship.
-
-```json
-{
-  "qualification": "QUALIFIED",
-  "alternatives": "PASS",
-  "architectural_impact": "PASS",
-  "durable_consequence": "PASS",
-  "lower_level_artifact": "PASS",
-  "existing_adr_check": "PASS",
-  "must_be_shared": "SUPPORTING",
-  "routing": "NEW_ADR",
-  "canonical_artifact": null,
-  "target_adr": null,
-  "replacement_adr": null,
-  "evidence": {
-    "alternatives": [],
-    "architectural_impact": [],
-    "durable_consequence": [],
-    "lower_level_artifact": [],
-    "existing_adr_check": []
-  }
-}
-```
-
-The five mandatory fields are `PASS` only when their own supplied evidence is
-present. `qualification` is `QUALIFIED` only when all five are `PASS`;
-otherwise it is `NOT_QUALIFIED`. Evidence arrays contain only facts and
-alternatives supplied by the author or source artifacts. Missing evidence stays
-empty and causes its gate to fail. The LLM must not invent alternatives,
-impact, consequences, participants, or provenance.
-
-Routing has one of these values:
-
-- `NEW_ADR` for a qualified independent decision without an existing record;
-- `AMEND_ADR` for a qualified refinement, with `target_adr` naming the existing
-  record;
-- `SUPERSEDE_ADR` for a qualified replacement, with `replacement_adr` naming
-  the new record and the old record retaining the relationship. The old record
-  must keep an explicit replacement link; or
-- `CANONICAL_ARTIFACT` for a non-qualifying candidate, with
-  `canonical_artifact` naming exactly one destination.
-
-For `CANONICAL_ARTIFACT`, `target_adr` and `replacement_adr` are `null`. For
-`AMEND_ADR`, `canonical_artifact` and `replacement_adr` are `null`. For
-`SUPERSEDE_ADR`, `canonical_artifact` and `target_adr` are `null`. A qualified
-candidate with no independent boundary is an amendment, not a new ADR. A
-refinement must amend the existing ADR and must not create a parallel ADR for
-the same decision boundary.
-
-The LLM must search existing ADRs before proposing a new ID, challenge whether
-the candidate belongs in a feature, design, Arc42, process document, or code,
-and stop without drafting when a mandatory gate fails. The qualification
-verdict is an authoring protocol, not a Givn runtime evaluator or persisted
-runtime artifact. Project overrides may replace this default guidance through
-the normal asset cascade.
-An incomplete existing-ADR check fails `existing_adr_check` and blocks a
-`NEW_ADR` route.
+An ADR retains both its positive and negative consequences. A routine tradeoff
+is not automatically risk or technical-debt tracking: only an actionable,
+unresolved downside needs an entry in chapter 11 with its location, consequence,
+and remediation or deferral reason. Do not promote every "Bad, because..."
+sentence into debt when nothing actionable remains.
 
 ### MADR file contract
 
@@ -315,10 +182,10 @@ placeholders, ellipses, generic option names, or unfilled prompts.
 
 Every individual ADR file is written and tailored from the self-contained
 template at `docs/arc42/adr/adr-template.md`. The template embeds the
-frontmatter block, a blank Qualification section filled from the structured
-verdict recorded in the change assessment, the MADR checklist evidence, and
-every required MADR section, so it is authoritative at authoring time even
-when this instruction is not loaded. Copy that template to
+frontmatter block, the rationale, alternatives, consequences, and every
+required MADR section, so it is authoritative at authoring time even when this
+instruction is not loaded. It does not carry a second qualification worksheet;
+the concise assessment lives once in the change's `arc42.md`. Copy that template to
 `docs/arc42/adr/ADR-NNNN-short-slug.md` and tailor it to the decision. Use every
 MADR section; do not omit a section because the decision seems small. The
 Context and Problem Statement is 2-4 sentences, Considered Options lists real,
@@ -356,8 +223,14 @@ does not by itself qualify an ADR.
 
 Rows are not mutually exclusive: treat correlated rows as a prompt to
 double-check, not evidence that any one of them is affected. An affected
-chapter does not by itself qualify an ADR; apply the qualification gate to
+chapter does not by itself qualify an ADR; apply the concise qualification to
 each candidate, and a change may legitimately have no ADR at all.
+
+The first completed change establishes the real twelve-chapter baseline. Later
+changes maintain only the chapters affected by the implemented change; unchanged
+chapters do not require repeated whole-baseline approval. Update the affected
+chapters so they reflect the implemented change rather than re-approving every
+chapter.
 
 ## Output
 
@@ -393,10 +266,12 @@ each candidate, and a change may legitimately have no ADR at all.
   Statement, Decision Drivers, Considered Options, Decision Outcome,
   Consequences, Confirmation, Pros and Cons of the Options, and More
   Information sections.
-- No ADR file may be created before all five mandatory qualification dimensions
-  pass with decision-specific evidence. A single checked MADR criterion,
-  including `Must be shared`, is never sufficient. Keep the status and concrete
-  supersession-ID contract from `## MADR file contract`.
+- No ADR file may be created before the concise change assessment records the
+  architectural commitment, real alternatives, durable consequence, and
+  existing-decision search and routes the candidate to `NEW_ADR`, `AMEND_ADR`,
+  or `SUPERSEDE_ADR`. A single supporting item, including `Must be shared`, is
+  never sufficient. Keep the status and concrete supersession-ID contract from
+  `## MADR file contract`.
 - Do not delete existing content unless it is factually wrong.
 - The marker file (`arc42.md` in the change dir) must end with a `## Status` section
   containing either `STATUS: DONE` or `STATUS: PARTIAL` on its own line.

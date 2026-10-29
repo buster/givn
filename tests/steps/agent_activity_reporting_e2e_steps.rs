@@ -67,6 +67,8 @@ const TURN_MODEL: &str = "claude-sonnet-5";
 pub(crate) struct AgentActivityReportingE2eState {
     /// The reporter process's own output.
     pub(crate) reporter_output: Option<Output>,
+    /// The agent target whose generated reporter the scenario installed.
+    pub(crate) target: Option<String>,
 }
 
 /// The scenario's project root, as its Givens left it.
@@ -193,10 +195,11 @@ fn installed_reporter_reports_activity(world: &mut GivnWorld, target: String) {
     // as the shim (claude), and every one of them reaches the real intake.
     let driver = driver_for(&target);
     let output = driver(env, &activities);
-    world
+    let state = world
         .agent_activity_reporting_e2e
-        .get_or_insert_with(AgentActivityReportingE2eState::default)
-        .reporter_output = Some(output);
+        .get_or_insert_with(AgentActivityReportingE2eState::default);
+    state.reporter_output = Some(output);
+    state.target = Some(target);
 }
 
 #[then("the machine-readable record names the tool call, the subagent, and the question wait")]
@@ -295,4 +298,93 @@ fn commit_evidence(root: &TestEnv, scenario: &str) {
     browser.goto(&browser::file_url(&report));
     browser.capture_evidence(scenario);
     browser.quit();
+}
+
+// --- prepare-0-9-10: installed reporter record and local storage -----------
+
+fn e2e_state(world: &mut GivnWorld) -> &mut AgentActivityReportingE2eState {
+    world
+        .agent_activity_reporting_e2e
+        .get_or_insert_with(AgentActivityReportingE2eState::default)
+}
+
+#[given(regex = r#"^an initialized project with the installed "([^"]+)" reporter$"#)]
+fn initialized_project_with_installed_reporter(world: &mut GivnWorld, target: String) {
+    let env = crate::common::make_init_root();
+    let out = crate::common::run_givn(&env, &["init", "--force", "--agents", target.as_str()]);
+    assert!(
+        out.status.success(),
+        "install the {target} reporter failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.env = Some(env);
+    e2e_state(world).target = Some(target);
+}
+
+#[then("the command exits 0 and the machine-readable record names the reported activity")]
+fn command_exits_zero_and_record_names_activity(world: &mut GivnWorld) {
+    let out = super::output(world);
+    assert!(
+        out.status.success(),
+        "the read command failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    record_names_the_reported_activity(world);
+}
+
+#[then("the reporter describes the record as best-effort rather than complete")]
+fn reporter_describes_best_effort(world: &mut GivnWorld) {
+    let target = e2e_state(world)
+        .target
+        .clone()
+        .expect("the installed reporter target is missing");
+    let relative = match target.as_str() {
+        "omp" => ".omp/hooks/pre/givn-timeline.js",
+        "opencode" => ".opencode/plugins/givn-timeline.js",
+        "claude" => ".claude/hooks/givn-timeline.sh",
+        "maki" => ".maki/lua/givn-timeline.lua",
+        other => panic!("unknown reporter target {other}"),
+    };
+    let content = std::fs::read_to_string(project_root(world).path(relative))
+        .unwrap_or_else(|error| panic!("read {relative}: {error}"));
+    let normalized = content.to_lowercase();
+    assert!(
+        normalized.contains("best effort") && normalized.contains("incomplete"),
+        "the generated {target} reporter does not describe its record as best-effort and possibly incomplete"
+    );
+}
+
+#[then("local recording paths are gitignored and absent from tracked files and repository history")]
+fn local_recording_paths_are_ignored_and_untracked(world: &mut GivnWorld) {
+    let env = project_root(world);
+    let ignored = crate::common::git(env, &["check-ignore", "givn/history/events.jsonl"]);
+    assert!(
+        ignored.status.success(),
+        "givn/history/events.jsonl is not gitignored: {}",
+        String::from_utf8_lossy(&ignored.stderr)
+    );
+    let tracked = crate::common::git(env, &["ls-files"]);
+    assert!(
+        !String::from_utf8_lossy(&tracked.stdout).contains("givn/history"),
+        "a local recording is tracked"
+    );
+    let history = crate::common::git(env, &["log", "--all", "--name-only", "--pretty=format:"]);
+    assert!(
+        !String::from_utf8_lossy(&history.stdout).contains("givn/history"),
+        "a local recording is present in repository history"
+    );
+}
+
+#[when("the installed reporter reports a completed tool call, a subagent, and a question wait")]
+fn installed_reporter_reports_for_installed_target(world: &mut GivnWorld) {
+    let target = e2e_state(world)
+        .target
+        .clone()
+        .expect("the installed reporter target is missing");
+    let activities = reported_activity();
+    let env = project_root(world);
+    let driver = driver_for(&target);
+    let output = driver(env, &activities);
+    let state = e2e_state(world);
+    state.reporter_output = Some(output);
 }

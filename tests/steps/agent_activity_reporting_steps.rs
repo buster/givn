@@ -1800,3 +1800,554 @@ fn usage_names_the_model(world: &mut GivnWorld, model: String) {
         "the usage does not name the session record's own model: {entry}"
     );
 }
+
+// --- prepare-0-9-10: bounded best-effort reporting -------------------------
+
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output, Stdio};
+use std::time::{Duration, Instant};
+
+use crate::common;
+
+const REPORTER_WAIT_BOUND_MS: u128 = 7_000;
+fn init_project_with_reporter(target: &str) -> common::TestEnv {
+    let env = common::make_init_root();
+    let out = common::run_givn(&env, &["init", "--force", "--agents", target]);
+    assert!(
+        out.status.success(),
+        "givn init --force --agents {target} failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    env
+}
+
+fn reporter_path(target: &str) -> &'static str {
+    match target {
+        "omp" => ".omp/hooks/pre/givn-timeline.js",
+        "opencode" => ".opencode/plugins/givn-timeline.js",
+        "claude" => ".claude/hooks/givn-timeline.sh",
+        "maki" => ".maki/lua/givn-timeline.lua",
+        other => panic!("unknown reporter target {other}"),
+    }
+}
+
+fn install_stalling_helper(env: &common::TestEnv, target: &str, failure: &str) -> PathBuf {
+    let bin = env.path(".stall-bin");
+    std::fs::create_dir_all(&bin).expect("create stall bin");
+    let givn = bin.join("givn");
+    // The capture-mode query must stay fast: a stalling settings helper would
+    // prevent the harness driver from ever reaching the reported action. The
+    // stall is in the intake helper, which is the reporting path under test.
+    let real = env!("CARGO_BIN_EXE_givn");
+    let body = match failure {
+        "never exits" => format!(
+            "#!/bin/sh\nif [ \"$1\" = \"history\" ] && [ \"$2\" = \"settings\" ]; then exec '{real}' \"$@\"; fi\necho $$ > helper.pid\nexec sleep 10\n"
+        ),
+        "does not consume its input" => format!(
+            "#!/bin/sh\nif [ \"$1\" = \"history\" ] && [ \"$2\" = \"settings\" ]; then exec '{real}' \"$@\"; fi\necho $$ > helper.pid\n# Deliberately never reads stdin and never exits.\nexec sleep 10\n"
+        ),
+        other => panic!("unknown helper failure {other}"),
+    };
+    std::fs::write(&givn, body).expect("write stalling givn");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = std::fs::metadata(&givn).unwrap().permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(&givn, permissions).unwrap();
+    }
+    let _ = target;
+    bin
+}
+
+fn path_with_prefix(prefix: &Path) -> String {
+    let mut parts = vec![prefix.display().to_string()];
+    if let Some(existing) = std::env::var_os("PATH") {
+        parts.push(existing.to_string_lossy().into_owned());
+    }
+    parts.join(":")
+}
+
+/// Run a command under the external `timeout` guard, so a reporter that
+/// ignores its bound fails the scenario rather than hanging the suite. Returns
+/// the elapsed wall time and the captured output.
+fn run_bounded(mut command: Command) -> (Duration, Output) {
+    let started = Instant::now();
+    let output = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .expect("run the reporter driver");
+    let elapsed = started.elapsed();
+    (elapsed, output)
+}
+
+fn omp_stall_driver() -> &'static str {
+    r#"import { pathToFileURL } from "node:url"
+const handlers = new Map()
+const eventHandlers = new Map()
+const pi = {
+  on: (event, handler) => handlers.set(event, handler),
+  events: { on: (event, handler) => eventHandlers.set(event, handler) },
+  getThinkingLevel: () => undefined,
+  exec: () => new Promise(() => {}),
+}
+const module = await import(pathToFileURL(process.env.GIVN_REPORTER).href)
+module.default(pi)
+const fire = async (event, payload, ctx = {}) => {
+  const handler = handlers.get(event)
+  if (!handler) throw new Error(`no ${event} handler`)
+  await handler(payload, ctx)
+}
+await fire("session_start", {}, { sessionManager: { getSessionId: () => process.env.GIVN_DRIVER_SESSION } })
+await fire("tool_execution_start", { toolCallId: "stall-tool", toolName: "Bash", args: { command: "echo stalled" } })
+await fire("tool_execution_end", { toolCallId: "stall-tool", toolName: "Bash", args: { command: "echo stalled" }, isError: false })
+await fire("session_shutdown", {})
+"#
+}
+
+fn opencode_stall_driver() -> &'static str {
+    r#"import { pathToFileURL } from "node:url"
+const session = "stall-session"
+const stream = {
+  async *[Symbol.asyncIterator]() {
+    yield { type: "session.tool.called", created: Date.now(), data: { sessionID: session, id: "stall-tool", name: "Bash", input: { command: "echo stalled" } } }
+    yield { type: "session.tool.success", created: Date.now(), data: { sessionID: session, id: "stall-tool", name: "Bash" } }
+    yield { type: "session.execution.succeeded", created: Date.now(), data: { sessionID: session } }
+    while (true) await new Promise((resolve) => setTimeout(resolve, 1000))
+  },
+}
+const registration = (domain) => (kind, handler) => undefined
+const ctx = {
+  session: { hook: registration("session") },
+  tool: { hook: registration("tool") },
+  shell: { hook: registration("shell") },
+  permission: { hook: registration("permission") },
+  event: { subscribe: () => stream },
+  signal: undefined,
+}
+const module = await import(pathToFileURL(process.env.GIVN_REPORTER).href)
+await module.default.setup(ctx)
+await new Promise((resolve) => setTimeout(resolve, 4000))
+process.exit(0)
+"#
+}
+
+fn claude_stall_driver(env: &common::TestEnv, path: &str) -> (Duration, Output) {
+    let shim = env.path(reporter_path("claude"));
+    let payload = serde_json::json!({
+        "hook_event_name": "PostToolUse",
+        "session_id": "stall-session",
+        "tool_name": "Bash",
+        "tool_use_id": "stall-tool",
+        "tool_input": { "command": "echo stalled" },
+        "tool_response": {},
+        "duration_ms": 1
+    })
+    .to_string();
+    let mut command = Command::new("timeout");
+    command
+        .arg("8")
+        .arg(&shim)
+        .current_dir(env.root())
+        .env("PATH", path)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let mut child = command.spawn().expect("spawn claude shim");
+    use std::io::Write as _;
+    child
+        .stdin
+        .take()
+        .expect("stdin")
+        .write_all(payload.as_bytes())
+        .expect("write hook payload");
+    let started = Instant::now();
+    let output = child.wait_with_output().expect("wait for claude shim");
+    (started.elapsed(), output)
+}
+
+fn maki_stall_driver(env: &common::TestEnv, path: &str) -> (Duration, Output) {
+    let fence_path = env.path(".maki/init.lua");
+    let generated = std::fs::read_to_string(&fence_path).expect("read maki init.lua");
+    let driver = r#"
+local marker = maki.fs.write(".maki-driver-loaded", "loaded\n")
+if not marker then error("driver marker") end
+maki.api.exec_autocmds("ToolStart", { data = { session_id = "stall-session", tool_id = "stall-tool", tool = "Bash" } })
+maki.api.exec_autocmds("ToolDone", { data = { session_id = "stall-session", tool_id = "stall-tool", tool = "Bash", is_error = false, duration_ms = 1 } })
+local reporter = require("givn-timeline")
+local ok, err = pcall(reporter.run)
+if not ok then maki.log.error("driver flush failed: " .. tostring(err)) end
+"#;
+    std::fs::write(&fence_path, format!("{generated}\n{driver}")).expect("write maki driver");
+    let mut command = Command::new("timeout");
+    command
+        .arg("8")
+        .arg("maki")
+        .arg("--trust")
+        .arg("prompt")
+        .current_dir(env.root())
+        .env("PATH", path);
+    let (elapsed, output) = run_bounded(command);
+    assert!(
+        output.status.success(),
+        "maki driver failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        env.path(".maki-driver-loaded").is_file(),
+        "the real maki binary did not load the project plugin"
+    );
+    (elapsed, output)
+}
+
+#[given(regex = r#"^an installed "([^"]+)" reporter whose helper "([^"]+)"$"#)]
+fn installed_reporter_with_stalling_helper(world: &mut GivnWorld, target: String, failure: String) {
+    let env = init_project_with_reporter(&target);
+    let bin = install_stalling_helper(&env, &target, &failure);
+    state(world).last_payload = Some(json!({
+        "target": target,
+        "failure": failure,
+        "stall_bin": bin,
+    }));
+    world.env = Some(env);
+}
+
+#[when("the agent completes a primary tool action")]
+fn agent_completes_primary_tool_action(world: &mut GivnWorld) {
+    let payload = state(world)
+        .last_payload
+        .clone()
+        .expect("the stalling reporter fixture is missing");
+    let target = payload["target"].as_str().unwrap().to_string();
+    let bin = PathBuf::from(payload["stall_bin"].as_str().unwrap());
+    let env = world.env.as_ref().expect("project root missing");
+    let path = path_with_prefix(&bin);
+    let (elapsed, output) = match target.as_str() {
+        "omp" => {
+            let mut command = Command::new("timeout");
+            let script = env.path("stall-omp.mjs");
+            std::fs::write(&script, omp_stall_driver()).unwrap();
+            command
+                .arg("8")
+                .arg("node")
+                .arg(&script)
+                .current_dir(env.root())
+                .env("PATH", &path)
+                .env("GIVN_REPORTER", env.path(reporter_path(&target)))
+                .env("GIVN_DRIVER_SESSION", "stall-session");
+            run_bounded(command)
+        }
+        "opencode" => {
+            let mut command = Command::new("timeout");
+            let script = env.path("stall-opencode.mjs");
+            std::fs::write(&script, opencode_stall_driver()).unwrap();
+            command
+                .arg("8")
+                .arg("node")
+                .arg(&script)
+                .current_dir(env.root())
+                .env("PATH", &path)
+                .env("GIVN_REPORTER", env.path(reporter_path(&target)));
+            run_bounded(command)
+        }
+        "claude" => claude_stall_driver(env, &path),
+        "maki" => maki_stall_driver(env, &path),
+        other => panic!("unknown reporter target {other}"),
+    };
+    assert_ne!(
+        output.status.code(),
+        Some(124),
+        "the {target} reporter did not return within the external guard: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        output.status.success(),
+        "the stalled {target} reporter failed the primary action (exit {:?}): {}",
+        output.status.code(),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    state(world).harness_run = Some(HarnessRun {
+        gap_ms: elapsed.as_millis() as u64,
+    });
+}
+
+#[then("the primary action returns its own result within the finite reporter wait bound")]
+fn primary_action_returns_within_bound(world: &mut GivnWorld) {
+    let elapsed = harness_run(world).gap_ms as u128;
+    let target = state(world)
+        .last_payload
+        .as_ref()
+        .and_then(|payload| payload["target"].as_str())
+        .unwrap_or("unknown");
+    assert!(
+        elapsed <= REPORTER_WAIT_BOUND_MS,
+        "the {target} primary action waited {elapsed}ms for a stalled reporter helper"
+    );
+}
+
+#[then("the outstanding helper is abandoned or stopped without an indefinite wait")]
+fn outstanding_helper_is_abandoned(world: &mut GivnWorld) {
+    let elapsed = harness_run(world).gap_ms as u128;
+    assert!(
+        elapsed < 8_000,
+        "the helper was still awaited after {elapsed}ms"
+    );
+    let env = world.env.as_ref().expect("project root missing");
+    let Ok(pid_text) = std::fs::read_to_string(env.path("helper.pid")) else {
+        // The fake omp exec never starts an OS helper; its abandon is the wait bound.
+        return;
+    };
+    if let Ok(pid) = pid_text.trim().parse::<i32>() {
+        #[cfg(unix)]
+        {
+            let deadline = Instant::now() + Duration::from_secs(1);
+            while unsafe { libc::kill(pid, 0) } == 0 && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            unsafe {
+                assert_ne!(
+                    libc::kill(pid, 0),
+                    0,
+                    "the stalled helper process {pid} is still alive"
+                );
+            }
+        }
+    }
+}
+
+#[then("missing observations are not represented as a complete recording")]
+fn missing_observations_not_complete(world: &mut GivnWorld) {
+    let target = state(world).last_payload.as_ref().unwrap()["target"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let env = world.env.as_ref().expect("project root missing");
+    let store = env.path("givn/history/events.jsonl");
+    let content = std::fs::read_to_string(&store).unwrap_or_default();
+    assert!(
+        !content.contains("stall-tool"),
+        "a stalled helper produced a complete-looking record: {content}"
+    );
+    let reporter = std::fs::read_to_string(env.path(reporter_path(&target))).unwrap_or_default();
+    let normalized = reporter.to_lowercase();
+    assert!(
+        normalized.contains("best effort") && normalized.contains("incomplete"),
+        "the reporter does not describe its record as best effort and possibly incomplete"
+    );
+}
+
+#[given("a change with recorded history whose development record cannot be written")]
+fn change_with_unwritable_development_record(world: &mut GivnWorld) {
+    let env = init_project_with_reporter("opencode");
+    let out = common::run_givn(&env, &["new", "demo"]);
+    assert!(out.status.success(), "create demo change failed");
+    let payload = serde_json::json!({
+        "schema": 1,
+        "reporter": "opencode",
+        "session": "rejected-report",
+        "events": [{
+            "kind": "tool",
+            "at": "2026-10-29T10:00:00.000Z",
+            "id": "prior-tool",
+            "tool": "Bash",
+            "label": "echo prior",
+            "outcome": "ok",
+            "duration_ms": 1
+        }]
+    });
+    let mut ingest = Command::new(env!("CARGO_BIN_EXE_givn"));
+    ingest
+        .args(["history", "ingest"])
+        .current_dir(env.root())
+        .env_remove("GIVN_FEATURES")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    let mut child = ingest.spawn().expect("spawn history ingest");
+    use std::io::Write as _;
+    child
+        .stdin
+        .take()
+        .unwrap()
+        .write_all(payload.to_string().as_bytes())
+        .unwrap();
+    let out = child.wait_with_output().unwrap();
+    assert!(out.status.success(), "seed history ingest failed");
+    let store = env.path("givn/history/events.jsonl");
+    let prior = std::fs::read(&store).expect("read prior history");
+    std::fs::write(env.path("givn/history/prior-events.jsonl"), &prior).unwrap();
+    std::fs::remove_file(&store).unwrap();
+    std::fs::create_dir(&store).expect("replace the record with a directory");
+    state(world).store_before = Some(prior);
+    world.env = Some(env);
+}
+
+#[when("the installed reporter observes a completed tool call")]
+fn installed_reporter_observes_completed_tool_call(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root missing");
+    let activities = vec![support::HarnessActivity::Tool {
+        id: "rejected-tool".to_string(),
+        tool: "Bash".to_string(),
+        args: json!({ "command": "echo rejected" }),
+    }];
+    let started = Instant::now();
+    let output = support::drive_opencode_reporter(env, &activities);
+    let elapsed = started.elapsed();
+    assert!(
+        output.status.success(),
+        "the reporter failed the agent action: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(
+        elapsed < Duration::from_secs(5),
+        "the reporter delayed the agent action for {elapsed:?}"
+    );
+    state(world).last_payload = Some(json!({ "reporter_exit": output.status.code() }));
+    state(world).harness_run = Some(HarnessRun {
+        gap_ms: elapsed.as_millis() as u64,
+    });
+}
+
+#[then("the original tool result is returned unchanged")]
+fn original_tool_result_returned_unchanged(world: &mut GivnWorld) {
+    let payload = state(world)
+        .last_payload
+        .as_ref()
+        .expect("the reporter did not observe the tool call");
+    assert_eq!(
+        payload["reporter_exit"],
+        json!(0),
+        "the reporter replaced the tool result with a failure"
+    );
+}
+
+#[then("the reporting failure neither fails nor indefinitely delays the agent action")]
+fn reporting_failure_does_not_fail_action(world: &mut GivnWorld) {
+    let elapsed = harness_run(world).gap_ms as u128;
+    assert!(
+        elapsed < 5_000,
+        "the unwritable record delayed the agent action for {elapsed}ms"
+    );
+}
+
+#[then("previously recorded history is unchanged")]
+fn previously_recorded_history_unchanged(world: &mut GivnWorld) {
+    let previous = state(world)
+        .store_before
+        .clone()
+        .expect("no prior record was captured");
+    let env = world.env.as_ref().expect("project root missing");
+    let saved = std::fs::read(env.path("givn/history/prior-events.jsonl")).expect("saved history");
+    assert_eq!(saved, previous, "the previously recorded history changed");
+}
+
+#[given("a project whose local recording path was committed before it was ignored")]
+fn recording_path_committed_before_ignored(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let store = env.path("givn/history/events.jsonl");
+    std::fs::create_dir_all(store.parent().unwrap()).unwrap();
+    std::fs::write(
+        &store,
+        "{\"schema\":1,\"id\":1,\"kind\":\"command\",\"name\":\"historical-recording\"}\n",
+    )
+    .unwrap();
+    common::git(&env, &["add", "-f", "givn/history/events.jsonl"]);
+    common::git(
+        &env,
+        &["commit", "-m", "commit a recording before ignoring it"],
+    );
+    world.env = Some(env);
+}
+
+#[when("the developer reads the reporter installation or synchronization report")]
+fn developer_reads_sync_report(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root missing");
+    world.last_output = Some(common::run_givn(env, &["skills", "sync"]));
+}
+
+#[then(
+    "the report warns that ignoring a path does not remove tracked files or historical recordings"
+)]
+fn report_warns_ignore_does_not_remove_history(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    let stdout = super::stdout(world);
+    let combined = format!("{stdout}\n{stderr}");
+    assert!(
+        combined.contains("ignoring a path does not remove tracked files or historical recordings"),
+        "the report does not warn about tracked/historical recordings: {combined}"
+    );
+}
+
+#[then(
+    "the report identifies the existing tracked recording rather than claiming history is clean"
+)]
+fn report_identifies_tracked_recording(world: &mut GivnWorld) {
+    let content = format!("{}\n{}", super::stdout(world), super::stderr(world));
+    assert!(
+        content.contains("tracked local recording: givn/history/events.jsonl"),
+        "the report does not identify the tracked recording: {content}"
+    );
+    assert!(
+        content.contains("history is not clean"),
+        "the report claims history is clean: {content}"
+    );
+}
+
+#[then("no automatic history rewrite is performed")]
+fn no_automatic_history_rewrite(world: &mut GivnWorld) {
+    let content = format!("{}\n{}", super::stdout(world), super::stderr(world));
+    assert!(
+        content.contains("no automatic history rewrite was performed"),
+        "the report does not state that no history rewrite happened: {content}"
+    );
+    let env = world.env.as_ref().expect("project root missing");
+    let files = common::git(env, &["log", "--all", "--name-only", "--pretty=format:"]);
+    assert!(
+        String::from_utf8_lossy(&files.stdout).contains("givn/history/events.jsonl"),
+        "the tracked recording disappeared from history"
+    );
+}
+
+#[given("a project with an installed development reporter")]
+fn project_with_installed_development_reporter(world: &mut GivnWorld) {
+    world.env = Some(init_project_with_reporter("opencode"));
+}
+
+#[when("the developer reads the effective recording guidance")]
+fn developer_reads_recording_guidance(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root missing");
+    world.last_output = Some(common::run_givn(env, &["history", "settings"]));
+}
+
+#[then("the guidance warns that recordings can contain sensitive content")]
+fn guidance_warns_sensitive_content(world: &mut GivnWorld) {
+    let content = format!("{}\n{}", super::stdout(world), super::stderr(world));
+    assert!(
+        content.contains("can contain sensitive"),
+        "recording guidance does not warn about sensitive content: {content}"
+    );
+}
+
+#[then(
+    "it describes local gitignored recordings rather than repository-history storage by default"
+)]
+fn guidance_describes_local_gitignored_storage(world: &mut GivnWorld) {
+    let content = format!("{}\n{}", super::stdout(world), super::stderr(world));
+    let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        normalized
+            .contains("local, gitignored recording rather than repository history by default"),
+        "recording guidance does not describe local gitignored storage: {content}"
+    );
+}
+
+#[then("it makes no redaction, privacy-boundary, or complete-capture guarantee")]
+fn guidance_makes_no_privacy_guarantee(world: &mut GivnWorld) {
+    let content = format!("{}\n{}", super::stdout(world), super::stderr(world));
+    let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        normalized.contains("no redaction, privacy-boundary, or complete-capture guarantee"),
+        "recording guidance does not disclaim the privacy guarantees: {content}"
+    );
+}

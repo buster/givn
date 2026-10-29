@@ -1216,3 +1216,455 @@ fn guidance_does_not_normalize_adr_per_change(world: &mut GivnWorld) {
         "guidance still normalizes a routine row set that includes row 9"
     );
 }
+
+// --- prepare-0-9-10: concise qualification and canonical routing -----------
+
+fn normalized_guidance(world: &GivnWorld) -> String {
+    guidance(world)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+#[given("an architectural decision with a routine tradeoff and an actionable unresolved downside")]
+fn architectural_decision_with_routine_tradeoff(world: &mut GivnWorld) {
+    let content = fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/instructions.md",
+    ))
+    .expect("read canonical Arc42 instruction");
+    world.additional_output = Some(content);
+}
+
+#[when("the author reads the consequence and risk-recording guidance")]
+fn author_reads_consequence_and_risk_guidance(world: &mut GivnWorld) {
+    assert!(
+        !normalized_guidance(world).is_empty(),
+        "consequence and risk guidance is empty"
+    );
+}
+
+#[then("the ADR retains both consequences")]
+fn adr_retains_both_consequences(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("retains both its positive and negative consequences"),
+        "guidance does not require the ADR to retain both consequences"
+    );
+}
+
+#[then("only the actionable unresolved downside requires risk or debt tracking")]
+fn only_actionable_downside_requires_tracking(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("routine tradeoff") && content.contains("not automatically risk"),
+        "guidance promotes routine ADR downsides to risk debt"
+    );
+    assert!(
+        content.contains("actionable, unresolved downside") && content.contains("chapter 11"),
+        "guidance does not scope risk/debt tracking to the actionable unresolved downside"
+    );
+}
+
+#[when("an author reads the qualification examples")]
+fn author_reads_qualification_examples(world: &mut GivnWorld) {
+    assert!(
+        !normalized_guidance(world).is_empty(),
+        "qualification examples are empty"
+    );
+}
+
+#[then(
+    "reversible implementation choices and workflow-only changes without architectural consequence remain non-ADR examples"
+)]
+fn reversible_and_workflow_changes_remain_non_adr_examples(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    for marker in [
+        "Single-change reversibility",
+        "Product-behavior exclusion",
+        "workflow behavior",
+        "not an ADR",
+    ] {
+        assert!(
+            content.contains(marker),
+            "qualification examples are missing {marker:?}"
+        );
+    }
+}
+
+#[then("a genuine lasting boundary decision with real alternatives may qualify")]
+fn genuine_boundary_decision_may_qualify(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("genuine lasting boundary")
+            && normalized_guidance(world).contains("may still qualify"),
+        "guidance does not preserve the genuine boundary example"
+    );
+}
+
+#[then(
+    "examples explain the concise qualification rather than require three additional recorded tests"
+)]
+fn examples_do_not_require_extra_recorded_tests(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("not three additional records"),
+        "guidance turns the examples into three extra recorded tests"
+    );
+}
+
+#[then("qualification is by kind rather than a numeric ADR cap")]
+fn qualification_is_by_kind_not_cap(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("Classify by kind, not count"),
+        "guidance does not classify by kind rather than count"
+    );
+    assert!(
+        content.contains("no numeric ADR cap"),
+        "guidance does not state that there is no numeric ADR cap"
+    );
+}
+
+#[then(
+    "an ADR requires an architectural commitment with real alternatives and a lasting boundary or consequence"
+)]
+fn adr_requires_commitment_alternatives_and_consequence(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    for marker in [
+        "Architectural commitment",
+        "Real alternatives",
+        "Durable consequence",
+        "lasting component or ownership boundary",
+        "compatibility/migration boundary",
+    ] {
+        assert!(
+            content.contains(marker),
+            "qualification guidance is missing {marker:?}"
+        );
+    }
+}
+
+#[then(
+    "the author must search existing ADRs before deciding whether to create amend or supersede a record"
+)]
+fn author_must_search_existing_adrs(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("search the active and archived ADR registers"),
+        "guidance does not require an existing-ADR search"
+    );
+    for route in ["NEW_ADR", "AMEND_ADR", "SUPERSEDE_ADR"] {
+        assert!(content.contains(route), "guidance is missing route {route}");
+    }
+}
+
+#[then("an ordinary implementation choice belongs in its appropriate existing artifact")]
+fn ordinary_choice_belongs_in_existing_artifact(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "ordinary implementation choice belongs in its appropriate existing artifact"
+        ),
+        "guidance does not route an ordinary choice to its existing artifact"
+    );
+}
+
+#[then(
+    "the guidance requires one concise qualification in the change assessment rather than repeated gate worksheets"
+)]
+fn guidance_requires_one_concise_assessment(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("Qualify a decision once, concisely, in the change assessment"),
+        "guidance does not place one qualification in the change assessment"
+    );
+    assert!(
+        content.contains("Do not repeat a qualification worksheet"),
+        "guidance permits repeated qualification worksheets"
+    );
+}
+
+#[then("each source defers to the same concise qualification and existing-ADR search")]
+fn sources_defer_to_same_concise_qualification(world: &mut GivnWorld) {
+    let canonical = fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/instructions.md",
+    ))
+    .unwrap();
+    for marker in [
+        "Architectural commitment",
+        "Real alternatives",
+        "Durable consequence",
+        "Existing decisions",
+    ] {
+        assert!(
+            canonical.contains(marker),
+            "canonical source is missing {marker:?}"
+        );
+    }
+    let impact = fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/impact-assessment-template.md",
+    ))
+    .unwrap();
+    for marker in [
+        "Architectural commitment",
+        "Real alternatives",
+        "Durable consequence",
+        "Existing-decision search",
+    ] {
+        assert!(
+            impact.contains(marker),
+            "impact assessment is missing {marker:?}"
+        );
+    }
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("read the concise qualification policy"),
+        "a derived source does not defer to the concise qualification policy"
+    );
+}
+
+#[then("shared guidance alone does not qualify an ADR")]
+fn shared_guidance_alone_does_not_qualify(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("supporting evidence only")
+            && content.contains("never qualifies a candidate by itself"),
+        "guidance does not keep Must be shared supporting-only"
+    );
+}
+
+#[then("derived sources do not copy qualification worksheets")]
+fn derived_sources_do_not_copy_worksheets(_world: &mut GivnWorld) {
+    for path in [
+        "assets/addons/arc42-docs/impact-assessment-template.md",
+        "assets/addons/arc42-docs/chapters/README.md",
+        "assets/addons/arc42-docs/chapters/09-architecture-decisions.md",
+        "assets/instructions/design-review.md",
+        "assets/templates/design-review.md",
+    ] {
+        let content =
+            fs::read_to_string(crate::common::repo_path(path)).expect("read derived ADR source");
+        for marker in [
+            "qualification = alternatives",
+            "ADR-QUALIFICATION:",
+            "structured qualification verdict",
+        ] {
+            assert!(
+                !content.contains(marker),
+                "derived source {path} copied the qualification worksheet marker {marker:?}"
+            );
+        }
+    }
+}
+
+#[then("no source claims runtime enforcement of the qualification policy")]
+fn no_source_claims_qualification_runtime(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("not runtime enforcement"),
+        "guidance does not distinguish authoring policy from runtime enforcement"
+    );
+    assert!(!content.contains("runtime enforces the policy"));
+}
+
+#[then("a configured project override remains effective")]
+fn configured_project_override_remains_effective(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("Project overrides may replace this default guidance"),
+        "guidance does not preserve the project override"
+    );
+    assert!(
+        content.contains("normal asset cascade"),
+        "guidance does not name the asset cascade"
+    );
+}
+
+#[then(
+    "the guidance requires one concise assessment of the commitment real alternatives durable consequence and existing decisions"
+)]
+fn guidance_requires_concise_assessment(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    for marker in [
+        "Architectural commitment",
+        "Real alternatives",
+        "Durable consequence",
+        "Existing decisions",
+        "once, concisely",
+    ] {
+        assert!(
+            content.contains(marker),
+            "ADR qualification is missing {marker:?}"
+        );
+    }
+}
+
+#[then("the ADR owns the decision rationale alternatives and consequences")]
+fn adr_owns_rationale_alternatives_consequences(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("The ADR owns the decision rationale, its real alternatives, and its"),
+        "guidance does not give the ADR ownership of rationale, alternatives, and consequences"
+    );
+}
+
+#[then(
+    "neither the ADR nor design-review repeats the assessment as another qualification worksheet"
+)]
+fn no_repeated_assessment_in_adr_or_review(_world: &mut GivnWorld) {
+    let adr = fs::read_to_string(crate::common::repo_path(
+        "assets/addons/arc42-docs/chapters/adr/adr-template.md",
+    ))
+    .unwrap();
+    assert!(
+        adr.contains("does not repeat it as another")
+            && !adr.contains("ADR-QUALIFICATION:")
+            && !adr.contains("qualification: QUALIFIED"),
+        "the ADR template repeats the qualification worksheet"
+    );
+    let review = fs::read_to_string(crate::common::repo_path(
+        "assets/instructions/design-review.md",
+    ))
+    .unwrap();
+    assert!(
+        review.contains("Do not demand a duplicate qualification worksheet"),
+        "design-review demands a second qualification worksheet"
+    );
+}
+
+#[then("the assessment records the concise qualification and chosen route before ADR drafting")]
+fn assessment_records_qualification_before_drafting(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("Fill it before")
+            && content.contains("drafting, amending, or superseding any ADR"),
+        "impact assessment does not require the qualification before drafting"
+    );
+    assert!(
+        content.contains("ADR action:"),
+        "impact assessment does not record the chosen route"
+    );
+}
+
+#[then("a second structured verdict is not required in the ADR")]
+fn second_structured_verdict_not_required(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("not a second schema")
+            || content.contains("not a second structured verdict"),
+        "impact assessment still asks for a second structured verdict"
+    );
+}
+
+#[then("the template supplies valid frontmatter without pre-passed qualification claims")]
+fn adr_template_has_valid_frontmatter_without_claims(world: &mut GivnWorld) {
+    let content = guidance(world);
+    let mut found_frontmatter = false;
+    let mut previous_blank = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed == "---" {
+            found_frontmatter = true;
+            previous_blank = true;
+            continue;
+        }
+        if previous_blank && !trimmed.is_empty() {
+            assert_eq!(
+                trimmed, "status: proposed",
+                "ADR template frontmatter does not start with the status field"
+            );
+            found_frontmatter = true;
+            break;
+        }
+        if !trimmed.is_empty() {
+            previous_blank = false;
+        }
+    }
+    assert!(found_frontmatter, "ADR template frontmatter is not valid");
+    for marker in ["date:", "decision-makers:", "consulted:", "informed:"] {
+        assert!(
+            content.contains(marker),
+            "ADR template frontmatter is missing {marker}"
+        );
+    }
+    for marker in [
+        "ADR-QUALIFICATION:",
+        "qualification: QUALIFIED",
+        "qualification: <blank until recorded>",
+    ] {
+        assert!(
+            !content.contains(marker),
+            "ADR template ships a pre-passed qualification claim {marker:?}"
+        );
+    }
+}
+
+#[then(
+    "the template records decision rationale alternatives and consequences without another qualification worksheet"
+)]
+fn adr_template_records_rationale_alternatives_consequences(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    for marker in [
+        "decision rationale",
+        "Considered Options",
+        "### Consequences",
+        "does not repeat it as another",
+    ] {
+        assert!(
+            content.contains(marker),
+            "ADR template is missing {marker:?}"
+        );
+    }
+}
+
+#[then("ordinary technical justification remains in the design")]
+fn ordinary_justification_remains_in_design(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("justification belongs in `design.md`"),
+        "design template does not keep technology justification in the design"
+    );
+}
+
+#[then(
+    "ADR candidates refer to the concise change assessment instead of repeating qualification tests"
+)]
+fn adr_candidates_refer_to_change_assessment(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("refers to the concise change assessment"),
+        "design template does not point ADR candidates at the change assessment"
+    );
+    assert!(
+        content.contains("repeat its qualification tests here"),
+        "design template repeats qualification tests for ADR candidates"
+    );
+}
+
+#[then(
+    "the reviewer checks whether the recorded commitment belongs in an ADR or an existing lower-level artifact"
+)]
+fn reviewer_checks_recorded_commitment_home(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("recorded architectural commitment")
+            && content.contains("existing lower-level artifact"),
+        "design-review does not check the recorded commitment's cheaper home"
+    );
+}
+
+#[then("the reviewer uses the recorded qualification without another mandatory worksheet")]
+fn reviewer_uses_recorded_qualification(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("recorded once") && content.contains("Do not demand a duplicate"),
+        "design-review does not use the recorded qualification without a second worksheet"
+    );
+}
+
+#[then("the design-review skill points to the canonical instruction")]
+fn design_review_skill_points_to_canonical_instruction(_world: &mut GivnWorld) {
+    let content = fs::read_to_string(crate::common::repo_path(
+        "assets/skills/givn-design-review/SKILL.md.tmpl",
+    ))
+    .expect("read design-review skill template");
+    assert!(
+        content.contains("givn instructions design-review"),
+        "design-review skill does not point to the canonical instruction"
+    );
+}

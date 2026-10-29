@@ -12,7 +12,9 @@
 // `Date.now()` stamps, paired by the harness's own call id. The flush sends one
 // compiled payload per boundary (`schema`, `reporter`, `session`, `events`) —
 // the intake's own contract; the reporter never knows the record's line format
-// (ADR-073).
+// (ADR-073). Recording is best effort and may be incomplete: a stalled
+// helper is abandoned after a bounded wait and never fails or indefinitely
+// delays the agent action.
 
 import { rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
@@ -21,6 +23,12 @@ import { join } from "node:path"
 const HARNESS = "omp"
 /** The buffer is bounded so a long session cannot grow without limit. */
 const MAX_BUFFER = 1000
+/** The finite best-effort wait for a settings or intake helper. */
+const REPORTER_WAIT_MS = 2000
+
+/** Resolve when `promise` settles or the reporter wait bound expires. */
+const boundedWait = (promise) =>
+  Promise.race([promise.catch(() => undefined), new Promise((resolve) => setTimeout(resolve, REPORTER_WAIT_MS))])
 /** The question tool of the omp toolset (`BUILTIN_TOOL_NAMES`). */
 const QUESTION_TOOL = "ask"
 
@@ -205,7 +213,7 @@ const questionOf = (args) => {
  */
 const queryMode = (pi) => {
   try {
-    return Promise.resolve(pi.exec("givn", ["history", "settings", "--json"])).then(
+    return boundedWait(Promise.resolve(pi.exec("givn", ["history", "settings", "--json"]))).then(
       (output) => {
         const text = typeof output === "string" ? output : output?.stdout
         try {
@@ -273,7 +281,9 @@ export default function givnTimeline(pi) {
     const file = join(tmpdir(), `givn-timeline-${HARNESS}-${process.pid}-${Date.now()}.json`)
     try {
       writeFileSync(file, JSON.stringify(payload))
-      await pi.exec("sh", ["-c", `givn history ingest < '${file}'`])
+      await boundedWait(
+        Promise.resolve(pi.exec("sh", ["-c", `givn history ingest < '${file}'`])),
+      )
     } catch {
       // Best effort: the record is development data, never a work item, and a
       // failing intake must not fail the agent action it reports.

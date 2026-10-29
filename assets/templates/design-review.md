@@ -99,8 +99,10 @@ record both:
       in chapter 09; non-qualifying decisions name exactly one canonical target.
 - [ ] Every MADR "Bad, because..." consequence has a counterpart entry in
       chapter 11 (risks-and-technical-debt).
-- [ ] Every ADR candidate records the structured qualification verdict and its
-      route-specific target; `Must be shared` is supporting evidence only.
+- [ ] Every ADR candidate uses the concise qualification recorded once in the
+      change assessment and names its route-specific target; `Must be shared`
+      is supporting evidence only. The ADR and this review do not repeat the
+      assessment as another qualification worksheet.
 - [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
 
 ## Changes made during hardening

@@ -133,22 +133,35 @@ Individual examples do not need their own failing test or production diff.
 1. Bind every Given/When/Then phrase. Given establishes real preconditions;
    When invokes the intended boundary; Then asserts the observable result.
 2. Add or update the tests and step glue. Run them against the current system.
-   Do not record a test revision, RED output, or TDD order.
-3. A failing test must fail on its assertion, not on discovery, registration,
+   Tests and bindings must run before production edits for new behavior. The
+   observed RED is a meaningful behavioral failure rather than missing
+   bindings, syntax, registration, fixtures, or environment failure.
+3. Record the actual command and a short observed failure compactly in the
+   batch task as they occur. Do not reconstruct the RED from memory or history.
+   A failing test must fail on its assertion, not on discovery, registration,
    step binding, import, fixture, or environment startup. Fix setup failures
    and rerun; do not write production code for them.
-4. A passing test is allowed when it protects a distinct requirement. Merge,
-   parameterize, or delete genuine duplication. Do not narrow correct
-   production code merely to force a failure.
-5. For high-risk rules (identity, omitted alternative, boundary, lifetime
+4. A passing test is allowed when it protects a distinct requirement: record
+   the requirement explicitly as existing behavior protected, make no
+   production edit for that requirement, and continue. Another requirement in
+   the same coherent batch may still require behavioral RED and production
+   edits. Merge, parameterize, or delete genuine duplication. Do not narrow
+   correct production code merely to force a failure.
+5. If production behavior was edited before the requirement's behavioral test
+   was run, admit the skipped RED. Never backdate evidence, rewrite history, or
+   deliberately break finished behavior. Mutation or discrimination tests are
+   not claimed as historical RED. Separate RED, GREEN, and REFACTOR commits and
+   retrospective phase-shaped history gates are not required.
+6. For high-risk rules (identity, omitted alternative, boundary, lifetime
    limit, precedence), the implementer may check that at least one test rejects
    a plausible wrong behavior. It is not a required TDD record.
 
 ### IMPLEMENTATION
 
-6. Implement the behavior batch or wire the real implementation. List every
+7. Implement the behavior batch or wire the real implementation. List every
    production file created or modified. Run the relevant scenarios; they must
-   exit zero. Capture the output.
+   exit zero. Capture the output. The minimum implementation is followed by
+   actual GREEN and REFACTOR checks recorded briefly in the batch task.
    - E2e: bring up the local environment from design.md if needed; assert
      primarily on the real external interface. Never substitute an internal
      stub for a browser or CLI E2E.
@@ -164,20 +177,48 @@ Individual examples do not need their own failing test or production diff.
 
 ### REFACTOR
 
-7. Clean up without changing behaviour. Run the relevant scenarios; they must
+8. Clean up without changing behaviour. Run the relevant scenarios; they must
    still exit zero. Capture the output.
+
+   When the `outline` addon is enabled, inspect its advisory report once per
+   batch for supported Rust/Python changed components and relevant neighbors.
+   Disclose which languages and components the outline covers and which it
+   omits. Go or Java components receive direct source assessment using the same
+   responsibility, interface, dependency-direction, and decomposition
+   questions, without forced outline analysis. Unavailable outline support is
+   not a failure and is not a reason for a waiver or an outline verdict.
+
+   Ask whether responsibilities are cohesive, public interfaces narrow,
+   dependencies correctly directed, and decomposition understandable. Confirm
+   suspected problems against source before conclusions or edits. Structural
+   call order is not a complete runtime trace; uncertain or omitted edges limit
+   the conclusions. Reuse the report until structural changes make its relevant
+   evidence stale: a later structural edit is the reason to regenerate it, not
+   every small edit, and nonstructural edits alone do not require rerunning the
+   outline. The outline report is reused by final review as advisory evidence;
+   it supplies no blocking verdict, metric waiver, or forced reviewer context.
+
+   Concrete cleanup encountered while implementing agreed behavior is made in a
+   separate behavior-preserving refactoring commit with explicit paths and
+   actual GREEN checks. It does not authorize speculative features or a broad
+   abstraction rewrite.
 
 ### COMMIT
 
-8. One batch commit for TESTS + IMPLEMENTATION + REFACTOR. The message carries
-   the release note as its subject and names the batch in the body. Scenarios
-   record it as `COMMIT: <hash> -- Batch: <batch-name>`.
+9. Inspect the intended explicit-path diff before a coherent completed batch
+   commit. Commit selections name the batch files explicitly rather than
+   implicitly staging all work. One batch commit covers TESTS + IMPLEMENTATION
+   + REFACTOR. The message carries the release note as its subject and names
+   the batch in the body. Record the actual reachable revision before scenario
+   tasks are completed; scenarios record it as
+   `COMMIT: <hash> -- Batch: <batch-name>`. No production diff is required for
+   each scenario that protects existing behavior.
 
 ### Done
 
-9. Check the task boxes when the batch tests pass and the commit is recorded.
-   Do not use mass text replacement to fake progress.
-10. Move to the next behavior batch.
+10. Check the task boxes when the batch tests pass and the commit is recorded.
+    Do not use mass text replacement to fake progress.
+11. Move to the next behavior batch.
 
 Characterization is a separate reverse-engineering loop. A normal change may
 not use `CHARACTERIZATION` as an alternative to writing tests.

@@ -13,6 +13,12 @@ For every user-facing question, follow the effective policy from
 - **Test-first at batch level.** Tests precede implementation of a coherent
   behavior batch, then implement the minimum and refactor. One batch commit
   may satisfy several scenarios.
+- **Modular boundaries from the first implementation.** Build cohesive
+  responsibility modules with narrow consumer contracts, keep external adapters
+  separate, compose them in one explicit root, and make dependency direction
+  explicit. A narrow module API is acceptable unless isolation or substitution
+  needs an explicit interface; do not invent hypothetical providers or plugin
+  registries for imagined future consumers.
 - **A failing test fails for the reason it claims.** Discovery, registration,
   binding, import, fixture, and environment failures are not behavioural RED.
   A passing test is allowed when it protects a distinct requirement; do not

@@ -887,3 +887,470 @@ fn each_served_content_carries_its_project_rule(world: &mut GivnWorld) {
         );
     }
 }
+
+// --- prepare-0-9-10: behavior-batch, RED, REFACTOR and cleanup guidance ----
+
+fn normalized_guidance(world: &GivnWorld) -> String {
+    world
+        .additional_output
+        .as_deref()
+        .unwrap_or_default()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn batch_guidance(world: &mut GivnWorld) {
+    let env = world.env.get_or_insert_with(common::make_init_root);
+    let output = common::run_givn(env, &["new", "serve-extended-rules"]);
+    assert!(
+        output.status.success(),
+        "create the served guidance fixture change: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let design = served_instruction(env, "design");
+    let steps = served_instruction(env, "steps");
+    world.additional_output = Some(format!("{design}\n{steps}"));
+}
+
+#[given(
+    "a coherent named behavior batch is planned in tasks with scenarios validation and an intended commit boundary"
+)]
+fn coherent_behavior_batch_planned(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[when("the author requests the implementation and steps guidance")]
+fn author_requests_implementation_and_steps(world: &mut GivnWorld) {
+    assert!(
+        !normalized_guidance(world).is_empty(),
+        "implementation and steps guidance is empty"
+    );
+}
+
+#[then("tests and bindings must run before production edits for new behavior")]
+fn tests_run_before_production_edits(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("Tests and bindings must run before production edits for new behavior"),
+        "guidance does not require tests and bindings before production edits"
+    );
+}
+
+#[then(
+    "the observed RED must be a meaningful behavioral failure rather than missing bindings syntax registration fixtures or environment failure"
+)]
+fn observed_red_is_behavioral(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "observed RED is a meaningful behavioral failure rather than missing bindings, syntax, registration, fixtures, or environment failure"
+        ),
+        "guidance accepts a non-behavioral RED"
+    );
+}
+
+#[then(
+    "the actual command and short observed failure are recorded compactly in the batch task as they occur"
+)]
+fn red_evidence_recorded_compactly(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Record the actual command and a short observed failure compactly in the batch task as they occur"
+        ),
+        "guidance does not require contemporaneous compact RED evidence"
+    );
+}
+
+#[then("minimum implementation is followed by actual GREEN and REFACTOR checks recorded briefly")]
+fn green_and_refactor_recorded(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "minimum implementation is followed by actual GREEN and REFACTOR checks recorded briefly"
+        ),
+        "guidance does not require actual GREEN and REFACTOR checks"
+    );
+}
+
+#[given("a distinct requirement already holds before its regression test is written")]
+fn distinct_requirement_already_holds(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[when("the author reads the implementation guidance for an immediately passing test")]
+fn author_reads_immediately_passing_guidance(world: &mut GivnWorld) {
+    assert!(!normalized_guidance(world).is_empty());
+}
+
+#[then("the requirement is explicitly recorded as existing behavior protected")]
+fn requirement_recorded_as_existing_behavior(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("existing behavior protected"),
+        "guidance does not name an immediately passing requirement as protected existing behavior"
+    );
+}
+
+#[then("no production edit is made for that requirement")]
+fn no_production_edit_for_passing_requirement(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("make no production edit for that requirement"),
+        "guidance still requires a production edit for a passing requirement"
+    );
+}
+
+#[then(
+    "another requirement in the same coherent batch may still require behavioral RED and production edits"
+)]
+fn other_requirement_may_still_require_red(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Another requirement in the same coherent batch may still require behavioral RED and production edits"
+        ),
+        "guidance lets one passing test exempt the whole batch"
+    );
+}
+
+#[given("production behavior was edited before the requirement's behavioral test was run")]
+fn production_edited_before_test(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[when("the author reads the test-first evidence guidance")]
+fn author_reads_test_first_evidence_guidance(world: &mut GivnWorld) {
+    assert!(!normalized_guidance(world).is_empty());
+}
+
+#[then("the skipped RED must be admitted")]
+fn skipped_red_is_admitted(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("admit the skipped RED"),
+        "guidance does not admit a skipped RED"
+    );
+}
+
+#[then(
+    "backdated evidence history rewriting and deliberately breaking finished behavior are forbidden"
+)]
+fn backdating_and_rewriting_forbidden(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Never backdate evidence, rewrite history, or deliberately break finished behavior"
+        ),
+        "guidance permits backdating or history rewriting"
+    );
+}
+
+#[then("mutation or discrimination tests cannot be claimed as historical RED")]
+fn mutation_tests_not_historical_red(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("Mutation or discrimination tests are not claimed as historical RED"),
+        "guidance claims mutation tests as historical RED"
+    );
+}
+
+#[then(
+    "separate RED GREEN and REFACTOR commits or retrospective phase-shaped history gates are not required"
+)]
+fn phase_commits_not_required(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Separate RED, GREEN, and REFACTOR commits and retrospective phase-shaped history gates are not required"
+        ),
+        "guidance requires phase-shaped commits"
+    );
+}
+
+#[given("a behavior batch has completed its actual GREEN and REFACTOR checks")]
+fn batch_completed_green_and_refactor(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[when("the author reads the batch completion guidance")]
+fn author_reads_batch_completion_guidance(world: &mut GivnWorld) {
+    assert!(!normalized_guidance(world).is_empty());
+}
+
+#[then("the intended explicit-path diff is inspected before a coherent completed batch commit")]
+fn explicit_path_diff_inspected(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Inspect the intended explicit-path diff before a coherent completed batch commit"
+        ),
+        "guidance does not inspect the explicit-path diff before committing"
+    );
+}
+
+#[then("the actual revision is recorded before scenario tasks are completed")]
+fn revision_recorded_before_tasks_complete(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("Record the actual reachable revision before scenario tasks are completed"),
+        "guidance checks tasks before recording the revision"
+    );
+}
+
+#[then("commit selections name the batch files explicitly rather than implicitly staging all work")]
+fn commit_selections_are_explicit(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Commit selections name the batch files explicitly rather than implicitly staging all work"
+        ),
+        "guidance permits implicit staging of all work"
+    );
+}
+
+#[then("no production diff is required for each scenario that protects existing behavior")]
+fn no_per_scenario_production_diff(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "No production diff is required for each scenario that protects existing behavior"
+        ),
+        "guidance still requires a production diff per scenario"
+    );
+}
+
+#[given(
+    "a behavior batch changes supported Rust or Python components alongside unsupported Go or Java components"
+)]
+fn mixed_supported_unsupported_batch(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[when("the author reads the REFACTOR guidance")]
+fn author_reads_refactor_guidance(world: &mut GivnWorld) {
+    assert!(!normalized_guidance(world).is_empty());
+}
+
+#[then(
+    "one advisory outline inspection per batch covers supported changed components and relevant neighbors"
+)]
+fn one_advisory_outline_per_batch(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "inspect its advisory report once per batch for supported Rust/Python changed components and relevant neighbors"
+        ),
+        "guidance does not define one advisory outline inspection per batch"
+    );
+}
+
+#[then(
+    "the assessment discloses which languages and components the outline covers and which it omits"
+)]
+fn assessment_discloses_outline_coverage(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Disclose which languages and components the outline covers and which it omits"
+        ),
+        "guidance does not disclose outline coverage"
+    );
+}
+
+#[then("Go or Java components receive direct source assessment without forced outline analysis")]
+fn unsupported_components_directly_assessed(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Go or Java components receive direct source assessment using the same responsibility, interface, dependency-direction, and decomposition questions"
+        ),
+        "guidance forces unsupported components through the outline"
+    );
+}
+
+#[then(
+    "the assessment asks whether responsibilities are cohesive public interfaces narrow dependencies correctly directed and decomposition understandable"
+)]
+fn assessment_asks_architecture_questions(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Ask whether responsibilities are cohesive, public interfaces narrow, dependencies correctly directed, and decomposition understandable"
+        ),
+        "REFACTOR guidance does not ask the architecture questions"
+    );
+}
+
+#[then("suspected problems are confirmed against source before conclusions or edits")]
+fn suspected_problems_confirmed_against_source(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("Confirm suspected problems against source before conclusions or edits"),
+        "REFACTOR guidance accepts outline-only conclusions"
+    );
+}
+
+#[then("structural call order is not represented as a complete runtime trace")]
+fn call_order_is_not_runtime_trace(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("Structural call order is not a complete runtime trace"),
+        "guidance overstates the outline as a runtime trace"
+    );
+}
+
+#[then("uncertain or omitted edges limit the conclusions")]
+fn uncertain_edges_limit_conclusions(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains("uncertain or omitted edges limit the conclusions"),
+        "guidance does not bound conclusions from uncertain edges"
+    );
+}
+
+#[then(
+    "a later structural edit is the reason to regenerate a stale outline rather than every small edit"
+)]
+fn structural_edit_regenerates_outline(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "a later structural edit is the reason to regenerate it, not every small edit"
+        ),
+        "guidance regenerates the outline for every edit"
+    );
+}
+
+#[then("the report is reused until structural changes make its relevant evidence stale")]
+fn report_reused_until_stale(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("Reuse the report until structural changes make its relevant evidence stale"),
+        "guidance does not reuse the outline report"
+    );
+}
+
+#[then("nonstructural edits alone do not require rerunning the outline")]
+fn nonstructural_edits_do_not_rerun_outline(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("nonstructural edits alone do not require rerunning the outline"),
+        "guidance reruns the outline for nonstructural edits"
+    );
+}
+
+#[given("a behavior batch changes Go or Java components unsupported by the outline")]
+fn unsupported_only_batch(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[then(
+    "the same responsibility interface dependency and decomposition questions are assessed directly against source"
+)]
+fn unsupported_same_questions_directly(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Go or Java components receive direct source assessment using the same responsibility, interface, dependency-direction, and decomposition questions"
+        ),
+        "unsupported components do not get the same questions from source"
+    );
+}
+
+#[then("unavailable outline support is not failure or a reason for a waiver")]
+fn unavailable_outline_not_failure(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains(
+            "Unavailable outline support is not a failure and is not a reason for a waiver"
+        ) || content
+            .contains("Unavailable outline support is not failure or a reason for a waiver"),
+        "guidance treats unavailable outline support as failure or waiver"
+    );
+}
+
+#[then("no outline verdict metric waiver or forced reviewer context is required")]
+fn no_outline_verdict_or_context(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    for marker in [
+        "no blocking verdict",
+        "metric waiver",
+        "forced reviewer context",
+    ] {
+        assert!(
+            content.contains(marker),
+            "REFACTOR guidance still requires {marker:?}"
+        );
+    }
+    assert!(
+        !content.contains("OUTLINE: PASS"),
+        "REFACTOR guidance still requires an outline verdict"
+    );
+}
+
+#[given("the author encounters a concrete cleanup opportunity while implementing agreed behavior")]
+fn cleanup_opportunity_encountered(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[when("the author reads the cleanup guidance")]
+fn author_reads_cleanup_guidance(world: &mut GivnWorld) {
+    assert!(!normalized_guidance(world).is_empty());
+}
+
+#[then(
+    "the cleanup is made in a separate behavior-preserving refactoring commit with explicit paths and actual GREEN checks"
+)]
+fn cleanup_is_separate_green_commit(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "separate behavior-preserving refactoring commit with explicit paths and actual GREEN checks"
+        ),
+        "cleanup guidance does not require a separate behavior-preserving commit"
+    );
+}
+
+#[then("the cleanup does not authorize speculative features or a broad abstraction rewrite")]
+fn cleanup_does_not_authorize_scope(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("does not authorize speculative features or a broad abstraction rewrite"),
+        "cleanup guidance permits speculative scope"
+    );
+}
+
+#[given("a project is about to make its first production implementation")]
+fn first_production_implementation(world: &mut GivnWorld) {
+    let env = world.env.get_or_insert_with(common::make_init_root);
+    world.additional_output = Some(served_instruction(env, "dev-principles"));
+}
+
+#[when("the author requests the development principles guidance")]
+fn author_requests_development_principles(world: &mut GivnWorld) {
+    assert!(
+        !normalized_guidance(world).is_empty(),
+        "development principles guidance is empty"
+    );
+}
+
+#[then(
+    "the guidance requires cohesive responsibility modules narrow consumer contracts external adapters separate composition and explicit dependency direction"
+)]
+fn development_guidance_requires_modular_boundaries(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    for marker in [
+        "cohesive responsibility modules",
+        "narrow consumer contracts",
+        "external adapters separate",
+        "compose them in one explicit root",
+        "dependency direction",
+    ] {
+        assert!(
+            content.contains(marker),
+            "development principles are missing {marker:?}"
+        );
+    }
+}
+
+#[then(
+    "a narrow module API is acceptable unless isolation or substitution needs an explicit interface"
+)]
+fn narrow_module_api_is_acceptable(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("narrow module API is acceptable unless isolation or substitution needs an explicit interface"),
+        "development principles demand an explicit interface everywhere"
+    );
+}
+
+#[then("the guidance does not demand hypothetical providers or plugin registries")]
+fn no_hypothetical_providers(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("do not invent hypothetical providers or plugin registries"),
+        "development principles demand hypothetical providers"
+    );
+}

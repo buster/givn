@@ -21,10 +21,10 @@ second MADR section into this file.
 
 ## Individual ADR contract
 
-Before creating a file or adding a register entry, read and pass the complete
-qualification procedure from the resolved Arc42 addon instruction. This chapter
-records the register contract only; it does not duplicate the qualification
-formula, LLM verdict schema, or routing values. A failed candidate is routed
+Before creating a file or adding a register entry, read and pass the concise
+qualification policy from the resolved Arc42 addon instruction. This chapter
+records the register contract only; it does not copy the qualification
+worksheet, structured verdict, or routing schema. A failed candidate is routed
 exactly once to its canonical feature, design, Arc42, process,
 project-documentation, or code location. A refinement amends an existing ADR;
 it does not create a parallel file.
@@ -32,15 +32,16 @@ it does not create a parallel file.
 Each individual file is written and tailored from the ADR template at
 `docs/arc42/adr/adr-template.md` (scaffolded from
 `addons/arc42-docs/chapters/adr/adr-template.md`). That template is
-self-contained: it embeds the frontmatter contract, the Qualification gate, the
-LLM qualification verdict, the MADR checklist evidence, and every required MADR
-section, so it is authoritative at authoring time even when the resolved Arc42
-instruction is not loaded. Use it to produce the complete MADR structure,
-including `## Qualification`, `## Context and Problem Statement`,
-`## Decision Drivers`, `## Considered Options`, `## Decision Outcome`,
-`### Consequences`, `### Confirmation`, `## Pros and Cons of the Options`, and
-`## More Information`, with real frontmatter and an `ADR-QUALIFICATION: PASS`
-verdict whose route-specific target fields are valid.
+self-contained: it embeds the frontmatter contract, the decision rationale,
+real alternatives, consequences, and every required MADR section, so it is
+authoritative at authoring time even when the resolved Arc42 instruction is not
+loaded. The concise qualification is recorded once in the change assessment,
+not repeated in the ADR. Use the template to produce the complete MADR
+structure, including `## Context and Problem Statement`, `## Decision Drivers`,
+`## Considered Options`, `## Decision Outcome`, `### Consequences`,
+`### Confirmation`, `## Pros and Cons of the Options`, and
+`## More Information`, with real frontmatter and no pre-passed qualification
+claims.
 Allowed statuses are `proposed`, `rejected`, `accepted`, `deprecated`, and
 `superseded by ADR-NNNN`. A superseded status must name a concrete existing
 replacement ID, such as `superseded by ADR-027` or `superseded by ADR-0042`;

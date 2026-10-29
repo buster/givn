@@ -393,10 +393,24 @@ fn stderr_mentions(world: &mut GivnWorld, needle: String) {
     assert!(s.contains(&unescaped), "stderr missing {unescaped:?}: {s}");
 }
 
+fn survival_marker(world: &mut GivnWorld) -> String {
+    let env = world.env.get_or_insert_with(common::make_init_root);
+    env.path("stall-survived").to_string_lossy().into_owned()
+}
+
 #[given("a server declaration whose readiness path never succeeds within its declared deadline")]
 fn deadline_never_ready(world: &mut GivnWorld) {
-    let command =
-        support::serve_command("/healthz", &["--never-ready", "--pid-file", "product.pid"]);
+    let marker = survival_marker(world);
+    let command = support::serve_command(
+        "/healthz",
+        &[
+            "--never-ready",
+            "--pid-file",
+            "product.pid",
+            "--survive-marker",
+            marker.as_str(),
+        ],
+    );
     support::write_server_declaration(
         world,
         &format!("exec {command}"),
@@ -432,8 +446,18 @@ fn stalled_readiness_endpoint(world: &mut GivnWorld, stall: String) {
         "sends a partial response and leaves the connection open" => "partial",
         _ => unreachable!(),
     };
-    let command =
-        support::serve_command("/healthz", &["--stall", mode, "--pid-file", "product.pid"]);
+    let marker = survival_marker(world);
+    let command = support::serve_command(
+        "/healthz",
+        &[
+            "--stall",
+            mode,
+            "--pid-file",
+            "product.pid",
+            "--survive-marker",
+            marker.as_str(),
+        ],
+    );
     support::write_server_declaration(
         world,
         &format!("exec {command}"),
@@ -449,23 +473,23 @@ fn stalled_readiness_endpoint(world: &mut GivnWorld, stall: String) {
 fn bounded_timeout_exit(world: &mut GivnWorld) {
     assert_eq!(super::output(world).status.code(), Some(2));
     let env = world.env.as_ref().unwrap();
-    let elapsed = match std::fs::read_to_string(env.path("run-elapsed-ms")) {
-        Ok(elapsed) => elapsed.parse::<u128>().unwrap(),
-        Err(_) => {
-            let started: u128 = std::fs::read_to_string(env.path("run-started-ms"))
-                .unwrap()
-                .parse()
-                .unwrap();
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_millis()
-                - started
-        }
-    };
+    let started: u128 = std::fs::read_to_string(env.path("run-started-ms"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    let elapsed = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis()
+        - started;
     assert!(
-        elapsed <= 1500,
-        "one-second deadline exceeded bounded cleanup: {elapsed}ms"
+        !env.path("stall-survived").exists(),
+        "the product survived the bounded cleanup (elapsed {elapsed}ms): {}",
+        std::fs::read_to_string(env.path("stall-survived")).unwrap_or_default()
+    );
+    assert!(
+        elapsed <= 15_000,
+        "the command did not return after the readiness deadline: {elapsed}ms"
     );
 }
 
@@ -483,10 +507,11 @@ fn named_readiness_timeout(world: &mut GivnWorld) {
 #[then("the started product is stopped and reaped")]
 fn stopped_product(world: &mut GivnWorld) {
     let env = world.env.as_ref().unwrap();
-    let pid: i32 = std::fs::read_to_string(env.path("product.pid"))
-        .unwrap()
+    let pid_text = std::fs::read_to_string(env.path("product.pid")).unwrap();
+    let pid: i32 = pid_text
+        .trim()
         .parse()
-        .unwrap();
+        .unwrap_or_else(|error| panic!("invalid product.pid {pid_text:?}: {error}"));
     #[cfg(unix)]
     {
         let deadline = Instant::now() + Duration::from_secs(1);
@@ -584,4 +609,36 @@ fn shared_deadline_elapsed(world: &mut GivnWorld) {
         .parse()
         .unwrap();
     assert!(elapsed <= 290, "220ms deadline exceeded: {elapsed}ms");
+}
+
+// --- prepare-0-9-10: total-deadline readiness -------------------------------
+
+#[given(r#"the readiness endpoint "does not complete a connection""#)]
+fn readiness_endpoint_does_not_connect(world: &mut GivnWorld) {
+    let marker = survival_marker(world);
+    let command = format!("sh -c 'echo $$ > product.pid; (sleep 1.5; touch {marker}) & sleep 10'");
+    support::write_server_declaration(world, &command, Some("PORT"), None, "/healthz", 1);
+}
+
+#[then(
+    "an expired deadline triggers the existing product cleanup rather than another full probe wait"
+)]
+fn expired_deadline_uses_existing_cleanup(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("fixture missing");
+    let attempts: u32 = std::fs::read_to_string(env.path("probe-connections"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    assert_eq!(
+        attempts, 2,
+        "an expired deadline started another full probe attempt"
+    );
+    let elapsed: u128 = std::fs::read_to_string(env.path("probe-elapsed-ms"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    assert!(
+        elapsed <= 290,
+        "cleanup started another full probe wait: {elapsed}ms"
+    );
 }

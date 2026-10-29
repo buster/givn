@@ -260,6 +260,23 @@ pub fn execute(caller_port: Option<u16>, print: bool) -> i32 {
     start_product(&plan)
 }
 
+/// Wait for the child to be reaped, but never longer than `budget`: a process
+/// that somehow escaped the group kill cannot hold the command open forever.
+fn reap_bounded(child: &mut std::process::Child, budget: Duration) {
+    let deadline = Instant::now() + budget;
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) | Err(_) => return,
+            Ok(None) if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.try_wait();
+                return;
+            }
+            Ok(None) => std::thread::sleep(Duration::from_millis(10)),
+        }
+    }
+}
+
 /// Spawn the product via `sh -c`, wait for readiness (server products),
 /// and forward the child's exit code.
 fn start_product(plan: &StartPlan) -> i32 {
@@ -348,7 +365,7 @@ fn start_product(plan: &StartPlan) -> i32 {
                 }
                 #[cfg(not(unix))]
                 let _ = child.kill();
-                let _ = child.wait();
+                reap_bounded(&mut child, Duration::from_millis(500));
                 eprintln!("givn run: readiness timeout at http://127.0.0.1:{port}{ready_path}");
                 return 2;
             }

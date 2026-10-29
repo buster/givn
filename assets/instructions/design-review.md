@@ -105,24 +105,22 @@ Required branches — cover every one (or explicitly record "no issue found"):
 - **Deferrals** — a mandatory check may be deferred only after an operator question; record the operator's decision, otherwise do not sign off.
 - **Persona disposition** — record, per persona, the relevance and evidence; a declared visual design contract, including `Interface: none`, requires at least one confirmed Persona, and when no persona is confirmed record the reason and the operator confirmation only for a change that declares no visual design contract. A user-visible surface requires at least one confirmed Persona.
 - **Interface classification** — test the opposite classification before accepting a non-browser interface: a screen rendered in a browser is a Web UI, so a design that declares no browser driver must say why the opposite does not hold.
-- **ADR qualification** — delegate the complete qualification procedure to the
-  canonical Arc42 addon instruction by running `givn instructions arc42-docs
-  --change <id>`. Check only candidates whose structured verdict has all
-  mandatory gates `PASS`; do not turn every non-trivial design choice into an
-  ADR. Enumerate the change's port/adapter boundaries, component split, and
-  durable storage mechanism as candidates before accepting “no ADR qualifies”.
-  The verdict must include a completed existing-ADR or duplicate check. A
-  non-qualifying choice must name exactly one canonical feature, design,
-  Arc42, process, project-documentation, or code destination. A refinement must
-  amend an existing ADR, and a replacement must supersede it. For every
-  proposed `NEW_ADR`, require the explicit cheaper home: name the specific
-  canonical artifact (feature specification, `design.md`, Arc42 chapter,
-  process documentation, project documentation, or code) that would own the
-  rationale instead. A missing cheaper home for a proposed `NEW_ADR` is a
-  finding. `Must be shared`
-  is supporting evidence only. This policy is authoring guidance, not runtime
-  enforcement, and this artifact must not duplicate the complete procedure or
-  verdict schema.
+- **ADR qualification** — use the concise qualification recorded once in the
+  change assessment (`arc42.md`) and delegate the full policy to the canonical
+  Arc42 addon instruction (`givn instructions arc42-docs --change <id>`). Check
+  whether the recorded architectural commitment, real alternatives, durable
+  consequence, and existing-decision search belong in an ADR or in an existing
+  lower-level artifact. For every proposed `NEW_ADR`, require the explicit
+  cheaper home: name the specific canonical artifact (feature specification,
+  `design.md`, Arc42 chapter, process documentation, project documentation, or
+  code) that would own the rationale instead. A missing cheaper home for a
+  proposed `NEW_ADR` is a finding. A refinement amends an existing ADR; a
+  replacement supersedes it. `Must be shared` is supporting evidence only.
+  Do not demand a duplicate qualification worksheet or a second structured
+  verdict: the assessment is recorded once, the ADR owns its rationale,
+  alternatives, and consequences, and this review checks the recorded result.
+  This policy is authoring guidance, not runtime enforcement, and this artifact
+  must not copy the complete procedure.
 {{#if addons.arc42}}
 - **Architecture documentation (arc42)** — do not just
   audit what `arc42.md` claims — independently re-derive the expected

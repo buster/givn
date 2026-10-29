@@ -45,8 +45,11 @@
 
 > What language, framework, libraries, or patterns will be used?
 > Justify decisions made here (why this approach over alternatives?).
-> Technology-decision justification belongs in `design.md`; do not promote it
-> to ADR candidacy unless the qualification falsification tests pass.
+> Technology-decision justification belongs in `design.md`. An ADR
+> candidate refers to the concise change assessment (`arc42.md`) and does not
+> repeat its qualification tests here. Promote a decision to an ADR only when
+> the assessment records an architectural commitment, real alternatives, a
+> durable consequence, and an existing-decision search.
 >
 > **Version freshness (mandatory):** never write a version number from
 > memory. For each versioned choice below, state "latest" / the ecosystem's
