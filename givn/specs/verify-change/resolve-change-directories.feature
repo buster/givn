@@ -2,6 +2,7 @@ Feature: Resolve change directories
 
   Scenario: Integrity hook resolves the change directory from a relative features path inside givn/changes
     Given  a project root with givn/ initialised
+    And  givn addon "outline" is "false"
     And  a change "detect-demo" exists with artifact "proposal.md"
     And  a change "detect-demo" exists with specs under "specs/"
     And  the project declares a complete run declaration
@@ -12,6 +13,7 @@ Feature: Resolve change directories
 
   Scenario: Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
     Given  a project root with givn/ initialised
+    And  givn addon "outline" is "false"
     And  the givn/commands.yaml has e2e_command unconfigured
     And  a change "e2e-detect" exists with design.md containing a valid Step Definitions table
     And  a change "e2e-detect" exists with tasks.md where every COMMIT hash is a valid 40-character hex string
@@ -23,6 +25,7 @@ Feature: Resolve change directories
   @e2e
   Scenario: Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected
     Given a givn project with a change "detect-int" that has design.md with a valid Step Definitions table and tasks.md where every COMMIT hash is a valid 40-character hex string
+    And givn addon "outline" is "false"
     And the project declares a complete run declaration
     When the user invokes `givn check review --change detect-int`
     Then the command succeeds

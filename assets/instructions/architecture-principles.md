@@ -4,9 +4,10 @@ Answer questions at their last responsible moment. Design the consumer's
 contract now. Split a component when it owns more than one current
 responsibility; do not carry the split.
 
-**Opt-in.** This guidance applies only while `addons.architecture_principles`
-is enabled in `givn/config.yaml`. The workflow pointers and gate checks are
-hidden otherwise.
+**Enabled by default.** This guidance applies while
+`addons.architecture_principles` is enabled in `givn/config.yaml`. A project
+may disable it with `givn addons disable architecture_principles`. The workflow
+pointers and gate checks are hidden otherwise.
 
 For every user-facing question, follow the effective policy from
 `givn instructions dialog`; load it once per context before the first question.

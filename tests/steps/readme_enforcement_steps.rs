@@ -246,6 +246,15 @@ pub(crate) fn write_reviewable_change(world: &mut GivnWorld, id: &str) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    // These fixtures exercise the README gate, not the outline gate. The
+    // outline addon is enabled by default, so opt this fixture out explicitly.
+    let config_path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).expect("read givn/config.yaml");
+    std::fs::write(
+        &config_path,
+        config.replace("outline: true", "outline: false"),
+    )
+    .expect("disable the outline addon");
     let change_dir = env.path(&format!("givn/changes/{id}"));
     std::fs::create_dir_all(&change_dir).expect("create change dir");
     std::fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write proposal");

@@ -54,7 +54,7 @@ flowchart TD
 | Building block | Responsibility |
 |---|---|
 | `main.rs` | Parse `clap` commands, dispatch, and map results to process exit. |
-| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable default-on addons unless `--no-addons`, prompt agent targets, and sync outputs. |
+| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable every registered addon unless `--no-addons` (which writes explicit false values for all of them), prompt agent targets, and sync outputs. |
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
 | `cli::instructions` | Resolve effective artifact instructions and non-artifact policy and step instructions with optional JSON metadata; render addon-conditional sections against the effective addon flags; append the project's extension under the marked section; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0, report advisory change-seed status findings and dangling persona references, and classify every finding as `advisory`, `finding`, or `blocking` in the rendered and JSON output. |
@@ -67,7 +67,7 @@ flowchart TD
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or, under the `local-only` policy, every pending project path except `AGENTS.md` and the strict rules), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
-| `cli::addons` | Toggle addon flags from a registry that records each addon's default state; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files, and a default-off addon such as `outline` or `architecture_principles` is listed as disabled until explicitly enabled. |
+| `cli::addons` | Toggle addon flags from a registry whose entries all default to enabled; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files, and `givn addons list` reports the effective default (enabled when no explicit key is present) while an explicit `false` remains disabled. |
 | `cli::skills` | Synchronize the selected skill targets, their commands, and their attribution integrations; refresh the project-start block with its resident rules rendered from the canonical tasks instruction. |
 | `cli::attribution` | Stamp commit messages from optional runtime attribution, format Claude Bash hook responses, and install the checked-in Git hook with a local dispatcher. |
 | `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |

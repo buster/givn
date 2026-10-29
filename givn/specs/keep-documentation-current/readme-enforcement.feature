@@ -74,6 +74,7 @@ Feature: README enforcement
   Scenario: A disabled addon needs no impact decision
     Given a project root with givn/ initialised
     And givn addon "readme" is "false"
+    And givn addon "outline" is "false"
     And verify commands are no-ops
     And a reviewable change "no-addon"
     And the project declares a complete run declaration

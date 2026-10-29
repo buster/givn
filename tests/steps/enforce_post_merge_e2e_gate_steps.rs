@@ -26,6 +26,7 @@ addons:
   dev_principles: true
   grill_me: true
   grill_with_docs: true
+  outline: false
 ";
     let yaml = format!("{yaml}{}", common::complete_run_declaration("cli"));
     std::fs::write(&commands_path, yaml).expect("write commands.yaml");
@@ -110,6 +111,7 @@ addons:
   dev_principles: true
   grill_me: true
   grill_with_docs: true
+  outline: false
 ";
     let yaml = format!("{yaml}{}", common::complete_run_declaration("cli"));
     std::fs::write(&commands_path, yaml).expect("write commands.yaml");
@@ -158,6 +160,7 @@ addons:
   dev_principles: true
   grill_me: true
   grill_with_docs: true
+  outline: false
 ";
     let yaml = format!("{yaml}{}", common::complete_run_declaration("cli"));
     std::fs::write(&commands_path, yaml).expect("write commands.yaml");

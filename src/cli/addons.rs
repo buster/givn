@@ -55,13 +55,13 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
     },
     AddonSpec {
         id: "architecture_principles",
-        description: "Opt-in architecture-principles experiment — last-responsible-moment decision timing, consumer contracts, component splits and port/adapter boundaries; default off",
-        default_enabled: false,
+        description: "Architecture-principles guidance — last-responsible-moment decision timing, consumer contracts, component splits and port/adapter boundaries; enabled by default",
+        default_enabled: true,
     },
     AddonSpec {
         id: "outline",
-        description: "Opt-in outline report — default off; enable with `givn addons enable outline`",
-        default_enabled: false,
+        description: "Outline report — enabled by default; disable with `givn addons disable outline`",
+        default_enabled: true,
     },
 ];
 
@@ -82,7 +82,7 @@ pub fn run_list() -> Result<()> {
     for addon in KNOWN_ADDONS {
         let id = addon.id;
         let description = addon.description;
-        let state = if *enabled.get(id).unwrap_or(&false) {
+        let state = if *enabled.get(id).unwrap_or(&addon.default_enabled) {
             "enabled "
         } else {
             "disabled"
@@ -117,7 +117,7 @@ pub fn run_enable(name: &str) -> Result<()> {
 /// uses this per addon and syncs once at the end.
 pub fn enable_scaffold(name: &str) -> Result<()> {
     validate_addon_name(name)?;
-    set_addon(name, true)?;
+    set_addon(&std::env::current_dir()?, name, true)?;
     println!("enabled addon '{name}' in givn/config.yaml");
     println!();
 
@@ -226,7 +226,7 @@ pub fn run_disable(name: &str) -> Result<()> {
 /// addon-owned files, but does NOT regenerate skills/commands).
 pub fn disable_scaffold(name: &str) -> Result<()> {
     validate_addon_name(name)?;
-    set_addon(name, false)?;
+    set_addon(&std::env::current_dir()?, name, false)?;
     println!("disabled addon '{name}' in givn/config.yaml");
     println!();
 
@@ -265,14 +265,23 @@ fn validate_addon_name(name: &str) -> Result<()> {
     }
 }
 
+/// Write an explicit `false` for every known add-on. `givn init --no-addons`
+/// uses this so the opt-out is visible in the project's config instead of
+/// depending on an embedded default.
+pub(crate) fn disable_all(project_root: &std::path::Path) -> Result<()> {
+    for addon in KNOWN_ADDONS {
+        set_addon(project_root, addon.id, false)?;
+    }
+    Ok(())
+}
+
 /// Write `addons.<name>: <value>` into givn/config.yaml.
 ///
 /// Strategy (line-based, preserves all other content):
 ///   1. If `addons:` block already exists with the key → replace the value line.
 ///   2. If `addons:` block exists without the key → insert the key after `addons:`.
 ///   3. If no `addons:` block exists → append a new block at the end.
-fn set_addon(name: &str, enabled: bool) -> Result<()> {
-    let project_root = std::env::current_dir()?;
+fn set_addon(project_root: &std::path::Path, name: &str, enabled: bool) -> Result<()> {
     let config_path = project_root.join("givn/config.yaml");
 
     if !config_path.exists() {

@@ -60,11 +60,13 @@ verify:
   features_path: "givn/specs"
 
 addons:
-  arc42: false
-  readme: false
-  coverage: false
-  domain_modeling: false
-  dev_principles: false
-  architecture_principles: false
-  grill_me: false
-  grill_with_docs: false
+  arc42: true
+  absolute_mode: true
+  readme: true
+  coverage: true
+  domain_modeling: true
+  dev_principles: true
+  architecture_principles: true
+  grill_me: true
+  grill_with_docs: true
+  outline: true

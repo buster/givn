@@ -56,8 +56,10 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
         // arc42-docs itself gates archive (added to apply.requires) so an
         // enabled-but-unfinished arc42 doc genuinely blocks `givn archive`,
         // not just the "ready-to-archive" status label.
-        if addons.arc42 && !result.addons.arc42 {
-            result.artifacts.push(arc42_artifact());
+        if addons.arc42 {
+            if !result.artifacts.iter().any(|a| a.id == "arc42-docs") {
+                result.artifacts.push(arc42_artifact());
+            }
             if !result.apply.requires.contains(&"arc42-docs".to_string()) {
                 result.apply.requires.push("arc42-docs".to_string());
             }
@@ -68,6 +70,19 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
                 && !design_review.requires.contains(&"arc42-docs".to_string())
             {
                 design_review.requires.push("arc42-docs".to_string());
+            }
+        } else if result.addons.arc42 {
+            // The default now enables Arc42, so an explicit opt-out must
+            // remove the artifact and its dependencies instead of leaving a
+            // gate the project did not ask for.
+            result.artifacts.retain(|a| a.id != "arc42-docs");
+            result.apply.requires.retain(|id| id != "arc42-docs");
+            if let Some(design_review) = result
+                .artifacts
+                .iter_mut()
+                .find(|a| a.id == "design-review")
+            {
+                design_review.requires.retain(|id| id != "arc42-docs");
             }
         }
         result.addons = addons;
