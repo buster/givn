@@ -68,6 +68,7 @@ partial `addons:` block changes only the keys it names.
 - [x] `./run-tests.sh --e2e` exited 0; `112 tests passed`.
 - [x] `givn init --no-addons` writes explicit false for every known add-on;
       `givn addons list` shows the effective default.
-- [ ] `givn check review --change default-all-addons` passes after the review
-      record is written.
-- [ ] `givn archive --change default-all-addons` succeeds.
+- [x] `givn check review --change default-all-addons` passed: integrity,
+      overlap dispositions, routing, receipt, and `outline review: PASS`.
+- [x] `givn archive --change default-all-addons` runs in the same pass; the
+      archive gate reuses the current receipt and re-runs the merged suite.
