@@ -84,8 +84,9 @@ so the text has exactly one home.
 - Tick off each scenario task when its batch is complete — not when the code
   merely compiles. Never batch-check boxes at the end.
 - One atomic `givn commit` per coherent behavior batch, not per scenario. The
-  revision message carries the release note as its subject and names the batch
-  in the body. A raw Git commit is stamped by the hook, a raw Fossil check-in is
+  revision message carries the release note as its message subject and names the batch
+  in the body. For a single-scenario batch, the scenario title goes in the message body.
+  A raw Git commit is stamped by the hook, a raw Fossil check-in is
   not.
 - Each checked scenario records the batch `COMMIT:` revision. The commit must
   contain the scenario's implementation or regression test; a comment-only,
@@ -110,7 +111,7 @@ issuance and its refusals). Work the batch, not one scenario at a time.
   merely to force a failure.
 - Run the full batch. It must exit zero before the batch is committed.
 - One batch commit, e.g. `feat(<capability>): <release note>`. The message
-  carries the release note as its subject and names the batch in the body.
+  carries the release note as its message subject and names the batch in the body.
   Scenarios record it as `COMMIT: <hash> -- Batch: <batch-name>`.
 
 ## Rule: @e2e tags are immutable — never remove them

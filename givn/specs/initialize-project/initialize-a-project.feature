@@ -122,7 +122,7 @@ Feature: initialize-a-project
     And  the installed givn-propose guidance directs the author to the proposal instruction
     And  the directory ".claude/skills/givn-propose" does not exist
     And  the generated project-start guidance requires the effective dialog policy before every context's first user-facing question
-    And  the obligation covers questions outside named skills and requires explicit handoff to delegated agents
+    And  the obligation covers questions outside named skills and names the handoff to another context
     And  the project-start guidance contains a policy reference rather than the worked dialog examples
     And  the human-authored agent instructions remain unchanged
     And  no optional tone addon is required for the obligation

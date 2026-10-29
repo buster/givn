@@ -434,7 +434,8 @@ fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
             writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
-    let specs_dir = change_dir.join("specs/e2e-check");
+    write_permanent_usecase(env, "example");
+    let specs_dir = change_dir.join("specs/example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
     std::fs::write(
         specs_dir.join("example.feature"),

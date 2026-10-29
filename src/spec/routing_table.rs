@@ -286,7 +286,7 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
     for delta in &deltas {
         let Some(row) = rows.iter().find(|row| row.capability == delta.capability) else {
             errors.insert(format!(
-                "delta capability '{}' is not declared in the Capability Routing table",
+                "delta capability '{}' is not declared in the Capability Routing table — the proposal records no 'NEW in <usecase-id>' or 'EXTEND <capability>' decision for it",
                 delta.capability
             ));
             continue;
