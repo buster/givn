@@ -36,6 +36,19 @@ fn write_delta(change_dir: &std::path::Path, group: &str, cap: &str) {
     .expect("write delta feature");
 }
 
+fn write_change_usecase(change_dir: &std::path::Path, group: &str, cap: &str) {
+    let usecase_dir = change_dir.join("specs").join(group);
+    std::fs::create_dir_all(&usecase_dir).expect("create use-case dir");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", group)
+        .replace("<capability-id>", cap)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", &format!("{cap} merges"));
+    std::fs::write(usecase_dir.join("usecase.md"), document).expect("write change usecase");
+}
+
 fn prepare_change(env: &common::TestEnv, id: &str, proposal: &str, group: &str) {
     let out = common::run_givn(env, &["new", id]);
     assert!(
@@ -47,6 +60,7 @@ fn prepare_change(env: &common::TestEnv, id: &str, proposal: &str, group: &str) 
     std::fs::write(change_dir.join("proposal.md"), proposal).expect("write proposal");
     write_passing_artifacts(&change_dir);
     write_delta(&change_dir, group, id);
+    write_change_usecase(&change_dir, group, id);
 }
 
 const ROUTED_PROPOSAL: &str = "\
@@ -208,6 +222,7 @@ fn retiring_change(world: &mut GivnWorld, id: String, cap: String) {
         format!("@givn.delta @givn.retired @{cap}\nFeature: Retire {cap}\n"),
     )
     .expect("write retirement delta");
+    write_change_usecase(&change_dir, &cap, &cap);
     world.last_change_id = Some(id);
 }
 

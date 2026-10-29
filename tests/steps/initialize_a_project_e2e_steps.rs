@@ -79,14 +79,15 @@ fn project_start_requires_policy(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the obligation covers questions outside named skills and requires explicit handoff to delegated agents"
+    "the obligation covers questions outside named skills and names the handoff to another context"
 )]
 fn obligation_covers_outside_skills_and_handoff(world: &mut GivnWorld) {
     let block = managed_project_block(world);
+    let normalized = block.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(
-        block.contains("outside any named")
-            && block.contains("pass the obligation explicitly to fresh delegated contexts"),
-        "managed obligation does not cover named-skill boundaries or delegation: {block}"
+        normalized.contains("outside any named")
+            && normalized.contains("when work is handed to another context"),
+        "managed obligation does not cover named-skill boundaries or the handoff: {block}"
     );
 }
 
