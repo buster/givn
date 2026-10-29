@@ -392,3 +392,196 @@ fn stderr_mentions(world: &mut GivnWorld, needle: String) {
     let unescaped = needle.replace("\\\"", "\"");
     assert!(s.contains(&unescaped), "stderr missing {unescaped:?}: {s}");
 }
+
+#[given("a server declaration whose readiness path never succeeds within its declared deadline")]
+fn deadline_never_ready(world: &mut GivnWorld) {
+    let command =
+        support::serve_command("/healthz", &["--never-ready", "--pid-file", "product.pid"]);
+    support::write_server_declaration(
+        world,
+        &format!("exec {command}"),
+        Some("PORT"),
+        None,
+        "/healthz",
+        1,
+    );
+    let env = world.env.as_ref().unwrap();
+    std::fs::write(
+        env.path("run-started-ms"),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis()
+            .to_string(),
+    )
+    .unwrap();
+}
+
+#[given("a server declaration with a finite readiness deadline")]
+fn finite_readiness_deadline(world: &mut GivnWorld) {
+    deadline_never_ready(world);
+}
+
+#[given(
+    regex = r#"^the readiness endpoint "(accepts a connection but does not read the request|reads the request but never responds|sends a partial response and leaves the connection open)"$"#
+)]
+fn stalled_readiness_endpoint(world: &mut GivnWorld, stall: String) {
+    let mode = match stall.as_str() {
+        "accepts a connection but does not read the request" => "write",
+        "reads the request but never responds" => "read",
+        "sends a partial response and leaves the connection open" => "partial",
+        _ => unreachable!(),
+    };
+    let command =
+        support::serve_command("/healthz", &["--stall", mode, "--pid-file", "product.pid"]);
+    support::write_server_declaration(
+        world,
+        &format!("exec {command}"),
+        Some("PORT"),
+        None,
+        "/healthz",
+        1,
+    );
+}
+
+#[then("the command exits 2 within that deadline plus bounded process cleanup time")]
+#[then("the command exits 2 within the readiness deadline plus bounded process cleanup time")]
+fn bounded_timeout_exit(world: &mut GivnWorld) {
+    assert_eq!(super::output(world).status.code(), Some(2));
+    let env = world.env.as_ref().unwrap();
+    let elapsed = match std::fs::read_to_string(env.path("run-elapsed-ms")) {
+        Ok(elapsed) => elapsed.parse::<u128>().unwrap(),
+        Err(_) => {
+            let started: u128 = std::fs::read_to_string(env.path("run-started-ms"))
+                .unwrap()
+                .parse()
+                .unwrap();
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+                - started
+        }
+    };
+    assert!(
+        elapsed <= 1500,
+        "one-second deadline exceeded bounded cleanup: {elapsed}ms"
+    );
+}
+
+#[then("no ready line is printed")]
+fn no_ready_line(world: &mut GivnWorld) {
+    assert!(!super::stdout(world).contains("givn run: ready at"));
+}
+
+#[then("the output names the readiness timeout without reporting ready")]
+fn named_readiness_timeout(world: &mut GivnWorld) {
+    assert!(super::stderr(world).contains("readiness timeout"));
+    no_ready_line(world);
+}
+
+#[then("the started product is stopped and reaped")]
+fn stopped_product(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let pid: i32 = std::fs::read_to_string(env.path("product.pid"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    #[cfg(unix)]
+    {
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while unsafe { libc::kill(pid, 0) } == 0 && Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_ne!(
+            unsafe { libc::kill(pid, 0) },
+            0,
+            "product {pid} is still alive or unreaped"
+        );
+    }
+}
+
+#[given(
+    "a readiness endpoint whose failing responses consume almost all the declared readiness time"
+)]
+#[given(
+    "a readiness endpoint that delays connection, request consumption, and response across repeated attempts"
+)]
+fn delayed_failing_endpoint(world: &mut GivnWorld) {
+    world.env.get_or_insert_with(common::make_init_root);
+    let root = world.env.as_ref().unwrap().root();
+    let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let peer = std::thread::spawn(move || {
+        use std::io::{Read, Write};
+        let deadline = Instant::now() + Duration::from_millis(600);
+        let mut attempts = 0;
+        while Instant::now() < deadline {
+            if let Ok((mut stream, _)) = listener.accept() {
+                attempts += 1;
+                stream
+                    .set_read_timeout(Some(Duration::from_millis(50)))
+                    .unwrap();
+                let mut request = [0; 4096];
+                let _ = stream.read(&mut request);
+                std::thread::sleep(Duration::from_millis(80));
+                let _ = stream.write_all(b"HTTP/1.0 503 Unavailable\r\n\r\n");
+            } else {
+                std::thread::sleep(Duration::from_millis(2));
+            }
+        }
+        attempts
+    });
+    let handle = std::thread::spawn(move || {
+        let started = Instant::now();
+        let outcome =
+            givn::cli::run::probe_until_ready(port, "/healthz", Duration::from_millis(220));
+        std::fs::write(
+            root.join("probe-elapsed-ms"),
+            started.elapsed().as_millis().to_string(),
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("probe-connections"),
+            peer.join().unwrap().to_string(),
+        )
+        .unwrap();
+        outcome
+    });
+    world.run_probe = Some(super::ProbeJob { port, handle });
+}
+
+#[when("the readiness deadline elapses")]
+#[when("the consumer starts the product with a declared readiness timeout")]
+fn wait_for_shared_deadline(world: &mut GivnWorld) {
+    let job = world.run_probe.take().unwrap();
+    assert_eq!(
+        job.handle.join().unwrap(),
+        givn::cli::run::ProbeOutcome::TimedOut
+    );
+}
+
+#[then("no additional connection attempt receives a fresh full timeout")]
+fn no_fresh_probe_timeout(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let attempts: u32 = std::fs::read_to_string(env.path("probe-connections"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    assert_eq!(attempts, 2);
+    shared_deadline_elapsed(world);
+}
+
+#[then("the probe reports a timeout within the original total deadline")]
+#[then(
+    "the combined connection, write, read, and retry waits consume no more than the total readiness deadline"
+)]
+fn shared_deadline_elapsed(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let elapsed: u128 = std::fs::read_to_string(env.path("probe-elapsed-ms"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    assert!(elapsed <= 290, "220ms deadline exceeded: {elapsed}ms");
+}

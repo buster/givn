@@ -131,31 +131,49 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
         }
     }
 
-    // Development managed block damage: exactly one of the two markers present.
-    let begins = content.matches(DEV_BLOCK_BEGIN).count();
-    let ends = content.matches(DEV_BLOCK_END).count();
-    if (begins == 0) != (ends == 0) {
-        findings.push(ReadmeFinding {
-            kind: ReadmeFindingKind::DamagedBlock,
-            message: "the development managed block is damaged — exactly one of the \
-                      begin/end markers is present; restore the marker pair."
-                .to_string(),
-        });
-    }
-
-    // Run managed block damage: exactly one of the two markers present.
-    let run_begins = content.matches(RUN_BLOCK_BEGIN).count();
-    let run_ends = content.matches(RUN_BLOCK_END).count();
-    if (run_begins == 0) != (run_ends == 0) {
-        findings.push(ReadmeFinding {
-            kind: ReadmeFindingKind::DamagedBlock,
-            message: "the run managed block is damaged — exactly one of the \
-                      begin/end markers is present; restore the marker pair."
-                .to_string(),
-        });
+    for (name, begin, end) in [
+        ("development", DEV_BLOCK_BEGIN, DEV_BLOCK_END),
+        ("run", RUN_BLOCK_BEGIN, RUN_BLOCK_END),
+    ] {
+        if let Err(error) = managed_block_range(&content, name, begin, end) {
+            findings.push(ReadmeFinding {
+                kind: ReadmeFindingKind::DamagedBlock,
+                message: error.to_string(),
+            });
+        }
     }
 
     findings
+}
+
+fn managed_block_range(
+    content: &str,
+    name: &str,
+    begin: &str,
+    end: &str,
+) -> Result<Option<std::ops::Range<usize>>> {
+    let mut begins = content.match_indices(begin);
+    let mut ends = content.match_indices(end);
+    let first_begin = begins.next();
+    let first_end = ends.next();
+    match (first_begin, first_end) {
+        (None, None) => Ok(None),
+        (Some((start, _)), Some((finish, _)))
+            if start < finish && begins.next().is_none() && ends.next().is_none() =>
+        {
+            Ok(Some(start..finish + end.len()))
+        }
+        _ => anyhow::bail!(
+            "the {name} managed block markers are damaged — require exactly one ordered begin/end marker pair; restore the marker pair."
+        ),
+    }
+}
+
+fn readme_block_ranges(content: &str) -> Result<[Option<std::ops::Range<usize>>; 2]> {
+    Ok([
+        managed_block_range(content, "development", DEV_BLOCK_BEGIN, DEV_BLOCK_END)?,
+        managed_block_range(content, "run", RUN_BLOCK_BEGIN, RUN_BLOCK_END)?,
+    ])
 }
 
 /// The `## ` heading text, or the document root when the finding sits above
@@ -280,29 +298,22 @@ fn development_block_body(
 
 /// Replace the development managed block content in an existing README.
 ///
-/// Refresh happens only when both block markers are present: a missing block
-/// is left alone (the README stays managed through its other markers and the
-/// block is not re-inserted), and exactly one marker present is reported by
-/// the checker as damaged. Returns whether the README was rewritten.
 pub(crate) fn refresh_development_block(project_root: &std::path::Path) -> Result<bool> {
     let path = project_root.join("README.md");
     if !path.exists() {
         return Ok(false);
     }
     let content = std::fs::read_to_string(&path)?;
-    let Some(begin) = content.find(DEV_BLOCK_BEGIN) else {
+    let ranges = readme_block_ranges(&content)?;
+    let Some(range) = ranges[0].clone() else {
         return Ok(false);
     };
-    let Some(end_marker) = content.find(DEV_BLOCK_END) else {
-        return Ok(false);
-    };
-    let after_end = end_marker + DEV_BLOCK_END.len();
     let new_block = render_development_block();
     let updated = format!(
         "{}{}{}",
-        &content[..begin],
-        new_block,
-        &content[after_end..]
+        &content[..range.start],
+        new_block.trim_end_matches('\n'),
+        &content[range.end..]
     );
     std::fs::write(&path, updated)?;
     Ok(true)
@@ -383,8 +394,6 @@ fn run_block_body(run: &crate::config::manifest::Run) -> String {
 
 /// Replace the run managed block content in an existing README.
 ///
-/// Mirrors [`refresh_development_block`]: a missing block is left alone and
-/// exactly one marker present is reported as damaged by the checker.
 /// Runs only after the run gate has passed, so a refresh never
 /// re-introduces a placeholder.
 pub(crate) fn refresh_run_block(project_root: &std::path::Path) -> Result<bool> {
@@ -393,19 +402,16 @@ pub(crate) fn refresh_run_block(project_root: &std::path::Path) -> Result<bool> 
         return Ok(false);
     }
     let content = std::fs::read_to_string(&path)?;
-    let Some(begin) = content.find(RUN_BLOCK_BEGIN) else {
+    let ranges = readme_block_ranges(&content)?;
+    let Some(range) = ranges[1].clone() else {
         return Ok(false);
     };
-    let Some(end_marker) = content.find(RUN_BLOCK_END) else {
-        return Ok(false);
-    };
-    let after_end = end_marker + RUN_BLOCK_END.len();
     let new_block = render_run_block();
     let updated = format!(
         "{}{}{}",
-        &content[..begin],
-        new_block,
-        &content[after_end..]
+        &content[..range.start],
+        new_block.trim_end_matches('\n'),
+        &content[range.end..]
     );
     std::fs::write(&path, updated)?;
     Ok(true)
@@ -439,4 +445,85 @@ fn detect_project_name(project_root: &std::path::Path) -> String {
         .and_then(|n| n.to_str())
         .unwrap_or("unnamed-project")
         .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn damaged_blocks(begin: &str, end: &str) -> Vec<String> {
+        vec![
+            begin.to_owned(),
+            end.to_owned(),
+            format!("{end}\nprose\n{begin}"),
+            format!("{begin}\nprose\n{begin}\n{end}"),
+            format!("{begin}\n{end}\nprose\n{end}"),
+            format!("{begin}\n{end}\nprose\n{begin}\n{end}"),
+        ]
+    }
+
+    #[test]
+    fn readme_rejects_ambiguous_markers_before_either_refresh() {
+        for (begin, end, name) in [
+            (DEV_BLOCK_BEGIN, DEV_BLOCK_END, "development"),
+            (RUN_BLOCK_BEGIN, RUN_BLOCK_END, "run"),
+        ] {
+            for damaged in damaged_blocks(begin, end) {
+                let root = tempfile::tempdir().unwrap();
+                let content = format!("prefix\r\n{damaged}\nsuffix\r\n");
+                let path = root.path().join("README.md");
+                std::fs::write(&path, &content).unwrap();
+                let findings = check_readme(root.path());
+                assert!(
+                    findings
+                        .iter()
+                        .any(|f| f.kind == ReadmeFindingKind::DamagedBlock
+                            && f.message.contains(name)),
+                    "missing damaged {name} finding for {damaged:?}"
+                );
+                assert!(refresh_development_block(root.path()).is_err());
+                assert_eq!(std::fs::read(&path).unwrap(), content.as_bytes());
+                assert!(refresh_run_block(root.path()).is_err());
+                assert_eq!(std::fs::read(&path).unwrap(), content.as_bytes());
+            }
+        }
+    }
+
+    #[test]
+    fn readme_refresh_preserves_surrounding_bytes() {
+        for (begin, end, refresh) in [
+            (
+                DEV_BLOCK_BEGIN,
+                DEV_BLOCK_END,
+                refresh_development_block as fn(&std::path::Path) -> Result<bool>,
+            ),
+            (
+                RUN_BLOCK_BEGIN,
+                RUN_BLOCK_END,
+                refresh_run_block as fn(&std::path::Path) -> Result<bool>,
+            ),
+        ] {
+            let root = tempfile::tempdir().unwrap();
+            let path = root.path().join("README.md");
+            let prefix = "# Résumé\r\n\r\nHuman prose  \t\r\n";
+            let suffix = "\r\n\r\nUser suffix\t  ";
+            std::fs::write(&path, format!("{prefix}{begin}\nstale\n{end}{suffix}")).unwrap();
+            assert!(refresh(root.path()).unwrap());
+            let updated = std::fs::read_to_string(&path).unwrap();
+            assert!(updated.starts_with(prefix));
+            assert!(updated.ends_with(&format!("{end}{suffix}")), "{updated:?}");
+            assert!(!updated.contains("stale"));
+        }
+    }
+
+    #[test]
+    fn readme_refresh_leaves_wholly_missing_blocks_alone() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("README.md");
+        let content = "# Human README\r\nNo managed blocks.\r\n";
+        std::fs::write(&path, content).unwrap();
+        assert!(!refresh_development_block(root.path()).unwrap());
+        assert!(!refresh_run_block(root.path()).unwrap());
+        assert_eq!(std::fs::read(&path).unwrap(), content.as_bytes());
+    }
 }

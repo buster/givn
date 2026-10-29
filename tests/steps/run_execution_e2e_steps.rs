@@ -16,6 +16,9 @@ use crate::common;
 use crate::steps::run_execution_support as support;
 
 #[given("a project with a server run declaration that becomes ready and exits cleanly")]
+#[given(
+    "a server declaration with a readiness deadline whose server becomes ready before that deadline and exits cleanly"
+)]
 fn server_becomes_ready_exits_cleanly(world: &mut GivnWorld) {
     let command = support::serve_command("/healthz", &["--exit-after", "1"]);
     support::write_server_declaration(world, &command, Some("PORT"), None, "/healthz", 60);
@@ -352,4 +355,21 @@ fn readme_has_run_placeholder(world: &mut GivnWorld) {
         ),
         "README must carry the run open placeholder:\n{readme}"
     );
+}
+
+#[then("stdout reports readiness at the declared port and readiness path")]
+#[then("the reported ready outcome follows a successful response through the declared boundary")]
+fn declared_boundary_ready(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    let line = stdout
+        .lines()
+        .find(|line| line.starts_with("givn run: ready at http://127.0.0.1:"))
+        .expect("reported readiness");
+    let address = line
+        .strip_prefix("givn run: ready at http://127.0.0.1:")
+        .unwrap();
+    let (port, path) = address.split_once('/').unwrap();
+    assert!(port.parse::<u16>().unwrap() > 0);
+    assert_eq!(path, "healthz");
+    assert_eq!(super::output(world).status.code(), Some(0));
 }
