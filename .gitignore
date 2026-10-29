@@ -32,3 +32,6 @@ givn/.spec-nli-cache/
 *.swo
 .idea/
 .vscode/
+
+# Local Maki permission state is machine-owned.
+.maki/permissions.toml
