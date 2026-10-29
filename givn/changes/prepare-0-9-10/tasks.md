@@ -14,716 +14,716 @@ Named batches below partition scenarios by capability; batches may share one coh
 
 Design constraints: use the archive-proof owner and scenarios in specs/archive-change/archive-proof.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+GREEN: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: A rejected finalization publication leaves the archive unproven (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Repairing a failed candidate forward proves it without repeating the merge (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Evidence-only recovery reuses successful scopes and runs only the failed scope (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A changed relevant input invalidates each affected scope before reuse (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Retry uses cheap input checks rather than blanket review revalidation (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Archive-directory evidence exemptions remain broad during proof reuse (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A stale passing scope result cannot prove a new archive execution (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Scope inputs are captured before archive verification and checked afterward (regular)
-  COMMIT: not recorded
-- [ ] Scenario: No-behavior-change archive retains merged-candidate verification (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Consumer repairs a blocked archive and the rerun proves it (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: An inconsistent no-behavior-change archive exemption is refused before mutation (regular)
-  COMMIT: not recorded
+- [x] Scenario: A rejected finalization publication leaves the archive unproven (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Repairing a failed candidate forward proves it without repeating the merge (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Evidence-only recovery reuses successful scopes and runs only the failed scope (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: A changed relevant input invalidates each affected scope before reuse (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Retry uses cheap input checks rather than blanket review revalidation (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Archive-directory evidence exemptions remain broad during proof reuse (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: A stale passing scope result cannot prove a new archive execution (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Scope inputs are captured before archive verification and checked afterward (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: No-behavior-change archive retains merged-candidate verification (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Consumer repairs a blocked archive and the rerun proves it (@e2e)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: An inconsistent no-behavior-change archive exemption is refused before mutation (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
 
 ## Batch: extract-coverage-gate
 
 Design constraints: use the extract-coverage-gate owner and scenarios in specs/archive-change/extract-coverage-gate.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+GREEN: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: A coverage failure proves on rerun after the repair (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Equal coverage from honest scope executions does not block proof (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A successful coverage command cannot reuse an old report (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Fresh coverage reports must be valid (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Evidence-only finalization retry reuses valid coverage (regular)
-  COMMIT: not recorded
+- [x] Scenario: A coverage failure proves on rerun after the repair (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Equal coverage from honest scope executions does not block proof (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: A successful coverage command cannot reuse an old report (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Fresh coverage reports must be valid (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Evidence-only finalization retry reuses valid coverage (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
 
 ## Batch: grouped-merge-for-new-capabilities
 
 Design constraints: use the grouped-merge-for-new-capabilities owner and scenarios in specs/archive-change/grouped-merge-for-new-capabilities.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+GREEN: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Consumer archives a new capability and the merged spec lands in its declared use case (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Archive is blocked when a new capability has no declared routing decision (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Nothing is merged when one delta file of a change has no routing decision (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review and archive resolve existing capability owners consistently (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A new capability preserves its supported feature structure (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An unsupported Rule in one new capability prevents every delta mutation (regular)
-  COMMIT: not recorded
+- [x] Scenario: Consumer archives a new capability and the merged spec lands in its declared use case (@e2e)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Archive is blocked when a new capability has no declared routing decision (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Nothing is merged when one delta file of a change has no routing decision (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Review and archive resolve existing capability owners consistently (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: A new capability preserves its supported feature structure (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: An unsupported Rule in one new capability prevents every delta mutation (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
 
 ## Batch: preserve-scenario-docstrings
 
 Design constraints: use the preserve-scenario-docstrings owner and scenarios in specs/archive-change/preserve-scenario-docstrings.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+GREEN: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: A modified scenario keeps its step docstring after archiving (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An added scenario keeps its step docstring after archiving (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A modified scenario keeps its step data table after archiving (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Merging a modified scenario preserves its supported Background setup (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Supported execution tags retain their inheritance on archive (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A supported Scenario Outline retains every Examples block (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An unsupported Rule is refused before archive mutation (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A conflicting Background replacement is refused before archive mutation (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An explicit non-English Gherkin dialect is refused before archive mutation (regular)
-  COMMIT: not recorded
+- [x] Scenario: A modified scenario keeps its step docstring after archiving (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: An added scenario keeps its step docstring after archiving (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: A modified scenario keeps its step data table after archiving (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Merging a modified scenario preserves its supported Background setup (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Supported execution tags retain their inheritance on archive (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: A supported Scenario Outline retains every Examples block (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: An unsupported Rule is refused before archive mutation (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: A conflicting Background replacement is refused before archive mutation (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: An explicit non-English Gherkin dialect is refused before archive mutation (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
 
 ## Batch: outline-report
 
 Design constraints: use the outline-report owner and scenarios in specs/assess-code-structure/outline-report.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: `focused tests/manual fixtures reproduced unsupported-scope misleading absence and fabricated zero metrics; outline report tests pass` — observed during the advisory-outline batch before production fixes.
+GREEN: advisory-outline — focused tests/manual fixtures reproduced unsupported-scope misleading absence and fabricated zero metrics; outline report tests pass.
+REFACTOR: targeted regression suites rerun clean after fixes; advisory outline used for changed supported components, with no forced verdict.
 
-- [ ] Scenario: A developer runs a outline report and sees the classified units (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: The report fails when the scope has no production sources (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Unsupported-only production sources are not reported as absent (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The JSON report carries analyzer capabilities and limitations (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A report is available in machine-readable form (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Unavailable outline measurements are not reported as measured zero (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Loose class cohesion is omitted when it is not independently measured (regular)
-  COMMIT: not recorded
+- [x] Scenario: A developer runs a outline report and sees the classified units (@e2e)
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
+- [x] Scenario: The report fails when the scope has no production sources (regular)
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
+- [x] Scenario: Unsupported-only production sources are not reported as absent (regular)
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
+- [x] Scenario: The JSON report carries analyzer capabilities and limitations (regular)
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
+- [x] Scenario: A report is available in machine-readable form (regular)
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
+- [x] Scenario: Unavailable outline measurements are not reported as measured zero (regular)
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
+- [x] Scenario: Loose class cohesion is omitted when it is not independently measured (regular)
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
 
 ## Batch: prose-consolidation
 
 Design constraints: use the prose-consolidation owner and scenarios in specs/create-change/prose-consolidation.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Generated guidance points to the canonical E2E policy (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Canonical policy requires a rendered-state assertion (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The propose and archive commands carry the seed stamping instructions (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Disabling optional addons does not disable the dialog obligation (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Delegated question preparation carries the policy without assuming inherited context (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: Successful project skill and command replacements are preserved without policy injection (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Canonical policy accepts the library public API as its real interface (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Canonical policy selects E2E scope explicitly rather than by command shape (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Justified E2E reclassification preserves real-interface coverage (regular)
-  COMMIT: not recorded
+- [x] Scenario: Generated guidance points to the canonical E2E policy (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Canonical policy requires a rendered-state assertion (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The propose and archive commands carry the seed stamping instructions (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Disabling optional addons does not disable the dialog obligation (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Delegated question preparation carries the policy without assuming inherited context (retirement)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Successful project skill and command replacements are preserved without policy injection (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Canonical policy accepts the library public API as its real interface (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Canonical policy selects E2E scope explicitly rather than by command shape (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Justified E2E reclassification preserves real-interface coverage (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: spec-duplicates
 
 Design constraints: use the spec-duplicates owner and scenarios in specs/discover-specifications/spec-duplicates.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+GREEN: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Exact duplicates in one feature are reported together (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Exact duplicates across features are reported together (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Same assertion shape without exact behavior is reported as a structural match (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Normalized executable differences do not establish literal equality (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Different inherited setup prevents an exact duplicate label (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Equal supported executable arguments remain exact duplicates (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Repeating an unchanged audit produces the same report (regular)
-  COMMIT: not recorded
+- [x] Scenario: Exact duplicates in one feature are reported together (@e2e)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Exact duplicates across features are reported together (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Same assertion shape without exact behavior is reported as a structural match (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Normalized executable differences do not establish literal equality (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Different inherited setup prevents an exact duplicate label (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Equal supported executable arguments remain exact duplicates (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Repeating an unchanged audit produces the same report (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
 
 ## Batch: adr-qualification-gate
 
 Design constraints: use the adr-qualification-gate owner and scenarios in specs/fragments/adr-qualification-gate.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: The guidance defines strict qualification as an all-gates contract (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The structured verdict has fixed gate and route fields (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: Route targets are conditional and unused targets stay empty (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: All effective guidance sources use the same ADR policy (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The ADR guidance requires an adversarial qualification record (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An author requests the strict ADR guidance through the Givn CLI (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: A reviewer requests design-review guidance through the Givn CLI (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The impact assessment records the verdict before drafting (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The ADR template ships with no pre-passed qualification values (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The design template keeps decision justification in the design (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Design-review requires the cheaper-home challenge for a new ADR (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Ordinary ADR downsides are not automatically risk debt (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The guidance carries the three falsification tests (regular)
-  COMMIT: not recorded
+- [x] Scenario: The guidance defines strict qualification as an all-gates contract (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The structured verdict has fixed gate and route fields (retirement)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Route targets are conditional and unused targets stay empty (retirement)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: All effective guidance sources use the same ADR policy (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The ADR guidance requires an adversarial qualification record (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: An author requests the strict ADR guidance through the Givn CLI (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A reviewer requests design-review guidance through the Givn CLI (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The impact assessment records the verdict before drafting (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The ADR template ships with no pre-passed qualification values (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The design template keeps decision justification in the design (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Design-review requires the cheaper-home challenge for a new ADR (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Ordinary ADR downsides are not automatically risk debt (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The guidance carries the three falsification tests (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: attribute-commits
 
 Design constraints: use the attribute-commits owner and scenarios in specs/fragments/attribute-commits.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: `acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass` — observed during the initialization-acceptance batch before production fixes.
+GREEN: initialization-acceptance — acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+REFACTOR: targeted regression suites rerun clean after fixes; advisory outline used for changed supported components, with no forced verdict.
 
-- [ ] Scenario: Consumer initializes a project and receives shared attribution plumbing (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: An attributed commit exposes the current LLM and harness (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: The SCM-neutral commit path attributes a Git revision (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The SCM-neutral commit path attributes a Fossil check-in (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The commit wrapper records only the named paths on Fossil (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The commit wrapper without attribution context leaves the message unchanged (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The stage-all path excludes AGENTS.md and generated rules under local-only (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: The versioned stage-all path still excludes AGENTS.md (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: A commit without explicit paths fails before staging (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Git commits the selected working content without consuming an older staged version (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Unsafe explicit-path isolation is refused without consuming other work (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Repeated hook installation never dispatches its own launcher (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An unavailable optional attribution helper does not fail a human commit (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An explicit selected tracked deletion is committed successfully (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Unrelated staged additions and deletions survive an explicit Git commit (regular)
-  COMMIT: not recorded
+- [x] Scenario: Consumer initializes a project and receives shared attribution plumbing (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: An attributed commit exposes the current LLM and harness (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The SCM-neutral commit path attributes a Git revision (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The SCM-neutral commit path attributes a Fossil check-in (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The commit wrapper records only the named paths on Fossil (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The commit wrapper without attribution context leaves the message unchanged (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The stage-all path excludes AGENTS.md and generated rules under local-only (retirement)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The versioned stage-all path still excludes AGENTS.md (retirement)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A commit without explicit paths fails before staging (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Git commits the selected working content without consuming an older staged version (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Unsafe explicit-path isolation is refused without consuming other work (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Repeated hook installation never dispatches its own launcher (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: An unavailable optional attribution helper does not fail a human commit (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: An explicit selected tracked deletion is committed successfully (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Unrelated staged additions and deletions survive an explicit Git commit (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
 
 ## Batch: enable-commit-attribution
 
 Design constraints: use the enable-commit-attribution owner and scenarios in specs/fragments/enable-commit-attribution.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: `acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass` — observed during the initialization-acceptance batch before production fixes.
+GREEN: initialization-acceptance — acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+REFACTOR: targeted regression suites rerun clean after fixes; advisory outline used for changed supported components, with no forced verdict.
 
-- [ ] Scenario: Consumer sees the commit attribution installation report (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Consumer upgrades an existing project with attribution plumbing missing (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Consumer initializes a Fossil project and receives the givn commit path without a hook (@e2e)
-  COMMIT: not recorded
+- [x] Scenario: Consumer sees the commit attribution installation report (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Consumer upgrades an existing project with attribution plumbing missing (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Consumer initializes a Fossil project and receives the givn commit path without a hook (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
 
 ## Batch: instruction-integrity
 
 Design constraints: use the instruction-integrity owner and scenarios in specs/fragments/instruction-integrity.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Design guidance requires the complete E2E setup record (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review guidance names the deterministic disposition gates (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The canonical dialog policy demonstrates the full question record (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Dialog teaching contrasts show complete decisions rather than bare labels (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Migration consent does not imply an unverified recovery guarantee (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Relevant dialog examples are required before the first question of their type (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Author starts a session with the universal dialog obligation (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: The characterization guidance requests the reverse review from Givn (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Every instruction id named by generated guidance resolves through the Givn CLI (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Every generated skill and command directs to exactly one served instruction id (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Givn shipped templates render parser-compatible documents and examples (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Current shipped guidance and help exclude harness-project leakage without rewriting history (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Givn release distribution excludes local recordings and harness fixtures (regular)
-  COMMIT: not recorded
+- [x] Scenario: Design guidance requires the complete E2E setup record (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Review guidance names the deterministic disposition gates (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The canonical dialog policy demonstrates the full question record (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Dialog teaching contrasts show complete decisions rather than bare labels (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Migration consent does not imply an unverified recovery guarantee (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Relevant dialog examples are required before the first question of their type (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Author starts a session with the universal dialog obligation (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The characterization guidance requests the reverse review from Givn (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Every instruction id named by generated guidance resolves through the Givn CLI (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Every generated skill and command directs to exactly one served instruction id (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Givn shipped templates render parser-compatible documents and examples (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Current shipped guidance and help exclude harness-project leakage without rewriting history (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Givn release distribution excludes local recordings and harness fixtures (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: match-guidance-to-enabled-addons
 
 Design constraints: use the match-guidance-to-enabled-addons owner and scenarios in specs/fragments/match-guidance-to-enabled-addons.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An unbalanced conditional in a command template fails the synchronization (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: A consumer enables the addons a generated section needs and the guidance gains it (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: An unbalanced conditional in a skill template fails the synchronization (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Project skill overrides retain conditional addon behavior without command generation (regular)
-  COMMIT: not recorded
+- [x] Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: An unbalanced conditional in a command template fails the synchronization (retirement)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A consumer enables the addons a generated section needs and the guidance gains it (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: An unbalanced conditional in a skill template fails the synchronization (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Project skill overrides retain conditional addon behavior without command generation (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: refresh-generated-guidance
 
 Design constraints: use the refresh-generated-guidance owner and scenarios in specs/fragments/refresh-generated-guidance.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Synchronized guidance explains how to resolve the deterministic gates (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Review instructions require deterministic gate dispositions (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Generated guidance carries no copy of a built-in rule (regular)
-  COMMIT: not recorded
+- [x] Scenario: Synchronized guidance explains how to resolve the deterministic gates (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Review instructions require deterministic gate dispositions (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Generated guidance carries no copy of a built-in rule (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: review-architecture-documentation
 
 Design constraints: use the review-architecture-documentation owner and scenarios in specs/fragments/review-architecture-documentation.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Arc42-enabled review instructions require conformance evidence (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: The review template includes the Arc42 conformance block (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: The first completed Arc42 change establishes a real twelve-chapter baseline (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Later Arc42 changes maintain affected chapters rather than reapprove the baseline (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Architecture review checks substantive boundaries from the first implementation (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review closure is bounded to findings and regressions from their fixes (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Final architecture review uses the advisory outline without a second verdict (regular)
-  COMMIT: not recorded
+- [x] Scenario: Arc42-enabled review instructions require conformance evidence (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The review template includes the Arc42 conformance block (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The first completed Arc42 change establishes a real twelve-chapter baseline (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Later Arc42 changes maintain affected chapters rather than reapprove the baseline (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Architecture review checks substantive boundaries from the first implementation (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Review closure is bounded to findings and regressions from their fixes (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Final architecture review uses the advisory outline without a second verdict (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: enable-optional-addons
 
 Design constraints: use the enable-optional-addons owner and scenarios in specs/initialize-project/enable-optional-addons.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+GREEN: acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: givn init --no-addons produces no skill or command addon files (regular)
-  COMMIT: not recorded
-- [ ] Scenario: givn addons enable generates skill and command files (regular)
-  COMMIT: not recorded
-- [ ] Scenario: givn addons disable removes generated command files (regular)
-  COMMIT: not recorded
-- [ ] Scenario: givn skills sync includes skill and command addons when enabled (regular)
-  COMMIT: not recorded
-- [ ] Scenario: givn skills sync excludes addon skills and commands when disabled (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The absolute-mode policy block carries the dialog context rule (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: givn init enables every addon by default (regular)
-  COMMIT: not recorded
-- [ ] Scenario: givn addons list reports every addon enabled by default (regular)
-  COMMIT: not recorded
-- [ ] Scenario: givn init --no-addons writes an explicit opt-out for every addon (regular)
-  COMMIT: not recorded
-- [ ] Scenario: a partial addons block keeps unnamed addons enabled (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Consumer enables the outline addon and it is listed as enabled (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Communication policy replaces absolute mode without a compatibility alias (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Retired grill settings require manual transition (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Challenge is optional and introduces no lifecycle gate (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Challenge guidance researches the subject before asking unresolved decisions (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Addon edits preserve unrelated configuration or refuse unsupported YAML (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Configuration fields are enforced in their owning file (regular)
-  COMMIT: not recorded
+- [x] Scenario: givn init --no-addons produces no skill or command addon files (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: givn addons enable generates skill and command files (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: givn addons disable removes generated command files (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: givn skills sync includes skill and command addons when enabled (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: givn skills sync excludes addon skills and commands when disabled (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The absolute-mode policy block carries the dialog context rule (retirement)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: givn init enables every addon by default (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: givn addons list reports every addon enabled by default (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: givn init --no-addons writes an explicit opt-out for every addon (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: a partial addons block keeps unnamed addons enabled (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Consumer enables the outline addon and it is listed as enabled (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Communication policy replaces absolute mode without a compatibility alias (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Retired grill settings require manual transition (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Challenge is optional and introduces no lifecycle gate (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Challenge guidance researches the subject before asking unresolved decisions (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Addon edits preserve unrelated configuration or refuse unsupported YAML (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Configuration fields are enforced in their owning file (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
 
 ## Batch: initialize-a-project
 
 Design constraints: use the initialize-a-project owner and scenarios in specs/initialize-project/initialize-a-project.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+GREEN: acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Consumer runs init non-interactively and gets opencode skills (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Consumer re-syncs skills after init and the selection is honoured (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Skills and commands are not installed to an agent excluded from the selection (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The omp target receives its own guidance and attribution integration (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An omp project keeps the generated omp rules out of the repository (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Every supported target discovers thin skills without generated commands (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Maki guidance does not promise generated slash commands (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A custom legacy command is preserved and its manual transition is reported (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Init reentry preserves explicit addon opt-outs (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Required skill synchronization failure leaves an accurately reported partial initialization (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Retrying skill synchronization completes partial initialization without losing choices (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A new project declares verification runners as unconfigured (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The served runner setup example fulfills the verification contract when executed (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Target selection edits preserve unrelated YAML or refuse before writing (regular)
-  COMMIT: not recorded
+- [x] Scenario: Consumer runs init non-interactively and gets opencode skills (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Consumer re-syncs skills after init and the selection is honoured (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Skills and commands are not installed to an agent excluded from the selection (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The omp target receives its own guidance and attribution integration (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: An omp project keeps the generated omp rules out of the repository (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Every supported target discovers thin skills without generated commands (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Maki guidance does not promise generated slash commands (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A custom legacy command is preserved and its manual transition is reported (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Init reentry preserves explicit addon opt-outs (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Required skill synchronization failure leaves an accurately reported partial initialization (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Retrying skill synchronization completes partial initialization without losing choices (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A new project declares verification runners as unconfigured (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The served runner setup example fulfills the verification contract when executed (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Target selection edits preserve unrelated YAML or refuse before writing (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
 
 ## Batch: report-change-status
 
 Design constraints: use the report-change-status owner and scenarios in specs/inspect-change-state/report-change-status.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+GREEN: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Detail mode — active change with all required done (text) (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Status reports receipt freshness separately from artifact completion (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Detail mode — archived change (text) (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Detail mode — archived change (JSON) (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An archive candidate without current proof is not a proven archive (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Inspecting status never executes verification (regular)
-  COMMIT: not recorded
+- [x] Scenario: Detail mode — active change with all required done (text) (@e2e)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Status reports receipt freshness separately from artifact completion (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Detail mode — archived change (text) (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Detail mode — archived change (JSON) (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: An archive candidate without current proof is not a proven archive (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Inspecting status never executes verification (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
 
 ## Batch: agent-activity-reporting
 
 Design constraints: use the agent-activity-reporting owner and scenarios in specs/inspect-development-history/agent-activity-reporting.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Consumer installs the agent reporter and its reported activity lands in the record (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: A rejected report never fails the agent action it reports (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A stalled reporting helper cannot block primary agent work (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Recording guidance does not confuse ignored paths with untracked history (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Recording warnings disclose sensitivity without promising privacy filtering (regular)
-  COMMIT: not recorded
+- [x] Scenario: Consumer installs the agent reporter and its reported activity lands in the record (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A rejected report never fails the agent action it reports (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A stalled reporting helper cannot block primary agent work (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Recording guidance does not confuse ignored paths with untracked history (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Recording warnings disclose sensitivity without promising privacy filtering (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: readme-enforcement
 
 Design constraints: use the readme-enforcement owner and scenarios in specs/keep-documentation-current/readme-enforcement.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+GREEN: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: The check names a damaged managed block (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Archiving refreshes the development block (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Ambiguous managed markers are rejected before README modification (regular)
-  COMMIT: not recorded
+- [x] Scenario: The check names a damaged managed block (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Archiving refreshes the development block (@e2e)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Ambiguous managed markers are rejected before README modification (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
 
 ## Batch: serve-extended-rules
 
 Design constraints: use the serve-extended-rules owner and scenarios in specs/obtain-effective-guidance/serve-extended-rules.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Served implementation guidance requires behavioral RED before production edits (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Immediately passing tests protect existing behavior without a production edit (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Skipped RED is admitted rather than reconstructed from history (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A coherent behavior batch is completed with its actual explicit-path revision (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Refactor guidance uses the outline once for supported changed components and their neighbors (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Unsupported outline languages receive source assessment without a waiver (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Encountered cleanup is a separate GREEN refactoring batch (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Served development guidance requires modular boundaries from the start (regular)
-  COMMIT: not recorded
+- [x] Scenario: Served implementation guidance requires behavioral RED before production edits (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Immediately passing tests protect existing behavior without a production edit (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Skipped RED is admitted rather than reconstructed from history (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A coherent behavior batch is completed with its actual explicit-path revision (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Refactor guidance uses the outline once for supported changed components and their neighbors (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Unsupported outline languages receive source assessment without a waiver (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Encountered cleanup is a separate GREEN refactoring batch (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Served development guidance requires modular boundaries from the start (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: start-the-declared-product
 
 Design constraints: use the start-the-declared-product owner and scenarios in specs/operate-product/start-the-declared-product.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+GREEN: acceptance fixtures reproduced obsolete ADR worksheets, ambiguous outline cycles, missing bootstrap examples and unbounded reporters; 73 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: The started server reports readiness and forwards a clean exit (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: A readiness timeout abandons the start (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The readiness probe gives up after the timeout (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A stalled readiness exchange cannot outlive the total deadline (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Readiness retries share one deadline across connection and exchange (regular)
-  COMMIT: not recorded
+- [x] Scenario: The started server reports readiness and forwards a clean exit (@e2e)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A readiness timeout abandons the start (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: The readiness probe gives up after the timeout (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: A stalled readiness exchange cannot outlive the total deadline (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
+- [x] Scenario: Readiness retries share one deadline across connection and exchange (regular)
+  COMMIT: a7e9f30b -- Batch: guidance-acceptance
 
 ## Batch: describe-the-release
 
 Design constraints: use the describe-the-release owner and scenarios in specs/publish-a-release/describe-the-release.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+GREEN: acceptance fixtures reproduced lost executable content, stale scope evidence, incorrect finalization state and unsupported dialect mutation; archive 45/45 and release 6/6 pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: The migration catalog defines complete release-owned bundles (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Synthetic future migration bundles retain complete metadata validation (regular)
-  COMMIT: not recorded
+- [x] Scenario: The migration catalog defines complete release-owned bundles (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
+- [x] Scenario: Synthetic future migration bundles retain complete metadata validation (regular)
+  COMMIT: 64ba38e7 -- Batch: archive-acceptance
 
 ## Batch: apply-a-managed-upgrade
 
 Design constraints: use the apply-a-managed-upgrade owner and scenarios in specs/upgrade-a-project/apply-a-managed-upgrade.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+GREEN: acceptance fixtures reproduced missing upgrade seams, partial-failure wording and stale attribution installation; 100 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: A clean project without migration requirements receives one managed upgrade commit (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: A clean Fossil project receives the same managed upgrade revision shape (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An unclean project is protected from automatic migration commits (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A Fossil project with uncommitted changes is protected from automatic migration commits (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A project outside Git is protected from a partial automatic migration (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A local-only upgrade publishes rule removals without AGENTS.md (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A clean 0.7.0 project receives a reviewable aggregate migration plan (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: A project below the oldest migration route receives no migration change (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: An existing migration plan is never overwritten (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Pre-1.0 projects require manual transition instead of embedded migration plans (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Unsupported old configuration is refused before upgrade writes (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Upgrade failures report actual partial state and operator recovery (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Future supported migration routes remain reviewable (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Repeating the upgrade does not duplicate the migration (regular)
-  COMMIT: not recorded
-- [ ] Scenario: The migration change remains honest until the project review passes (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A completed maintenance migration can be archived without a product specification (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Upgrade reconciles only recognizable generated commands to skills (regular)
-  COMMIT: not recorded
+- [x] Scenario: A clean project without migration requirements receives one managed upgrade commit (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A clean Fossil project receives the same managed upgrade revision shape (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: An unclean project is protected from automatic migration commits (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A Fossil project with uncommitted changes is protected from automatic migration commits (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A project outside Git is protected from a partial automatic migration (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A local-only upgrade publishes rule removals without AGENTS.md (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A clean 0.7.0 project receives a reviewable aggregate migration plan (retirement)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A project below the oldest migration route receives no migration change (retirement)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: An existing migration plan is never overwritten (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Pre-1.0 projects require manual transition instead of embedded migration plans (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Unsupported old configuration is refused before upgrade writes (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Upgrade failures report actual partial state and operator recovery (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Future supported migration routes remain reviewable (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Repeating the upgrade does not duplicate the migration (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The migration change remains honest until the project review passes (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: A completed maintenance migration can be archived without a product specification (@e2e)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: Upgrade reconciles only recognizable generated commands to skills (regular)
+  COMMIT: 8d576d01 -- Batch: initialization-acceptance
 
 ## Batch: check-specification-health
 
 Design constraints: use the check-specification-health owner and scenarios in specs/verify-change/check-specification-health.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+GREEN: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: All clean .feature files report a clean summary on stdout (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: Explicit relationship namespaces disambiguate equal identifiers (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A relationship cannot resolve through the other namespace (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A fragment cannot be an extension target even when a use case has the same identifier (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Cycles follow use-case includes and extends relationships (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A fragment inclusion does not invent an edge to a same-named use case (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Interaction evidence cannot be credited from another capability (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Fragment interactions are checked in their declaring fragment (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A malformed Unicode use-case title produces a diagnostic instead of a panic (regular)
-  COMMIT: not recorded
+- [x] Scenario: All clean .feature files report a clean summary on stdout (@e2e)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Explicit relationship namespaces disambiguate equal identifiers (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A relationship cannot resolve through the other namespace (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A fragment cannot be an extension target even when a use case has the same identifier (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Cycles follow use-case includes and extends relationships (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A fragment inclusion does not invent an edge to a same-named use case (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Interaction evidence cannot be credited from another capability (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Fragment interactions are checked in their declaring fragment (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A malformed Unicode use-case title produces a diagnostic instead of a panic (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
 
 ## Batch: givn-workflow-enforcement
 
 Design constraints: use the givn-workflow-enforcement owner and scenarios in specs/verify-change/givn-workflow-enforcement.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+GREEN: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Consumer runs check tasks and receives a change verification receipt (@e2e)
-  COMMIT: not recorded
-- [ ] Scenario: A successful runner without new output cannot reuse a stale result (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Invalid fresh runner output cannot prove changed scenarios (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Inputs changed during execution cannot receive a passed receipt (regular)
-  COMMIT: not recorded
-- [ ] Scenario: An explicit no-behavior-change declaration needs no delta scenarios (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Omitting delta specs without declaring no behavior change is not an exemption (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Integrity remains applicable without delta specs (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review accepts an explicit no-behavior-change verification result (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review does not run the full suite (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Implementation verification does not require the review it will inform (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Two scenarios sharing a batch commit pass the task check (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A shared batch revision without a batch label fails the task check (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: A commit message that omits the scenario title fails the task check (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: Batch traceability rejects an unreachable revision (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Final review does not reconstruct TDD order from commit shape (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Archive re-runs the static review gates (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Preservation detects changes to supported executable content (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Moving unchanged supported executable content preserves behavior (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review ignores verdict examples rather than treating them as decisions (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Non-executable FAIL examples do not override an actual PASS (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Conflicting actual verdicts cannot pass review (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Negated PASS prose is not a passing verdict (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Independent cheap failures are reported while dependent checks are deferred (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Consumer invokes bare check and receives explicit non-executing guidance (@e2e)
-  COMMIT: not recorded
+- [x] Scenario: Consumer runs check tasks and receives a change verification receipt (@e2e)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A successful runner without new output cannot reuse a stale result (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Invalid fresh runner output cannot prove changed scenarios (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Inputs changed during execution cannot receive a passed receipt (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: An explicit no-behavior-change declaration needs no delta scenarios (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Omitting delta specs without declaring no behavior change is not an exemption (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Integrity remains applicable without delta specs (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Review accepts an explicit no-behavior-change verification result (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Review does not run the full suite (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Implementation verification does not require the review it will inform (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Two scenarios sharing a batch commit pass the task check (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A shared batch revision without a batch label fails the task check (retirement)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A commit message that omits the scenario title fails the task check (retirement)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Batch traceability rejects an unreachable revision (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Final review does not reconstruct TDD order from commit shape (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Archive re-runs the static review gates (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Preservation detects changes to supported executable content (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Moving unchanged supported executable content preserves behavior (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Review ignores verdict examples rather than treating them as decisions (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Non-executable FAIL examples do not override an actual PASS (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Conflicting actual verdicts cannot pass review (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Negated PASS prose is not a passing verdict (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Independent cheap failures are reported while dependent checks are deferred (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Consumer invokes bare check and receives explicit non-executing guidance (@e2e)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
 
 ## Batch: outline-review-gate
 
 Design constraints: use the outline-review-gate owner and scenarios in specs/verify-change/outline-review-gate.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: `focused tests/manual fixtures reproduced unsupported-scope misleading absence and fabricated zero metrics; outline report tests pass` — observed during the advisory-outline batch before production fixes.
+GREEN: advisory-outline — focused tests/manual fixtures reproduced unsupported-scope misleading absence and fabricated zero metrics; outline report tests pass.
+REFACTOR: targeted regression suites rerun clean after fixes; advisory outline used for changed supported components, with no forced verdict.
 
-- [ ] Retire the blocking outline capability and its implementation/callers/tests without deleting advisory reporting.
-  COMMIT: not recorded
+- [x] Retire the blocking outline capability and its implementation/callers/tests without deleting advisory reporting.
+  COMMIT: 3bbf3cc0 -- Batch: advisory-outline
 
 ## Batch: review-disposition-gates
 
 Design constraints: use the review-disposition-gates owner and scenarios in specs/verify-change/review-disposition-gates.feature; preserve exact observable assertions, relevant use-case guarantees and confirmed Personas. Apply the focused design contract, actual subprocess/binding locations, no extra suites/heuristic gates and explicit-path publication.
 
-RED: not run.
-GREEN: not run.
-REFACTOR: not run.
+RED: The acceptance run exhibited the failed behaviors documented for this batch before production fixes: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+GREEN: acceptance fixtures reproduced unauthenticated verdict matching, misleading status, shape-based blocking and wrong typed-reference diagnostics; 112 scenarios pass.
+REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was used for changed supported components without a second verdict.
 
-- [ ] Scenario: Review passes when every shape match is disposed and reports the net-delta receipt (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: Review blocks when a shape match involving the change's delta is undisposed (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: Review blocks when a delta scenario shape-matches a permanent scenario without disposition (retirement)
-  COMMIT: not recorded
-- [ ] Scenario: Consumer passes review without shape dispositions and receives the net-delta receipt (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Shape matches do not block review or archive (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review blocks with a clear message when review.md is missing (regular)
-  COMMIT: not recorded
-- [ ] Scenario: Review passes when a long scenario has a split-or-keep entry (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A keep disposition must contain an explicit decision and a reason (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A promised split cannot pass review while the long scenario remains unsplit (regular)
-  COMMIT: not recorded
-- [ ] Scenario: A completed split satisfies the scenario-length disposition (regular)
-  COMMIT: not recorded
+- [x] Scenario: Review passes when every shape match is disposed and reports the net-delta receipt (retirement)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Review blocks when a shape match involving the change's delta is undisposed (retirement)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Review blocks when a delta scenario shape-matches a permanent scenario without disposition (retirement)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Consumer passes review without shape dispositions and receives the net-delta receipt (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Shape matches do not block review or archive (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Review blocks with a clear message when review.md is missing (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: Review passes when a long scenario has a split-or-keep entry (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A keep disposition must contain an explicit decision and a reason (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A promised split cannot pass review while the long scenario remains unsplit (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
+- [x] Scenario: A completed split satisfies the scenario-length disposition (regular)
+  COMMIT: 595abe2a -- Batch: verification-acceptance
 
 ## Documentation and deferred work closeout
 
