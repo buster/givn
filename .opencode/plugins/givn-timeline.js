@@ -11,8 +11,9 @@
 // `session.execution.*`, so one payload covers one step. opencode's event
 // envelope carries the harness's own `created` timestamps (epoch ms), so
 // durations are measured from those where the event stream provides them and
-// from the reporter's own stamps otherwise. It never blocks the agent and
-// never fails a hook: every failure is contained and reported once.
+// from the reporter's own stamps otherwise. Recording is best effort and may
+// be incomplete: it never blocks the agent and never fails a hook. A stalled
+// helper is abandoned after a bounded wait.
 
 import { spawn } from "node:child_process"
 
@@ -21,6 +22,12 @@ const HARNESS = "opencode"
 const QUESTION_TOOL = "question"
 /** The buffer is bounded so a long session cannot grow without limit. */
 const MAX_BUFFER = 1000
+/** The finite best-effort wait for the settings query or intake helper. */
+const REPORTER_WAIT_MS = 2000
+
+/** Resolve when `promise` settles or the reporter wait bound expires. */
+const boundedWait = (promise) =>
+  Promise.race([promise.catch(() => undefined), new Promise((resolve) => setTimeout(resolve, REPORTER_WAIT_MS))])
 
 /** One harness timestamp as the intake's RFC 3339 UTC form (millisecond precision). */
 const at = (ms) => new Date(ms).toISOString()
@@ -147,6 +154,12 @@ const queryMode = () =>
         resolve("on")
       }
     })
+    setTimeout(() => {
+      try {
+        child.kill("SIGKILL")
+      } catch {}
+      resolve("on")
+    }, REPORTER_WAIT_MS)
   })
 
 export default {
@@ -233,16 +246,30 @@ export default {
           resolve()
           return
         }
+        let settled = false
+        const done = () => {
+          if (settled) return
+          settled = true
+          resolve()
+        }
         child.on("error", () => {
           dropped += payload.events.length
-          resolve()
+          done()
         })
-        child.on("close", () => resolve())
+        child.on("close", done)
         try {
           child.stdin.end(JSON.stringify(payload))
         } catch {
-          resolve()
+          done()
         }
+        setTimeout(() => {
+          if (settled) return
+          dropped += payload.events.length
+          try {
+            child.kill("SIGKILL")
+          } catch {}
+          done()
+        }, REPORTER_WAIT_MS)
       })
 
     /** Every start the session never closed still becomes one unmeasured entry. */

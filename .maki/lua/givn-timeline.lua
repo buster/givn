@@ -22,7 +22,8 @@
 -- Every callback is wrapped so a `maki` error is logged once and never
 -- propagates into the dispatch, the buffer is bounded, and a failed flush
 -- counts its dropped events so the report shows a gap instead of a silently
--- short timeline.
+-- short timeline. Recording is best effort and may be incomplete: a stalled
+-- helper is stopped after a bounded wait.
 
 local M = {}
 
@@ -243,7 +244,10 @@ local function flush(timeout_ms)
     local result, wait_err = maki.fn.jobwait(job, timeout_ms or JOB_TIMEOUT_MS)
     maki.fs.rm(path)
     if not result then
-      error(wait_err)
+      pcall(function()
+        maki.fn.jobstop(job)
+      end)
+      error(wait_err or "the intake helper did not finish within its bounded wait")
     end
   end)
   if not ok then
@@ -273,8 +277,11 @@ local function record_mode()
     end
     local result, wait_err = maki.fn.jobwait(job, JOB_TIMEOUT_MS)
     if not result then
+      pcall(function()
+        maki.fn.jobstop(job)
+      end)
       maki.fs.rm(path)
-      error(wait_err)
+      error(wait_err or "the settings helper did not finish within its bounded wait")
     end
     local text = maki.fs.read(path)
     maki.fs.rm(path)
