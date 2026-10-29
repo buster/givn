@@ -205,6 +205,16 @@ pub enum GateFailure {
         author: String,
         reviewer: String,
     },
+    MissingRecordedReviewContext,
+    OutlineAuthorMismatch {
+        outline: String,
+        recorded: String,
+    },
+    OutlineReviewerMismatch {
+        outline: String,
+        recorded: String,
+    },
+    InvalidReviewContext(String),
     SlugCollision {
         first: String,
         second: String,
@@ -260,6 +270,10 @@ impl GateFailure {
             Self::MissingOutlineAuthor => "missing-outline-author",
             Self::MissingOutlineReviewer => "missing-outline-reviewer",
             Self::SelfOutlineReview { .. } => "self-outline-review",
+            Self::MissingRecordedReviewContext => "missing-recorded-review-context",
+            Self::OutlineAuthorMismatch { .. } => "outline-author-mismatch",
+            Self::OutlineReviewerMismatch { .. } => "outline-reviewer-mismatch",
+            Self::InvalidReviewContext(_) => "invalid-review-context",
             Self::SlugCollision { .. } => "slug-collision",
             Self::InvalidRationale { .. } => "invalid-rationale",
             Self::MissingRationale { .. } => "missing-rationale",
@@ -341,6 +355,17 @@ impl GateFailure {
             Self::SelfOutlineReview { author, reviewer } => format!(
                 "outline reviewer '{reviewer}' must differ from the author '{author}'"
             ),
+            Self::MissingRecordedReviewContext => {
+                "review.md records a Review kind but no Author/Reviewer context; record the review context before the outline review"
+                    .to_string()
+            }
+            Self::OutlineAuthorMismatch { outline, recorded } => format!(
+                "outline author '{outline}' does not match the recorded Author '{recorded}'"
+            ),
+            Self::OutlineReviewerMismatch { outline, recorded } => format!(
+                "outline reviewer '{outline}' does not match the recorded Reviewer context '{recorded}'"
+            ),
+            Self::InvalidReviewContext(message) => format!("review context: {message}"),
             Self::SlugCollision { first, second } => {
                 format!("rationale slug collision for {first} and {second}")
             }
@@ -394,6 +419,14 @@ impl GateFailure {
             Self::SelfOutlineReview { author, reviewer } => {
                 (5, 6, String::new(), format!("{author} {reviewer}"))
             }
+            Self::MissingRecordedReviewContext => (5, 7, String::new(), String::new()),
+            Self::OutlineAuthorMismatch { outline, recorded } => {
+                (5, 8, String::new(), format!("{outline} {recorded}"))
+            }
+            Self::OutlineReviewerMismatch { outline, recorded } => {
+                (5, 9, String::new(), format!("{outline} {recorded}"))
+            }
+            Self::InvalidReviewContext(message) => (5, 10, String::new(), message.clone()),
             Self::SlugCollision { first, second } => {
                 (3, 0, String::new(), format!("{first} {second}"))
             }
@@ -687,6 +720,78 @@ fn review(request: &GateRequest) -> Result<GateOutcome> {
     )
 }
 
+fn validate_outline_identity(
+    request: &GateRequest,
+    outline_author: &str,
+    outline_reviewer: &str,
+    failures: &mut Vec<GateFailure>,
+) {
+    let review_path = request.change_dir.join("review.md");
+    let record = match crate::review_context::parse(&review_path) {
+        Ok(record) => record,
+        Err(error) => {
+            failures.push(GateFailure::InvalidReviewContext(error.to_string()));
+            return;
+        }
+    };
+    match record.kind {
+        None => {
+            if outline_author == outline_reviewer {
+                failures.push(GateFailure::SelfOutlineReview {
+                    author: outline_author.to_string(),
+                    reviewer: outline_reviewer.to_string(),
+                });
+            }
+        }
+        Some(crate::review_context::ReviewKind::SelfReview) => {
+            let (Some(recorded_author), Some(recorded_reviewer)) =
+                (&record.author, &record.reviewer)
+            else {
+                failures.push(GateFailure::MissingRecordedReviewContext);
+                return;
+            };
+            if outline_author != recorded_author {
+                failures.push(GateFailure::OutlineAuthorMismatch {
+                    outline: outline_author.to_string(),
+                    recorded: recorded_author.clone(),
+                });
+            }
+            if outline_reviewer != recorded_reviewer {
+                failures.push(GateFailure::OutlineReviewerMismatch {
+                    outline: outline_reviewer.to_string(),
+                    recorded: recorded_reviewer.clone(),
+                });
+            }
+        }
+        Some(crate::review_context::ReviewKind::Independent) => {
+            let (Some(recorded_author), Some(recorded_reviewer)) =
+                (&record.author, &record.reviewer)
+            else {
+                failures.push(GateFailure::MissingRecordedReviewContext);
+                return;
+            };
+            if outline_author != recorded_author {
+                failures.push(GateFailure::OutlineAuthorMismatch {
+                    outline: outline_author.to_string(),
+                    recorded: recorded_author.clone(),
+                });
+            }
+            if outline_reviewer != recorded_reviewer {
+                failures.push(GateFailure::OutlineReviewerMismatch {
+                    outline: outline_reviewer.to_string(),
+                    recorded: recorded_reviewer.clone(),
+                });
+            }
+            if outline_author == outline_reviewer {
+                failures.push(GateFailure::SelfOutlineReview {
+                    author: outline_author.to_string(),
+                    reviewer: outline_reviewer.to_string(),
+                });
+            }
+        }
+    }
+}
+
 fn outline_outcome(
     request: &GateRequest,
     base: ChangeBase,
@@ -703,13 +808,9 @@ fn outline_outcome(
             match (&markers.author, &markers.reviewer) {
                 (None, _) => failures.push(GateFailure::MissingOutlineAuthor),
                 (_, None) => failures.push(GateFailure::MissingOutlineReviewer),
-                (Some(author), Some(reviewer)) if author == reviewer => {
-                    failures.push(GateFailure::SelfOutlineReview {
-                        author: author.clone(),
-                        reviewer: reviewer.clone(),
-                    });
+                (Some(author), Some(reviewer)) => {
+                    validate_outline_identity(request, author, reviewer, &mut failures);
                 }
-                _ => {}
             }
         }
         for outline in &outlines {

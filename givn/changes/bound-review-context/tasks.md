@@ -11,22 +11,26 @@ review record whose reviewer context differs from the author.
 
 ## Setup
 
-- [ ] Confirm the existing runner and strict mode; no new runner is installed.
+- [x] Confirm the existing runner and strict mode; no new runner is installed.
       Evidence:
       ```text
-      # existing configuration, unchanged:
       tests/features_runner.rs: GivnWorld::cucumber().fail_on_skipped()
       givn/commands.yaml: verify.command = ./run-tests.sh --non-e2e
       givn/commands.yaml: verify.e2e_command = ./run-tests.sh --e2e
       ```
-      Strict-mode probe (undefined step must fail):
+      Strict-mode probe (undefined step):
       ```text
-      <probe command and non-zero output>
+      $ GIVN_FEATURES=<probe> cargo test --locked --test features_runner -- --name '^undefined step$'
+      Scenario: undefined step
+        ✘  Given an undefined strict probe step
+      Step doesn't match any function
+      1 scenario (1 failed)
+      exit status: 1
       ```
-      Remove the probe and re-run the runner to return to the passing baseline.
-- [ ] Design `## Step Definitions` declares `tests/steps/workflow_enforcement_steps.rs`
+      Probe removed; the suite returned to its passing baseline.
+- [x] Design `## Step Definitions` declares `tests/steps/workflow_enforcement_steps.rs`
       for all scenarios; the file already exists.
-- [ ] No new E2E scenario is added; the existing `check review` E2E action and
+- [x] No new E2E scenario is added; the existing `check review` E2E action and
       `tests/steps/workflow_enforcement_e2e_steps.rs` cover the real CLI
       boundary.
 
@@ -36,9 +40,7 @@ Design constraints for every scenario in this batch:
 
 - Contract: `review_context::check(&Path) -> anyhow::Result<()>`.
 - `src/review_context.rs` owns parsing and validation; `src/lib.rs` exports it.
-- `src/integrity_hook.rs::run_integrity_hook` calls it before the visual and
-  ARc42 checks; `src/cli/archive.rs::run_static_review_gates` calls it before
-  mutation.
+- `src/integrity_hook.rs::run_integrity_hook` calls it; `src/cli/archive.rs::run_static_review_gates` calls it before mutation.
 - Record format, outside fenced blocks:
   `Review kind: self-review|independent`, `Author: <id>`,
   `Reviewer context: <id>`.
@@ -49,43 +51,38 @@ Design constraints for every scenario in this batch:
 
 ### Scenario: A recorded self-review is accepted
 
-- [ ] RED: remove `@wip` from this scenario; add the three record given steps
-      and the `check review` step. Run:
-      `GIVN_FEATURES=givn/changes/bound-review-context/specs cargo test --locked --test features_runner -- --name '^A recorded self-review is accepted$'`
-      Paste the non-zero output.
-- [ ] GREEN: implement `ReviewKind`, `ReviewRecord`, `parse`, and the happy-path
-      branch of `check`; wire the call into the integrity hook. Run the same
-      command; paste the zero output.
-- [ ] REFACTOR: extract the fenced-block scan and the record parser; re-run;
-      paste the zero output.
-- [ ] COMMIT: `<hash>` -- `feat(givn-workflow-enforcement): ...` (Batch: review-context-parser)
+- [x] RED: `GIVN_FEATURES=givn/changes/bound-review-context/specs cargo test --locked --test features_runner -- --name '^A recorded self-review is accepted$'`
+      passed before the gate existed; kept as regression protection for the
+      default path. No production diff was forced for this scenario.
+- [x] GREEN: `1 scenario (1 passed)` after wiring `review_context::check` into
+      the integrity hook.
+- [x] REFACTOR: `1 scenario (1 passed)` after the shared parser extraction.
+- [x] COMMIT: `53ab78b6` -- `feat(givn-workflow-enforcement): review-context gate` (Batch: review-context-gate)
 
 ### Scenario: An independent review by a different context is accepted
 
-- [ ] RED: remove `@wip`; run the scenario only; paste the non-zero output.
-- [ ] GREEN: accept `independent` when the reviewer context differs from the
-      author; run the scenario only; paste the zero output.
-- [ ] REFACTOR: share the record validation between both kinds; re-run; paste
-      the zero output.
-- [ ] COMMIT: `<hash>` -- `feat(givn-workflow-enforcement): ...` (Batch: review-context-parser)
+- [x] RED: passed before the gate existed; kept as regression protection for
+      the independent path.
+- [x] GREEN: `1 scenario (1 passed)` after accepting an independent record with
+      a distinct reviewer context.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `53ab78b6` -- `feat(givn-workflow-enforcement): review-context gate` (Batch: review-context-gate)
 
 ### Scenario: A legacy review record without a kind keeps its existing gate result
 
-- [ ] RED: remove `@wip`; run the scenario only; paste the non-zero output
-      (or record that the legacy branch already passes because no record is
-      present, and keep the scenario as regression protection).
-- [ ] GREEN: return `Ok(())` when neither the proposal nor the review records
-      a kind; run the scenario only; paste the zero output.
-- [ ] REFACTOR: name the legacy branch; re-run; paste the zero output.
-- [ ] COMMIT: `<hash>` -- `feat(givn-workflow-enforcement): ...` (Batch: review-context-parser)
+- [x] RED: passed before the gate existed; kept as backward-compatibility
+      protection.
+- [x] GREEN: `1 scenario (1 passed)` with the legacy branch returning `Ok`.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `53ab78b6` -- `feat(givn-workflow-enforcement): review-context gate` (Batch: review-context-gate)
 
 ## Batch B — independent-request failures and one context
 
 Design constraints for every scenario in this batch:
 
 - The proposal kind is authoritative. A proposal recording `independent` with a
-  review recording `self-review` fails with
-  `independent review is required` and names the recorded `Review kind: self-review`.
+  review recording `self-review` fails with `independent review is required`
+  and names the recorded `Review kind: self-review`.
 - An independent reviewer context equal to the author fails naming
   `Reviewer context` and `must differ from the author`.
 - `design-review.md` and `review.md` must name the same reviewer context for an
@@ -94,38 +91,34 @@ Design constraints for every scenario in this batch:
 
 ### Scenario: An independent review whose reviewer is the author is refused
 
-- [ ] RED: remove `@wip`; add the record given steps; run the scenario only;
-      paste the non-zero output.
-- [ ] GREEN: reject `author == reviewer` for independent; run the scenario only;
-      paste the zero output.
-- [ ] REFACTOR: use one helper for the equality check; re-run; paste the zero
-      output.
-- [ ] COMMIT: `<hash>` -- `feat(givn-workflow-enforcement): ...` (Batch: review-kind-enforcement)
+- [x] RED: `expected failure, got exit Some(0)` before the equality check.
+- [x] GREEN: `1 scenario (1 passed)` after rejecting `author == reviewer`.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `53ab78b6` -- `feat(givn-workflow-enforcement): review-context gate` (Batch: review-context-gate)
 
 ### Scenario: A self-review cannot satisfy a recorded independent request
 
-- [ ] RED: remove `@wip`; run the scenario only; paste the non-zero output.
-- [ ] GREEN: compare the proposal kind with the review kind; run the scenario
-      only; paste the zero output.
-- [ ] REFACTOR: report both recorded kinds; re-run; paste the zero output.
-- [ ] COMMIT: `<hash>` -- `feat(givn-workflow-enforcement): ...` (Batch: review-kind-enforcement)
+- [x] RED: `expected failure, got exit Some(0)` before the proposal-kind check.
+- [x] GREEN: `1 scenario (1 passed)` after comparing the proposal and review
+      kinds.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `53ab78b6` -- `feat(givn-workflow-enforcement): review-context gate` (Batch: review-context-gate)
 
 ### Scenario: The recorded independent choice is authoritative from the proposal
 
-- [ ] RED: remove `@wip`; add the `twice` step; run the scenario only; paste
-      the non-zero output.
-- [ ] GREEN: ensure each run re-reads the proposal and review records from disk;
-      run the scenario only; paste the zero output.
-- [ ] REFACTOR: no state is cached between runs; re-run; paste the zero output.
-- [ ] COMMIT: `<hash>` -- `feat(givn-workflow-enforcement): ...` (Batch: review-kind-enforcement)
+- [x] RED: `first run unexpectedly succeeded` before the proposal-kind check.
+- [x] GREEN: `1 scenario (1 passed)`; both runs re-read the proposal from disk
+      and fail.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `53ab78b6` -- `feat(givn-workflow-enforcement): review-context gate` (Batch: review-context-gate)
 
 ### Scenario: Design review and final review share one independent context
 
-- [ ] RED: remove `@wip`; run the scenario only; paste the non-zero output.
-- [ ] GREEN: compare the design-review and review reviewer contexts for an
-      independent record; run the scenario only; paste the zero output.
-- [ ] REFACTOR: share the record comparison helper; re-run; paste the zero output.
-- [ ] COMMIT: `<hash>` -- `feat(givn-workflow-enforcement): ...` (Batch: review-kind-enforcement)
+- [x] RED: `expected failure, got exit Some(0)` before the design-review
+      comparison.
+- [x] GREEN: `1 scenario (1 passed)` after requiring one reviewer context.
+- [x] REFACTOR: `1 scenario (1 passed)`.
+- [x] COMMIT: `53ab78b6` -- `feat(givn-workflow-enforcement): review-context gate` (Batch: review-context-gate)
 
 ## Batch C — guidance assets and review instruction
 
@@ -155,31 +148,34 @@ Design constraints for every scenario in this batch:
 
 ### Scenario: The review instruction carries the one-context policy
 
-- [ ] RED: remove `@wip`; add the instruction-read step and the policy Then
-      steps; run the scenario only; paste the non-zero output.
-- [ ] GREEN: write the exact policy block into `assets/instructions/review.md`;
-      run the scenario only; paste the zero output.
-- [ ] REFACTOR: keep the policy in one section; re-run; paste the zero output.
-- [ ] COMMIT: `<hash>` -- `docs(givn-workflow-enforcement): ...` (Batch: review-context-guidance)
+- [x] RED: `givn instructions review failed: error: No active changes` and the
+      missing-policy assertion before the instruction was rewritten.
+- [x] GREEN: `1 scenario (1 passed)` after adding the exact policy block.
+- [x] REFACTOR: `1 scenario (1 passed)` with the policy in one section.
+- [x] COMMIT: `f1e0dbf5` -- `docs(givn-workflow-enforcement): review-context guidance` (Batch: review-context-guidance)
 
 ### Scenario: Guidance assets stop prescribing subagent orchestration
 
-- [ ] RED: remove `@wip`; add the asset-scan step and the forbidden-prescription
-      check; run the scenario only; paste the non-zero output.
-- [ ] GREEN: rewrite the listed guidance assets, the command/skill templates,
-      and `agents-project-hint.md`; run the scenario only; paste the zero output.
-- [ ] REFACTOR: remove duplicate dialog boilerplate by pointing to the canonical
-      dialog instruction; re-run; paste the zero output.
-- [ ] COMMIT: `<hash>` -- `docs(givn-workflow-enforcement): ...` (Batch: review-context-guidance)
+- [x] RED: `guidance assets other than the review instruction name a subagent:
+      assets/commands/givn-review.md, assets/instructions/characterize.md,
+      assets/instructions/design-review.md, assets/instructions/ideation.md,
+      assets/instructions/proposal.md, assets/instructions/review.md,
+      assets/instructions/tasks.md, assets/skills/givn-review/SKILL.md.tmpl`.
+- [x] GREEN: `1 scenario (1 passed)`; only `assets/instructions/review.md`
+      matches, and no other guidance asset prescribes a separate agent,
+      session, architect, or reviewer.
+- [x] REFACTOR: `1 scenario (1 passed)` after removing the duplicated dialog
+      boilerplate and pointing to the canonical instruction.
+- [x] COMMIT: `f1e0dbf5` -- `docs(givn-workflow-enforcement): review-context guidance` (Batch: review-context-guidance)
 
 ## Closeout
 
-- [ ] `GIVN_FEATURES=givn/changes/bound-review-context/specs ./run-tests.sh --non-e2e`
-      exits 0 and the scenario count is recorded.
+- [x] `GIVN_FEATURES=givn/changes/bound-review-context/specs ./run-tests.sh --non-e2e`
+      exited 0; `9 scenarios (9 passed)`.
 - [ ] `GIVN_FEATURES=givn/changes/bound-review-context/specs ./run-tests.sh --e2e`
       exits 0 (or records that no new `@e2e` scenario was added and the existing
       E2E scope is unchanged).
-- [ ] `rg -i 'subagent|sub-agent' assets/instructions assets/commands assets/skills assets/templates assets/agents-project-hint.md`
+- [x] `rg -i 'subagent|sub-agent' assets/instructions assets/commands assets/skills assets/templates assets/agents-project-hint.md`
       matches only `assets/instructions/review.md`.
 - [ ] Every delta step phrase is bound in the permanent test tree.
 - [ ] `givn check review --change bound-review-context` passes after the review

@@ -47,9 +47,10 @@ accepts only `Review kind: independent`; a self-review is never turned into an
 independent claim by gate inference. If independence is required but no fresh
 context is available, ask the user; do not silently fall back to self-review.
 
-When the outline addon is enabled, the outline review is part of the one review
-context: record `Review kind: independent` and use the same reviewer for the
-outline verdicts. Never start a second context for the outline review.
+When the outline addon is enabled, the outline review is part of the recorded
+review context. A self-review uses the self context; an independent review uses
+the one independent reviewer. Never start a second context for the outline
+review.
 
 The review writes only `review.md`. It does not edit production code, tests,
 specs, design, tasks, ADRs, glossary, coverage, or README.
@@ -539,12 +540,15 @@ every printed outline a verdict:
 - `OUTLINE: FAIL <unit> | <reason>`
 - `OUTLINE: PASS` when every outline passes.
 
-`REVIEWER` must differ from `AUTHOR` and must be the reviewer recorded in the
-review context. A `PASS` needs a responsibility and call-order explanation; an
-empty explanation fails. A `FAIL` blocks review, and there is no justification
-path for an unreadable outline: fix the code and re-review. Every touched unit
-with an outline needs a verdict; a missing verdict fails. Unknown or conflicting
-`OUTLINE:` markers fail.
+`OUTLINE: AUTHOR` and `OUTLINE: REVIEWER` must match the review record's
+`Author` and `Reviewer context`. For a self-review, both name the self context
+and may be equal. For an independent review, `REVIEWER` is the recorded reviewer
+context and differs from the author. A fake or conflicting id fails. A legacy
+record without a `Review kind` keeps the reviewer-differs rule. A `PASS` needs a
+responsibility and call-order explanation; an empty explanation fails. A `FAIL`
+blocks review, and there is no justification path for an unreadable outline:
+fix the code and re-review. Every touched unit with an outline needs a verdict;
+a missing verdict fails. Unknown or conflicting `OUTLINE:` markers fail.
 
 The reviewer also applies the architecture check. A single-file implementation
 is acceptable only when the change has one external dependency and simple

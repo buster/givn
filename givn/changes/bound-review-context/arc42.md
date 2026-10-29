@@ -21,12 +21,14 @@
 
 The change is workflow policy plus an internal parser. The component boundary is
 the change directory; no new external interface, persistent store, or deployment
-surface is introduced. The outline gate's existing `OUTLINE:` reviewer identity
-rule is unchanged. The review-context record is a separate record and must not
-be conflated with the outline reviewer identity.
+surface is introduced. The outline gate now cross-checks `OUTLINE: AUTHOR` and
+`OUTLINE: REVIEWER` against the recorded review context: a self-review accepts
+the self context, an independent review requires the recorded reviewer and a
+different author, and a legacy record without a kind keeps the reviewer-differs
+rule.
 
 ADR action: NONE
-ADR target: `docs/arc42/08-crosscutting-concepts.md` and the `g Review context` feature under `verify-change`
+ADR target: `docs/arc42/08-crosscutting-concepts.md` and the review-context feature under `verify-change`
 
 ```text
 qualification: NOT_QUALIFIED
