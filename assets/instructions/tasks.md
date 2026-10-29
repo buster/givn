@@ -249,15 +249,14 @@ this.
 served instruction the implement files route to; artifact authors follow the
 task-list rules above.
 
-Work the task list in one context, or split it into behavior batches, each
-batch delegated to one coding subagent. Delegation is per batch, never per
-scenario. Follow the test-first order described by the design and tasks.
-Finish one batch before starting the next.
+Work the task list in the current context. The user or harness may split it into
+behavior batches across sessions; the artifacts remain the handoff, and no step
+requires or forbids that topology. Follow the test-first order described by the
+design and tasks. Finish one batch before starting the next.
 
-**Never trust subagent self-reports.** A "PASSED" claim is not proof: a
-subagent has previously checked off every task while every step was an empty
-stub and the runner silently reported GREEN. Independently verify every batch
-when it returns — never a spot-check:
+**Verify every batch yourself.** A checked box is not proof: a batch has
+previously been checked off while every step was an empty stub and the runner
+silently reported GREEN. Verify every batch — never a spot-check:
 
 1. Re-run the relevant scenarios yourself and confirm zero exit.
 2. Inspect the batch commit. It may cover several scenarios; it must not be a
@@ -271,7 +270,7 @@ when it returns — never a spot-check:
    named real interface's output — never repository-only state, and never an
    internal stub substituted for a browser or CLI E2E.
 6. For high-risk rules (identity, omitted alternative, boundary, lifetime
-   limit, precedence), the reviewer may ask for a discrimination proof: revert
+   limit, precedence), the author may add a discrimination proof: revert
    or mutate the production behavior and confirm the test fails. It is a
    risk-based check, not a required TDD record.
 

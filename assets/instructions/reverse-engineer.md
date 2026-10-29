@@ -35,9 +35,9 @@ only for testability seams, with a behaviour-preservation guarantee.
 
 ## Discovery phase
 
-A fresh delegated context does not inherit the parent's loaded policy. Pass
-the dialog obligation explicitly and load it in the fresh context before the
-first question.
+**Dialog obligation.** A context that did not receive this conversation does not
+inherit the loaded policy. When work is handed to another context, pass the
+obligation explicitly and load it there before the first question.
 
 Before writing any artifact, explore the codebase and propose ONE capability
 with a clear black-box boundary. Present the proposal to the user

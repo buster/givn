@@ -1,5 +1,9 @@
 # Design Review: {{CHANGE_ID}}
 
+Review kind: self-review
+Author: <author id>
+Reviewer context: <reviewer id>
+
 ## Grilling log
 
 The table is the scannable index; the full record for each question is

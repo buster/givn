@@ -227,11 +227,15 @@ For `givn check review`, it runs:
    coverage checks, and — when `design.md` declares a visual interface — the
    visual verdict, the persona disposition, the final-state and per-state
    evidence, and the operator decision for any recorded deferral.
-2. The deterministic run-declaration check.
-3. For a named change, the overlap disposition gate.
-4. The change-scoped verification receipt, so a stale receipt is reported before
+2. For a named change, the review-context record: the proposal's requested kind,
+   the performed design-review kind, and the performed review kind must agree;
+   an independent record requires a reviewer context different from the author,
+   and the design-review and review records must name one reviewer context.
+3. The deterministic run-declaration check.
+4. For a named change, the overlap disposition gate.
+5. The change-scoped verification receipt, so a stale receipt is reported before
    any change-relative outline analysis runs.
-5. For a named change with `addons.outline` enabled, the outline review
+6. For a named change with `addons.outline` enabled, the outline review
    gate (6.20).
 
 The visual gate reads the `## Visual Design Contract` section from

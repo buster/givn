@@ -11,22 +11,53 @@ deliberately classified and resolved. No percentage threshold.
   finding to classify or remediate through the loop, not an edit made to turn
   the suite green.
 
-## Review agent (mandatory)
+## Review context (mandatory)
 
-Implementation is complete. Start one fresh review subagent. It loads this
-instruction, runs the outline, reads the metrics and the outline, and writes
-`review.md` including every `OUTLINE:` verdict and the final `REVIEW:` marker.
-Do not reuse the design-review subagent; its context predates implementation.
-The parent may verify the review and ask for rework, but must not author or edit
-the review verdict.
+Default: perform the review in the current context and record
+`Review kind: self-review`. A self-review is not an independent review; do not
+label it independent.
 
-The review subagent writes only `review.md`. It does not edit production code,
-tests, specs, design, tasks, ADRs, glossary, coverage, or README.
+For a major change, or when the user requests it, perform the review in exactly
+one fresh context: one review subagent, one separate reviewer session, or one
+human reviewer. One context covers both the design-review and final-review
+obligations for the change. The reviewer must not be the author, must not
+receive the author's conversation history, and must review only.
 
-## Preflight (before spawning review)
+Do not start planning, design, hardening, coverage, implementation, or
+additional review subagents. Never start more than one review context.
+
+A change is major when any of these is true, and the change records the reason:
+
+- public contract, CLI or API change;
+- persistent data, schema or migration;
+- security, privacy or authorization;
+- concurrency or distributed behavior;
+- architecture boundary or external adapter;
+- irreversible or destructive operation;
+- multiple capabilities or high blast radius;
+- the user explicitly requests an independent review.
+
+If classification is ambiguous, ask the user one question. Do not infer "major"
+silently.
+
+The proposal records the requested kind. The design review and the review record
+`Review kind`, `Author`, and `Reviewer context`. For an independent review the
+reviewer context must differ from the author. A gate that requires independence
+accepts only `Review kind: independent`; a self-review is never turned into an
+independent claim by gate inference. If independence is required but no fresh
+context is available, ask the user; do not silently fall back to self-review.
+
+When the outline addon is enabled, the outline review is part of the one review
+context: record `Review kind: independent` and use the same reviewer for the
+outline verdicts. Never start a second context for the outline review.
+
+The review writes only `review.md`. It does not edit production code, tests,
+specs, design, tasks, ADRs, glossary, coverage, or README.
+
+## Preflight (before review)
 
 The implementing agent runs the mechanical checks and fixes every failure before
-starting the review subagent:
+starting the review:
 
 - full `verify.command`;
 - full `verify.e2e_command`;
@@ -37,7 +68,7 @@ starting the review subagent:
 - canonical proposal and use-case format;
 - README badges and other generated evidence.
 
-Do not spawn the review subagent on a tree that still fails a mechanical check.
+Do not start the review on a tree that still fails a mechanical check.
 The review is for semantic findings, not for discovering work the implementer
 can verify deterministically.
 
@@ -354,10 +385,10 @@ Run this block when the change's design declares a visual interface (a
 - The evidence is complete: every delta `@e2e` scenario has one committed
   final-state screenshot per contract viewport, or a transcript for a
   terminal interface. Missing evidence blocks the review.
-- One fresh-context vision review runs per confirmed Persona: the subagent
-  sees the committed screenshots and judges whether that Persona can reach
-  its goal with what is shown. Record every finding with a disposition, and
-  never invent a Persona.
+- The vision review runs in the recorded review context: the reviewer sees the
+  committed screenshots and judges, for each confirmed Persona, whether that
+  Persona can reach its goal with what is shown. Record every finding with a
+  disposition, and never invent a Persona.
 - The vision review names the state screenshots the review saw for each declared UI state.
 - End the block with `VISUAL-REVIEW: PASS` only when the evidence is
   complete, the baseline holds, and every Persona finding is dispositioned.
@@ -444,11 +475,11 @@ blocks the archive gate regardless of this line.
   (no "acceptable for now," "future scope," "sufficient for current scope,"
   or similar invented exception anywhere in this report).
 
-## Step orchestration (orchestrator spot-check)
+## Step orchestration (review spot-check)
 
-**Audience: the agent orchestrating the review step, not the review author.**
-Before accepting a reported `REVIEW: PASS`, independently re-check a sample
-rather than trusting the subagent's report:
+**Audience: the agent performing the review step, not a separate review author.**
+Before accepting `REVIEW: PASS`, re-check a sample rather than trusting a
+reported result:
 
 1. Grep two or three step definition files yourself for empty bodies (or all
    when fewer than five) and confirm any "0 findings" claim.
@@ -474,8 +505,8 @@ rather than trusting the subagent's report:
 8. Scan `review.md` itself for invented exception language ("acceptable for
    now," "future scope," "sufficient for current scope," or similar) — any
    such phrase rejects `REVIEW: PASS` regardless of what it excuses.
-9. Any contradiction: reject `REVIEW: PASS` and re-run the review subagent
-   with the discrepancy named.
+9. Any contradiction: reject `REVIEW: PASS` and re-run the review with the
+   discrepancy named.
 
 {{#if addons.outline}}
 ## Outline review gate
@@ -499,7 +530,7 @@ cross-component leaf points at that component's own outline. An `[ambiguous]`
 edge means the analyzer could not choose a target; it is not the callee. The
 outline contains no method bodies or data.
 
-The review record must name the author and a fresh-context reviewer, and give
+The review record must name the author and the reviewer context, and give
 every printed outline a verdict:
 
 - `OUTLINE: AUTHOR <id>`
@@ -508,12 +539,12 @@ every printed outline a verdict:
 - `OUTLINE: FAIL <unit> | <reason>`
 - `OUTLINE: PASS` when every outline passes.
 
-`REVIEWER` must differ from `AUTHOR` and must be the fresh review subagent from
-the Review agent section, not the design-review subagent. A `PASS` needs a
-responsibility and call-order explanation; an empty explanation fails. A `FAIL`
-blocks review, and there is no justification path for an unreadable outline:
-fix the code and re-review. Every touched unit with an outline needs a verdict;
-a missing verdict fails. Unknown or conflicting `OUTLINE:` markers fail.
+`REVIEWER` must differ from `AUTHOR` and must be the reviewer recorded in the
+review context. A `PASS` needs a responsibility and call-order explanation; an
+empty explanation fails. A `FAIL` blocks review, and there is no justification
+path for an unreadable outline: fix the code and re-review. Every touched unit
+with an outline needs a verdict; a missing verdict fails. Unknown or conflicting
+`OUTLINE:` markers fail.
 
 The reviewer also applies the architecture check. A single-file implementation
 is acceptable only when the change has one external dependency and simple
@@ -536,6 +567,14 @@ fix the code and re-review.
 {{/if}}
 
 ## Result
+
+Record the review context outside any code fence before the final marker:
+
+```text
+Review kind: self-review | independent
+Author: <author id>
+Reviewer context: <reviewer id>
+```
 
 End the file with `REVIEW: PASS` or `REVIEW: FAIL`. The archive gate reads
 this marker.

@@ -18,6 +18,11 @@
 - Seed path: <givn/ideation/<topic-id>/changes/<uc-id>.md or none>
 - Confirmed Personas: <persona-id>, or none — <reason + operator confirmation>
 
+## Review Context
+
+- Review kind: self-review
+- Reason: <why this kind; name the major-change reason when independent>
+
 ## Problem / Opportunity
 
 > Describe the problem or opportunity in domain terms. What is currently broken,
