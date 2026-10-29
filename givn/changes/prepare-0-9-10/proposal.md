@@ -84,6 +84,8 @@ The initial route command recommended EXTEND givn-workflow-enforcement (signal, 
 | givn-workflow-enforcement | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND givn-workflow-enforcement | Primary verification behavior. |
 | outline-review-gate | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND outline-review-gate | Retire blocking outline enforcement; retain advisory outline-report. |
 | review-disposition-gates | EXTEND givn-workflow-enforcement (initial global signal) | EXTEND review-disposition-gates | Existing verify-change ownership; do not concentrate unrelated goals in verification. |
+| generate-ideation-guidance | EXTEND generate-ideation-guidance (existing support capability) | EXTEND generate-ideation-guidance | Skills-only synchronization preserves ideation guidance without a generated command. |
+| measure-coverage-per-project | EXTEND measure-coverage-per-project (existing support capability) | EXTEND measure-coverage-per-project | Documentation follows the configured coverage scripts under the current setup contract. |
 
 ## Compatibility and user interactions
 

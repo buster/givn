@@ -365,6 +365,14 @@ fn feature_file_at(world: &mut GivnWorld, path: String, step: &Step) {
     }
     std::fs::write(&file_path, content).expect("write .feature file");
     ensure_fixture_usecase(env, &path, content);
+    if let Some(change) = path
+        .strip_prefix("givn/changes/")
+        .and_then(|rest| rest.split_once("/specs/"))
+        .map(|(change, _)| change)
+    {
+        common::clear_no_behavior_fixture(env, change);
+        common::declare_fixture_routing(env, change);
+    }
 }
 
 fn ensure_fixture_usecase(env: &common::TestEnv, feature_path: &str, content: &str) {
@@ -467,6 +475,14 @@ fn feature_file_removed_wip_placeholder(world: &mut GivnWorld, path: String) {
     }
     std::fs::write(&file_path, content).expect("write .feature file");
     ensure_fixture_usecase(env, &path, content);
+    if let Some(change) = path
+        .strip_prefix("givn/changes/")
+        .and_then(|rest| rest.split_once("/specs/"))
+        .map(|(change, _)| change)
+    {
+        common::clear_no_behavior_fixture(env, change);
+        common::declare_fixture_routing(env, change);
+    }
 }
 
 #[given(
@@ -484,6 +500,14 @@ fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
     }
     std::fs::write(&file_path, content).expect("write .feature file");
     ensure_fixture_usecase(env, &path, content);
+    if let Some(change) = path
+        .strip_prefix("givn/changes/")
+        .and_then(|rest| rest.split_once("/specs/"))
+        .map(|(change, _)| change)
+    {
+        common::clear_no_behavior_fixture(env, change);
+        common::declare_fixture_routing(env, change);
+    }
 }
 
 /// Extra environment overrides for the current subprocess. The

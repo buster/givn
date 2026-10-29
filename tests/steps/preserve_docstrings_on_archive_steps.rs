@@ -51,8 +51,28 @@ fn complete_change_with_delta(
     write_command_overrides(env);
     let specs_dir = change_dir.join("specs");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
-    let cap_file = specs_dir.join(format!("delta-{id}.feature"));
-    std::fs::write(&cap_file, delta_content).expect("write delta feature");
+    let capability = delta_content
+        .split_whitespace()
+        .find_map(|token| {
+            token
+                .strip_prefix('@')
+                .filter(|tag| !tag.starts_with("givn."))
+        })
+        .unwrap_or("delta")
+        .to_string();
+    let owner = givn::spec::owner::resolve_capability_owner(&env.path("givn/specs"), &capability)
+        .expect("resolve fixture capability owner");
+    let delta_dir = match owner {
+        Some(owner) => {
+            let dir = specs_dir.join(owner.file_name().expect("owner directory name"));
+            std::fs::create_dir_all(&dir).expect("create owned delta dir");
+            dir
+        }
+        None => specs_dir.clone(),
+    };
+    std::fs::write(delta_dir.join(format!("delta-{id}.feature")), delta_content)
+        .expect("write delta feature");
+    common::declare_fixture_routing(env, id);
     change_dir
 }
 

@@ -27,6 +27,37 @@ fn write_visual_contract(world: &GivnWorld, interface: &str, viewports: Option<&
     }
     contract.push_str("- Design system: docs/design/design-system.md\n\nFixture contract.\n");
     std::fs::write(change_dir(world).join("design.md"), contract).expect("write design.md");
+    ensure_fixture_delta(world);
+}
+
+/// The review gate requires an explicit behavior artifact: a delta feature or
+/// a no-behavior-change declaration. A visual contract scenario without its
+/// own delta models one added scenario and refreshes the receipt to match.
+fn ensure_fixture_delta(world: &GivnWorld) {
+    let env = world.env.as_ref().expect("a fixture project is required");
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let specs = env.path(&format!("givn/changes/{id}/specs"));
+    let has_delta = std::fs::read_dir(&specs)
+        .map(|entries| {
+            entries.flatten().any(|entry| {
+                entry.path().is_dir()
+                    && std::fs::read_dir(entry.path())
+                        .map(|nested| {
+                            nested.flatten().any(|file| {
+                                file.path().extension().is_some_and(|ext| ext == "feature")
+                            })
+                        })
+                        .unwrap_or(false)
+            })
+        })
+        .unwrap_or(false);
+    if !has_delta {
+        crate::common::write_fixture_delta(env, &id, "visual-fixture", "Visual fixture behavior");
+        crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
+    }
 }
 
 #[given(
@@ -49,6 +80,7 @@ fn design_declares_terminal_contract(world: &mut GivnWorld) {
 fn design_declares_no_contract(world: &mut GivnWorld) {
     let design = "# Design: fixture\n\nNo visual contract in this design.\n";
     std::fs::write(change_dir(world).join("design.md"), design).expect("write design.md");
+    ensure_fixture_delta(world);
 }
 
 #[given(regex = r##"^the change's design\.md declares the visual interface "([^"]+)"$"##)]
@@ -69,6 +101,14 @@ fn delta_spec_contains_e2e(world: &mut GivnWorld, title: String) {
         "@givn.delta @fixture-capability\n\nFeature: Fixture capability\n\n  @givn.added @e2e\n  Scenario: {title}\n    Given the fixture universe is ready\n    When the fixture observer looks\n    Then the fixture records a unique observation\n"
     );
     std::fs::write(dir.join("fixture-capability.feature"), feature).expect("write delta feature");
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let env = world.env.as_ref().expect("a fixture project is required");
+    crate::common::clear_no_behavior_fixture(env, &id);
+    crate::common::declare_fixture_routing(env, &id);
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
 }
 
 fn evidence_path(world: &GivnWorld, title: &str, file: &str) -> PathBuf {

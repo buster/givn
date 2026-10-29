@@ -21,8 +21,9 @@ printf '%s\n' '<?xml version="1.0"?><coverage line-rate="0.95" branch-rate="0.95
 "##;
     std::fs::write(env.path("merge-coverages.sh"), merge).expect("write merge script");
     make_executable(&env.path("merge-coverages.sh"));
-    let yaml = "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"./measure-coverage.sh\"\n  merge_command: \"./merge-coverages.sh\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\naddons:\n  readme: true\n  coverage: true\n";
+    let yaml = "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"./measure-coverage.sh\"\n  merge_command: \"./merge-coverages.sh\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\n";
     common::write_commands_yaml(&env.path("givn/commands.yaml"), yaml);
+    common::replace_config_addons(env, "addons:\n  readme: true\n  coverage: true\n");
 }
 
 #[then("givn/commands.yaml contains `measure_command: \"./measure-coverage.sh\"`")]
@@ -124,4 +125,30 @@ fn make_executable(path: &std::path::Path) {
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))
         .expect("make script executable");
+}
+
+#[then("the README documents the configured runner and coverage scripts")]
+fn readme_documents_configured_workflow(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("environment is set");
+    let commands =
+        std::fs::read_to_string(env.path("givn/commands.yaml")).expect("read commands.yaml");
+    let verify = commands
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("command:"))
+        .map(|value| {
+            value
+                .split('#')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .trim_matches('"')
+        })
+        .expect("commands.yaml declares verify.command");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    for command in [verify, "./measure-coverage.sh", "./merge-coverages.sh"] {
+        assert!(
+            readme.contains(command),
+            "README missing configured command {command}"
+        );
+    }
 }

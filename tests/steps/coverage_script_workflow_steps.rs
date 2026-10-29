@@ -30,9 +30,10 @@ fn archive_change(world: &mut GivnWorld) {
 
 fn write_commands(env: &crate::common::TestEnv, measure: &str, merge: &str) {
     let yaml = format!(
-        "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"{measure}\"\n  merge_command: \"{merge}\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\naddons:\n  readme: true\n  coverage: true\n"
+        "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"{measure}\"\n  merge_command: \"{merge}\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\n"
     );
     crate::common::write_commands_yaml(&env.path("givn/commands.yaml"), &yaml);
+    crate::common::replace_config_addons(env, "addons:\n  readme: true\n  coverage: true\n");
 }
 
 fn write_measure_script(env: &crate::common::TestEnv) {

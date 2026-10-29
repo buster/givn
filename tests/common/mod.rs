@@ -429,6 +429,220 @@ pub fn run_init_in_terminal(env: &TestEnv, keys: &[u8]) -> Output {
     }
 }
 
+/// Replace the project's addon policy in `givn/config.yaml`.
+///
+/// Addon flags are policy: `givn/commands.yaml` rejects them. Fixtures that
+/// need a specific addon set call this instead of writing an `addons:` block
+/// beside the command settings.
+pub fn replace_config_addons(env: &TestEnv, addons: &str) {
+    let path = env.path("givn/config.yaml");
+    let content = fs::read_to_string(&path).expect("read givn/config.yaml");
+    let updated = replace_top_level_key(&content, "addons", addons);
+    fs::write(path, updated).expect("write givn/config.yaml");
+}
+
+/// Drop a fixture's explicit no-behavior-change declaration once the scenario
+/// writes executable delta features.
+pub fn clear_no_behavior_fixture(env: &TestEnv, change: &str) {
+    let change_dir = env.path(&format!("givn/changes/{change}"));
+    let proposal = change_dir.join("proposal.md");
+    if let Ok(content) = fs::read_to_string(&proposal) {
+        let filtered: Vec<&str> = content
+            .lines()
+            .filter(|line| !line.trim_start().starts_with("Behavior change:"))
+            .collect();
+        fs::write(&proposal, format!("{}\n", filtered.join("\n").trim_end()))
+            .expect("rewrite fixture proposal");
+    }
+    let _ = fs::remove_file(change_dir.join(".givn-skip"));
+}
+
+/// Declare a routing decision for every capability the change's delta
+/// actually declares.
+///
+/// The archive/review routing gate is fail-closed: a delta capability without
+/// a filled `## Capability Routing` row blocks the command. Fixtures model an
+/// authored proposal by recording `EXTEND <capability>` when the permanent
+/// corpus already owns the capability and `NEW in <usecase>` otherwise. A new
+/// capability also needs its change-local use-case narrative, so one is
+/// scaffolded from the shipped template when the fixture did not write it.
+pub fn declare_fixture_routing(env: &TestEnv, change: &str) {
+    let change_dir = env.path(&format!("givn/changes/{change}"));
+    let specs = change_dir.join("specs");
+    let mut capabilities = std::collections::BTreeMap::new();
+    collect_capability_names(&specs, &specs, &mut capabilities);
+    if capabilities.is_empty() {
+        return;
+    }
+    let permanent = env.path("givn/specs");
+    let mut rows = Vec::new();
+    for (usecase, capability) in capabilities {
+        let owned = givn::spec::owner::resolve_capability_owner(&permanent, &capability)
+            .ok()
+            .flatten();
+        let decision = match (&usecase, owned) {
+            (_, Some(_)) => format!("`EXTEND {capability}`"),
+            (Some(usecase), None) => {
+                write_fixture_usecase(&specs, usecase, &capability);
+                format!("`NEW in {usecase}`")
+            }
+            (None, None) => format!("`NEW in {capability}`"),
+        };
+        rows.push(format!(
+            "| {capability} | (fixture) | {decision} | fixture |"
+        ));
+    }
+    let table = format!(
+        "## Capability Routing\n\n\
+         | Proposed capability | Route's recommendation | Decision | Rationale |\n\
+         |---|---|---|---|\n{}\n",
+        rows.join("\n")
+    );
+    let proposal_path = change_dir.join("proposal.md");
+    let proposal = fs::read_to_string(&proposal_path).unwrap_or_default();
+    let updated = replace_section(&proposal, "## Capability Routing", &table);
+    fs::write(proposal_path, updated).expect("write fixture proposal routing");
+}
+
+fn write_fixture_usecase(specs: &std::path::Path, usecase: &str, capability: &str) {
+    let path = specs.join(usecase).join("usecase.md");
+    if path.exists() {
+        return;
+    }
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", usecase)
+        .replace("<capability-id>", capability)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", capability)
+        .replace("<scenario title>", "No E2E interaction");
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).expect("create fixture usecase dir");
+    }
+    fs::write(path, document).expect("write fixture usecase");
+}
+
+fn collect_capability_names(
+    dir: &std::path::Path,
+    specs_root: &std::path::Path,
+    capabilities: &mut std::collections::BTreeMap<Option<String>, String>,
+) {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_capability_names(&path, specs_root, capabilities);
+        } else if path
+            .extension()
+            .is_some_and(|extension| extension == "feature")
+        {
+            let declared = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
+                .ok()
+                .and_then(|feature| {
+                    givn::gherkin::delta::capability_tag(&feature).map(str::to_string)
+                });
+            let capability = declared.or_else(|| {
+                path.file_stem()
+                    .and_then(|stem| stem.to_str())
+                    .map(str::to_string)
+            });
+            let Some(capability) = capability else {
+                continue;
+            };
+            let usecase = path
+                .parent()
+                .filter(|parent| *parent != specs_root)
+                .and_then(|parent| parent.file_name())
+                .and_then(|name| name.to_str())
+                .map(str::to_string);
+            capabilities.insert(usecase, capability);
+        }
+    }
+}
+
+/// Replace a level-two Markdown section, or append it when absent.
+fn replace_section(document: &str, heading: &str, replacement: &str) -> String {
+    if let Some(start) = document.find(heading) {
+        let rest = &document[start + heading.len()..];
+        let end = rest
+            .find("\n## ")
+            .map(|offset| start + heading.len() + offset + 1)
+            .unwrap_or(document.len());
+        let mut updated = String::new();
+        updated.push_str(&document[..start]);
+        updated.push_str(replacement);
+        updated.push_str(&document[end..]);
+        return updated;
+    }
+    let mut updated = document.to_string();
+    if !updated.is_empty() && !updated.ends_with('\n') {
+        updated.push('\n');
+    }
+    if !updated.is_empty() {
+        updated.push('\n');
+    }
+    updated.push_str(replacement);
+    updated
+}
+
+/// Add a minimal passing review record to a change when the fixture does not
+/// write one itself.
+///
+/// The review artifact requires an actual verdict (`REVIEW: PASS`) and, when
+/// the readme addon is enabled, a README impact decision. Fixtures that
+/// exercise a later gate still model a project that completed the review.
+pub fn ensure_review_evidence(env: &TestEnv, change: &str, readme_addon: bool) {
+    let path = env.path(&format!("givn/changes/{change}/review.md"));
+    let mut content = fs::read_to_string(&path).unwrap_or_default();
+    if !content.contains("REVIEW:") && !content.contains("VERDICT:") {
+        if !content.is_empty() && !content.ends_with('\n') {
+            content.push('\n');
+        }
+        content.push_str("\nREVIEW: PASS\n");
+    }
+    if readme_addon && !content.contains("README-IMPACT:") {
+        content = format!("README-IMPACT: none\n\n{content}");
+    }
+    fs::write(path, content).expect("write review.md evidence");
+}
+
+/// Write a change delta with one added scenario and its routing decision.
+pub fn write_fixture_delta(env: &TestEnv, change: &str, capability: &str, scenario: &str) {
+    let dir = env.path(&format!("givn/changes/{change}/specs/{capability}"));
+    fs::create_dir_all(&dir).expect("create fixture delta dir");
+    let feature = format!(
+        "@givn.delta @{capability}\nFeature: {capability}\n\n  @givn.added\n  Scenario: {scenario}\n    Given a fixture precondition\n    When the fixture action runs\n    Then the fixture result is observed\n"
+    );
+    fs::write(dir.join(format!("{capability}.feature")), feature).expect("write fixture delta");
+    clear_no_behavior_fixture(env, change);
+    declare_fixture_routing(env, change);
+}
+
+/// Write a coverage measurement script that publishes two distinct reports.
+///
+/// The archive coverage gate removes stale reports before running the
+/// measurement, so a fixture that archives with the coverage addon enabled
+/// must produce the reports during that run. Returns the configured command.
+pub fn write_fixture_coverage_measure(env: &TestEnv, non_e2e: &str, e2e: &str) -> String {
+    let dir = env.path("coverage");
+    fs::create_dir_all(&dir).expect("create coverage dir");
+    fs::write(dir.join("fixture-non-e2e.xml"), non_e2e).expect("write fixture non-e2e report");
+    fs::write(dir.join("fixture-e2e.xml"), e2e).expect("write fixture e2e report");
+    let script = "#!/bin/sh\n\
+                  set -eu\n\
+                  mkdir -p \"$(dirname \"$GIVN_COVERAGE_NON_E2E_PATH\")\" \"$(dirname \"$GIVN_COVERAGE_E2E_PATH\")\"\n\
+                  cp coverage/fixture-non-e2e.xml \"$GIVN_COVERAGE_NON_E2E_PATH\"\n\
+                  cp coverage/fixture-e2e.xml \"$GIVN_COVERAGE_E2E_PATH\"\n";
+    let path = env.path("measure-coverage.sh");
+    fs::write(&path, script).expect("write measure script");
+    use std::os::unix::fs::PermissionsExt;
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o755))
+        .expect("make measure script executable");
+    "./measure-coverage.sh".to_string()
+}
+
 /// Write a project override at `givn/artifacts/<artifact>/<file>` inside the
 /// temp root. `givn init` does not scaffold `givn/artifacts/` (SMELL-3), so
 /// this helper `create_dir_all`s the subtree itself.

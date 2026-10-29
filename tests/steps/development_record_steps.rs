@@ -109,6 +109,12 @@ fn change_with_a_slow_verification_command(world: &mut GivnWorld, id: String) {
         String::from_utf8_lossy(&out.stderr),
     );
     support::declare_verify_command(env, support::SLOW_VERIFY_COMMAND);
+    common::write_fixture_delta(
+        env,
+        &id,
+        "recorded-behavior",
+        "Recorded verification behavior",
+    );
     world.last_change_id = Some(id);
 }
 
@@ -359,6 +365,18 @@ fn two_givn_commands_record_at_the_same_time(world: &mut GivnWorld) {
         "givn new demo failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
+    common::write_fixture_delta(
+        env,
+        "demo",
+        "recorded-behavior",
+        "Concurrent recording behavior",
+    );
+    let observed = common::run_givn(env, &["status", "--change", "demo"]);
+    assert!(
+        observed.status.success(),
+        "givn status demo failed: {}",
+        String::from_utf8_lossy(&observed.stderr)
+    );
     let before = support::record_entries(&env.root()).len();
     let racing = support::start_racing_commands(env);
     let state = world
@@ -399,9 +417,8 @@ fn every_entry_has_a_distinct_id(world: &mut GivnWorld) {
         .and_then(|state| state.entries_before)
         .expect("the two-writer fixture ran first");
     let entries = support::record_entries(&env.root());
-    // Every racer appended its own run and no line was lost or invented: one
-    // `command` entry plus its two children per racing command.
-    let expected = before + support::RACING_ROUNDS * 2 * 3;
+    let entries_per_racing_command = 3;
+    let expected = before + support::RACING_ROUNDS * 2 * entries_per_racing_command;
     assert_eq!(
         entries.len(),
         expected,
@@ -737,6 +754,7 @@ fn change_with_a_command_longer_than_the_label_limit(world: &mut GivnWorld, id: 
         String::from_utf8_lossy(&out.stderr),
     );
     support::declare_verify_command(env, LONG_VERIFY_COMMAND);
+    common::write_fixture_delta(env, &id, "recorded-behavior", "Recorded label behavior");
     world.last_change_id = Some(id);
 }
 

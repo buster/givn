@@ -89,9 +89,23 @@ fn readme_has_dev_block(world: &mut GivnWorld) {
             && readme.contains("<!-- givn:end:development -->"),
         "README must contain the development managed block:\n{readme}"
     );
+    let commands =
+        std::fs::read_to_string(env.path("givn/commands.yaml")).expect("read commands.yaml");
+    let verify = commands
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("command:"))
+        .map(|value| {
+            value
+                .split('#')
+                .next()
+                .unwrap_or("")
+                .trim()
+                .trim_matches('"')
+        })
+        .expect("commands.yaml declares verify.command");
     assert!(
-        readme.contains("./run-tests.sh"),
-        "development managed block must name the configured workflow commands:\n{readme}"
+        readme.contains(verify),
+        "development managed block must name the configured verify command {verify}:\n{readme}"
     );
 }
 

@@ -24,3 +24,7 @@ Feature: Givn release metadata and migration route
       | order          |
       | proposal asset |
       | design asset   |
+
+  @givn.removed
+  Scenario: The migration guide is an executable prompt sequence
+    Given this scenario is removed
