@@ -1668,3 +1668,191 @@ fn design_review_skill_points_to_canonical_instruction(_world: &mut GivnWorld) {
         "design-review skill does not point to the canonical instruction"
     );
 }
+
+// --- 0.9.10 concise-policy assertions --------------------------------------
+
+/// The guidance with line wrapping collapsed, so a quoted phrase is matched
+/// across the source's line breaks.
+fn flat_guidance(world: &GivnWorld) -> String {
+    guidance(world)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+#[then("the guidance labels `Must be shared` as supporting evidence only")]
+fn guidance_labels_shared_as_supporting(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("`Must be shared` is supporting evidence only"),
+        "guidance does not label Must be shared as supporting evidence"
+    );
+}
+
+#[then("the guidance says shared evidence alone never qualifies a candidate")]
+fn guidance_shared_alone_never_qualifies(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("it never qualifies a candidate by itself"),
+        "guidance allows shared evidence alone to qualify a candidate"
+    );
+}
+
+#[then("the guidance routes a non-qualifying candidate to its appropriate existing artifact")]
+fn guidance_routes_non_qualifying_to_existing_artifact(world: &mut GivnWorld) {
+    let guidance = flat_guidance(world);
+    assert!(
+        guidance.contains("If one of those is the complete home, do not create an ADR"),
+        "guidance does not refuse an ADR when an existing artifact owns the decision"
+    );
+    assert!(
+        guidance.contains("belongs in its appropriate existing artifact"),
+        "guidance does not route an implementation choice to its existing artifact"
+    );
+}
+
+#[then("the guidance names the existing artifacts that can own an ordinary decision")]
+fn guidance_names_existing_artifact_homes(world: &mut GivnWorld) {
+    let guidance = flat_guidance(world);
+    for artifact in [
+        "Gherkin specification",
+        "`design.md`",
+        "Arc42 chapter",
+        "process guidance",
+        "ordinary project documentation",
+        "the implementation",
+    ] {
+        assert!(
+            guidance.contains(artifact),
+            "guidance does not name {artifact} as an existing artifact home"
+        );
+    }
+}
+
+#[then("the guidance keeps the decision rationale in the ADR when it qualifies")]
+fn guidance_keeps_rationale_in_adr(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains(
+            "The ADR owns the decision rationale, its real alternatives, and its consequences"
+        ),
+        "guidance does not keep the decision rationale in the ADR"
+    );
+}
+
+#[then(
+    "the guidance requires searching the active and archived ADR registers before choosing a route"
+)]
+fn guidance_requires_register_search(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("search the active and archived ADR registers"),
+        "guidance does not require searching the ADR registers"
+    );
+}
+
+#[then(
+    "the guidance requires exactly one of NEW_ADR AMEND_ADR SUPERSEDE_ADR or an existing artifact"
+)]
+fn guidance_requires_exactly_one_route(world: &mut GivnWorld) {
+    let guidance = flat_guidance(world);
+    assert!(
+        guidance.contains("choose exactly one route"),
+        "guidance does not require exactly one route"
+    );
+    for route in ["NEW_ADR", "AMEND_ADR", "SUPERSEDE_ADR"] {
+        assert!(guidance.contains(route), "guidance is missing {route}");
+    }
+}
+
+#[then("the guidance forbids drafting an ADR before the existing-decision search")]
+fn guidance_forbids_drafting_before_search(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("before drafting any ADR"),
+        "guidance does not gate drafting on the existing-decision search"
+    );
+}
+
+#[then("the guidance requires facts established by the author or source artifacts")]
+fn guidance_requires_established_facts(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains(
+            "when a fact is unknown, establish it or narrow the decision instead of filling the gap"
+        ),
+        "guidance does not require unknown facts to be established"
+    );
+}
+
+#[then(
+    "the guidance forbids inventing alternatives impact consequences participants or provenance"
+)]
+fn guidance_forbids_invented_qualification_facts(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains(
+            "Do not invent alternatives, impact, consequences, participants, or provenance"
+        ),
+        "guidance does not forbid invented qualification facts"
+    );
+}
+
+#[then("the guidance says a refinement amends the existing ADR")]
+fn guidance_refinement_amends(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("A refinement amends the existing ADR"),
+        "guidance does not route a refinement to the existing ADR"
+    );
+}
+
+#[then("the guidance requires the existing record to be identified before amending")]
+fn guidance_identifies_existing_record(world: &mut GivnWorld) {
+    let guidance = flat_guidance(world);
+    assert!(
+        guidance.contains("AMEND_ADR"),
+        "guidance does not name AMEND_ADR"
+    );
+    assert!(
+        guidance.contains("existing ADR"),
+        "guidance does not name the existing ADR to amend"
+    );
+}
+
+#[then("the guidance forbids a duplicate qualification worksheet in the amended record")]
+fn guidance_forbids_duplicate_worksheet(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("Qualification is not another section of the ADR"),
+        "guidance repeats qualification inside the ADR"
+    );
+}
+
+#[then("the guidance says a replacement supersedes the existing ADR")]
+fn guidance_replacement_supersedes(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("a replacement supersedes it"),
+        "guidance does not route a replacement to supersession"
+    );
+}
+
+#[then("the guidance requires an explicit replacement link from the old record")]
+fn guidance_requires_replacement_link(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("leaves an explicit replacement link"),
+        "guidance does not require an explicit replacement link"
+    );
+}
+
+#[then("the guidance keeps the superseded record's history in the archive")]
+fn guidance_keeps_superseded_history(world: &mut GivnWorld) {
+    let guidance = flat_guidance(world);
+    assert!(
+        guidance.contains("superseded by ADR-NNNN"),
+        "guidance does not keep a concrete supersession status"
+    );
+    assert!(
+        guidance.contains("docs/arc42/adr/archive/"),
+        "guidance does not keep historical ADRs in the decision archive"
+    );
+}
+
+#[then("the guidance requires the decision to have one complete home")]
+fn guidance_requires_one_complete_home(world: &mut GivnWorld) {
+    assert!(
+        flat_guidance(world).contains("If one of those is the complete home, do not create an ADR"),
+        "guidance does not require one complete home for the decision"
+    );
+}

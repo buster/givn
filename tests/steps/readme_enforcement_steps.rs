@@ -258,6 +258,14 @@ pub(crate) fn write_reviewable_change(world: &mut GivnWorld, id: &str) {
     let change_dir = env.path(&format!("givn/changes/{id}"));
     std::fs::create_dir_all(&change_dir).expect("create change dir");
     std::fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write proposal");
+    let permanent_dir = env.path("givn/specs/example");
+    std::fs::create_dir_all(&permanent_dir).expect("create permanent usecase dir");
+    std::fs::write(
+        permanent_dir.join("example.feature"),
+        "Feature: Example\n\n  Scenario: Existing fixture behavior\n    Given a fixture step\n",
+    )
+    .expect("write permanent fixture feature");
+    common::write_fixture_delta(env, id, "example", "Readme fixture behavior");
     std::fs::write(change_dir.join("design.md"), "# Design\n").expect("write design");
     std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
         .expect("write design-review");

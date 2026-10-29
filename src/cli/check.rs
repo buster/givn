@@ -129,13 +129,14 @@ fn run_mandatory_checks(
         "review" => {
             println!("Mandatory checks for 'review':");
             let mut failures = Vec::new();
-            if let Err(error) = crate::integrity_hook::run_integrity_hook(
+            match crate::integrity_hook::run_integrity_hook(
                 features_path,
                 manifest.addons.arc42,
                 manifest.addons.coverage,
                 manifest.addons.readme,
             ) {
-                failures.push(error.to_string());
+                Ok(()) => println!("  ✓ integrity checks passed"),
+                Err(error) => failures.push(error.to_string()),
             }
             let run_findings = crate::cli::run_block::check_run(manifest);
             if !run_findings.is_empty() {

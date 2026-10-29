@@ -59,6 +59,7 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
         &root.join("givn/commands.yaml"),
         &format!("verify:\n  command: \"{verify}\"\n  e2e_command: \"\"\n"),
     );
+    common::declare_fixture_routing(&env, "fixture-consolidation");
 
     common::git_init(&env);
     world.env = Some(env);

@@ -98,3 +98,50 @@ Feature: Concise qualification and canonical routing of architecture decisions
     And a genuine lasting boundary decision with real alternatives may qualify
     And examples explain the concise qualification rather than require three additional recorded tests
     And qualification is by kind rather than a numeric ADR cap
+
+  @givn.modified
+  Scenario: Shared guidance alone does not qualify an ADR
+    Given the ADR qualification guidance is available
+    When an author reads the qualification criteria
+    Then the guidance labels `Must be shared` as supporting evidence only
+    And the guidance says shared evidence alone never qualifies a candidate
+    And the guidance routes a non-qualifying candidate to its appropriate existing artifact
+
+  @givn.modified
+  Scenario: The guidance routes normal design decisions to one canonical artifact
+    Given the ADR qualification guidance is available
+    When an author reads the lower-level artifact rules
+    Then the guidance names the existing artifacts that can own an ordinary decision
+    And the guidance requires the decision to have one complete home
+    And the guidance keeps the decision rationale in the ADR when it qualifies
+
+  @givn.modified
+  Scenario: The guidance requires an existing-ADR check before drafting
+    Given the ADR qualification guidance is available
+    When an author reads the duplicate and relationship rules
+    Then the guidance requires searching the active and archived ADR registers before choosing a route
+    And the guidance requires exactly one of NEW_ADR AMEND_ADR SUPERSEDE_ADR or an existing artifact
+    And the guidance forbids drafting an ADR before the existing-decision search
+
+  @givn.modified
+  Scenario: The guidance forbids invented ADR evidence
+    Given the ADR qualification guidance is available
+    When an author reads the evidence rules
+    Then the guidance requires facts established by the author or source artifacts
+    And the guidance forbids inventing alternatives impact consequences participants or provenance
+
+  @givn.modified
+  Scenario: An ADR refinement is routed to amendment without duplication
+    Given the ADR qualification guidance is available
+    When an author reads the refinement rules
+    Then the guidance says a refinement amends the existing ADR
+    And the guidance requires the existing record to be identified before amending
+    And the guidance forbids a duplicate qualification worksheet in the amended record
+
+  @givn.modified
+  Scenario: An architectural replacement preserves supersession history
+    Given the ADR qualification guidance is available
+    When an author reads the replacement rules
+    Then the guidance says a replacement supersedes the existing ADR
+    And the guidance requires an explicit replacement link from the old record
+    And the guidance keeps the superseded record's history in the archive

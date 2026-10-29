@@ -208,7 +208,7 @@ fn run_with_root(
     // run the same scan but keep only findings that involve the change's
     // delta (same delta-prefix filter as run_review_overlap_gate), so the
     // authoring loop surfaces overlap findings before check review does.
-    if paths.is_empty() {
+    if paths.is_empty() && !has_parse_error {
         let all_findings = crate::overlap::analysis::scan_tree(project_root);
         let scoped_findings: Vec<_> = if let Some(id) = change {
             let change_dir = crate::state::resolve_change_dir(project_root, id)?;

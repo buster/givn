@@ -258,6 +258,9 @@ docs/arc42/                     # fixed durable architecture path (arc42 addon)
 AGENTS.md                       # user-owned except managed fenced blocks
 ```
 
+The durable use-case model — identity, scoping rules, and review rejection
+criteria — is documented in [use-case-model.md](use-case-model.md).
+
 Selected targets receive:
 
 | Target | Generated content |

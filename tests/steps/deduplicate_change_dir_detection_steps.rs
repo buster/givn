@@ -34,40 +34,16 @@ verify:
   command: \"true\"
   e2e_command: \"\"
 coverage:
-  measure_command: \"true\"
+  measure_command: \"./measure-coverage.sh\"
   merge_command: \"cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml\"
   non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
   e2e_path: \"coverage/e2e-cobertura.xml\"
-addons:
-  arc42: true
-  absolute_mode: true
-  readme: true
-  coverage: true
-  domain_modeling: true
-  dev_principles: true
-  grill_me: true
-  grill_with_docs: true
-  outline: false
 ";
     std::fs::write(&commands_path, yaml).expect("write commands.yaml");
-    let cov_dir = env.path("coverage");
-    std::fs::create_dir_all(&cov_dir).expect("create coverage dir");
-    std::fs::write(
-        cov_dir.join("non-e2e-cobertura.xml"),
-        r#"<?xml version="1.0"?>
-<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
-  <packages />
-</coverage>"#,
-    )
-    .expect("write non-e2e xml");
-    std::fs::write(
-        cov_dir.join("e2e-cobertura.xml"),
-        r#"<?xml version="1.0"?>
-<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
-  <packages />
-</coverage>"#,
-    )
-    .expect("write e2e xml");
+    configure_fixture_policy(env);
+    write_permanent_example(env);
+    common::write_fixture_delta(env, &id, "example", "Integrity fixture behavior");
+    common::ensure_review_evidence(env, &id, true);
     world.last_change_id = Some(id.clone());
     let head = String::from_utf8_lossy(&common::git(env, &["rev-parse", "HEAD"]).stdout)
         .trim()
@@ -127,40 +103,13 @@ verify:
   command: \"true\"
   e2e_command: \"\"
 coverage:
-  measure_command: \"true\"
+  measure_command: \"./measure-coverage.sh\"
   merge_command: \"cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml\"
   non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
   e2e_path: \"coverage/e2e-cobertura.xml\"
-addons:
-  arc42: true
-  absolute_mode: true
-  readme: true
-  coverage: true
-  domain_modeling: true
-  dev_principles: true
-  grill_me: true
-  grill_with_docs: true
-  outline: false
 ";
     std::fs::write(&commands_path, yaml).expect("write commands.yaml");
-    let cov_dir = env.path("coverage");
-    std::fs::create_dir_all(&cov_dir).expect("create coverage dir");
-    std::fs::write(
-        cov_dir.join("non-e2e-cobertura.xml"),
-        r#"<?xml version="1.0"?>
-<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
-  <packages />
-</coverage>"#,
-    )
-    .expect("write non-e2e xml");
-    std::fs::write(
-        cov_dir.join("e2e-cobertura.xml"),
-        r#"<?xml version="1.0"?>
-<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
-  <packages />
-</coverage>"#,
-    )
-    .expect("write e2e xml");
+    configure_fixture_policy(env);
     world.last_change_id = Some(id);
 }
 
@@ -177,6 +126,9 @@ fn change_with_specs(world: &mut GivnWorld, id: String, specs_rel: String) {
         "@givn.delta\nFeature: example\n  Scenario: stub\n    Given a placeholder step\n",
     )
     .unwrap();
+    common::ensure_review_evidence(env, &id, true);
+    write_permanent_example(env);
+    common::declare_fixture_routing(env, &id);
     world.last_change_id = Some(id);
 }
 
@@ -238,5 +190,48 @@ fn change_with_specs_no_e2e(world: &mut GivnWorld, id: String, specs_rel: String
         "@givn.delta\nFeature: example\n  Scenario: stub\n    Given a placeholder step\n",
     )
     .unwrap();
+    common::ensure_review_evidence(env, &id, true);
+    write_permanent_example(env);
+    common::declare_fixture_routing(env, &id);
     world.last_change_id = Some(id);
+}
+
+/// Addon policy belongs in `givn/config.yaml`; the coverage gate removes stale
+/// reports before measuring, so the fixture measure command writes them.
+fn configure_fixture_policy(env: &crate::common::TestEnv) {
+    common::replace_config_addons(
+        env,
+        "addons:\n  arc42: true\n  readme: true\n  coverage: true\n  domain_modeling: true\n  dev_principles: true\n  outline: false\n",
+    );
+    common::write_fixture_coverage_measure(
+        env,
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+    );
+}
+
+/// The delta extends an existing capability, so the fixture models a real
+/// project with one permanent use case and its capability spec.
+fn write_permanent_example(env: &crate::common::TestEnv) {
+    let dir = env.path("givn/specs/example");
+    std::fs::create_dir_all(&dir).expect("create permanent usecase dir");
+    std::fs::write(
+        dir.join("example.feature"),
+        "Feature: Example\n\n  Scenario: Existing behavior\n    Given a fixture step\n",
+    )
+    .expect("write permanent feature");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "example")
+        .replace("<capability-id>", "example")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "No E2E interaction");
+    std::fs::write(dir.join("usecase.md"), document).expect("write permanent usecase");
 }

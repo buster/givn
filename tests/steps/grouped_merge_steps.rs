@@ -142,40 +142,14 @@ verify:
   command: \"./emit-result.sh regular\"
   e2e_command: \"givn missing-e2e-runner\"
 coverage:
-  measure_command: \"true\"
+  measure_command: \"./measure-coverage.sh\"
   merge_command: \"cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml\"
   non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
   e2e_path: \"coverage/e2e-cobertura.xml\"
-addons:
-  arc42: true
-  absolute_mode: true
-  readme: true
-  coverage: true
-  domain_modeling: true
-  dev_principles: true
-  grill_me: true
-  grill_with_docs: true
 ";
     let yaml = format!("{yaml}{}", common::complete_run_declaration("cli"));
     std::fs::write(&commands_path, yaml).expect("write commands.yaml");
-    let cov_dir = env.path("coverage");
-    std::fs::create_dir_all(&cov_dir).expect("create coverage dir");
-    std::fs::write(
-        cov_dir.join("non-e2e-cobertura.xml"),
-        r#"<?xml version="1.0"?>
-<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
-  <packages />
-</coverage>"#,
-    )
-    .expect("write non-e2e xml");
-    std::fs::write(
-        cov_dir.join("e2e-cobertura.xml"),
-        r#"<?xml version="1.0"?>
-<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
-  <packages />
-</coverage>"#,
-    )
-    .expect("write e2e xml");
+    configure_retirement_policy(env);
 
     // The permanent use case: a narrative plus its only capability.
     let usecase_dir = env.path(&format!("givn/specs/{usecase}"));
@@ -885,4 +859,24 @@ fn change_not_moved_no_receipt(world: &mut GivnWorld) {
     let root = support::root(world);
     assert!(root.join("givn/changes/two-new").is_dir());
     assert!(!root.join("givn/archive/two-new/verification.json").exists());
+}
+
+/// Addon policy belongs in `givn/config.yaml`; the coverage gate removes stale
+/// reports before measuring, so the fixture measure command writes them.
+fn configure_retirement_policy(env: &common::TestEnv) {
+    common::replace_config_addons(
+        env,
+        "addons:\n  arc42: true\n  readme: true\n  coverage: true\n  domain_modeling: true\n  dev_principles: true\n",
+    );
+    common::write_fixture_coverage_measure(
+        env,
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+    );
 }

@@ -701,7 +701,8 @@ impl VerificationInputs {
     pub fn ensure_unchanged(&self, after: &Self) -> Result<()> {
         if self != after {
             bail!(
-                "tested inputs changed during execution; no passing verification evidence was issued"
+                "tested inputs changed during execution — the tested tree changed outside the declared \
+                 evidence; no passing verification evidence was issued"
             );
         }
         Ok(())

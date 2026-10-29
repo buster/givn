@@ -366,7 +366,31 @@ fn change_passed_design_review(world: &mut GivnWorld) {
     let personas = project_root(world).join("givn/personas");
     std::fs::create_dir_all(&personas).unwrap();
     std::fs::write(personas.join("fixture-persona.md"), "# Persona: fixture\n").unwrap();
+    declare_fixture_review_baseline(world, "test-change");
     write_fixture_change_receipt(world, "test-change");
+}
+
+/// Model a change that reached review without executable behavior changes.
+///
+/// The review gate demands either delta feature files or an explicit
+/// no-behavior-change declaration with a skipped specs artifact. A scenario
+/// that later writes a delta removes the declaration through its own fixture
+/// step.
+fn declare_fixture_review_baseline(world: &GivnWorld, id: &str) {
+    let change = change_dir_for(world, id);
+    let proposal = change.join("proposal.md");
+    let mut content = std::fs::read_to_string(&proposal).unwrap_or_default();
+    if !content.ends_with('\n') && !content.is_empty() {
+        content.push('\n');
+    }
+    content.push_str("\nBehavior change: none\n");
+    std::fs::write(&proposal, content).unwrap();
+    std::fs::write(change.join(".givn-skip"), "specs\n").unwrap();
+    std::fs::write(
+        change.join("review.md"),
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
+    )
+    .unwrap();
 }
 
 #[given(regex = r#"^the change's proposal records review kind "([^"]+)"$"#)]
@@ -733,6 +757,7 @@ fn project_arc42_enabled(world: &mut GivnWorld) {
         String::from_utf8_lossy(&out.stderr)
     );
     world.last_change_id = Some("test-change".to_string());
+    declare_fixture_review_baseline(world, "test-change");
     write_fixture_change_receipt(world, "test-change");
 }
 
@@ -751,6 +776,7 @@ fn standalone_change_design_review(world: &mut GivnWorld) {
     disable_outline_addon(world);
     let dr_path = project_root(world).join("givn/changes/test-change/design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
+    declare_fixture_review_baseline(world, "test-change");
     write_fixture_change_receipt(world, "test-change");
 }
 
@@ -863,6 +889,8 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
         "Feature: Test Capability\n",
     )
     .unwrap();
+    let env = world.env.as_ref().expect("a fixture project is required");
+    common::declare_fixture_routing(env, "integrity-hook-and-archive-gate");
 }
 
 #[given("the change's review.md has no README impact decision")]
@@ -962,6 +990,8 @@ fn archive_ready_change_with_wip(world: &mut GivnWorld) {
         "Feature: Test Capability\n",
     )
     .unwrap();
+    let env = world.env.as_ref().expect("a fixture project is required");
+    common::declare_fixture_routing(env, "wip-change");
 }
 
 #[given(
@@ -1007,6 +1037,8 @@ fn archive_ready_change_wip_only_on_removed(world: &mut GivnWorld) {
         "Feature: Test Capability\n\n  Scenario: Old\n    Given x\n",
     )
     .unwrap();
+    let env = world.env.as_ref().expect("a fixture project is required");
+    common::declare_fixture_routing(env, "wip-removed-change");
 }
 
 #[given("a change whose delta spec contains @wip")]

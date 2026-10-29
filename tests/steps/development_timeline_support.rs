@@ -1286,10 +1286,12 @@ pub const RACING_ROUNDS: usize = 6;
 /// is noticed within microseconds by every process — the failure the fixture
 /// creates is a real `EISDIR`-free, real-process interleaving, never a mocked
 /// clock and never a simulated failure.
-pub const RACE_BARRIER_COMMAND: &str = "until [ -e .givn-race-go ]; do :; done; printf '{\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}' > $GIVN_RESULT_FILE.$$; mv $GIVN_RESULT_FILE.$$ $GIVN_RESULT_FILE";
+pub const RACE_BARRIER_COMMAND: &str = "until [ -e givn/history/givn-race-go ]; do :; done; printf '{\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}' > $GIVN_RESULT_FILE.$$; mv $GIVN_RESULT_FILE.$$ $GIVN_RESULT_FILE";
 
-/// The marker that releases the barrier.
-const RACE_MARKER: &str = ".givn-race-go";
+/// The marker that releases the barrier. It lives under the excluded history
+/// store so the input witness does not mistake the fixture signal for a tested
+/// source change.
+const RACE_MARKER: &str = "givn/history/givn-race-go";
 
 /// How long the racing processes get to reach the barrier before the fixture
 /// releases it. A process that arrives late appends later instead of racing —
@@ -1304,6 +1306,8 @@ pub fn start_racing_commands(env: &common::TestEnv) -> Vec<std::process::Child> 
     declare_verify_command(env, RACE_BARRIER_COMMAND);
     common::commit_fixture(env);
     let marker = env.path(RACE_MARKER);
+    std::fs::create_dir_all(marker.parent().expect("race marker parent"))
+        .expect("create race marker directory");
     let _ = std::fs::remove_file(&marker);
     let children: Vec<std::process::Child> = (0..RACING_ROUNDS * 2)
         .map(|_| spawn_recording_command(env))
