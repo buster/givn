@@ -34,7 +34,7 @@ enum Commands {
     },
     /// Create one attributed revision through the selected SCM backend.
     ///
-    /// Records the named paths (or every pending change) and commits them.
+    /// Records only the explicitly named paths and commits them.
     /// The managed attribution trailer is appended when the harness exports
     /// attribution context (GIVN_ATTRIBUTION_ACTIVE); otherwise the message
     /// is committed unchanged. Fails when the checkout has no pending
@@ -173,7 +173,7 @@ enum Commands {
         #[command(subcommand)]
         command: ReadmeCommands,
     },
-    /// Regenerate skills and agent commands.
+    /// Regenerate generated skills.
     Skills {
         #[command(subcommand)]
         command: SkillsCommands,
@@ -186,7 +186,7 @@ enum Commands {
     },
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
-    /// Read the opt-in, advisory code-structure report.
+    /// Read the advisory code-structure report.
     Outline {
         #[command(subcommand)]
         command: OutlineCommands,
@@ -329,7 +329,7 @@ enum AddonsCommands {
 
 #[derive(Subcommand)]
 enum SkillsCommands {
-    /// Regenerate skills and agent commands from current templates.
+    /// Regenerate skills from current templates.
     Sync,
     /// Manage the configured skill/command install targets.
     Targets {
