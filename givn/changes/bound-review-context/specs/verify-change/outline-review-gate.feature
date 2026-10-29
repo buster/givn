@@ -2,7 +2,7 @@
 
 Feature: Outline review gate
 
-  @givn.added @wip
+  @givn.added
   Scenario: A self-review outline uses the self context
     Given a Givn project with the outline experiment enabled
     And a committed change that adds a type of 40 code lines in "src/engine.rs"
@@ -16,7 +16,7 @@ Feature: Outline review gate
     When the outline review assesses the change
     Then the review passes
 
-  @givn.added @wip
+  @givn.added
   Scenario: An independent outline uses the recorded reviewer context
     Given a Givn project with the outline experiment enabled
     And a committed change that adds a type of 40 code lines in "src/engine.rs"
@@ -30,7 +30,7 @@ Feature: Outline review gate
     When the outline review assesses the change
     Then the review passes
 
-  @givn.added @wip
+  @givn.added
   Scenario: An outline reviewer that differs from the recorded context is refused
     Given a Givn project with the outline experiment enabled
     And a committed change that adds a type of 40 code lines in "src/engine.rs"
@@ -45,7 +45,7 @@ Feature: Outline review gate
     Then the review fails
     And the review says "does not match the recorded Reviewer context"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An outline author that differs from the recorded author is refused
     Given a Givn project with the outline experiment enabled
     And a committed change that adds a type of 40 code lines in "src/engine.rs"
@@ -60,7 +60,7 @@ Feature: Outline review gate
     Then the review fails
     And the review says "does not match the recorded Author"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A legacy outline without a review kind keeps the reviewer-differs rule
     Given a Givn project with the outline experiment enabled
     And a committed change that adds a type of 40 code lines in "src/engine.rs"
@@ -71,7 +71,7 @@ Feature: Outline review gate
     When the outline review assesses the change
     Then the review passes
 
-  @givn.added @wip
+  @givn.added
   Scenario: A legacy outline with the author as reviewer is refused
     Given a Givn project with the outline experiment enabled
     And a committed change that adds a type of 40 code lines in "src/engine.rs"

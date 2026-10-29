@@ -7,7 +7,7 @@ Feature: givn Workflow Enforcement
   one independent review context, which covers both the design review and the
   final review. Existing design-review and review markers stay required.
 
-  @givn.added @wip
+  @givn.added
   Scenario: A recorded self-review is accepted
     Given a givn project with a change that has passed design-review
     And the change's proposal records review kind "self-review"
@@ -17,7 +17,7 @@ Feature: givn Workflow Enforcement
     When the user runs `givn check review --change test-change`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: An independent review by a different context is accepted
     Given a givn project with a change that has passed design-review
     And the change's proposal records review kind "independent"
@@ -27,7 +27,7 @@ Feature: givn Workflow Enforcement
     When the user runs `givn check review --change test-change`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: An independent review whose reviewer is the author is refused
     Given a givn project with a change that has passed design-review
     And the change's proposal records review kind "independent"
@@ -39,7 +39,7 @@ Feature: givn Workflow Enforcement
     And stderr contains "Reviewer context"
     And stderr contains "must differ from the author"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A self-review cannot satisfy a recorded independent request
     Given a givn project with a change that has passed design-review
     And the change's proposal records review kind "independent"
@@ -51,7 +51,7 @@ Feature: givn Workflow Enforcement
     And stderr contains "independent review is required"
     And stderr contains "Review kind: self-review"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The recorded independent choice is authoritative from the proposal
     Given a givn project with a change that has passed design-review
     And the change's proposal records review kind "independent"
@@ -62,7 +62,7 @@ Feature: givn Workflow Enforcement
     Then both runs exit non-zero
     And stderr contains "independent review is required"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design review and final review share one independent context
     Given a givn project with a change that has passed design-review
     And the change's proposal records review kind "independent"
@@ -75,14 +75,14 @@ Feature: givn Workflow Enforcement
     And stderr contains "reviewer-one"
     And stderr contains "reviewer-two"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A legacy review record without a kind keeps its existing gate result
     Given a givn project with a change that has passed design-review
     And the project declares a complete run declaration
     When the user runs `givn check review --change test-change`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review instruction carries the one-context policy
     Given a givn project
     When the developer reads the review instruction
@@ -92,7 +92,7 @@ Feature: givn Workflow Enforcement
     And the review instruction forbids more than one review context
     And the review instruction says the reviewer must not be the author
 
-  @givn.added @wip
+  @givn.added
   Scenario: Guidance assets stop prescribing subagent orchestration
     When the guidance assets are scanned for subagent vocabulary
     Then only assets/instructions/review.md names a review subagent
