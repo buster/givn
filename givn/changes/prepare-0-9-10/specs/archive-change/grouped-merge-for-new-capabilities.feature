@@ -1,7 +1,7 @@
 @givn.delta @grouped-merge-for-new-capabilities
 Feature: Grouped merge for new capabilities
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer archives a new capability and the merged spec lands in its declared use case
     Given a givn project with a completed change declaring a capability NEW in "some-group"
     And its supported delta feature has Background setup, inherited execution tags and a Scenario Outline with a docstring, table and Examples
@@ -12,21 +12,21 @@ Feature: Grouped merge for new capabilities
     And the published feature retains its complete supported executable content and tag inheritance
     And the terminal transcript is captured for this scenario
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive is blocked when a new capability has no declared routing decision
     Given a completed change introduces a new capability without a declared routing decision
     When the developer runs `givn archive --change flat-new`
     Then the command exits non-zero and explains the missing NEW routing decision
     And the permanent capability is not created and the active change is not moved
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Nothing is merged when one delta file of a change has no routing decision
     Given a completed change has two deltas with one routed NEW in "mixed-group" and one unrouted
     When the developer runs `givn archive --change mixed-routing`
     Then the command exits non-zero and names the missing routing decision
     And neither delta is merged and the active change is not moved
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Review and archive resolve existing capability owners consistently
     Given an otherwise valid completed change has a delta for capability "shared-capability"
     And "shared-capability" has <existing owners>
@@ -51,7 +51,7 @@ Feature: Grouped merge for new capabilities
       | `givn check review --change owner-demo` | both a use-case owner and a fragment owner | NEW | exits non-zero | ambiguous capability owners |
       | `givn archive --change owner-demo` | both a use-case owner and a fragment owner | NEW | exits non-zero | ambiguous capability owners |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A new capability preserves its supported feature structure
     Given a completed change routes a new capability into its declared use case
     And the supported feature contains Background setup, inherited tags, docstrings, data tables and multiple tagged Examples blocks
@@ -60,7 +60,7 @@ Feature: Grouped merge for new capabilities
     And every step argument and Examples value remains attached to its original executable element
     And only delta-operation tags are removed
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unsupported Rule in one new capability prevents every delta mutation
     Given the supported Gherkin dialect does not support Rule
     And a completed change has two correctly routed new capabilities

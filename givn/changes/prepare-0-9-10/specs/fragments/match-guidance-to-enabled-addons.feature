@@ -1,7 +1,7 @@
 @givn.delta @match-guidance-to-enabled-addons
 Feature: Match guidance to enabled addons
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Review guidance omits the Arc42 section when the Arc42 addon is disabled
     Given a Givn project with the arc42 addon disabled and the skills synchronized
     Then the served review instruction omits the Arc42 implementation conformance section
@@ -9,7 +9,7 @@ Feature: Match guidance to enabled addons
     And the generated review skill directs the reviewer to the review instruction
     And no generated review command exists
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
     Given a Givn project with the arc42 addon disabled and the skills synchronized
     Then the served design-review instruction omits the Architecture documentation (arc42) branch
@@ -20,7 +20,7 @@ Feature: Match guidance to enabled addons
   Scenario: An unbalanced conditional in a command template fails the synchronization
     Given this scenario is removed
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
     Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
     When a consumer synchronizes skills through the Givn CLI
@@ -32,7 +32,7 @@ Feature: Match guidance to enabled addons
     And no generated skill mentions any disabled addon
     And no Givn command files are generated
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: A consumer enables the addons a generated section needs and the guidance gains it
     Given a Givn project with the arc42 and domain-modeling addons disabled and the skills synchronized
     When a consumer enables the arc42 and domain-modeling addons through the Givn CLI
@@ -43,14 +43,14 @@ Feature: Match guidance to enabled addons
     And the generated review skill directs the reviewer to the review instruction
     And no generated review command exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unbalanced conditional in a skill template fails the synchronization
     Given a Givn project with a project skill template that contains an unbalanced conditional
     When a consumer synchronizes skills through the Givn CLI
     Then the synchronization fails
     And the failure names the template with the invalid directive
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Project skill overrides retain conditional addon behavior without command generation
     Given a Givn project with a project-owned skill template containing a conditional on the arc42 addon
     And the arc42 addon is "<state>"

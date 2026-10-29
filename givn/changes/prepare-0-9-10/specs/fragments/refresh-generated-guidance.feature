@@ -1,7 +1,7 @@
 @givn.delta @refresh-generated-guidance
 Feature: Refresh generated guidance
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Synchronized guidance explains how to resolve the deterministic gates
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
@@ -12,7 +12,7 @@ Feature: Refresh generated guidance
     And generated skills contain no repeated dialog-loading or delegation policy blocks
     And no separately authored agent commands are generated
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Review instructions require deterministic gate dispositions
     Given a givn project
     When the user runs `givn instructions review --change skill-rewrites`
@@ -20,7 +20,7 @@ Feature: Refresh generated guidance
     And the guidance requires completing a chosen split before sign-off
     And shape-match findings do not require blocking dispositions
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Generated guidance carries no copy of a built-in rule
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`

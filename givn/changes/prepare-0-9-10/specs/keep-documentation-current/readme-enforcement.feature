@@ -1,7 +1,7 @@
 @givn.delta @readme-enforcement
 Feature: README enforcement
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The check names a damaged managed block
     Given a project root with givn/ initialised
     And a README with a broken development managed block
@@ -11,7 +11,7 @@ Feature: README enforcement
     And stdout mentions "development managed block"
     And the README is unchanged
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Archiving refreshes the development block
     Given a project root with givn/ initialised
     And a stale development managed block with exactly one ordered opening and closing marker
@@ -26,7 +26,7 @@ Feature: README enforcement
     And the archived change directory exists
     And the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Ambiguous managed markers are rejected before README modification
     Given a project root with givn/ initialised
     And an otherwise complete README whose <block> managed block markers have <damage>

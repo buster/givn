@@ -1,7 +1,7 @@
 @givn.delta @adr-qualification-gate
 Feature: Concise qualification and canonical routing of architecture decisions
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The guidance defines strict qualification as an all-gates contract
     Given the ADR qualification guidance is available
     When an author reads the qualification gate
@@ -18,7 +18,7 @@ Feature: Concise qualification and canonical routing of architecture decisions
   Scenario: Route targets are conditional and unused targets stay empty
     Given this scenario is removed
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: All effective guidance sources use the same ADR policy
     Given the canonical Arc42 qualification procedure and design-review guidance are available
     When an author compares the effective and generated guidance sources
@@ -28,7 +28,7 @@ Feature: Concise qualification and canonical routing of architecture decisions
     And no source claims runtime enforcement of the qualification policy
     And a configured project override remains effective
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ADR guidance requires an adversarial qualification record
     Given the ADR qualification guidance is available
     When an author prepares an ADR candidate
@@ -36,7 +36,7 @@ Feature: Concise qualification and canonical routing of architecture decisions
     And the ADR owns the decision rationale alternatives and consequences
     And neither the ADR nor design-review repeats the assessment as another qualification worksheet
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: An author requests the strict ADR guidance through the Givn CLI
     Given an initialized ADR qualification project with active change `adr-qualification-gate`
     When the author requests the Arc42 ADR guidance through the Givn CLI
@@ -45,7 +45,7 @@ Feature: Concise qualification and canonical routing of architecture decisions
     And the output routes the result to a new amended superseding or non-ADR artifact
     And the output requires qualification once in the change assessment
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A reviewer requests design-review guidance through the Givn CLI
     Given an initialized ADR qualification project with active change `adr-qualification-gate`
     When the reviewer requests the `design-review` guidance through the Givn CLI
@@ -54,28 +54,28 @@ Feature: Concise qualification and canonical routing of architecture decisions
     And the output does not demand a duplicate qualification worksheet
     And the output distinguishes authoring policy from runtime enforcement
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The impact assessment records the verdict before drafting
     Given the change-level Arc42 assessment template is available
     When a maintainer reads the verdict placement rule
     Then the assessment records the concise qualification and chosen route before ADR drafting
     And a second structured verdict is not required in the ADR
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The ADR template ships with no pre-passed qualification values
     Given the ADR template is available
     When an author prepares to copy the template
     Then the template supplies valid frontmatter without pre-passed qualification claims
     And the template records decision rationale alternatives and consequences without another qualification worksheet
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The design template keeps decision justification in the design
     Given the design template is available
     When an author reads the Technology Decisions guidance
     Then ordinary technical justification remains in the design
     And ADR candidates refer to the concise change assessment instead of repeating qualification tests
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Design-review requires the cheaper-home challenge for a new ADR
     Given the design-review instruction is available
     When a reviewer reads the ADR branch
@@ -83,14 +83,14 @@ Feature: Concise qualification and canonical routing of architecture decisions
     And the reviewer uses the recorded qualification without another mandatory worksheet
     And the design-review skill points to the canonical instruction
 
-  @givn.added @wip
+  @givn.added
   Scenario: Ordinary ADR downsides are not automatically risk debt
     Given an architectural decision with a routine tradeoff and an actionable unresolved downside
     When the author reads the consequence and risk-recording guidance
     Then the ADR retains both consequences
     And only the actionable unresolved downside requires risk or debt tracking
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The guidance carries the three falsification tests
     Given the ADR qualification guidance is available
     When an author reads the qualification examples

@@ -1,7 +1,7 @@
 @givn.delta @outline-report
 Feature: Outline report
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: A developer runs a outline report and sees the classified units
     Given a Givn project with the outline experiment enabled
     And a production source unit that is over the readable size
@@ -13,7 +13,7 @@ Feature: Outline report
     And the report writes no baseline file
     And the terminal transcript is captured for this scenario
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The report fails when the scope has no production sources
     Given a Givn project with the outline experiment enabled
     And no production source files
@@ -23,7 +23,7 @@ Feature: Outline report
     And stderr says there are no supported production sources
     And stderr names Rust and Python as the supported source languages
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Unsupported-only production sources are not reported as absent
     Given a Givn project with the outline experiment enabled
     And the requested scope contains only production source files written in <language>
@@ -39,7 +39,7 @@ Feature: Outline report
       | Java     |
       | Go       |
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The JSON report carries analyzer capabilities and limitations
     Given a Givn project with the outline experiment enabled
     And a production source unit
@@ -50,7 +50,7 @@ Feature: Outline report
     And the limitations state that structural call order is not a complete runtime trace
     And the limitations state that uncertain or omitted call edges limit conclusions
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A report is available in machine-readable form
     Given a Givn project with the outline experiment enabled
     And a production source unit that is over the readable size
@@ -60,7 +60,7 @@ Feature: Outline report
     And the JSON report has no action or recommendation fields
     And the JSON report does not present classifications as review or archive verdicts
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Unavailable outline measurements are not reported as measured zero
     Given a Givn project with the outline experiment enabled
     And a supported production source unit for which <measurement> is unavailable
@@ -75,7 +75,7 @@ Feature: Outline report
       | method complexity    |
       | method nesting       |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Loose class cohesion is omitted when it is not independently measured
     Given a Givn project with the outline experiment enabled
     And a production source unit with measured tight class cohesion
