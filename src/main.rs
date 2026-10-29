@@ -1,22 +1,4 @@
-mod cli;
-mod cobertura;
-mod config;
-mod error;
-mod fossil;
-mod gherkin;
-mod git;
-mod history;
-mod hooks;
-mod integrity_hook;
-mod outline;
-mod overlap;
-mod proof;
-mod review_context;
-mod scm;
-mod skills;
-mod spec;
-mod state;
-mod subprocess;
+use givn::{cli, history};
 
 use std::path::PathBuf;
 
@@ -40,10 +22,10 @@ enum Commands {
         /// Overwrite existing files.
         #[arg(long)]
         force: bool,
-        /// Do not enable addons (arc42, absolute_mode).
+        /// Do not enable addons.
         #[arg(long)]
         no_addons: bool,
-        /// Agents to install skills/commands to, comma-separated
+        /// Agents to install skills to, comma-separated
         /// (e.g. `opencode,claude`, `omp`, `maki`, or `all`). Skips the interactive
         /// prompt. Only takes effect on fresh config creation (or with
         /// `--force`), same as the prompt it replaces.
@@ -61,7 +43,7 @@ enum Commands {
         /// Revision message.
         #[arg(short, long)]
         message: String,
-        /// Paths to record (defaults to every pending change).
+        /// Explicit paths to record; required.
         paths: Vec<String>,
     },
     /// Create a new change scaffold.
