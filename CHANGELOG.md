@@ -6,6 +6,26 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.9] - 2026-10-29
+
+### Features
+
+- **review:** run each change in one context by default, permit at most one
+  fresh independent review context for major or user-requested changes, record
+  `Review kind`, and make the outline gate use the recorded context. Prescriptive
+  subagent orchestration is removed from the generated guidance; the review
+  instruction is its only owner.
+- **addons:** enable every add-on by default, including the outline and
+  architecture-principles add-ons. `givn init --no-addons` writes an explicit
+  false for every known add-on, `givn addons list` reports the effective default,
+  and a partial `addons:` block changes only the keys it names.
+
+### Bug Fixes
+
+- **spec routing:** name the absent `NEW in <usecase-id>` or
+  `EXTEND <capability>` decision in the missing-row diagnostic so an archive
+  failure explains the missing record.
+
 ## [0.9.8] - 2026-10-26
 
 ### Features
