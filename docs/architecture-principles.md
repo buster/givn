@@ -10,10 +10,10 @@ Canonical rule: `givn instructions architecture-principles`.
 
 ## Status
 
-Feature-gated opt-in experiment. It is default-off, adds no archive gate and no
-generated skill, and its rules are provisional until the expected outcome below
-is observed in real changes. Disabling it removes every workflow pointer and
-gate check without deleting project content.
+Enabled-by-default guidance, not a gate or an experiment flag. It adds no
+artifact and no generated skill; it adds no review or archive gate. Its rules
+are still evolving with observed changes. Disabling it removes every served
+workflow reference without deleting project content.
 
 ## What it does
 
@@ -154,6 +154,6 @@ givn addons enable architecture_principles
 givn addons disable architecture_principles
 ```
 
-`givn init` lists it under `addons available (default off)`. When disabled, the
-workflow pointers and gate checks above are omitted. The instruction text
-remains retrievable by explicit id, matching the existing policy addons.
+`givn init` enables it with the other default addons. When disabled, the
+workflow references above are omitted; the instruction text remains retrievable
+by explicit id, matching the other policy instructions.

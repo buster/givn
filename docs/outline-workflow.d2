@@ -2,18 +2,18 @@ direction: right
 
 
 implement: |md
-  # 1. Implement
+  # 1. Implement and REFACTOR
 
-  **Produces (optional)**
+  **Produces (advisory)**
 
-  - `givn outline report` (Rust and Python)
-  - **Outline** — per-component call tree
-  - Same-unit calls nest; other components are leaves
-  - Supporting metrics
+  - One `givn outline report` per behavior batch
+  - Changed Rust/Python components and relevant neighbors
+  - Per-component call tree, then metric hints
 
   **Checks**
 
   - Nothing; the report never blocks
+  - Confirm suspected concerns against source
 | {
   style.fill: "#eef2ff"
   style.stroke: "#4f46e5"
@@ -24,17 +24,16 @@ implement: |md
 review: |md
   # 2. Review
 
-  **Produces**
+  **Uses**
 
-  - `OUTLINE: PASS` or `FAIL` per touched unit
-  - `AUTHOR`, `REVIEWER`, `OUTLINE: PASS`
+  - Relevant current reports as evidence
+  - No per-unit verdict, waiver, or forced reviewer
 
   **Checks**
 
-  - Every printed outline has a verdict
-  - `PASS` explains responsibility and call order
-  - `FAIL` blocks; no justification path
-  - The reviewer differs from the author
+  - Reuse current evidence; rerun only if structurally stale
+  - Assess unsupported languages directly from source
+  - The outline alone cannot block review or archive
 | {
   style.fill: "#fff7ed"
   style.stroke: "#ea580c"
@@ -51,8 +50,7 @@ archive: |md
 
   **Checks**
 
-  - The review record is complete
-  - An outlined unit without a verdict blocks archive
+  - No outline gate or verdict
 | {
   style.fill: "#f0fdf4"
   style.stroke: "#16a34a"

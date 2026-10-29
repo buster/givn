@@ -1,22 +1,13 @@
 # 5. Building Block View
 
-## 5.4 Commit Attribution Model Extraction
-
-The existing attribution CLI owns the Claude PreToolUse transformation. It
-reads the latest assistant model from the transcript named by the hook payload,
-then composes an exported environment prefix before the complete Bash command.
-The generated Claude shell hook remains a thin launcher. OpenCode model
-extraction remains in its generated plugin asset. The same attribution CLI
-stamps only the managed co-author line at the commit boundary (`givn commit`
-on every backend, the hook on Git).
-
-## 5.1 Level 0 - System
+## 5.1 Level 0 — System
 
 `givn` is one Rust CLI crate. It reads embedded defaults and project-local
 configuration, changes lifecycle artifacts, invokes configured commands at gate
-points, and produces deterministic overlap and coverage evidence.
+points, generates skills for selected agent targets, and produces deterministic
+specification, archive, record, and advisory structure evidence.
 
-## 5.2 Level 1 - Crate Structure
+## 5.2 Level 1 — Crate Structure
 
 ```mermaid
 flowchart TD
@@ -27,22 +18,21 @@ flowchart TD
     G --> HOOK[hooks and integrity]
     G --> STATE[state]
     G --> SCM[scm backend selection]
-    G --> GITMOD[git worktree wrapper]
+    G --> GIT[git worktree wrapper]
     G --> FOSSIL[fossil checkout wrapper]
     G --> PROOF[proof receipts and runner results]
     G --> HIST[development record and report]
+    G --> SKILL[skills renderer and targets]
     G --> ASSET[embedded assets]
     G --> TEST[repository acceptance tests]
-    G --> COV[spec coverage inventory and migration comparison]
+    G --> SPEC[spec inventory, ownership, routing]
     G --> READ[outline analysis and report]
     READ --> PORT[SourceAnalyzer port and neutral model]
     PORT --> SYN[syn adapter]
-    G --> GATE[outline review gate]
-    GATE --> READ
+    PORT --> PYA[python ast adapter]
     CLI --> CHECK[mandatory check and archive gates]
-    CHECK --> GATE
     CLI --> RUNBLK[run-declaration validation and run executor]
-    CFG --> GRAPH[manifest overlay and facet cascade]
+    CFG --> GRAPH[manifest overlay, commands schema, facet cascade]
     GH --> MERGE[delta parsing and merge]
     O --> FINGER[Fingerprint evidence]
     GH --> UC[use-case and fragment parser]
@@ -53,97 +43,94 @@ flowchart TD
 
 | Building block | Responsibility |
 |---|---|
-| `main.rs` | Parse `clap` commands, dispatch, and map results to process exit. |
-| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable every registered addon unless `--no-addons` (which writes explicit false values for all of them), prompt agent targets, and sync outputs. |
+| `main.rs` | Parse `clap` commands, dispatch, install the development recorder, and map results to process exit. |
+| `lib.rs` | Re-export the CLI and history modules for the binary and tests. |
+| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable every registered addon unless `--no-addons`, prompt/parse agent targets, scaffold addon files, and sync. A sync failure exits non-zero with the failed destination and leaves the scaffold for retry. |
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
-| `cli::instructions` | Resolve effective artifact instructions and non-artifact policy and step instructions with optional JSON metadata; render addon-conditional sections against the effective addon flags; append the project's extension under the marked section; provide context-aware generic guidance without an artifact id. |
-| `cli::lint` | Parse features, report WIP/PENDING, run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0, report advisory change-seed status findings and dangling persona references, and classify every finding as `advisory`, `finding`, or `blocking` in the rendered and JSON output. |
-| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. Review executes `integrity`, the run-declaration check, the batched use-case/capability-routing gate, and the shared receipt-freshness check; scenario execution belongs to the archive verification. `givn check tasks` captures the tested-content digest before the run and writes it into the receipt. `givn check rules` reports tracked and reachable-history rules and exits non-zero on a violation. |
-| `cli::test_result` | Write the four-count runner result to `GIVN_RESULT_FILE`, validate reconciliation, and never require a scope field. |
-| `cli::archive` | Check archive prerequisites and the current change verification receipt through the shared freshness result, accepting a documentation-only revision without rerunning the change suite, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, compare the delta step-definition binding phrases with the permanent test tree (the project root minus change, archive, history, VCS, build, and cache trees) and refuse before mutation when one is missing (fresh and resume paths; the refusal prints the project-relative delta file and a bounded phrase list), run configured hooks, write the pending receipt, move the change into the archive location with one rename, merge deltas, publish the archive candidate revision through the selected backend, run the regular and E2E verification scopes once against the candidate, run the optional coverage gate, refresh managed blocks, record the verification receipt, and publish the evidence-only finalization revision. |
-| `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks; status and instructions surface unproven archive candidates with their resume command. |
-| `cli::history` | Read one scope's development record as text or machine-readable JSON; serve `givn history settings [--json]` as the non-recorded mode query (human and JSON forms, `config`/`default` source, the documented exit codes); own the single intake contract for reported agent activity (validate each event, store the accepted ones, name a rejected one on stderr, exit `0` whenever the payload was read), the single enforcement site for every bound, and the mode enforcement for payloads plus Claude's in-process `off` path; and map a raw process-per-hook harness payload (Claude Code) into record events, resolving the mode in-process, enforcing `off` before any store/pending/ignore write, holding that harness's start timestamps in pending state, and reading its session record for token usage. |
-| `cli::timeline` | Build the report model for one change or ideation (the workflow phase scaffold with statuses and current state, the optional linked ideation group with its own ideation phases, phase aggregates, lane groups, ranked long steps, question-wait totals, repeated-step groups, subagent fan-out, token totals, the captured metadata facts, and the 8 MiB content budget), first dropping the recorder's own command entries (the intake and the process-per-hook mapper) from the model, and render it into one self-contained HTML file whose path is printed; content beyond the budget is marked `content omitted; see the record` while the store stays complete. |
+| `cli::instructions` | Resolve artifact instructions and non-artifact policy/step instructions through the project-overrides-first cascade; render addon conditionals; append project extensions; return text or JSON; provide context-aware next-step guidance without an id. |
+| `cli::lint` | Parse features, report WIP/PENDING, run the default overlap scan with exit precedence 1, 3, 2, 0, report advisory seed and persona findings, and classify every finding as `advisory`, `finding`, or `blocking`. Runs no tests. |
+| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks. Review runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks; it executes no suite. Tasks runs change verification and writes the receipt. Also serves `check migration` and `check rules`. |
+| `cli::test_result` | Write the four-count runner result to `GIVN_RESULT_FILE` for simple runners. |
+| `proof` (with the check/archive adapters) | Capture stable verification inputs, validate fresh runner results, persist change and archive receipts, and classify archive provenance. |
+| `cli::archive` | Check preconditions and receipt freshness; run structural gates; publish the merged candidate; move the change with one rename; run regular/E2E scopes and the optional coverage gate; refresh managed README blocks; guard finalization; publish the proven receipt. Persists successful scope evidence for reuse. |
+| `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, hooks, and unproven archive candidates with the resume command. |
+| `cli::history` | Read one scope's record; serve `history settings` as a non-recorded query; own the intake contract and its bounds/mode enforcement; map Claude's process-per-hook payloads into record events. |
+| `cli::timeline` | Build the report model for one change/topic/project and render one self-contained HTML file; omit the recorder's own command entries; enforce the 8 MiB content budget. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
-| `cli::commit` | Create one attributed revision through the selected backend: stage the named paths (or, under the `local-only` policy, every pending project path except `AGENTS.md` and the strict rules), stamp the managed attribution trailer when context is active, and commit; refuse a project without a backend by name. |
-| `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
-| `cli::addons` | Toggle addon flags from a registry whose entries all default to enabled; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files, and `givn addons list` reports the effective default (enabled when no explicit key is present) while an explicit `false` remains disabled. |
-| `cli::skills` | Synchronize the selected skill targets, their commands, and their attribution integrations; refresh the project-start block with its resident rules rendered from the canonical tasks instruction. |
+| `cli::commit` | Reject an empty or unsafe explicit path selection, select the backend, stamp optional attribution, and create one revision with exactly the selected paths. |
+| `cli::readme` | Scaffold the README from the marked template with development and run managed blocks; run the deterministic completeness check; parse and refresh unique ordered managed marker pairs while preserving surrounding bytes. |
+| `cli::addons` | Toggle addon flags from an all-enabled registry; scaffold fixed `docs/arc42/` files without overwriting existing files; report effective defaults. |
+| `cli::skills` | `sync` regenerates selected skills, integrations, `AGENTS.md` blocks, and ignore state, then reconciles old commands and disabled addon skills; `targets add` edits only the targets line and syncs. |
+| `cli::agents_block` | Append/replace/remove one named fenced block in `AGENTS.md` while preserving all surrounding content. |
+| `cli::project_hint` | Keep the unconditional `givn-project` block current. |
 | `cli::attribution` | Stamp commit messages from optional runtime attribution, format Claude Bash hook responses, and install the checked-in Git hook with a local dispatcher. |
-| `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |
-| `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight the selected backend state through the SCM seam (a dirty checkout or a missing backend is refused before any write), calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration revisions on the selected backend, and write the aggregate maintenance plan. |
-| `cli::run_block` | Validate the `run:` declaration with the deterministic rules (R1–R10) and produce labeled findings for `check review` and the archive gate. |
-| `cli::run` | Resolve the start plan (product type, port source, `--port`/`--print`), execute the declared command, probe readiness over `std::net`, print the ready line, forward child exit codes, and forward SIGINT/SIGTERM on unix. |
-| `cli::outline` | Gate `givn outline report` on the outline addon at runtime, build the analysis request for the project-root `src/` tree, select human or JSON output, and write to stdout or the explicit `--out` path. |
-| `outline` | Orchestrate production-source discovery, neutral analysis, call-shape resolution, per-component call-tree rendering, shared metric hints, classification, and human/JSON rendering. The model, metrics, classification, and report depend on the neutral contract, never on a parser; no action or recommendation is produced. |
-| `outline::resolve` | Resolve every call against the callee's call shape: a free function or a method, with a qualifier or receiver evidence when the syntax proves one. A candidate is accepted only when its owner matches that evidence; an unknown method receiver stays `name_only`, several compatible methods are `ambiguous`, and a contradictory qualifier is `external`. Sync the resolved targets into the outline items so the renderer, the gate, and the cohesion metrics see the same call edges; only resolved same-unit edges join methods for LCOM4. |
-| `outline::gate` | Run the review gate: resolve the change base from version-control history, materialize base and committed-head trees outside the project, analyze both through the same neutral pipeline, select the touched units (across files, modules, and trait implementors), and print the per-component call tree only for units with at least one method. A module with only type items therefore needs no verdict. Validate the `review.md` outline verdicts and cross-check the outline author and reviewer against the recorded review context, and render one deterministic verdict. It computes no metric and makes no classification decision of its own. |
-| `outline::gate::base` | Ask the SCM seam for the first reachable revision that touched the change directory and its first parent. A missing first touch fails closed; Git first-parent, Fossil `timeline --reverse -r ancestors current` with `parent:` (never `merged-from:`), root, merge, rebase, and shallow rules live here. |
-| `outline::gate::head` | Select the committed `HEAD`, detect dirty production paths through the SCM seam, and fail before analysis with the paths and the remedy. |
-| `outline::gate::revision` | Ask the SCM seam for the revision's files and entry kinds under the production roots and their bytes; write a temporary base or head tree and remove it on drop. A non-UTF-8 path, a path containing a line break, a symlink, a submodule, or an unreadable blob is a named diagnostic; Git paths and bytes are read with NUL delimiters. |
-| `outline::gate::touched` | Map changed paths to head units by declaration file and by contributing file, add each touched type's module and the implementors of a touched trait, and match base and head by unit id. A unit with no head counterpart has no outline and needs no verdict. |
-| `outline::gate::findings` | Apply the hint predicate (classification other than within-limits, data-only size exemption, method length, crossed threshold, growth) and attach the unit-level hint reason; run the post-analysis guard for every changed production source path present at head (a deletion is proven by the base unit's removal). Hints never gate. |
-| `outline::gate::markers` | Parse `OUTLINE: AUTHOR`, `OUTLINE: REVIEWER`, `OUTLINE: PASS <unit> \| <explanation>`, `OUTLINE: FAIL <unit> \| <reason>`, `OUTLINE: PASS`, and the general `FAIL <reason>` from `review.md`; reject unknown `OUTLINE:` lines, ignore fenced examples, and keep duplicate outline verdicts for the conflict check. |
-| `outline::analyzer` and adapters | Define the `SourceAnalyzer` port and its neutral `Analysis` contract; `syn_adapter` parses Rust in-process with `syn`, and `python_adapter` parses Python by starting a `python3` standard-library `ast` extractor only when the scope contains a `.py` file. Parser types stay inside each adapter directory, and per-file failures return as diagnostics. |
-| `cli::missing_run_command` | Sentinel behind `givn missing-run-command`: prints start-configuration guidance to stderr and exits 1. |
-| `config::manifest` | Define artifact, apply, verify, coverage, addon, hook, and run-declaration data structures. |
-| `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
+| `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, validate retired/misplaced settings, and dispatch the managed upgrade. |
+| `cli::migration` | Load and validate the release migration catalog; resolve ordered future routes; enforce the clean-checkout checkpoint; calculate the managed-path allowlist; create the managed revision and an aggregate plan when a route exists; report partial publication honestly. |
+| `cli::run_block` | Validate the `run:` declaration with deterministic rules R1–R10 and produce labeled findings for review and archive. |
+| `cli::run` | Resolve the start plan, execute the declared command, probe readiness over `std::net`, print the ready line, forward child exit codes, and forward SIGINT/SIGTERM on unix. |
+| `cli::outline` | Gate `givn outline report` on the outline addon at runtime, resolve the production roots, run the neutral analysis, and select human/JSON output or the explicit `--out` path. |
+| `outline` | Orchestrate production-source discovery, neutral analysis, call-shape resolution, per-component call-tree rendering, shared metric hints, classification, and human/JSON rendering. No action, recommendation, verdict, or gate. |
+| `outline::resolve` | Resolve every call against the callee's call shape. A candidate is accepted only when its owner matches the evidence; an unknown receiver stays `name_only`, multiple compatible methods are `ambiguous`, and a contradictory qualifier is `external`. Only resolved same-unit edges join methods for LCOM4. |
+| `outline::analyzer` and adapters | Define the `SourceAnalyzer` port and neutral `Analysis` contract; `syn_adapter` parses Rust in-process; `python_adapter` starts a standard-library `python3` `ast` extractor only when a `.py` file is in scope. Parser types stay inside each adapter; per-file failures are diagnostics. |
+| `config::manifest` | Define artifact, apply, verify, coverage, addon, hook, run, and retirement data structures. |
+| `config::overlay` | Apply `givn/config.yaml` policy/graph overlays and the dedicated `commands.yaml` schema; expand Arc42; validate graph references/cycles; resolve targets, rules policy, and record mode. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |
-| `config::extensions` | Load the `extensions:` map from `givn/config.yaml`, warn and drop an unknown instruction id or a malformed entry, and render the marked project-extension section appended to the served instruction. |
-| `skills::rules` | Resolve the generated-rules policy, write the file-precise ignore entries in both destinations, transition tracked rules to local-only without deleting files, and report tracked and reachable-history occurrences. |
+| `config::extensions` | Load the `extensions:` map, warn and drop unknown ids or malformed entries, and append the marked project-extension section. |
+| `config::render` | Render the managed `config.yaml` scaffold. |
+| `skills::render` | Render skill templates and addon-conditional sections from one known-addon map. |
+| `skills::targets` | Resolve selected targets; write skills; install per-target attribution/reporter integrations and merged Claude/Maki configuration; reconcile legacy commands, disabled addon skills, managed paths, and AGENTS blocks. |
+| `skills::rules` | Resolve the generated-rules policy, write file-precise ignore entries in both destinations, transition tracked rules to local-only without deleting files, and report tracked/reachable-history occurrences. |
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
-| `gherkin::usecase_md` | Parse strict `usecase.md` and `fragment.md` documents, identities, goal levels, interactions, Personas, and typed relationships. Collect every schema diagnostic in one pass with line numbers, recovery, deduplication, and exact-spelling suggestions; the semantic rules stay unchanged. |
+| `gherkin::content` | Encode executable feature content for preservation and duplicate comparisons. |
+| `gherkin::usecase_md` | Parse strict `usecase.md` and `fragment.md` documents, identities, goals, interactions, Personas, and typed relationships; collect schema diagnostics in one pass. |
+| `gherkin::interaction` | Validate interaction inventories against capabilities. |
 | `gherkin::delta` | Interpret delta tags, operation defaults, and capability identity. |
-| `gherkin::merge` | Validate all delta preconditions and merge text-level scenario blocks into permanent specs. |
+| `gherkin::merge` | Validate delta preconditions and merge scenario blocks into permanent specs. |
 | `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
 | `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
+| `overlap::disposition` | Validate review dispositions for deterministic overlap findings. |
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
-| Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and the generated OpenCode/Claude/omp harness integrations. |
-| Embedded harness reporter assets | Provide one development-activity reporter per supported harness: `agent-integrations/omp/givn-timeline.js` (pre-hook factory), `agent-integrations/opencode/givn-timeline.js` (plugin with hooks and an event subscription), `agent-integrations/claude/givn-timeline.sh` (per-event command hook shim), and `agent-integrations/maki/givn-timeline.lua` with `agent-integrations/maki/plugin.toml` (Lua module plus its grants, loaded by a managed fail-soft fence in the project's `.maki/init.lua`; the same target additionally writes Givn's skills and commands into `.maki/`). |
-| Embedded workflow report asset | Provide the development report's document with inline CSS, JavaScript, and SVG and two substituted markers (the machine-readable model payload element the script parses and the text-only initial view): the phase stack (and the linked ideation group), each phase's vertical lane timeline and lane log, the current state, and the statistics; no third-party JavaScript, no CDN, no build step, and no remote resource at render time. |
-| `integrity_hook` | Check revision-identifier/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, the review-level README impact decision, and the visual review contract: every declared `## Visual Design Contract` requires the persona disposition with its ID resolved against the project persona collection, while the visual verdict and the final-state/per-state evidence are required only for `web` and `terminal` interfaces; plus the operator decision for any recorded deferral. |
-| `review_context` | Parse the optional `Review kind`, `Author`, and `Reviewer context` record from the proposal, design review, and review artifacts; reject an independent proposal satisfied by a self-review, an independent reviewer equal to the author, and design-review and review contexts that disagree; never infer a kind from other markers. |
-| `scm::Backend` | Inspect a revision's existence, message, and ancestry for the per-scenario commit gate; export the first revision that touched a path, its parent, a revision's files and file bytes, and the changed paths, so the outline gate consumes history and base content without running a backend command itself. |
-| `history` / `cli::history` | Record derived usage, attributable answers, bounded command errors, and provider/variant/model identity additively. |
-| `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance (legacy/pending/proven, plus an identical pending candidate that still has an active change) from the receipt. |
-| `history` | Own the development record: the entry schema, the single append-only local store, the exactly-one-scope rule (change, ideation, project), the bounded-label rule, the three capture modes (`record.mode: on \| off \| full`, default `on`) — bounded metadata and full question text under `on`, complete content under `full` with the documented 64 KiB/256 KiB caps, and no write at all under `off`, the per-process recorder used by the capture points, and the fenced ignore block that keeps the store out of repository history. |
-| `scm` | Select the version-control backend for the project root (a Git worktree first, then a Fossil checkout), enforce the project-boundary rule, refuse absence, ambiguity, a nested root, or a missing executable by name before any mutation, and expose the shared revision, clean-state, content-path, publication, and revision-content operations. |
-| `fossil` | Implement the Fossil checkout handle: revision identity from `fossil info`, the clean-state witness from `fossil changes --differ` (including `EXTRA` entries), the content-path set from `fossil ls` plus `fossil extras`, witness-bounded publication through `fossil addremove` plus `fossil commit`, allowlist staging through `fossil add [--force]`, revision-content checks through `fossil cat`, and the history operations the outline gate needs (`timeline --reverse`, `info` with `parent:`, `ls`, `cat`, and a diff for changed paths). |
-| `git` | Git backend implementation: root-bound worktree prerequisite, clean-state witness, HEAD resolution, the NUL-separated tracked-plus-untracked content-path listing, scoped staging, and scoped commits for the archive boundary and the selection seam; the history operations the outline gate needs (`rev-list`, first-parent resolution, `ls-tree -r -z`, one batched `cat-file --batch -z`, and a changed-path diff). |
-| `proof` | Verification receipt and runner-result contract: archive provenance, fail-closed scope-result parsing, schema 2 tested-content binding with the `change-proof/v1` scope, the documentation/evidence path predicate, the shared current/documentation-only/stale freshness result, schema 1 strict-head fallback, and the single evidence-path predicate shared by the clean witness and the finalization guard. |
-| `spec::routing_table` | Parse each referenced and delta use-case/fragment narrative once, collect every routing decision error, append every parser diagnostic once, group the report by document, and keep the existing advisory for a missing routing table. |
-| `spec::coverage` | Emit behavior-hash specification inventories, compare migration baselines, and block missing behavior, lost E2E evidence, or lower interaction/source coverage. |
-| `spec::route` | Rank capability-routing candidates with confidence: ownership-weighted goal/rules and interaction evidence above lexical overlap, a scatter penalty for goal-mismatched candidates, and an explicit no-signal verdict on ties or below-threshold overlap. |
+| `integrity_hook` | Check revision-identifier/task evidence, promised step files, Arc42 affected-file edits, coverage configuration, the README impact decision, and the visual review contract. |
+| `review_context` | Parse `Review kind`, `Author`, and `Reviewer context`; reject an independent proposal satisfied by a self-review, a reviewer equal to the author, and disagreeing design-review/review contexts. |
+| `scm::Backend` | Select Git or Fossil at the project root; expose revision identity, clean-state witness, content paths, selected-path publication, revision content, and history/revision operations used by tests and future adapters. |
+| `git` | Git backend: root-bound worktree checks, clean-state witness, HEAD resolution, selected-path commit (`git commit --only`), allowlist staging for managed upgrades, and revision-content checks. |
+| `fossil` | Fossil backend: revision identity, clean-state witness including `EXTRA`, witness-bounded publication, allowlist staging, revision-content checks, and explicit selected paths for `givn commit`. |
+| `proof` | Change and archive receipt schemas, fail-closed runner-result parsing, tested-content binding, evidence-path predicate, freshness classification, archive provenance, and reusable scope evidence. |
+| `history` / `cli::history` | Own the record entry schema, the append-only local store, scope resolution, capture modes and bounds, the recorder, ignore entries, and the intake. |
+| `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance. |
+| `spec::coverage` | Emit behavior-hash specification inventories and compare migration baselines. |
+| `spec::owner` | Resolve capability ownership across use cases and fragments. |
+| `spec::routing_table` | Parse referenced and delta narratives once, collect routing errors, and group the report by document. |
+| `spec::route` | Rank advisory capability-routing candidates with ownership-weighted evidence and an explicit no-signal verdict. |
+| `spec::tree` | Walk the permanent corpus by group and capability. |
+| Embedded attribution assets | Provide `.githooks/commit-msg` and the generated OpenCode/Claude/omp integrations. |
+| Embedded reporter assets | Provide one reporter per supported harness: omp, opencode, Claude Code, and Maki. |
+| Embedded workflow report asset | Provide the self-contained report document with inline CSS, JavaScript, and SVG; no third-party JavaScript, CDN, build step, or remote resource. |
 
-The pending `make-user-questions-decision-ready` design reuses these owners:
-`cli::instructions` adds a short obligation to its shared startup overview;
-the existing skill/command templates and managed project hint carry references;
-the effective dialog instruction owns the full rules and worked examples.
-No new production module, template include protocol, JSON field, or dependency
-is introduced. Deterministic delivery checks and fresh-context question review
-remain separate evidence; the former does not prove agent compliance.
+## 5.4 Repository-Owned Acceptance Blocks
+
+The Cucumber test binary contains regular step modules and separate compiled-CLI
+E2E step modules. They invoke the public binary in temporary project roots. They
+are test building blocks, not production modules, and are intentionally owned by
+this repository. The `ready_fixture` harness-false test target is a test-only
+child process that binds a port, answers a readiness path, and can self-exit or
+trap signals; it exists so `givn run` scenarios exercise a real HTTP-ready
+product without shipping any test surface in the binary.
 
 ## 5.5 Dependencies
 
 | Dependency | Use |
 |---|---|
 | `clap`, `clap_complete` | CLI parsing and shell completion |
-| `serde`, `serde_yaml_ng`, `serde_json` | Manifest, config, index, and machine-readable output |
+| `dialoguer` | Interactive agent-target selection in `givn init` |
+| `serde`, `serde_yaml_ng`, `serde_json` | Manifest, config, record, and machine-readable output |
 | `gherkin` | Feature parsing and AST access |
-| `syn` | Rust source parsing in the first `SourceAnalyzer` adapter; `full`, `parsing`, and `visit` features only, with parser types confined to the `syn_adapter/` directory |
+| `syn` | Rust source parsing in the first `SourceAnalyzer` adapter; parser types confined to `syn_adapter/` |
 | `anyhow`, `thiserror` | Application context and typed errors |
 | `rust-embed` | Embedded defaults and addon assets |
-| `tempfile` | The outline gate's temporary base tree, created outside the project and removed on drop; no other production use. |
 | `quick-xml` | Cobertura coverage parsing |
-
-## 5.6 Repository-Owned Acceptance Blocks
-
-The Cucumber test binary contains regular step modules and separate compiled-CLI
-E2E step modules. They invoke the public binary in temporary project roots.
-They are test building blocks, not production modules, and are intentionally
-owned by this repository. The `ready_fixture` harness-false test target is a
-test-only child process that binds a port, answers a readiness path, and can
-self-exit or trap signals; it exists so `givn run` scenarios exercise a real
-HTTP-ready product without shipping any test surface in the binary.
+| `sha2` | Tested-content and verification digests |
+| `libc` (unix) | Signal forwarding and process-group control in `givn run` |
+| `tempfile` | Test fixtures and temporary test directories; no production archive gate depends on it |
 
 *[Architecture documentation index](README.md)*

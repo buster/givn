@@ -11,7 +11,7 @@ The current source-of-truth installation path is a Rust build from this
 checkout:
 
 ```sh
-cargo install --path .
+cargo install --path . --locked
 ```
 
 The planned shell-installer, Homebrew, binary, and Cargo publication channels
@@ -45,13 +45,27 @@ givn/commands.yaml
 givn/specs/
 givn/changes/
 givn/archive/
-.githooks/commit-msg                 # checked-in shared commit hook
-.opencode/plugins/givn-attribution.js # when opencode is selected (Git and Fossil)
-.claude/hooks/givn-attribution.sh    # when claude is selected
-.claude/settings.json                # merged Givn hook entry when claude is selected
+.githooks/commit-msg                  # checked-in shared commit hook
+.opencode/skills/<name>/SKILL.md      # selected target
+.agents/skills/<name>/SKILL.md        # selected neutral target
+.opencode/plugins/givn-attribution.js
+.opencode/plugins/givn-timeline.js
+.claude/skills/<name>/SKILL.md        # selected target
+.claude/hooks/givn-attribution.sh
+.claude/hooks/givn-timeline.sh
+.claude/settings.local.json           # merged hook registration
+.omp/skills/<name>/SKILL.md           # selected target
+.omp/hooks/pre/givn-attribution.js
+.omp/hooks/pre/givn-timeline.js
+.maki/skills/<name>/SKILL.md          # selected target
+.maki/lua/givn-timeline.lua
 ```
 
-The Arc42 addon currently enabled by default during `init` scaffolds the fixed
+No target receives generated command files. `.maki/plugin.toml` grants and the
+`.maki/init.lua` fence are merged into user-owned files rather than replaced.
+The neutral `.agents/` target receives only `skills/<name>/SKILL.md`.
+
+The Arc42 addon, enabled by default during `init`, scaffolds the fixed
 `docs/arc42/` directory. It does not create a configurable output location.
 
 The development record adds one project-local directory, `givn/history/`: the
@@ -67,32 +81,28 @@ block in `.git/info/exclude` for a Git worktree, writes Fossil's repository-leve
 `.fossil-settings/ignore-glob` receives the entry `givn/history/*` in that file's
 managed entry list through `givn init`, `givn skills sync`, and `givn upgrade`.
 
-When `omp` is a selected target, initialization and synchronization also install
+When `omp` is selected, synchronization also installs
 `.omp/hooks/pre/givn-timeline.js` next to the attribution hook. The other three
 targets that execute an agent get their own reporter the same way:
 `.opencode/plugins/givn-timeline.js` for `opencode`,
 `.claude/hooks/givn-timeline.sh` plus one registered event per hook entry in
-`.claude/settings.local.json` for `claude`, and for `maki` its guidance
-(`.maki/skills/<name>/SKILL.md` and `.maki/commands/<name>.md`), the module
+`.claude/settings.local.json` for `claude`, and for `maki` the module
 `.maki/lua/givn-timeline.lua`, grants merged into `.maki/plugin.toml`, and a
 managed fail-soft `-- givn:begin:timeline` fence inside `.maki/init.lua` (Maki
 runs only that file, so a module under `lua/` stays inert until it is required
 and the fence is what loads it). The full-content store is **not** a separate
 directory: with `record.mode: full`, content lands inline in
 `givn/history/events.jsonl` under the 64 KiB-per-field / 256 KiB-per-entry caps,
-so the whole footprint (record, content, `givn/history/reports/`, and
-`givn/history/pending/`) stays under the ignored `givn/history/` root. The
-`agents` target is a skills mirror that no harness runs, so it receives no
-reporter. The browser tier's Node project under `tests/e2e/` is repository
-content and is not installed into a consumer project.
+so the whole footprint (record, content, reports, and pending state) stays under
+the ignored `givn/history/` root. The `agents` target is a skills mirror that no
+harness runs, so it receives no reporter. The browser tier's Node project under
+`tests/e2e/` is repository content and is not installed into a consumer project.
 
 Generated skills are written only to the persisted target selection. Givn may
 maintain its own fenced blocks in root `AGENTS.md`; all content outside those
-blocks remains user-owned.
-
-The pending decision-ready-question contract adds a short effective-dialog
-reference to the existing managed project block and all bundled available
-guidance. It creates no additional deployed service or generated-file type.
+blocks remains user-owned. The dialog obligation is delivered through the
+unconditional project block and the served instruction, not through a deployed
+service or a new generated-file type.
 
 The checked-in `.githooks/commit-msg` is shared through normal version control.
 The local dispatcher under the Git hooks directory is machine-local and is
@@ -122,27 +132,23 @@ treated as current checkout evidence until it is present and verified.
 ## 7.6 Upgrade
 
 After a binary upgrade, `givn upgrade` refreshes the managed config scaffold and
-generated guidance. For a clean project whose marker selects a declared
-migration route, the binary performs this synchronization as the first of two
-narrowly scoped revisions on the selected backend and creates a second
-revision containing the LLM migration plan. For a release without a selected
-route — including any version below the oldest source the migration catalog
-declares (0.7.0) — it
-creates one managed revision when files changed and no migration plan. Project
-overrides, durable Arc42 chapters, and user-owned
+generated guidance. The supported migration baseline is 1.0: the shipped catalog
+has no pre-1.0 route, so a current-format project receives one allowlist-only
+managed revision when files changed and no migration plan. Retired configuration
+is refused with a manual-transition message; a pre-1.0 project follows
+[the manual transition](../migrations/README.md).
+
+For a future release whose catalog declares a route, the command performs the
+managed synchronization as the first of two narrowly scoped revisions on the
+selected backend and creates a second revision containing the aggregate LLM
+migration plan. Project overrides, durable Arc42 chapters, and user-owned
 `AGENTS.md` content outside givn blocks remain under project control.
 
-For the pending question-policy update, changed defaults require the rebuilt
-binary and normal guidance synchronization. Project-owned instruction, skill,
-and command replacements remain authoritative and untouched; their owners
-must review stale question guidance. Sync must not be described as upgrading
-an override or proving that an agent follows the referenced policy.
-
-The managed route requires a version-controlled project and a clean checkout.
-Projects without a usable backend and dirty projects receive no partial update;
-the retained migration guides describe the evidence-preserving recovery path. A
-migration catalog route may span multiple versions, but all of its bundle
-phases are inventoried in one ordered aggregate maintenance change; a bundle
-may direct that the repairs run as named follow-up changes.
+The managed upgrade requires a version-controlled project and a clean checkout.
+Projects without a usable backend and dirty projects receive no partial update.
+The command reports the checkpoint, completed writes, revisions actually
+published, best-effort restoration, remaining partial state, and pending work;
+it performs no reset or history rewrite and promises no complete rollback.
+Recovery is manual from the checkpoint or fix-forward.
 
 *[Architecture documentation index](README.md)*

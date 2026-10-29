@@ -55,7 +55,7 @@ Projects need durable architecture documentation alongside per-change artifacts.
 
 Chosen option: **Bundle `arc42-docs` as an addon**. The embedded default manifest has no Arc42 artifact, but current `givn init` enables all known addons unless `--no-addons` is passed. Enabling Arc42 creates missing chapter files at the fixed `docs/arc42/` path, adds a required `arc42-docs` artifact after `design`, makes it an archive requirement, and makes `design-review` depend on it.
 
-Amended 2026-10-19: `givn init` now enables only default-on addons. `arc42-docs` remains default-on, so the behavior in this decision is unchanged; the refinement is recorded in [`add-readability-report`](../../../givn/changes/add-readability-report/proposal.md) and its `initialize-project` delta, and in [chapter 8.11](../08-crosscutting-concepts.md#811-addons-and-the-arc42-documentation-artifact).
+Amended 2026-10-19: `givn init` now enables only default-on addons. `arc42-docs` remains default-on, so the behavior in this decision is unchanged; the refinement is recorded in [`add-readability-report`](../../../givn/archive/add-readability-report/proposal.md) and its `initialize-project` delta, and in [chapter 8.11](../08-crosscutting-concepts.md#811-addons-and-the-arc42-documentation-artifact).
 
 ### Consequences
 

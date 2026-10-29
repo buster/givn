@@ -1,10 +1,11 @@
 ---
-
 status: accepted
 date: 2026-10-16
 decision-makers: buster (project owner)
 consulted: none
 informed: none
+
+---
 
 # Own the development record inside Givn and let harnesses report through one intake interface
 

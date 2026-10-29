@@ -1,10 +1,11 @@
 ---
-
 status: accepted
 date: 2026-09-14
 decision-makers: buster (project owner)
 consulted: none
 informed: none
+
+---
 
 # Publish revisions through the SCM seam with witness-bounded commits
 
@@ -85,6 +86,12 @@ Chosen option: "Resolve the publication paths, validate the exact dirty set
 against them, and record only that set", because the clean-state witness
 already bounds what may be dirty, the validation makes the bound explicit, and
 Fossil's record-all mechanism then commits exactly the resolved paths.
+
+**Current note (prepare-0-9-10).** The archive's witness-bounded publication is
+unchanged. `givn commit` is a separate, explicit selected-path publication path:
+it requires at least one path, refuses an unsafe or escaping selection, and
+records exactly those paths on Git or Fossil. It never stages every pending
+change and does not weaken the archive's witness boundary.
 
 ### Consequences
 

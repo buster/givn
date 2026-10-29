@@ -31,7 +31,7 @@ replacement_adr: null
 
 - [x] **Hard to reverse** - generated paths and ownership rules are consumed by projects and agents.
 - [x] **Shapes quality attributes** - the policy protects project context and keeps generated guidance maintainable.
-- [x] **Structural** - it defines the boundary between generated skill/command files and the root `AGENTS.md`.
+- [x] **Structural** - it defines the boundary between generated skill files and the root `AGENTS.md`.
 - [x] **Must be shared** - every sync and every agent target must follow the same ownership rule.
 
 ## Context and Problem Statement
@@ -54,7 +54,7 @@ Agents need on-demand workflow guidance, but a root `AGENTS.md` is project conte
 
 ## Decision Outcome
 
-Chosen option: **Emit skills and commands to configured agent directories; manage only givn-owned fenced blocks in `AGENTS.md`**. Content outside `<!-- givn:begin:<name> -->` and matching end markers is user-owned and is not changed. Initialization records an explicitly selected target set, and synchronization writes only to those targets.
+Chosen option: **Emit generated guidance to configured agent directories; manage only givn-owned fenced blocks in `AGENTS.md`**. Content outside `<!-- givn:begin:<name> -->` and matching end markers is user-owned and is not changed. Initialization records an explicitly selected target set, and synchronization writes only to those targets. The original decision generated skills and commands; the current amendment below retires the command half.
 
 The `require-agent-target` change amended this decision (its interactive
 prompt wording is refined by `keep-agent-prompt-open`): initialization
@@ -68,26 +68,34 @@ versions stay runnable.
 
 The `development-timeline` change amended this decision again: the
 generated-guidance destinations gain `maki` (`.maki`), alongside `.opencode`,
-`.agents`, `.claude`, and `.omp`. It is a full target — skills to
-`.maki/skills/<name>/SKILL.md` and commands to `.maki/commands/<name>.md`, the
-only project command location Maki reads that Givn can write — so it is usable
-on its own, and it also receives the in-project development reporter: the Lua
-module under `.maki/lua/`, its grants merged into `.maki/plugin.toml`, and a
-managed `-- givn:begin:timeline` fence inside `.maki/init.lua` (Maki runs only
-that file, so a module under `lua/` stays inert until it is required). Only the
-fenced region and the grant keys are touched in those two user-owned files; all
-other content stays as the user wrote it. The ownership rule for surrounding
-content is unchanged.
+`.agents`, `.claude`, and `.omp`. It is a full skills target and also receives
+the in-project development reporter: the Lua module under `.maki/lua/`, its
+grants merged into `.maki/plugin.toml`, and a managed `-- givn:begin:timeline`
+fence inside `.maki/init.lua` (Maki runs only that file, so a module under
+`lua/` stays inert until it is required). Only the fenced region and the grant
+keys are touched in those two user-owned files; all other content stays as the
+user wrote it.
+
+**Current amendment (prepare-0-9-10).** The generated invocation surface is
+skills-only. Givn writes `<target>/skills/<name>/SKILL.md` and generates no
+command files for any target. Recognizable command files from earlier releases
+are removed during sync; a custom file with a known Givn name is preserved and
+reported for manual transition. Maki uses an explicit request or an
+agent-selected skill, not a generated command. The current invocation paths are
+Claude Code and OpenCode skill slash, OMP `/skill:<name>`, the neutral `agents`
+target's skill discovery, and Maki's explicit/agent-selected skill. The
+ownership rule for surrounding content is unchanged.
 
 ### Consequences
 
 - Skills are written under selected `.opencode/`, `.agents/`, `.claude/`,
-  `.omp/`, and `.maki/` locations; opencode, omp, and maki commands use their own
-  `<target>/commands/` directory.
-- A selected `maki` target receives skills, commands, and the development
-  reporter; `.maki/init.lua` and `.maki/plugin.toml` are merged, never replaced,
-  so a hand-written Maki config keeps its content.
-- The always-on `givn-project` block and the `absolute-mode` block are separately managed when applicable.
+  `.omp/`, and `.maki/` locations. No target receives generated commands.
+- A selected `maki` target receives skills and the development reporter;
+  `.maki/init.lua` and `.maki/plugin.toml` are merged, never replaced, so a
+  hand-written Maki config keeps its content.
+- The always-on `givn-project` block and the optional `communication-policy`
+  block are separately managed when applicable; the retired `absolute-mode`
+  block is removed during sync.
 - Generated files are snapshots and are refreshed by `givn skills sync`.
 - Target selection is explicit project configuration; the interactive prompt
   re-asks until a target is marked, a non-terminal empty or unknown-only

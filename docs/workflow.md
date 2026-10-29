@@ -1,9 +1,14 @@
 # Givn workflow
 
 Givn is a spec-driven workflow. The `.feature` file is the executable
-specification; its owning use case supplies the domain contract. A change
-moves through planning, design review, implementation, review, and archive.
-State is derived from files on disk, not stored separately.
+specification; its owning use case supplies the domain contract. A change moves
+through planning, design review, implementation, review, and archive. State is
+derived from files on disk, not stored separately.
+
+This page is the orientation map. The exact command, configuration, skill,
+runner, and recovery contracts live in [the reference](reference.md); the rules
+an agent follows during a step are served by `givn instructions <id>` and belong
+to the instruction assets, not to this overview.
 
 Lifecycle rendering: [`workflow.svg`](workflow.svg) (GitHub-safe) and
 [`workflow.html`](workflow.html) (self-contained HTML).
@@ -12,53 +17,164 @@ Lifecycle rendering: [`workflow.svg`](workflow.svg) (GitHub-safe) and
 proposal → specs → design → [arc42-docs] → design-review → tasks → review → archive
 ```
 
-`arc42-docs` appears when the arc42 addon is enabled.
+`arc42-docs` appears when the arc42 addon is enabled (the default). The graph is
+configurable through `givn/config.yaml`; a project may add, remove, or reorder
+artifacts.
 
-| Phase | Command | Produces | Leaves when |
+## Phases
+
+| Phase | Skill | Produces under `givn/changes/<id>/` | Leaves when |
 |---|---|---|---|
-| Propose | `/givn-propose` | `proposal.md`: problem, observable solution, release note, capability placement, open questions | file exists |
-| Spec | `/givn-spec` | delta features under `specs/<usecase-slug>/`, tagged `@givn.delta`, `@givn.added/modified/removed`, `@wip` | delta features exist |
-| Design | `/givn-design` | `design.md`: runner, strict mode, step files, decisions, interaction matrix, visual contract, local runnability | file exists |
-| Design review | `/givn-design-review` | `design-review.md` ending in `DESIGN-REVIEW: PASS` | marker present |
-| Tasks | `/givn-tasks` | `tasks.md`: setup task, behavior batches, commit fields | tasks written |
-| Implement | `/givn-implement` | production code, ticked tasks, one batch commit per behavior batch | every scenario has a commit |
-| Review | `/givn-review` | `review.md` ending in `REVIEW: PASS` | marker present |
-| Archive | `givn archive` | merged permanent specs, archived change, proven receipt | archive proves |
+| Propose | `givn-propose` | `proposal.md`: problem, observable solution, release note, capability placement, open questions | file exists |
+| Spec | `givn-spec` | delta features under `specs/<usecase-slug>/`, tagged `@givn.delta`, `@givn.added/modified/removed`, with `@wip` while unimplemented | delta features exist |
+| Design | `givn-design` | `design.md`: technology, step locations, decisions, interaction matrix, visual contract, local runnability | file exists |
+| Architecture (addon) | served by the design step | `arc42.md` plus affected `docs/arc42/` chapters | assessment complete |
+| Design review | `givn-design-review` | `design-review.md` ending in `DESIGN-REVIEW: PASS` | marker is the final non-empty line |
+| Tasks | `givn-tasks` | `tasks.md`: setup task, behavior batches, evidence and commit fields | tasks written |
+| Implement | `givn-implement` | production code, tests and step glue, ticked tasks, one batch commit | every scenario records a batch commit |
+| Review | `givn-review` | `review.md` ending in `REVIEW: PASS` | marker is the final non-empty line |
+| Archive | `givn-archive` (the command is `givn archive`) | merged permanent specs, archived change, proven receipt | archive proves |
 
-Ideation (`/givn-ideation`) is an optional pre-phase: event storming that
-slices a domain into use cases and change seeds. It produces no manifest
-artifact and has no gate.
+Skills are the only generated invocation surface. How a harness invokes a skill
+depends on the harness: Claude Code and OpenCode use their skill slash, OMP uses
+`/skill:<name>`, the neutral `agents` target uses skill discovery, and Maki uses
+an explicit request or an agent-selected skill. Givn generates no commands.
+The exact rules for each step come from `givn instructions <id>`; do not copy
+those obligations into a second local policy.
 
-## The hard gates
+`givn-ideation` and `givn-explore` are optional pre-phases. Ideation storms a
+domain into use cases and change seeds under `givn/ideation/<topic>/`; it
+produces no manifest artifact and has no gate. Explore clarifies a problem
+without producing lifecycle artifacts. `givn-challenge` examines a supplied
+proposal, test, specification, design, implementation, or whole change with
+evidence; it is not a lifecycle gate.
 
-Only four commands stop the workflow; everything else is served guidance or
-advisory reporting.
+## Behavior batches
+
+Related scenarios form one coherent behavior batch. The batch gets one test
+phase, one implementation phase, one refactor phase, and one batch commit.
+
+- Before a production edit, record an actual observed RED for the behavior:
+  the test fails on its assertion, not on a missing binding, fixture, import, or
+  environment failure.
+- A new test that immediately passes is valid only as protection for an
+  already-satisfied distinct requirement; it records that fact and makes no
+  production edit for it.
+- Never reconstruct RED or rewrite history. Record the actual command and short
+  result in the batch task as it happens.
+- Commit a completed batch with explicit paths. The release note is the message
+  subject; the batch name and, for a single-scenario batch, the scenario title
+  are in the body. Separate GREEN refactoring commits are allowed.
+- Tick a scenario box when the batch tests pass and the batch commit is
+  recorded. The commit must contain the scenario's implementation or its
+  regression test.
+
+The precise test-first and step-writing mechanics are served by
+`givn instructions steps`; task sequencing is served by `givn instructions
+tasks`. This overview deliberately does not restate them.
+
+## Hard gates
+
+Only the following commands stop the workflow; everything else is served
+guidance or advisory reporting.
 
 | Gate | Command | Stops |
 |---|---|---|
-| Change verification | `givn check tasks --change <id>` | `@wip` scenarios, missing or unreachable scenario commits, a dirty tree, a red delta suite; writes the change receipt |
-| Review | `givn check review --change <id>` | missing artifacts, unsigned visual review, unresolved overlap dispositions, invalid capability placement, stale receipt, blocking lint findings |
-| Archive | `givn archive --change <id>` | incomplete tasks/review, unsigned design-review, unmerged step definitions, missing e2e runner, merge conflicts, red regular or e2e scopes, coverage failure, a tested tree that moved |
-| Commit | `givn commit` and the commit hook | an uncommitted or conventionally invalid revision |
+| Change verification | `givn check tasks --change <id>` | non-removed `@wip`, missing or unreachable scenario commits, a dirty tree, a failing delta suite; writes the change verification receipt |
+| Review | `givn check review --change <id>` | integrity failures, an unconfigured run declaration, change-scoped lint failures, invalid capability placement, unresolved overlap dispositions, a missing or stale receipt, missing scenario commits |
+| Archive | `givn archive --change <id>` | incomplete tasks/review, an unsigned design-review, unbound delta step definitions, a missing E2E runner when `@e2e` is in scope, merge conflicts, red regular or E2E scopes, a failing coverage gate, a tested tree that moved |
+| Lint | `givn lint` | parse errors, duplicate titles, empty features, invalid use-case documents, interaction mismatches; review runs the change-scoped form |
+| Commit path | `givn commit` | an empty path selection or a path outside the checkout |
 
-`givn lint` is blocking when it is invoked: parse errors, duplicate titles,
-empty features, invalid use-case documents, and interaction mismatches exit
-non-zero. Review runs it for the active change.
+`givn readme check` reports open placeholders and damaged managed blocks; the
+archive completeness gate blocks on its findings when the readme addon is
+enabled. The run-declaration gate in review and archive blocks an unconfigured
+or invalid `run:` block. A configured `post` hook adds checks; it cannot weaken
+a mandatory one, and built-in hook names cannot be marked `allow_failure`.
 
-## What guides the agent
+## Verification
 
-- `givn instructions` reports the next required artifact and the skill to run.
-- `givn instructions <artifact> --change <id>` serves the artifact's rules,
-  with addon conditionals and project extensions.
-- `givn status --change <id>` shows the checklist, task progress, and skipped
-  artifacts.
-- Artifact templates define required sections and sign-off markers.
-- The owning `usecase.md`, confirmed Personas, and ideation seeds supply
-  domain context.
+- `givn check tasks --change <id>` runs the configured `verify.command` once
+  against the change's delta features. The runner receives `GIVN_FEATURES`,
+  `GIVN_RESULT_FILE`, and `GIVN_RESULT_SCOPE=change`, and must write a fresh,
+  reconciling four-count result. The tested revision, features, command, and
+  tested content are bound into the change verification receipt.
+- A change that declares `Behavior change: none` with skipped specs and no
+  delta features reports changed-scenario verification as not applicable. It
+  stores an applicability result, not a fabricated green receipt.
+- `givn check review` runs no tests. It validates the receipt. A later revision
+  whose tested content is unchanged may reuse the proof; any tested-content
+  change makes it stale and routes back to `givn check tasks`.
+- `givn archive` publishes the merged candidate and runs the regular and E2E
+  scopes once against it. The E2E scope is not applicable only when the merged
+  corpus has no `@e2e` scenario. Successful scope evidence is persisted, so a
+  later failure does not erase it; a retry reuses evidence only when its inputs
+  match, and changed inputs conservatively invalidate both scopes.
+- A missing, malformed, zero, failed, skipped, or non-reconciling result is a
+  failure. A runner that ignores `GIVN_FEATURES` remains a project-runner
+  limitation; the receipt records the feature path but cannot prove what the
+  runner read.
 
-## Details
+The full runner and receipt contract is in
+[the reference](reference.md#verification-and-recovery).
 
-[Workflow details](workflow-details.md) lists every phase, check, failure
-condition, archive step, and the limits of enforcement. The
-[use-case model](use-case-model.md) defines use-case identity and scoping;
-[reference](reference.md) lists commands, skills, addons, and configuration.
+## Archive and recovery
+
+Archive is forward-only and SCM-backed on Git or Fossil. It refuses a dirty
+checkout, a project root below the checkout root, and an already proven archive.
+The sequence is:
+
+1. Static gates: artifact completeness, signed design review, review receipt
+   freshness, delta step-definition binding, configured archive hooks, the run
+   declaration, README completeness, use-case and delta prevalidation, and the
+   E2E-runner configuration when `@e2e` is in scope. No suite runs here.
+2. Publish the merged change as the archive candidate and write the pending
+   receipt. The change directory moves to `givn/archive/<id>/` in one rename.
+3. Run each verification scope once against the candidate; run the coverage
+   gate when enabled.
+4. Guard that `HEAD` is still the tested revision and that only declared
+   evidence paths are dirty, write the proven receipt, and publish the
+   evidence-only finalization revision.
+
+A failure after the candidate publication leaves an unproven candidate in
+place. Repair the committed state and rerun `givn archive --change <id>`; the
+merge is idempotent, completed scopes may be reused, and the archive reports
+honestly. Givn never rolls back the permanent corpus or rewrites history.
+
+## Reverse engineering
+
+For a codebase without baseline specs, the flow is
+`givn-reverse-engineer` → `givn-characterize` → archive.
+
+- Scaffold with `givn new <id> --skip proposal,design,design-review`.
+- Write the black-box boundary and suspected bugs in the feature description;
+  put the seam strategy in `tasks.md`.
+- Characterization corrects the spec, never the code. Suspected bugs carry a
+  `TODO: REVERSE-ENGINEERING NOTE:` marker.
+- Once the baseline exists, normal changes proceed against it.
+
+## What the gates do not check
+
+- Design review ran in a genuinely fresh context; the marker is a self-report.
+- A bound step body asserts something; the strict-mode proof covers undefined
+  and pending steps, and review checks the implementation evidence.
+- A commit touches production code; the task gate checks revision identity and
+  reachability, not the diff.
+- A screenshot shows the right thing; evidence presence is checked and the
+  Persona judgment is a review marker.
+- Planning artifacts are semantically complete; status treats an existing file
+  as done.
+- A runner honors `GIVN_FEATURES`; the project owns that contract.
+
+## Where to go next
+
+- [Reference](reference.md) — CLI, configuration authority, skills, addons,
+  runner and receipt formats, recovery.
+- [Use-case model](use-case-model.md) — identity, scoping, and review criteria.
+- [Outline addon](outline.md) — advisory structure report and its limits.
+- [Development record](development-report.md) — local record, report, analytics.
+- [Architecture documentation](arc42/README.md) — current architecture, ADRs,
+  and the post-1.0 backlog.
+- [Manual 1.0 transition](migrations/README.md) — moving a pre-1.0 project.
+
+*[Documentation index](INDEX.md)*

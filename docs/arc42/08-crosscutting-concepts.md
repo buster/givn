@@ -15,8 +15,7 @@ embedded content second:
 ```
 
 Templates use `givn/artifacts/<id>/<filename>`. Instructions use
-`givn/artifacts/<id>/instructions.md`. Skill and command assets have their own
-project override paths. `givn eject` materializes an embedded asset so the
+`givn/artifacts/<id>/instructions.md`. Skill assets have their own project override paths. `givn eject` materializes an embedded asset so the
 project can own it. An existing file is protected unless `--force` is used.
 
 The cascade is per facet. Ejecting a template does not eject the instruction,
@@ -29,7 +28,7 @@ The effective manifest is assembled in this order:
 ```text
 embedded default-manifest.yaml
         + givn/config.yaml overlay
-        + givn/commands.yaml overlay when present
+        + givn/commands.yaml dedicated schema when present
 ```
 
 Artifact patches are keyed by `id`. An existing artifact is merged field by
@@ -39,9 +38,10 @@ identifies archive prerequisites. The effective graph is rejected for dangling
 references or cycles.
 
 The current `givn/commands.yaml` is intentionally separate from the structural
-scaffold. It supplies `verify.command`, `verify.e2e_command`, and coverage
-commands and paths. Because it is applied as a later overlay, those values are
-the effective runtime values in this checkout.
+scaffold. It supplies `verify.command`, `verify.e2e_command`, coverage commands
+and paths, and the `run:` declaration. It is parsed by a dedicated schema, not
+the generic manifest overlay, so policy keys there and executable keys in
+`givn/config.yaml` are refused by name.
 
 The Arc42 addon is special overlay sugar. When `addons.arc42` changes from false
 to true, overlay processing adds a required `arc42-docs` artifact after
@@ -107,8 +107,8 @@ preserve every original docstring delimiter detail.
 ### 8.3a Normative Authoring Guidance
 
 The resolved `specs` instruction is the single normative source for interaction
-inventories and E2E evidence. Design, tasks, review, skills, and commands add
-only artifact-specific choreography and derived checks.
+inventories and E2E evidence. Design, tasks, and review add only
+artifact-specific choreography and derived checks.
 
 The policy requires primary assertions against the named consumer interface.
 Repository or database state is secondary evidence unless it is itself the
@@ -117,24 +117,23 @@ not a browser interaction substitute. An obstacle is a design gap, not
 permission to weaken the assertion.
 
 Project overrides can replace the effective policy through the cascade. Generated
-skills and commands carry trigger metadata, invocation-specific orchestration,
-and a direction to `givn instructions <id>`; they carry no rule content and have
-no independent policy authority. The rule an agent follows for a step is the
+skills carry trigger metadata, invocation-specific orchestration, and a
+direction to `givn instructions <id>`; they carry no rule content and have no
+independent policy authority. The rule an agent follows for a step is the
 extended rule: the built-in, technology-agnostic rules resolved at call time
 plus the project's extension when one exists. An extension adds rules; it never
 overrides, suppresses, or reorders the built-in rules, and it never changes
 steps, order, or gates.
 
 The resolved `dialog` instruction is the single normative source for phrasing
-and recording user-facing questions. The current delivered references cover
-only part of the authoring workflow. The approved target contract in
-`make-user-questions-decision-ready`, pending implementation, makes the
-obligation explicit at unconditional project/session startup, every bundled
-available skill and command, and fresh delegated contexts. The complete rules
-and five hypothetical worked contrasts belong only to the effective policy
-served by `givn instructions dialog`; derived entry points carry short
-references rather than competing copies. See that policy for question content,
-proportional clarification, answer consequences, and material revision costs.
+and recording user-facing questions. The unconditional project/session block,
+every bundled available skill, and fresh delegated contexts direct the agent to
+load it once per context before the first user-facing question. The complete
+rules and the worked contrasts are served by `givn instructions dialog`; the
+companion `dialog-examples` instruction carries the preserved regression
+examples, and derived entry points carry short references rather than competing
+copies. See that policy for question content, proportional clarification,
+answer consequences, and material revision costs.
 
 Distribution does not establish agent compliance. Real-interface delivery and
 override/preservation checks are deterministic evidence; unseen fresh-context
@@ -167,7 +166,7 @@ interface break beyond the documented shape.
 ```text
 givn/
   config.yaml                    # structural overlay, addon flags, targets
-  commands.yaml                  # project commands and coverage settings
+  commands.yaml                  # verify, coverage, and run settings
   specs/<usecase-id>/usecase.md # permanent use-case contract
   specs/<usecase-id>/<cap>.feature # permanent tag-stripped specification
   specs/fragments/fragment.md   # reusable behavior contract
@@ -195,20 +194,47 @@ explicit `false`; there is no effective `arc42.output_dir` or chapter-list
 setting, and no lifecycle cascade for selecting individual durable chapter
 files.
 
-## 8.5 The TDD Loop
+## 8.5 The Behavior Batch
 
-The normal implementation guidance is scenario-by-scenario:
+The normal implementation guidance is a behavior batch, not a commit per
+scenario or per phase:
 
 ```text
-RED:      make this scenario's assertions genuinely fail
+TESTS:    bind the scenarios; observe a meaningful RED for new behavior
 GREEN:    implement the minimum code following design constraints
-REFACTOR: clean up without changing behavior
+REFACTOR: clean up without changing behavior, optionally using the advisory outline
+COMMIT:   one coherent completed batch with explicit paths
 ```
 
-The test runner configured in `verify.command` executes the feature files and
-confirms GREEN. `givn lint` only parses and analyzes feature files; it never
-executes the project tests. Mandatory gate execution is described in section
-8.12.
+Related scenarios form one batch. A batch gets one test phase, one
+implementation phase, one refactor phase, and one batch commit. Individual
+examples do not need their own failing test or production diff.
+
+- A new test must fail on its assertion, not on discovery, registration, step
+  binding, import, fixture, or environment startup. Fix setup failures and rerun.
+- A passing test is valid when it protects a distinct already-satisfied
+  requirement. Record it as existing behavior protected, make no production edit
+  for that requirement, and continue.
+- Record actual commands and short results in the batch task as they happen.
+  Never reconstruct RED or rewrite history.
+- Commit the completed batch with explicit paths. The release note is the
+  message subject; the batch name and, for a single-scenario batch, the scenario
+  title are in the body.
+- Tick each scenario when the batch tests pass and the batch commit is recorded.
+- The setup task comes first: install the runner, configure strict mode, set
+  `verify.command`, create one step file per capability, and prove that an
+  undefined or pending step fails. Remove the probe afterwards.
+- `@e2e` tags are immutable. Removing one to bypass the E2E gate is detected by
+  the verify-e2e hook and by lint.
+- Deviating from `design.md` requires stopping, updating `design.md`, and
+  re-running design-review.
+
+Commit identity is machine-checked at `givn check tasks`. Empty step bodies,
+downgraded E2E assertions, and test strength are checked by review; the TDD
+record is authoring evidence, not a machine-audited phase history.
+
+MANDATORY: read `givn instructions steps` and `givn instructions tasks` for the
+complete binding, RED, reuse, and commit rules.
 
 ### 8.5f Permanent Duplicate Audit
 
@@ -257,16 +283,18 @@ candidate.
 `givn skills sync` renders the standard workflow skills and writes them only to
 the persisted target selection:
 
-- `.opencode/skills/<name>/SKILL.md` and `.opencode/commands/<name>.md`;
+- `.opencode/skills/<name>/SKILL.md`;
 - `.agents/skills/<name>/SKILL.md`;
 - `.claude/skills/<name>/SKILL.md`;
-- `.omp/skills/<name>/SKILL.md` and `.omp/commands/<name>.md`.
+- `.omp/skills/<name>/SKILL.md`;
+- `.maki/skills/<name>/SKILL.md`.
 
-The standard skills and commands are direction-only: each file carries its
-trigger metadata (the frontmatter `name` and `description`), invocation-specific
-orchestration (change context, subagent boundaries, stop conditions,
-reporting), and a direction to `givn instructions <id>`; rule content is served
-at call time and never copied into the file. Every workflow step has an
+No target receives a generated command file. The standard skills are
+direction-only: each file carries its trigger metadata (the frontmatter `name`
+and `description`), invocation-specific orchestration (change context, subagent
+boundaries, stop conditions, reporting), and a direction to
+`givn instructions <id>`; rule content is served at call time and never copied
+into the file. Every workflow step has an
 instruction id, and every instruction id a generated file names resolves
 through the CLI in the same Givn version or a later one, in the context its
 direction names — an artifact direction carries a resolvable change context, a
@@ -300,11 +328,12 @@ Initialization itself requires a selection: the interactive prompt opens with
 `.opencode` marked and re-asks — with an error naming the requirement — until a
 target is marked, while an empty or unknown-only answer and EOF without the
 `--agents` flag refuse with a non-zero exit before the first write, naming
-`.opencode`, `.agents`, `.claude`, and `.omp` plus the `--agents` flag.
+`.opencode`, `.agents`, `.claude`, `.omp`, and `.maki` plus the `--agents` flag.
 
 The implementation guidance states the revision-message rule: every revision a
 change records carries the change's release note (authored in its proposal) as
-its message subject, with the scenario title in the message body. The rule
+its message subject, with the batch name and, for a single-scenario batch, the
+scenario title in the message body. The rule
 lives in the `tasks` instruction; the project-start block renders its resident
 rules (the task-checkoff and commit obligations) from that same
 `instructions/tasks.md` asset, so the block's text and the served instruction
@@ -321,19 +350,19 @@ direction names: an artifact direction carries a resolvable change context,
 and a policy or step direction resolves without one (an artifact request
 without a resolvable change context refuses by name). A reference into the
 Givn distribution (`assets/…`, a repository-only document) is a defect; the
-acceptance suite grades every generated skill, command, and printed
-instruction against both rules.
+acceptance suite grades every generated skill and printed instruction against
+both rules.
 
 `AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
 create or replace the unconditional `givn-project` block and, when enabled, the
-`absolute-mode` block. It does not rewrite surrounding user content. The block
-carries the direction to `givn instructions`, the dialog-policy obligation,
-and its resident task-checkoff and commit obligations rendered from the
-canonical `instructions/tasks.md` asset. The pending
-decision-ready-question contract puts policy discovery in `givn-project`, not
-behind a tone addon; the addon defers question content to the effective dialog
-policy. Givn never stages `AGENTS.md` under either rules policy; committing it
-is the developer's explicit act.
+`communication-policy` block; it removes the retired `absolute-mode` block. It
+does not rewrite surrounding user content. The project block carries the
+direction to `givn instructions`, the mandatory dialog-policy obligation, and
+its resident task-checkoff and commit obligations rendered from the canonical
+`instructions/tasks.md` asset. The communication-policy addon controls only
+presentation; it does not gate or own question content. Givn never stages
+`AGENTS.md` under either rules policy; committing it is the developer's explicit
+act.
 
 The generated-rules policy is a flat scalar in `givn/config.yaml`:
 `rules: local-only` (the default when absent) or `rules: versioned`. An
@@ -343,10 +372,9 @@ of the repository through a fenced block in the tracked ignore file
 (`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
 (`.git/info/exclude`, the Fossil `ignore-glob` setting). The block carries
 prefix patterns for the reserved namespaces (`.opencode/skills/givn-*/`,
-`.opencode/commands/givn-*.md`, `.opencode/commands/grill-*.md`,
-`.omp/skills/givn-*/`, `.omp/commands/givn-*.md`, `.omp/commands/grill-*.md`,
-and the fixed integration files), never individual rule names; tracked rules are discovered
-by a path predicate instead. A tracked strict rule
+`.agents/skills/givn-*/`, `.claude/skills/givn-*/`, `.omp/skills/givn-*/`,
+`.maki/skills/givn-*/`, and the fixed integration files), never individual rule
+names; tracked rules are discovered by a path predicate instead. A tracked strict rule
 becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
 stays on disk, and the staged removals join the upgrade's managed revision or
 wait for the developer after `givn init`. Under `versioned` the fenced blocks
@@ -420,14 +448,16 @@ review evidence. A migration ledger remains the human-readable explanation for
 every move, split, merge, fragment classification, creation, rename, or
 retirement.
 
-## 8.9a README Completeness Gate and the Development Managed Block
+## 8.9a README Completeness Gate and Managed Blocks
 
 When the readme addon is enabled, the README is a givn-managed document:
 
 - The scaffold template marks every request-for-content section with a
   `<!-- givn:todo: <expectation> -->` open placeholder line and embeds the
   development managed block (`<!-- givn:begin:development -->` /
-  `<!-- givn:end:development -->`) rendered from the effective command file.
+  `<!-- givn:end:development -->`) and the run managed block
+  (`<!-- givn:begin:run -->` / `<!-- givn:end:run -->`) rendered from the
+  effective command file.
 - A README counts as managed when it carries at least one management marker:
   any `<!-- givn:begin:` line, any `<!-- givn:todo:` line, or a legacy
   scaffold text. Enabling the addon on a hand-written README therefore blocks
@@ -436,14 +466,15 @@ When the readme addon is enabled, the README is a givn-managed document:
   string list (`git clone <repo>` is deliberately excluded — real quick-starts
   contain it). Legacy findings report the README migration as remediation.
 - `givn readme check` reports open placeholders, remnants (`TBD` license line,
-  `{{PROJECT_NAME}}`), damaged or unmanaged/missing state, and development
-  managed block damage (exactly one begin/end marker present). It exits
-  non-zero while any finding remains.
+  `{{PROJECT_NAME}}`), damaged or unmanaged/missing state, and damaged or
+  ambiguous development/run managed markers (a reversed, duplicated, or
+  multiple begin/end pair). It exits non-zero while any finding remains and
+  never rewrites the README.
 - The archive completeness gate runs the same check before any mutation and
-  blocks with a per-finding report. The development and run managed blocks are
-  refreshed during finalization, after verification and coverage; refresh
-  happens only when both markers are present, and a failure leaves the archive
-  candidate unproven without restoring the previous README.
+  blocks with a per-finding report. Both managed blocks are refreshed during
+  finalization, after verification and coverage; refresh requires exactly one
+  ordered marker pair, refuses ambiguity before writing, preserves surrounding
+  bytes, and leaves the archive candidate unproven on failure.
 - The review artifact records a machine-checkable README impact decision:
   `README-IMPACT: none` or `README-IMPACT: updated - <sections>`. The
   integrity check refuses review sign-off without it while the readme addon is
@@ -462,24 +493,29 @@ enabling a new addon remains an explicit `givn addons enable` operation.
 Ejected facets are not automatically replaced.
 
 For every managed upgrade, it refuses a project without a usable backend or a
-dirty checkout before any write, stages only a calculated list of Givn-owned
-paths, and creates one commit if the managed files changed. A declared migration route adds an aggregate
-maintenance change under `givn/changes/` and a second commit containing its
-ordered bundle plan. Existing active plans are detected through their visible
-`migration.yaml` metadata; archived plans are historical and do not block a
-later managed upgrade.
+dirty checkout before any write, records the checkpoint, stages only a
+calculated list of Givn-owned paths, and creates one commit if the managed
+files changed. A declared future migration route adds an aggregate maintenance
+change under `givn/changes/` and a second commit containing its ordered bundle
+plan. Existing active plans are detected through their visible `migration.yaml`
+metadata; archived plans are historical and do not block a later managed
+upgrade. On failure it reports the checkpoint, completed writes, revisions
+actually published, best-effort restoration, and pending work; it performs no
+reset or history rewrite.
 
 The embedded `migrations/catalog.yaml` is the release policy. Each bundle names
 its source and target versions, deterministic order, and Proposal/Design asset
 paths. The resolver follows multiple bundles in sequence and treats later
-patch releases within a covered minor line as compatible. A transition without
-a declared route is migration-free and never creates a maintenance change.
+patch releases within a covered minor line as compatible. The 1.0 baseline
+ships `migrations: []`, so a pre-1.0 project follows the manual transition and
+never receives an embedded route or alias. A transition without a declared
+route is migration-free and never creates a maintenance change.
 
-The maintenance change is deliberately not a product feature: it must not add
-a synthetic scenario to `givn/specs/`. The public migration guide is an ordered
-LLM prompt pack for the remaining project-specific work, including active
-change review, overlap remediation, and Arc42/ADR reconciliation.
-Normal design-review, tasks, review, and archive gates remain authoritative.
+A future maintenance change is deliberately not a product feature: it must not
+add a synthetic scenario to `givn/specs/`. Its bundle assets carry the
+project-specific prompts, including active change review, overlap remediation,
+and Arc42/ADR reconciliation. Normal design-review, tasks, review, and archive
+gates remain authoritative.
 
 For the maintenance change itself, a `specs` skip marker is an explicit
 no-product-delta signal. Global verification uses the permanent feature path.
@@ -518,11 +554,11 @@ There are two distinct mechanisms.
 
 ### 8.12a Commit attribution environment
 
-OpenCode and Claude integrations set the process-scoped Givn attribution
-variables for every shell command they prepare. The values identify the active
-model, reasoning mode, and harness, using `unavailable` where a harness has no
-value. Claude exports these variables for the complete Bash command so compound
-commands and shell wrappers such as RTK preserve them. The checked-in Git
+OpenCode, Claude Code, and omp integrations set the process-scoped Givn
+attribution variables for the shell commands they prepare. The values identify
+the active model, reasoning mode, and harness, using `unavailable` where a
+harness has no value. Claude exports these variables for the complete Bash
+command so compound commands and shell wrappers such as RTK preserve them. The checked-in Git
 `commit-msg` hook consumes the variables only when `GIVN_ATTRIBUTION_ACTIVE` is
 present, stamps only the managed co-author attribution, and never blocks a
 commit when context or the installed binary is absent.
@@ -540,14 +576,14 @@ When an explicit artifact is passed to `givn check`, `src/cli/check.rs` first
 runs mandatory checks:
 
 - `tasks`: change-delta WIP protection and `verify.command`;
-- `review`: `integrity`, the run-declaration check, the named-change overlap
-  and retirement gates, the use-case/capability-routing gate (which reports
-  every schema and routing diagnostic in one pass, with dependent completeness
-  findings withheld while the title or Level is invalid), the shared change
-  verification receipt freshness check, and — for a named change with
-  `addons.outline` enabled — the outline review gate. Review does not
-  execute the test suite; scenario execution is proven by the archive
-  verification receipt.
+- `review`: `integrity`, the run-declaration check, change-scoped lint, the
+  named-change overlap and retirement gates, the use-case/capability-routing
+  gate (which reports every schema and routing diagnostic in one pass, with
+  dependent completeness findings withheld while the title or Level is
+  invalid), the shared change verification receipt freshness check, and the
+  scenario-commit check. Review does not execute the test suite; scenario
+  execution is proven by the archive verification receipt. There is no outline
+  review member.
 
 These checks are not controlled by `post` and cannot be disabled by merely
 removing a hook entry. Removing the `tasks` or `review` artifact changes the
@@ -557,14 +593,15 @@ list. The embedded default manifest currently has empty `post` lists for tasks
 and review; older generated comments showing `tasks.post: [verify]` or similar
 are not the effective default.
 
-`givn check` without an artifact runs only configured post hooks for applicable
-outputs. It does not invoke the explicit mandatory task/review branch.
+`givn check` without an artifact prints guidance and executes nothing. It does
+not invoke the explicit mandatory task/review branch or any configured post
+hook.
 
-`verify.command`, `verify.e2e_command`, and coverage values come from the
-effective overlays, normally `givn/commands.yaml` in an initialized project.
-The embedded `givn missing-testrunner` value is only the manifest fallback when
-no later project command replaces it. The current generated command template
-uses `./run-tests.sh` and `./run-tests.sh --e2e` instead.
+`verify.command`, `verify.e2e_command`, coverage values, and `run:` come from
+`givn/commands.yaml` through its dedicated schema in an initialized project.
+The embedded `givn missing-testrunner` and `givn missing-run-command` values are
+manifest fallbacks. The shipped command template keeps those sentinels and does
+not invent project scripts.
 
 ## 8.13 Reverse-engineering Flow
 
@@ -953,11 +990,10 @@ that harness's other integration and is discovered or registered by the
 harness's own convention (`pre` hook factory, plugin, registered command hook,
 or a managed fence in Maki's `init.lua`); those written in the harness's
 language import nothing from a type package, so no dependency pin can drift
-under the asset. Unlike the other three, Maki is also a full guidance target —
-it receives Givn's skills and its own commands in `.maki/`, because Maki reads
-project commands only from `.maki/commands/` and `.claude/commands/`, which Givn
-otherwise never writes — and its two configuration files (`.maki/init.lua`,
-`.maki/plugin.toml`) are merged, never replaced. Their observable asymmetries, all derived from what the
+under the asset. Maki is also a full skills target: it receives
+`.maki/skills/<name>/SKILL.md` and its development reporter, but no generated
+commands. Its two configuration files (`.maki/init.lua`, `.maki/plugin.toml`)
+are merged, never replaced. Their observable asymmetries, all derived from what the
 installed versions actually expose, are deliberate: omp and opencode report
 in-process and stamp their own timestamps where their events carry none, Claude
 Code runs one process per hook so its mapping, pending start timestamps, and
@@ -1012,7 +1048,7 @@ exclude `givn/history/**` when they check that a command "changed nothing": the
 exclusion is scoped to the record directory, so no other path's behavior
 changes, and a legitimate command entry no longer reads as a modified project.
 
-**Privacy bound.** An entry keeps bounded metadata — the label at 120
+**Capture limits, not a privacy guarantee.** An entry keeps bounded metadata — the label at 120
 characters, text metadata at 240, error text at 1 000 — plus whichever capture
 mode is active. The record has three modes (`record.mode`, default `on`):
 `off` writes nothing new and is absolute (`--with-full-content` is ignored with
@@ -1036,8 +1072,11 @@ any tier. Full content is not a secret filter: a credential that appears inside
 a captured command, file, prompt, or tool output travels with that work, which
 is why the default `on` mode stores no LLM-facing content and `full` is the
 project's explicit decision (R-92). The label bound lives in `bound_label`; the
-question and content bounds live in the intake's validators, so the privacy
-rule has one enforcement site rather than one per capture point.
+question and content bounds live in the intake's validators, so the capture
+limits have one enforcement site rather than one per capture point. Nothing
+here is a redaction, encryption, access-control, or filtering guarantee: paths,
+command lines, error text, question text, and any content inside `full` work
+remain as sensitive as the work itself.
 
 **Ignore entry.** Keeping the store out of repository history splits by who owns
 the destination, and the recorder never writes a versioned file: with a Git
@@ -1114,15 +1153,15 @@ real `givn` binary; the driver never substitutes an API call for a click.
 
 ## 8.26 The Outline Report and the Source Analysis Boundary
 
-The outline experiment is enabled by default. Its report is a read view that
-appends no development-record entry; its review gate (8.26a) is scoped to
-`givn check review` for a named change and adds no archive gate. The report's
+The outline addon is enabled by default. Its report is an advisory read view
+that appends no development-record entry. It has no review or archive gate, no
+verdict vocabulary, no waiver, and no forced reviewer context. The report's
 contract is:
 
 - **Enabled by default, explicitly disableable.** `addons.outline` is enabled
   unless the project writes `false` or runs `givn addons disable outline`. The
-  command is still registered so the disabled path can name the experiment and
-  the enabling command; that path exits 1.
+  command is still registered so the disabled path can name the addon and the
+  enabling command; that path exits 1.
 - **Outline first, hints second.** Every unit is printed as a per-component call
   tree first: declarations, signatures, order, and calls. Module outlines list
   declared member types as type items. Same-unit calls nest under the caller;
@@ -1131,10 +1170,10 @@ contract is:
   forward-only and omits calls outside the analyzed sources. It contains no
   data, method bodies, or comments. Metrics and classification follow as
   hints. A report exits 0 regardless of how many hints it contains. There is
-  no `action`, no `recommendation`, and no advice line. The JSON schema is
-  version 3 and carries the flat per-unit methods and their call-resolution
-  labels and `target` under `units[].outline`; the nesting is a human
-  rendering, not a JSON field.
+  no `action`, `recommendation`, or advice line. The JSON schema is version 3
+  and carries the flat per-unit methods and their call-resolution labels and
+  `target` under `units[].outline`; the nesting is a human rendering, not a
+  JSON field.
 - **Call resolution is neutral and shape-aware.** Both adapters supply whether
   a call is a free function or a method, plus a path qualifier or receiver
   evidence when the syntax proves one. A candidate is accepted only when its
@@ -1145,90 +1184,68 @@ contract is:
   resolved same-unit edges join methods for LCOM4.
 - **Production-only accounting.** File `code_lines` excludes recorded inline
   `#[cfg(test)]` spans. Unit `physical_lines` and `code_lines` cover the unit's
-  own spans and subtract the same exclusions.
-- **Hints never gate.** A report hint never enters a gate. The review gate
-  prints its own change-relative hints as `HINT` and requires outline verdicts
-  instead.
+  own spans and subtract the same exclusions. Conditional code is counted as
+  written and a parent `mod tests;` `#[cfg(test)]` is not propagated.
+- **Hints never gate.** A report hint never enters a gate or a review verdict.
+  It is evidence for a source-confirmed architecture judgment.
 - **No stored state.** The report writes only stdout/stderr or the explicit
   `--out` path. There is no baseline, watchlist, cache, classification history,
-  or feedback ledger; the review gate evaluates the units a change touches
-  at its base and head instead.
-- **Production scope.** The first release scans the project-root `src/` tree and
-  excludes `tests/`, `benches/`, `examples/`, `target/`, and `#[cfg(test)]`
-  items. `src/bin/**` is included. A multi-crate workspace whose members live
-  outside that tree is not scanned in this release.
+  or feedback ledger.
+- **Production scope.** The report scans the project-root `src/` tree by default
+  or the explicit `--path` roots, and excludes `tests/`, `benches/`,
+  `examples/`, `target/`, Python test modules, cache/virtualenv directories, and
+  `#[cfg(test)]` items. `src/bin/**` is included. A multi-crate workspace whose
+  members live outside the requested roots is not scanned unless named.
+- **Unavailable measurements are not zero.** A metric the analyzer cannot
+  compute is `unavailable` in text and `null` in JSON. LCC is not implemented
+  and is omitted; TCC is never relabelled as LCC.
 - **Deterministic and offline.** Traversal is sorted, paths are project-relative
   with `/`, output carries no timestamps or analyzer identity, line counts and
   ratio metrics are integers, and no model or network call exists.
-- **Neutral analysis boundary.** `SourceAnalyzer` is the port; `SynAnalyzer` is
-  the first adapter; parser types stay inside the `syn_adapter/` directory.
-  Production discovery, metrics, classification, and both renderers run above
-  the port. A hand-written fake adapter proves the port's sufficiency, a source
-  scan keeps `syn` out of every non-adapter module, and a later tree-sitter
-  adapter is accepted only by passing the same contract suite unchanged.
-  ADR-074 records this cross-change boundary.
+- **Neutral analysis boundary.** `SourceAnalyzer` is the port; `syn` is the
+  first adapter and the Python standard-library AST extractor is the second;
+  parser types stay inside each adapter directory. Production discovery,
+  metrics, classification, and both renderers run above the port. A later
+  tree-sitter adapter is accepted only by passing the same contract suite
+  unchanged. ADR-074 records this cross-change boundary.
 - **Diagnostics are data.** A file that cannot be read or parsed, an
   item-position macro, or another unsupported construct is reported by path and
   kind; the report continues. A wholly unsupported unit is never classified and
   no data is invented for it.
 - **Format versions are explicit.** `schema_version` changes only for a breaking
   document-shape change; `rules_version` changes when thresholds or
-  classification rules change. Schema 2 removes `action` and `recommendation`;
-  rules stay version 1 because no threshold or classification changed. The
-  human and JSON forms render from the same classified model, so a rule change
-  does not silently alter the schema.
+  classification rules change. The human and JSON forms render from the same
+  classified model, so a rule change does not silently alter the schema.
 
-### 8.26a The Outline Review Gate
+### 8.26a Advisory Outline Use in REFACTOR and Review
 
-The gate turns the touched units' outlines into a review obligation without
-becoming a second classification authority. Four concepts carry it.
+The report supports one substantive architecture pass rather than a second
+review authority:
 
-**The change-relative comparison.** There is no project-wide baseline and no
-watchlist. The base is the parent of the first reachable commit that touched the
-change directory; the head is the committed `HEAD`, and a dirty production path
-fails before analysis. Only the units the change touched are evaluated. The gate
-prints the per-component call tree of every touched head unit with methods; a
-unit with no methods or no head counterpart has no outline and needs no
-verdict.
+- **Once per behavior batch.** During REFACTOR, run one report for the changed
+  Rust/Python components and relevant neighbors. Ask whether each unit has one
+  cohesive responsibility, a narrow consumer contract, a sensible dependency
+  direction, and an understandable decomposition. Confirm suspected concerns
+  against source. Reuse the report until later structural changes make it stale.
+- **Review reuse.** Final review reuses relevant reports from implementation
+  when they are current; rerun only for structurally stale evidence. The
+  reviewer may name a concern from the outline, but must confirm it in source.
+- **Unsupported languages.** Java, Go, or another unsupported production
+  language is assessed directly from source with the same questions. It is not a
+  report failure and needs no waiver.
+- **No per-unit verdict.** No `OUTLINE:` marker, `PASS`/`FAIL` explanation,
+  metric decision, author/reviewer identity, or independent outline context is
+  required. The report cannot block review or archive.
+- **Serving path.** `assets/instructions/review.md` renders its advisory-outline
+  section behind `{{#if addons.outline}}`; `assets/instructions/steps.md` keeps
+  one conditional REFACTOR sentence that states the addon must be enabled. The
+  addon key is known to the renderer, the sync flag map
+  (`src/skills/targets.rs`), and the instruction CLI map
+  (`src/cli/instructions.rs`). A project that disables the addon receives no
+  outline obligation.
 
-**The outline verdict vocabulary.** `review.md` is the durable record. The
-marker names and unit ids are case-sensitive; a marker names the report's exact
-unit id (`type:<path>::<Name>` or `module:<path>`), never a file alias:
-
-| Marker | Meaning |
-|---|---|
-| `OUTLINE: AUTHOR <id>` | Names the author of the review record. Required when any outline verdict exists. |
-| `OUTLINE: REVIEWER <id>` | Names the review context that produced the verdict. Required when any outline verdict exists. For a self-review it is the self context and may equal the author; for an independent review it is the recorded reviewer context and differs from the author. A legacy record without a kind keeps the reviewer-differs rule. |
-| `OUTLINE: PASS <unit> \| <responsibility; call order>` | The reviewer can explain the unit's responsibility and why its calls happen in that order. Same-unit calls are nested in the tree; calls to another component are leaves the reviewer follows into that component's outline. The explanation must be non-empty. |
-| `OUTLINE: FAIL <unit> \| <reason>` | The outline is not explainable. Review is blocked; there is no justification path. |
-| `OUTLINE: PASS` | Overall verdict. Required when at least one outline exists. |
-| `FAIL <reason>` | General review failure; review must not pass. |
-
-Every printed outline needs exactly one verdict. A missing verdict, an empty
-`PASS` explanation, a `FAIL`, two conflicting verdicts for one unit, a missing
-reviewer, a reviewer that does not match the recorded review context, and an
-independent reviewer equal to the author all block. Fenced examples are
-ignored. Metric hints in the gate output are advisory and never create, satisfy,
-or block a verdict.
-
-**Hints are not decisions.** The gate prints the report's classification and
-method hints as `HINT` with their base/head evidence. A readable outline passes
-even when a hint flags the code; an unreadable outline fails even when every
-hint is clean. The gate never asks for `FIXED` or `JUSTIFIED`, and there is no
-rationale artifact. Historical rationales in the archive are evidence only.
-
-**The semantic verdict is an attestation.** The outline-only comprehension
-review (fresh context, outline alone, responsibility and call order) is
-procedural. `OUTLINE: PASS` records that it happened; the gate cannot prove the
-reviewer stayed out of the source, and it does not claim to. The mechanical
-rules cover the presence and shape of the verdict only.
-
-The serving path is conditional: `assets/instructions/review.md` renders the
-block behind `{{#if addons.outline}}`, and the addon key is known to the
-renderer, the sync flag map (`src/skills/targets.rs`), and the instruction CLI
-map (`src/cli/instructions.rs`); the two maps are kept identical or share one
-helper. A project that has not enabled the experiment receives the unchanged
-review instruction.
+The historical blocking gate and its verdict vocabulary are retired. They are
+not current architecture; see [the advisory outline guide](../outline.md).
 
 ### 8.26b The Review Context Record
 
@@ -1248,8 +1265,7 @@ reviewer context differs from the author. A self-review is accepted when no
 independence is recorded. A gate that requires independence accepts only
 `Review kind: independent`; a self-review is never upgraded by inference.
 Design-review and final review must name the same reviewer context for an
-independent review. The outline gate's `OUTLINE: AUTHOR` / `OUTLINE: REVIEWER`
-identity check is a separate record and is unchanged.
+independent review. No outline identity record is required.
 
 A legacy record with no `Review kind` line keeps its existing gate result, so
 the policy does not retroactively fail changes that predate it. The one

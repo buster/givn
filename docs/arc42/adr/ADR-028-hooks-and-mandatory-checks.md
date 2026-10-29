@@ -53,7 +53,12 @@ The project needs to run project commands at lifecycle gates while preventing a 
 
 ## Decision Outcome
 
-Chosen option: **Keep mandatory checks in the binary and use `post` for additional hooks**. `givn check tasks` always runs WIP protection and `verify.command`. `givn check review` always runs `verify`, `verify-e2e`, `integrity`, and, for a named change, overlap checks. These mandatory checks are not disabled by removing or marking a `post` entry. Configured `post` hooks run separately; built-in names (`verify`, `verify-e2e`, `lint`, `integrity`) cannot be downgraded with `allow_failure`, while custom shell commands can.
+Chosen option: **Keep mandatory checks in the binary and use `post` for additional hooks**. `givn check tasks` always runs WIP protection and change verification. `givn check review` always runs `integrity`, the run declaration, change-scoped lint, overlap/retirement/routing, the verification receipt, and scenario-commit checks. Scenario execution is proven by the receipt and by archive's merged scopes, not re-run in review. These mandatory checks are not disabled by removing or marking a `post` entry. Configured `post` hooks run separately; built-in names (`verify`, `verify-e2e`, `lint`, `integrity`) cannot be downgraded with `allow_failure`, while custom shell commands can.
+
+The original record listed `verify` and `verify-e2e` as review members. The
+verification split moved change-suite execution to `givn check tasks` and merged
+suite execution to `givn archive`; review validates the receipt. The
+non-deactivatable boundary and the hook-versus-check separation are unchanged.
 
 The `run-command`, `visual-ui-review`, `web-ui-verification-hardening`, and
 `persona-identity-reuse` changes each amended this decision by adding a member
@@ -63,23 +68,25 @@ the persona-ID resolution respectively. The register in
 [`../09-architecture-decisions.md`](../09-architecture-decisions.md) records
 the amendments.
 
-Amended 2026-10-20 by the `add-readability-review-gate` change. The mandatory
-review check gains a conditional member: when `addons.readability` is enabled,
-`givn check review --change <id>` analyzes the production units the change
-touched at the committed `HEAD` and at the change base and refuses while any
-gate finding has neither `READABILITY: FIXED` nor `READABILITY: JUSTIFIED`.
-A `JUSTIFIED` decision requires a change-scoped rationale whose fields, owner,
-and banned-reason check pass; the owner judges the content. The member is
-conditional on the opt-in addon, but once enabled it cannot be removed or
-downgraded by a `post` entry, and `FAIL <reason>` always blocks. The gate stores
-no baseline, watchlist, classification history, or feedback ledger.
+**Retired amendment.** The `add-readability-review-gate` change once added a
+conditional readability/outline member with `READABILITY: FIXED` /
+`READABILITY: JUSTIFIED` markers. That member is retired. `givn check review`
+performs no readability or outline analysis, requires no `OUTLINE` or
+`READABILITY` verdict, and accepts no metric waiver. The outline addon is
+advisory only. The record's original non-deactivatable-check boundary remains
+current; the retired member and its markers are historical.
+
+The `prepare-0-9-10` change confirms the current members: integrity (including
+the visual/persona checks), run declaration, change-scoped lint,
+overlap/retirement/routing, verification receipt, and scenario commits. None can
+be removed by a `post` entry.
 
 ### Consequences
 
 - The embedded default manifest has empty `post` lists for `tasks` and `review`; older comments claiming default `post: [verify]` are not the effective runtime contract.
 - `givn check` without an artifact runs only configured `post` hooks for applicable outputs; it does not invoke the artifact-specific mandatory path.
-- `givn archive` runs configured hooks of `apply.requires`, then performs its own hard-coded similarity, merge, post-merge verify/e2e, and optional coverage stages.
-- `verify.command` and coverage commands are read after applying `givn/config.yaml` and then `givn/commands.yaml` overlays.
+- `givn archive` runs configured hooks of `apply.requires`, then performs its own hard-coded structural gates, candidate publication, per-scope verification, optional coverage, and finalization stages.
+- `verify.command` and coverage commands are read from `givn/commands.yaml` through its dedicated executable schema after the `givn/config.yaml` policy overlay.
 
 ### Confirmation
 

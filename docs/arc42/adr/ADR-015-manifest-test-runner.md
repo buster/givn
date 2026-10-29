@@ -29,7 +29,7 @@ canonical_artifact: null
 target_adr: null
 replacement_adr: null
 
-- [x] **Hard to reverse** - runner configuration is part of every project gate and generated command contract.
+- [x] **Hard to reverse** - runner configuration is part of every project gate and generated guidance contract.
 - [x] **Shapes quality attributes** - explicit runner selection protects correctness and language neutrality.
 - [x] **Structural** - `verify.command`, `verify.e2e_command`, and `GIVN_FEATURES` define the runner interface.
 - [x] **Must be shared** - agents, CI, hooks, and archive must use the same command and feature scope.

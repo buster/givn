@@ -1,15 +1,21 @@
 ---
-
 status: accepted
 date: 2026-10-20
 decision-makers: buster (project owner)
 consulted: none
 informed: none
 
+---
+
 # Analyze source code behind a neutral SourceAnalyzer port with a syn adapter
 
 > Naming note (2026-10-21): the capability and its Rust module were renamed from
 > `readability` to `outline`. The decision and the analysis boundary are unchanged.
+>
+> Current note (2026-10-29): the later outline review gate was retired by
+> `prepare-0-9-10`. The neutral port remains the current boundary for the
+> advisory report. References below to the gate describe the historical
+> two-consumer rationale, not current behavior.
 
 ## Qualification
 
@@ -55,7 +61,7 @@ new record, not an amendment.
 ### MADR checklist evidence
 
 - [x] **Hard to reverse** - Reverting later would cost significant effort
-      because: the later review gate analyzes change base and head through the
+      because: the historical later review gate analyzed change base and head through the
       same model, a later tree-sitter adapter is accepted against the same
       contract scenarios, and abandoning the port would rewrite metrics,
       classification, both renderers, and the gate's analysis path.
@@ -76,7 +82,7 @@ new record, not an amendment.
 
 Givn has no source-analysis subsystem; the readability report must measure and
 classify Rust source units while keeping its human and machine-readable formats
-stable when the analysis engine changes. The later review gate also needs the
+stable when the analysis engine changes. The historical later review gate also needed the
 same unit analysis at a change's base and head. If metrics, classification, and
 rendering depend directly on `syn`, the parser's types and limitations enter the
 durable report contract, and a tree-sitter adapter becomes a rewrite instead of
@@ -200,6 +206,6 @@ scenarios pass unchanged.
 - Related records: ADR-069 owns the feature-free dependency surface; ADR-037
   owns deterministic overlap evidence; this decision owns only the source
   analysis boundary and its replaceability contract.
-- The later review gate (`add-readability-review-gate`) and the later
-  tree-sitter adapter are the two consumers that make this a cross-change
-  boundary rather than a local implementation detail.
+- The historical later review gate (`add-readability-review-gate`, retired) and
+  the later tree-sitter adapter are the two consumers that made this a
+  cross-change boundary rather than a local implementation detail.

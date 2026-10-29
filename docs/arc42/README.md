@@ -1,179 +1,108 @@
-# givn - Architecture Documentation (arc42)
+# givn — Architecture Documentation (arc42)
 
-This is the durable architecture documentation for `givn`, organized according
-to the [arc42](https://arc42.org) template. Each chapter is a separate file.
-Chapter 9 is a register whose decisions are stored as individual MADR files.
+This is the durable architecture documentation for the current checkout,
+organized according to the [arc42](https://arc42.org) template. Each chapter is
+a separate file. Chapter 9 is a register whose decisions are stored as
+individual MADR files.
 
-## Documentation Status
+## Documentation Ownership
 
-The checkout contains the core Rust CLI, lifecycle, embedded assets, the
-deterministic specification toolchain (`spec find`, `spec tree`, `spec
-duplicates`, `spec coverage`, `spec route`), and the
-repository-owned acceptance fixtures. Distribution through release binaries,
-Homebrew, and the shell installer remains planned work.
+Each contract has one home:
 
-The `drop-embedding-features` change removed the semantic retrieval engine;
-ADR-069 records the single feature-free binary and supersedes the engine
-records. The `run-command` change records ADR-067 (one tool declares and
-executes the product start command) and amends ADR-028 with the
-run-declaration gate; the durable run-declaration facts live in chapters 3,
-6.15, 8.16, and the glossary.
+| Subject | Authoritative document |
+|---|---|
+| Purpose, installation, quick start, brief guarantees | [README](../../README.md) |
+| Lifecycle phases, gates, batch flow, recovery overview | [Workflow](../workflow.md) |
+| CLI, configuration authority, skills and invocation, runner/receipt contracts, layout | [Reference](../reference.md) |
+| Step obligations an agent follows | Served instructions (`givn instructions <id>`) and their assets |
+| Current architecture and constraints | These arc42 chapters |
+| Decision rationale | The [ADR register](adr/README.md) |
+| Post-1.0 work | Chapter [11](11-risks-and-technical-debt.md) |
 
-The `archive-proof` change proposes ADR-070: archive publication becomes
-forward-only and SCM-backed (Git or Fossil), with a published candidate, fail-closed
-per-scope runner results, and a verification receipt published as the
-evidence-only finalization. Durable archive facts live in chapters 2, 3, 5,
-6.7, 8.6, 8.9, 8.12, and the glossary.
+An active change's proposal, design, and specs own its planned behavior until it
+archives. Docs describe the current checkout; they do not present a planned or
+completed change as pending work.
 
-The `scm-backend` change records ADR-071: repository-state commands select the
-version-control backend through one seam (a Git worktree first, then a Fossil
-checkout) and refuse absence, ambiguity, a nested root, or a missing executable
-by name. Durable facts live in chapters 2 (TC-21, TC-33), 3, 4, 5, 6.13/6.16,
-8.18, 10 (Q-50), and 11 (R-63, R-64, D-20).
+## Current State
 
-The `maintain-project` change amends ADR-071: the managed upgrade and
-migration bundles run on Git and Fossil through the same seam, with
-allowlist-only force staging on both. Durable facts live in chapters 2
-(TC-21), 3, 4, 5, 6.13, 8.18, and the glossary; D-20 is repaid.
+The checkout contains the Rust CLI, the Git and Fossil adapters, the change
+lifecycle and archive proof, the deterministic specification tools, the
+skills-only guidance pipeline, the arc42 addon, the development record and
+report, and the advisory outline report.
 
-The `archive-change` change records ADR-072: publication through the seam is
-witness-bounded, the archive runs on Git and Fossil, and a candidate whose
-publication a hook rejected is republished on resume. Durable facts live in
-chapters 2 (TC-21, TC-31, TC-32), 3, 4, 5, 6.7/6.13/6.16, 7.3, 8.18, 10
-(Q-92), 11 (R-65, R-66), and the glossary.
+Current architecture facts that recur in the chapters:
 
-The approved `make-user-questions-decision-ready` change records a pending
-universal dialog-policy discovery and question-quality contract. Its target
-stakeholder quality objective, ownership, flows, delivery, review boundaries,
-and risks are documented in chapters 1, 3, 5, 6, 7, 8, 10, 11, and the refined
-existing dialog glossary entry.
-The source policy and generated guidance are not changed by the planning
-artifacts; implementation and fresh-context verification remain to be proved.
-No new ADR or runtime question gate is introduced.
+- One feature-free Rust binary; no Cargo features and no model dependency.
+- Configuration authority is split: `givn/config.yaml` owns policy and graph,
+  `givn/commands.yaml` owns `verify`, `coverage`, and `run`.
+- Every registered addon is enabled by default; an explicit `false` is the
+  opt-out. `communication_policy` and `challenge` replace the retired
+  `absolute_mode`, `grill_me`, and `grill_with_docs` keys without aliases.
+- Skills are the only generated invocation surface. Claude Code and OpenCode
+  use their skill slash, OMP uses `/skill:<name>`, the neutral `agents` target
+  uses skill discovery, and Maki uses an explicit or agent-selected skill.
+- `givn commit` requires explicit paths and preserves unrelated work on both
+  backends. Git additionally stamps raw commits through the optional
+  `commit-msg` hook; Fossil raw check-ins carry no attribution.
+- Review and archive reuse a fresh change verification receipt while its tested
+  content is unchanged; archive runs its merged scopes against the published
+  candidate.
+- The outline report is advisory. There is no outline review gate, verdict,
+  waiver, baseline, or forced reviewer context.
+- The supported migration baseline is 1.0. The shipped migration catalog is
+  empty; pre-1.0 projects repair their configuration manually.
 
-The `support-opencode-2` change moves the generated OpenCode attribution
-integration to the OpenCode 2 plugin contract, with session-scoped model
-observation, an issuing-session link for shell commands, and best-effort
-unavailable fallbacks. Durable facts live in chapters 2 (TC-29), 6.1a, 10
-(Q-78), 11 (R-50), and 12 (Issuing session). No ADR is introduced: the
-compatibility window and the
-session-link choice are single-component, one-change-reversible integration
-decisions owned by the change's proposal, design, and specs.
+## Explicit Unknowns
 
-The `drop-legacy-residue` change retires the in-tool history rewrite and
-removes the pre-0.8 migration bundles and guides: the oldest migration
-source the catalog declares is 0.7.0, a version below it receives only the
-managed refresh, rule cleanliness stays report-only, and the vestigial
-`extras` flag
-and legacy coverage commands are gone. Durable facts live in chapters 1, 2,
-3, 4, 5, 7, 8, 10 (Q-48, Q-55, Q-77), 11 (R-29, R-81, R-82), and the
-glossary. No ADR is introduced: the removed boundaries are product behaviour
-and release policy owned by the specs, the catalog, and the chapters above.
+These are outside the current implementation or documentation evidence and are
+not claimed as delivered:
 
-The `development-timeline` change records ADR-073: Givn owns one append-only,
-scope-tagged development record and every supported harness — omp, opencode,
-Claude Code, and Maki — reports through one intake command instead of writing the
-record itself (the `agents` target is a skills mirror with no runtime, and
-ADR-013 is amended to add `maki` as a full target — skills in `.maki/skills/`,
-commands in `.maki/commands/`, and the development reporter, with
-`.maki/init.lua` and `.maki/plugin.toml` merged rather than replaced). Durable facts
-live in chapters 2 (TC-34, TC-35, TC-36, TC-37), 3, 4, 5, 6.18, 7.3/7.4, 8.25, 10 (Q-98 to
-Q-103), 11 (R-83 to R-86, R-88 to R-92, D-22, D-23), and the glossary; the record's ownership
-boundary is deliberately separate from ADR-014's filesystem-derived state,
-ADR-013's generated-integration ownership, and ADR-028's gate boundary. The
-browser report and its visual contract are documented in
-`docs/design/design-system.md`.
-
-The `add-readability-report` change records ADR-074: source analysis sits behind
-a neutral `SourceAnalyzer` port, `SynAnalyzer` is the first adapter, metrics and
-classification run above the port, and a later tree-sitter adapter must pass the
-same contract without changing the report. The report is an opt-in, default-off,
-advisory experiment with no stored baseline. Durable facts live in chapters 1
-(FR-46), 2 (TC-42, 2.3), 3, 4, 5, 6.1/6.12/6.19, 8.11/8.26,
-10 (Q-108 to Q-111, Q-119), 11 (R-104 to R-108, R-121, D-24, D-25,
-D-27), and 12.
-
-The `add-readability-review-gate` change adds the same experiment's review stage
-and revises the report. The report becomes outline-first at schema version 3:
-each unit prints its per-component call tree, then one classification and its
-evidence as hints, never an action or a recommendation. `givn check review --change <id>`
-prints the per-component call tree of every touched unit with methods at the
-change base and at the committed head and fails while any outline lacks a fresh-context `PASS` with
-a responsibility and call-order explanation, or carries a `FAIL`. A dirty
-production path, a missing change-directory commit, and a shallow clone fail
-closed. The change reuses ADR-074's pipeline and amends two existing records:
-ADR-028 (the conditional mandatory review member) and ADR-071 (the five SCM
-history/revision operations). Its observable rules and markers are owned by the
-`outline-review-gate` Gherkin capability, the `verify-change` use case, and
-the change design. Durable facts live in chapters 1 (FR-46, FR-47), 2 (TC-42,
-TC-43), 3, 4, 5, 6.20, 8.12/8.26a, 10 (Q-112 to Q-117), 11 (R-108 to R-115,
-D-24 to D-26), and 12.
-
-The `review-friction-hardening` change amends ADR-070: the change
-verification receipt binds the tested content through a SHA-256 digest and the
-`change-proof/v1` scope, so review and archive reuse a green proof across a
-documentation-only revision while any tested-content change still stales it.
-The review routing gate also reports every use-case schema and
-capability-routing diagnostic in one pass. Durable facts live in chapters 2
-(TC-39), 4, 5, 6.7.1, 10 (Q-105, Q-118), 11 (R-116, R-117), and the glossary.
-
-The `require-persona-for-interface-none` change makes the Persona disposition
-follow the presence of a declared `## Visual Design Contract` rather than the
-rendered interface: `Interface: none` requires at least one confirmed Persona,
-the visual verdict and visual evidence stay conditional on `web` and
-`terminal`, and a change that declares no contract remains exempt. The rule is
-observable review behavior owned by the `visual-review-gate` capability, so no
-ADR is introduced. Durable facts live in chapters 5, 6, 8, 10, 11, and the
-glossary.
-
-The `gate-delta-step-definitions-at-archive` change adds a pre-mutation archive
-comparison between the step phrases bound by a change's delta step files and
-the phrases bound by the permanent test tree (the project root minus the
-change, archive, history, version-control, build, and cache trees). The
-refusal is user-visible archive behavior owned by the `archive-change` use
-case, the `require-merged-step-definitions` capability, and the change design,
-so no ADR is introduced. Durable facts live in chapters 5, 6, 8 (§8.3), 11
-(R-123), and 12 (Step definition, Step phrase).
-
-Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
-register](adr/README.md) for status, relationships, evidence, reserved IDs, and
-historical records.
+- Release binaries, Homebrew, a shell installer, a published cargo crate, and a
+  verified cross-platform target matrix. See [chapter 7](07-deployment-view.md)
+  and [chapter 11](11-risks-and-technical-debt.md).
+- Production-scale performance of the record store and the report; no bottleneck
+  has been measured. See [chapter 11](11-risks-and-technical-debt.md).
+- Gherkin dialects other than English, `Rule:` publication, Java/Go structure
+  adapters, complete outline coverage or metric parity, and semantic duplicate
+  matching. See [chapter 11](11-risks-and-technical-debt.md).
+- Future migration bundles beyond the declared 1.0 baseline. The catalog
+  contract is tested with synthetic routes; no future route is shipped. See
+  [the migration contract](../migrations/README.md#future-migration-bundles).
 
 ## Chapters
 
 | # | Chapter | Purpose |
 |---|---|---|
 | 1 | [Introduction and Goals](01-introduction-and-goals.md) | Product purpose, requirements, quality goals, stakeholders |
-| 2 | [Architecture Constraints](02-architecture-constraints.md) | Technical, organizational, and repository constraints |
+| 2 | [Architecture Constraints](02-architecture-constraints.md) | Technical, configuration, and process constraints |
 | 3 | [Context and Scope](03-context-and-scope.md) | System boundary, interfaces, and scope |
 | 4 | [Solution Strategy](04-solution-strategy.md) | Strategic architecture choices |
 | 5 | [Building Block View](05-building-block-view.md) | Crate, modules, and responsibilities |
-| 6 | [Runtime View](06-runtime-view.md) | Lifecycle, gates, and archive flows |
-| 7 | [Deployment View](07-deployment-view.md) | Binary and planned distribution |
-| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade, manifest, Gherkin, hooks, skills, and coverage |
+| 6 | [Runtime View](06-runtime-view.md) | Lifecycle, gates, verification, archive, upgrade, and reporting flows |
+| 7 | [Deployment View](07-deployment-view.md) | Binary, installation, targets, distribution |
+| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade, manifest, Gherkin, skills, gates, verification, records, analysis |
 | 9 | [Architecture Decisions](09-architecture-decisions.md) | Pointer to the [ADR register](adr/README.md) and individual records |
 | 10 | [Quality Requirements](10-quality-requirements.md) | Quality tree, scenarios, and verification boundaries |
-| 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks, limitations, and historical measurements |
-| 12 | [Glossary](12-glossary.md) | Domain and technical vocabulary |
-
-## Related Documents
-
-- [`../../README.md`](../../README.md) - user-facing project overview.
-- [`../workflow.md`](../workflow.md) - ordered workflow phases, gates, and chokepoints.
-- [`../migrations/0.8.0-to-0.9.0.md`](../migrations/0.8.0-to-0.9.0.md) - LLM prompt pack for the current project migration.
-- [`../migrations/README.md`](../migrations/README.md) - release-owned migration bundle and aggregate-plan contract.
+| 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Current risks, deliberate debt, resolved boundaries, post-1.0 backlog |
+| 12 | [Glossary](12-glossary.md) | Canonical domain and technical vocabulary |
 
 ## Reading Order
 
 1. Read chapters 1 and 4 for purpose and strategy.
 2. Read chapter 8 for cross-cutting mechanics and chapter 6 for runtime order.
-3. Read the [ADR register](adr/README.md) and only then individual decisions.
-4. Treat proposed, deprecated, and superseded records as historical or pending evidence, not as accepted architecture.
+3. Read the [ADR register](adr/README.md) and then individual decisions.
+4. Treat proposed, deprecated, and superseded records as historical or pending
+   evidence, not as accepted architecture.
+5. Use chapter 11 for known limits and deferred work rather than treating an
+   experimental tool as a complete guarantee.
 
-The `fix-outline-report-fidelity` change corrects the outline report's evidence
-without changing its goal: call resolution now follows the call's shape,
-unknown receivers are visible `name_only` leaves, JSON calls carry their
-target, module outlines list member types, evidence names only fired
-predicates, production line counts exclude recorded test spans, and signatures
-keep their full type detail. Durable facts live in chapters 1 (FR-46), 3, 4, 5,
-6.19, 8, 10 (Q-119), 11 (R-106, R-115, R-121, R-122), and 12.
+## Related Documents
+
+- [`../../README.md`](../../README.md) — user-facing project overview.
+- [`../workflow.md`](../workflow.md) — lifecycle, gates, and recovery overview.
+- [`../reference.md`](../reference.md) — operational contracts.
+- [`../migrations/README.md`](../migrations/README.md) — manual 1.0 transition
+  and the future migration-bundle contract.
+- [`../outline.md`](../outline.md) — the advisory structure report.
+
+*[Architecture documentation index](README.md)*
