@@ -178,3 +178,19 @@ fn policy_load_once_and_reload(world: &mut GivnWorld) {
         "the bootstrap does not state the load-once and reload-if-lost obligation: {output}"
     );
 }
+
+#[then("the terminal startup output recommends givn-start and the direct change command")]
+fn terminal_startup_recommends_start(world: &mut GivnWorld) {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("the startup command must run first");
+    assert!(output.status.success(), "startup command failed");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("givn-start")
+            && stdout.contains("givn new <change-id>")
+            && stdout.contains("direct alternative"),
+        "terminal startup output does not recommend start and the direct change command: {stdout}"
+    );
+}

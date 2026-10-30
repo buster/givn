@@ -11,6 +11,7 @@ Feature: Instruction integrity
     And  the policy is loaded once per context and reloaded if lost
     And  the startup guidance says to load givn-start for new or unclassified work
     And  the startup guidance names givn new as the direct alternative
+    And  the terminal startup output recommends givn-start and the direct change command
     And  the terminal transcript is captured for this scenario
 
   @givn.modified
