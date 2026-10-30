@@ -19,6 +19,7 @@ Feature: Guide domain modeling
     And  the generated givn-domain-modeling guidance directs the domain modeler to the domain-modeling instruction
     And  the served domain-modeling instruction contains "maintaining the project's glossary"
     And  the generated skill does not describe the givn change lifecycle
+    And  the terminal transcript is captured for this scenario
 
   @givn.modified
   Scenario: The design-review skill checks that the ubiquitous language is followed
