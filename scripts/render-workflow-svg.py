@@ -2,9 +2,10 @@
 """Generate docs/workflow.svg — GitHub-safe rendering of the givn lifecycle.
 
 Three-column layout: action/step, artifact, check. The flow starts at
-`givn-explore`, which routes either through the optional `givn-ideation`
-pre-phase or directly to `givn-propose`, then runs proposal -> specs -> design
--> arc42-docs (addon) -> design-review -> tasks -> implementation -> review ->
+`givn-start`, which may stop with an answer or direct work, run `givn new`
+directly for a clear change, or route through the optional `givn-ideation`
+pre-phase to `givn-propose`, then runs proposal -> specs -> design ->
+arc42-docs (addon) -> design-review -> tasks -> implementation -> review ->
 archive.
 
 No <style>, no classes, no foreignObject, no filters, no external resources;
@@ -130,14 +131,15 @@ def render_card(card, x, y, w):
 ROWS = [
     dict(
         kind="entry",
-        name="givn-explore",
-        subs=["optional entry &#183; no artifact"],
-        optional=True,
+        entry=True,
+        name="givn-start",
+        subs=["default entry &#183; no artifact"],
+        optional=False,
         art_title=["no chain artifact"],
         art_lines=[
-            "clarify, investigate, compare",
-            "route to givn-ideation or",
-            "directly to givn-propose",
+            "investigate; answer or direct work",
+            "may stop here; otherwise route",
+            "to givn-ideation or givn-propose",
         ],
         checks=[],
     ),
@@ -380,7 +382,15 @@ def row_height(row):
 def render_step(x, y, w, row):
     parts = []
     optional = row.get("optional", False)
-    if optional:
+    entry = row.get("entry", False)
+    if entry:
+        parts.append(
+            f'<rect x="{x}" y="{y}" width="{w}" height="{STEP_H}" rx="12" '
+            f'fill="{C_CARD}" stroke="{C_ADV_STROKE}" stroke-width="1.5"/>'
+        )
+        name_fill = C_INK
+        sub_fill = C_MUTED
+    elif optional:
         parts.append(
             f'<rect x="{x}" y="{y}" width="{w}" height="{STEP_H}" rx="12" '
             f'fill="{C_CARD}" stroke="{C_ADV_STROKE}" stroke-width="1.5" '
@@ -404,7 +414,7 @@ def render_step(x, y, w, row):
         name_fill = "#ffffff"
         sub_fill = "#dbeafe"
 
-    name_x = x + w / 2 + (14 if not optional else 0)
+    name_x = x + w / 2 + (14 if not optional and not entry else 0)
     subs = row["subs"]
     if len(subs) == 1:
         name_y = y + STEP_H / 2 - 2
@@ -543,11 +553,11 @@ def main():
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" '
         f'viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">'
     )
-    s.append('<title id="t">Givn change lifecycle: explore, ideation, and the main chain</title>')
+    s.append('<title id="t">Givn change lifecycle: start, ideation, and the main chain</title>')
     s.append(
         '<desc id="d">Top-to-bottom lifecycle with three columns: action, artifact, and checks. '
-        'givn-explore starts without an artifact and routes either through optional givn-ideation '
-        'or directly to givn-propose. The main chain runs proposal, specs, design, arc42-docs '
+        'givn-start starts without an artifact and may stop with an answer or direct work, '
+        'or route through optional givn-ideation to givn-propose. The main chain runs proposal, specs, design, arc42-docs '
         '(addon), design-review, tasks, implementation, review, and archive. Blocking checks stop '
         'the workflow; advisory checks only report.</desc>'
     )
@@ -565,12 +575,12 @@ def main():
     # header
     s.append(
         f'<text x="{MARGIN}" y="46" font-size="{FS_TITLE}" font-weight="800" fill="{C_INK}">'
-        'givn &#8212; change lifecycle: explore to archive</text>'
+        'givn &#8212; change lifecycle: start to archive</text>'
     )
     header_lines = [
-        "Start with givn-explore: clarify without artifacts. Two routes leave it:",
-        "optional givn-ideation, or the dashed direct rail to givn-propose. The middle",
-        "column names the artifact; the right column holds the checks. Only BLOCKING checks stop the workflow.",
+        "Start with givn-start: clarify without artifacts. Answer or direct work may stop here;",
+        "two change routes leave it: optional givn-ideation, or the dashed direct rail to givn-propose.",
+        "The middle column names the artifact; the right column holds the checks. Only BLOCKING checks stop the workflow.",
     ]
     sy = 76
     for line in header_lines:
@@ -585,7 +595,7 @@ def main():
         (C_CARD, C_ART_STROKE, "artifact", False),
         (C_CHK_BG, C_CHK_STROKE, "blocking check", False),
         (C_ADV_BG, C_ADV_STROKE, "advisory check", True),
-        (C_CARD, C_ADV_STROKE, "optional entry", True),
+        (C_CARD, C_ADV_STROKE, "optional step", True),
     ]
     for fill, stroke, label, dashed in legend:
         d = ' stroke-dasharray="4 3"' if dashed else ""
@@ -598,7 +608,7 @@ def main():
         )
         lx += 22 + text_width(label, FS_LEGEND) + 28
 
-    # connectors and the compact direct rail from explore to propose
+    # connectors and the compact direct rail from start to propose
     for i in range(1, len(ROWS)):
         dashed = i <= 2
         s.append(
@@ -611,7 +621,7 @@ def main():
             f'{SPINE_X},{step_top(i)}" fill="{C_LINE}"/>'
         )
 
-    # Compact direct rail: starts at the lower right of explore, runs in the
+    # Compact direct rail: starts at the lower right of start, runs in the
     # gap between the action and artifact columns, and enters propose at its
     # lower right. It never crosses the ideation row's cards.
     x_lane = MARGIN + STEP_W + 24

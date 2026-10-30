@@ -7,9 +7,9 @@
 <rect width="1060" height="2211" fill="#f1f5f9"/>
 <g font-family="'Segoe UI',-apple-system,Roboto,Helvetica,Arial,sans-serif">
 <text x="20" y="46" font-size="26" font-weight="800" fill="#0f172a">givn &#8212; change lifecycle: start to archive</text>
-<text x="20" y="76" font-size="14" fill="#64748b">Start with givn-start: clarify without artifacts. Answer or direct work may stop here; two change routes leave it:</text>
-<text x="20" y="96" font-size="14" fill="#64748b">optional givn-ideation, or the dashed direct rail to givn-propose. The middle</text>
-<text x="20" y="116" font-size="14" fill="#64748b">column names the artifact; the right column holds the checks. Only BLOCKING checks stop the workflow.</text>
+<text x="20" y="76" font-size="14" fill="#64748b">Start with givn-start: clarify without artifacts. Answer or direct work may stop here;</text>
+<text x="20" y="96" font-size="14" fill="#64748b">two change routes leave it: optional givn-ideation, or the dashed direct rail to givn-propose.</text>
+<text x="20" y="116" font-size="14" fill="#64748b">The middle column names the artifact; the right column holds the checks. Only BLOCKING checks stop the workflow.</text>
 <rect x="20" y="128" width="15" height="15" rx="4" fill="#2563eb" stroke="None" stroke-width="1.5"/>
 <text x="42" y="140" font-size="13" fill="#64748b">action</text>
 <rect x="113.68" y="128" width="15" height="15" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
@@ -19,7 +19,7 @@
 <rect x="373.84000000000003" y="128" width="15" height="15" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/>
 <text x="395.84000000000003" y="140" font-size="13" fill="#64748b">advisory check</text>
 <rect x="525.76" y="128" width="15" height="15" rx="4" fill="#ffffff" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/>
-<text x="547.76" y="140" font-size="13" fill="#64748b">optional entry</text>
+<text x="547.76" y="140" font-size="13" fill="#64748b">optional step</text>
 <line x1="120.0" y1="264.0" x2="120.0" y2="316.0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 3"/>
 <polygon points="112.0,315.0 128.0,315.0 120.0,327.0" fill="#cbd5e1"/>
 <line x1="120.0" y1="400.0" x2="120.0" y2="452.0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 3"/>
@@ -45,8 +45,8 @@
 <rect x="156" y="284" width="88" height="18" rx="9" fill="#fffbeb" stroke="#d97706" stroke-width="1.2" stroke-dasharray="4 3"/>
 <text x="200" y="296.5" text-anchor="middle" font-size="10.5" font-weight="700" fill="#d97706">direct route</text>
 <rect x="20" y="191.0" width="200" height="70" rx="12" fill="#ffffff" stroke="#d97706" stroke-width="1.5"/><text x="120.0" y="224.0" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">givn-start</text><text x="120.0" y="243.0" text-anchor="middle" font-size="11" fill="#64748b">default entry &#183; no artifact</text>
-<line x1="224" y1="226.0" x2="246" y2="226.0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 3"/><polygon points="247,220.0 247,232.0 256,226.0" fill="#cbd5e1"/>
-<rect x="256" y="176.0" width="300" height="100" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="268" y="200.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">no chain artifact</text><rect x="473.2" y="185.0" width="70.8" height="17" rx="8.5" fill="#d97706"/><text x="508.6" y="192.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">OPTIONAL</text><text x="268" y="221.0" font-size="13" fill="#64748b">clarify, investigate, compare</text><text x="268" y="239.0" font-size="13" fill="#64748b">route to givn-ideation or</text><text x="268" y="257.0" font-size="13" fill="#64748b">directly to givn-propose</text>
+<line x1="224" y1="226.0" x2="246" y2="226.0" stroke="#cbd5e1" stroke-width="2"/><polygon points="247,220.0 247,232.0 256,226.0" fill="#cbd5e1"/>
+<rect x="256" y="176.0" width="300" height="100" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/><text x="268" y="200.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">no chain artifact</text><text x="268" y="221.0" font-size="13" fill="#64748b">investigate; answer or direct work</text><text x="268" y="239.0" font-size="13" fill="#64748b">may stop here; otherwise route</text><text x="268" y="257.0" font-size="13" fill="#64748b">to givn-ideation or givn-propose</text>
 <rect x="20" y="327.0" width="200" height="70" rx="12" fill="#ffffff" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="120.0" y="360.0" text-anchor="middle" font-size="16" font-weight="700" fill="#0f172a">givn-ideation</text><text x="120.0" y="379.0" text-anchor="middle" font-size="11" fill="#64748b">optional &#183; skill givn-ideation</text>
 <line x1="224" y1="362.0" x2="246" y2="362.0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 3"/><polygon points="247,356.0 247,368.0 256,362.0" fill="#cbd5e1"/>
 <rect x="256" y="312.0" width="300" height="100" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="268" y="336.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">givn/ideation/&lt;topic&gt;/</text><rect x="473.2" y="321.0" width="70.8" height="17" rx="8.5" fill="#d97706"/><text x="508.6" y="328.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">OPTIONAL</text><text x="268" y="357.0" font-size="13" fill="#64748b">multi-session event storming:</text><text x="268" y="375.0" font-size="13" fill="#64748b">domain events, personas, use cases,</text><text x="268" y="393.0" font-size="13" fill="#64748b">change seeds; no chain artifact</text>
