@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.13] - 2026-10-30
+
+### Features
+
+- **routing:** Replace explore with start, recommend answer only, direct work, ideation, or a formal change proportionately, and separate session state from request routing
+
 ## [0.9.12] - 2026-10-30
 
 ### Features
@@ -818,3 +824,5 @@ for the complete 0.2.0 feature set.
 [0.9.11]: https://github.com/buster/givn/compare/v0.9.10...v0.9.11
 
 [0.9.12]: https://github.com/buster/givn/compare/v0.9.11...v0.9.12
+
+[0.9.13]: https://github.com/buster/givn/compare/v0.9.12...v0.9.13
