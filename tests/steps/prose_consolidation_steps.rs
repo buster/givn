@@ -787,36 +787,6 @@ fn committed_project_with_tracked_explore(world: &mut GivnWorld) {
     assert!(replaced, "fixture config must declare rules");
     fs::write(&config_path, format!("{}\n", lines.join("\n"))).expect("write config");
 
-    for args in [vec!["init"], vec!["add", "-A"]] {
-        let out = std::process::Command::new("git")
-            .args(&args)
-            .current_dir(env.root())
-            .output()
-            .expect("git command");
-        assert!(
-            out.status.success(),
-            "git {} failed: {}",
-            args.join(" "),
-            String::from_utf8_lossy(&out.stderr)
-        );
-    }
-    let commit = std::process::Command::new("git")
-        .args([
-            "-c",
-            "user.name=fixture",
-            "-c",
-            "user.email=fixture@example.com",
-            "commit",
-            "-m",
-            "fixture",
-        ])
-        .current_dir(env.root())
-        .output()
-        .expect("git commit");
-    assert!(
-        commit.status.success(),
-        "git commit failed: {}",
-        String::from_utf8_lossy(&commit.stderr)
-    );
+    common::git_init(&env);
     world.env = Some(env);
 }
