@@ -65,8 +65,7 @@ fn run_artifact(
         })?;
         let content = crate::skills::render::render_conditionals(&content, &addons)?;
         let content = crate::config::extensions::append(&content, &extension_rules);
-        let skill_to_load =
-            domain_skill_to_load(manifest.addons.domain_modeling, manifest.addons.arc42);
+        let skill_to_load = domain_skill_to_load(manifest.addons.domain_modeling);
         if json {
             let mut out = serde_json::json!({
                 "id": artifact,
@@ -106,8 +105,7 @@ fn run_artifact(
     let content = crate::config::cascade::resolve_instruction(artifact)?;
     let content = crate::skills::render::render_conditionals(&content, &addons)?;
     let content = crate::config::extensions::append(&content, &extension_rules);
-    let skill_to_load =
-        domain_skill_to_load(manifest.addons.domain_modeling, manifest.addons.arc42);
+    let skill_to_load = domain_skill_to_load(manifest.addons.domain_modeling);
 
     if json {
         let mut out = serde_json::json!({
@@ -177,13 +175,7 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
         }
         let state = ChangeState::from_manifest(&change_dir, &manifest);
         let readme_hint = readme_nudge(&project_root, &manifest);
-        return report_change(
-            &state,
-            manifest.addons.domain_modeling,
-            manifest.addons.arc42,
-            json,
-            readme_hint,
-        );
+        return report_change(&state, manifest.addons.domain_modeling, json, readme_hint);
     }
 
     // No change named: derive from current project state.
@@ -197,7 +189,6 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
         1 => report_change(
             &changes[0],
             manifest.addons.domain_modeling,
-            manifest.addons.arc42,
             json,
             readme_hint,
         ),
@@ -398,13 +389,12 @@ fn report_archived_change(id: &str, json: bool) -> Result<()> {
 fn report_change(
     state: &ChangeState,
     domain_modeling: bool,
-    arc42: bool,
     json: bool,
     readme_hint: Option<String>,
 ) -> Result<()> {
     let (summary, next_command, next_skill) = describe_next_step(state);
     let skill_to_load = if state.next_required().is_some() {
-        domain_skill_to_load(domain_modeling, arc42)
+        domain_skill_to_load(domain_modeling)
     } else {
         None
     };
@@ -447,11 +437,10 @@ fn report_change(
 /// The domain-modeling skill to route to, if any.
 ///
 /// Routed during every workflow step of a change (any phase), and only when
-/// the domain-modeling addon is enabled AND the project has the arc42
-/// glossary the skill maintains. When either is off, behaviour is identical to
-/// before.
-fn domain_skill_to_load(domain_modeling: bool, arc42: bool) -> Option<&'static str> {
-    if domain_modeling && arc42 {
+/// the domain-modeling addon is enabled. The standalone domain documents do not
+/// depend on the arc42 addon.
+fn domain_skill_to_load(domain_modeling: bool) -> Option<&'static str> {
+    if domain_modeling {
         Some("givn-domain-modeling")
     } else {
         None
@@ -598,18 +587,13 @@ mod tests {
     }
 
     #[test]
-    fn domain_skill_to_load_routes_when_both_addons_enabled() {
-        assert_eq!(
-            domain_skill_to_load(true, true),
-            Some("givn-domain-modeling")
-        );
+    fn domain_skill_to_load_routes_when_the_domain_addon_enabled() {
+        assert_eq!(domain_skill_to_load(true), Some("givn-domain-modeling"));
     }
 
     #[test]
-    fn domain_skill_to_load_is_empty_without_both_addons() {
-        assert_eq!(domain_skill_to_load(false, false), None);
-        assert_eq!(domain_skill_to_load(true, false), None);
-        assert_eq!(domain_skill_to_load(false, true), None);
+    fn domain_skill_to_load_is_empty_without_the_domain_addon() {
+        assert_eq!(domain_skill_to_load(false), None);
     }
 
     #[test]

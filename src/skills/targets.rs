@@ -331,10 +331,10 @@ pub fn sync(project_root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Whether the domain-modeling skill should be generated. It requires the
-/// arc42 addon (the project's glossary), mirroring the router's coupling.
+/// Whether the domain-modeling skill should be generated. It follows the
+/// domain-modeling addon and does not require arc42.
 fn domain_modeling_present(manifest: &crate::config::manifest::Manifest) -> bool {
-    manifest.addons.domain_modeling && manifest.addons.arc42
+    manifest.addons.domain_modeling
 }
 
 /// Build the addon-name/enabled map passed into the template renderer.
@@ -385,10 +385,7 @@ fn reconcile_addon_artifacts(
     targets: &[AgentTarget],
 ) -> Result<()> {
     let disabled = [
-        (
-            "givn-domain-modeling",
-            !manifest.addons.domain_modeling || !manifest.addons.arc42,
-        ),
+        ("givn-domain-modeling", !manifest.addons.domain_modeling),
         (
             "givn-dev-principles",
             !manifest_addon_enabled(manifest, "dev_principles"),
@@ -1072,6 +1069,17 @@ mod tests {
     fn validate_frontmatter_requires_description() {
         let content = "---\nname: givn-propose\n---\n\nContent";
         assert!(validate_frontmatter(content, "givn-propose").is_err());
+    }
+
+    #[test]
+    fn domain_skill_follows_its_own_addon_without_arc42() {
+        let mut manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        manifest.addons.domain_modeling = true;
+        manifest.addons.arc42 = false;
+        assert!(domain_modeling_present(&manifest));
+
+        manifest.addons.domain_modeling = false;
+        assert!(!domain_modeling_present(&manifest));
     }
 
     #[test]
