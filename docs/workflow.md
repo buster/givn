@@ -86,7 +86,9 @@ a lasting design decision is promoted into an ADR. Each subject still has one
 authoritative home. An affected/unaffected Arc42 assessment owns architecture
 impact; design and review may summarize or link to it, but should not reproduce
 competing checklists. Accurate unaffected architecture chapters, personas, and
-glossary entries stay unchanged. Initial adoption cannot use no-impact claims to
+glossary entries and the standalone domain model stay unchanged. Vocabulary
+lives in `docs/glossary.md`; structure lives in `docs/domain-model.md`. Initial
+adoption cannot use no-impact claims to
 excuse unpopulated scaffolds or an inaccurate baseline.
 
 ## Behavior batches

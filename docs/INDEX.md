@@ -30,6 +30,10 @@ Status values:
 
 - [Use-Case Model](use-case-model.md) — current; canonical use-case definition,
   scoping rules, authoring requirements, and review rejection criteria.
+- [Glossary](glossary.md) — current; the sole vocabulary authority for the
+  project's domain and technical terms.
+- [Domain Model](domain-model.md) — current; thin structural map of the working
+  domain, its bounded contexts, aggregates, and relationships.
 - [Architecture Principles addon](architecture-principles.md) — reference;
   enabled-by-default guidance for decision timing, consumer contracts,
   component boundaries, and ports/adapters, with its expected outcome and
@@ -79,8 +83,8 @@ Status values:
 - [Arc42 11: Risks and Technical Debt](arc42/11-risks-and-technical-debt.md) —
   current; current risks, deliberate debt, resolved boundaries, and the concrete
   post-1.0 backlog.
-- [Arc42 12: Glossary](arc42/12-glossary.md) — current; canonical domain and
-  technical vocabulary.
+- [Arc42 12: Glossary](arc42/12-glossary.md) — current; links to the
+  standalone [glossary](glossary.md), the sole vocabulary authority.
 
 ## Historical Handoffs
 

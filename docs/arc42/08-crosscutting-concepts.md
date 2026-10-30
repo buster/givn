@@ -537,9 +537,14 @@ For Arc42 specifically, `givn addons enable arc42`:
 1. writes `addons.arc42: true` to `givn/config.yaml`;
 2. creates `docs/arc42/`;
 3. writes missing embedded chapter/index files without overwriting existing
-   files; and
-4. makes the `arc42-docs` artifact effective after `design`, with archive and
+   files;
+4. creates a missing `docs/glossary.md`; and
+5. makes the `arc42-docs` artifact effective after `design`, with archive and
    design-review dependencies.
+
+Chapter 12 is a link to the standalone glossary, not a second term table. The
+scaffold never rewrites an existing chapter 12; migration from an older
+glossary is agent-directed and preservation-first (see 8.27).
 
 The durable output path is always `docs/arc42/`. The current code has no
 effective `arc42.output_dir`, no effective chapter list, and no cascade for
@@ -1284,5 +1289,43 @@ exception is a proposal that records `independent`: that record is
 authoritative, and the gate fails clearly when the review record is a
 self-review. If independence is required but no fresh context is available,
 the reviewer asks the user; there is no silent fallback.
+
+## 8.27 Standalone Domain Documentation
+
+Vocabulary and structure have separate durable homes:
+
+- `docs/glossary.md` is the sole vocabulary authority in every project.
+- `docs/domain-model.md` is the thin structural map: bounded contexts, collapsed
+  aggregates, external systems, boundaries, and relationships. It links to the
+  governing use-case contracts and specifications rather than copying rules.
+- `docs/arc42/12-glossary.md` is a heading and a link to `../glossary.md`.
+
+The domain-modeling skill and its instruction are available whenever
+`domain_modeling` is enabled, independent of arc42. The instruction owns three
+checks: ownership (vocabulary, structure, or behaviour), added value (a real
+boundary or relationship rather than repeated scenarios), and change impact
+(edit the model only when structure changed). A no-op edit is not maintenance
+evidence.
+
+Scaffolding follows the guidance that points at each file. `givn init`
+creates the glossary when `arc42` or `domain_modeling` is effective and the
+model when `domain_modeling` is effective. `givn addons enable arc42` creates
+a missing glossary; `givn addons enable domain_modeling` creates both missing
+files. `--no-addons` creates neither. Existing files are never overwritten and
+are never deleted by disabling an addon.
+
+The embedded templates live at `assets/templates/glossary.md` and
+`assets/templates/domain-model.md`. The model template requests the top-down
+ELK layout and keeps its Mermaid legend in a separate section. A host must
+include the ELK renderer and honour the configuration; unsupported hosts may
+fall back or fail. The guidance requires a rendered-diagram review and does not
+promise identical rendering across hosts.
+
+Migration is agent-directed: an agent that finds term definitions in an older
+chapter 12 moves them into `docs/glossary.md`, preserves their wording and
+ordering, and replaces chapter 12 with the link. Givn does not parse or rewrite
+consumer Markdown automatically. While a migration is pending, chapter 12 is
+the older location and the new glossary must not be presented as a second
+authority; the agent completes the move before relying on the new file.
 
 *[Architecture documentation index](README.md)*
