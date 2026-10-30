@@ -17,37 +17,31 @@ NOT in scope for givn. givn's scope is the .feature files: they are the spec
 you document, the cucumber test you run, and (after archive) the permanent
 record. verify.command MUST execute them.
 
-Set `verify.command` in givn/commands.yaml to a runner that executes the
-.feature files and produces COVERAGE DATA, e.g.:
+During the first product change, choose a known-working Gherkin runner and
+adapt it to the project. Common coverage-capable choices include:
 
-  # Rust / cucumber-rs (line/branch coverage via llvm-cov)
-  verify:
-    command: "cargo llvm-cov --test features_runner --test e2e_runner --summary-only"
+  Rust / cucumber-rs: cargo llvm-cov --test features_runner
+  JavaScript / Cucumber.js: npx nyc --reporter=text-summary npx cucumber-js
+  Python / Behave: coverage run -m behave givn/specs && coverage report
+  Java / Cucumber-JVM: mvn verify
 
-  # Rust / cucumber-rs (test only — no coverage data, not recommended)
-  # verify:
-  #   command: "cargo test --test features_runner"
+Bare `cargo test` with a cucumber runner, Behave, pytest-bdd, or Cucumber.js can
+establish the Gherkin loop before coverage is ready.
 
-  # JavaScript / Cucumber.js (coverage via nyc)
-  verify:
-    command: 'npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"'
+None of those command lines is sufficient by name alone. The project adapter
+must execute the path in GIVN_FEATURES and write a fresh GIVN_RESULT_FILE with
+actual `total`, `passed`, `failed`, and `skipped` scenario counts. For
+GIVN_RESULT_SCOPE, `change` runs every delta scenario, including `@e2e`; regular
+excludes `@e2e` from permanent specs; e2e selects only `@e2e` from permanent
+specs. Givn cannot infer those facts from a command's name.
 
-  # Python / Behave (coverage via coverage.py)
-  verify:
-    command: "coverage run -m behave givn/specs && coverage report"
-
-  # Java / Cucumber-JVM (coverage via JaCoCo in verify phase)
-  verify:
-    command: "mvn verify"
-
-Coverage requirement: when measuring test coverage, configure the coverage
-tool to instrument EVERY test binary — unit tests, integration tests, AND
-the Gherkin/Cucumber runner that executes the .feature files. The coverage
-number must reflect the combined execution of all test kinds. A coverage run
-that omits the .feature execution is invalid.
+Coverage setup is separate: configure the coverage commands to instrument the
+Gherkin runner and create the regular and E2E Cobertura reports required by the
+coverage gate. Do not substitute a copied command line or a fabricated result
+for this setup.
 
 After editing givn/commands.yaml, re-run the command that invoked this sentinel.
-See givn/commands.yaml (key: verify.command) and arc42 ch.8.10 for details."#
+See docs/reference.md#runner-contract and givn/commands.yaml."#
     );
     std::process::exit(1);
 }

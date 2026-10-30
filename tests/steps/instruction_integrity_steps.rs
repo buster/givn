@@ -1682,15 +1682,21 @@ fn disabled_addon_guidance_is_absent(world: &mut GivnWorld) {
     }
 }
 
-#[then("the core dialog obligation does not depend on the optional tone policy")]
+#[then("the bootstrap dialog obligation does not depend on the optional tone policy")]
 fn core_obligation_is_addon_independent(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("sync fixture is missing");
-    let content = std::fs::read_to_string(env.path(".opencode/skills/givn-propose/SKILL.md"))
-        .expect("core skill missing");
+    let agents = std::fs::read_to_string(
+        world
+            .env
+            .as_ref()
+            .expect("sync fixture is missing")
+            .path("AGENTS.md"),
+    )
+    .expect("read AGENTS.md");
     assert!(
-        content.contains("effective policy from `givn instructions dialog`")
-            && !content.contains("Absolute Mode"),
-        "core obligation depends on the optional tone policy: {content}"
+        agents.contains("effective dialog policy from")
+            && agents.contains("givn instructions dialog")
+            && !agents.contains("Absolute Mode"),
+        "bootstrap obligation depends on the optional tone policy: {agents}"
     );
 }
 
@@ -2862,82 +2868,72 @@ fn guidance_requires_scope_and_driver(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the setup example executes the selected Gherkin features supplied through GIVN_FEATURES rather than a parallel hand-maintained test suite"
+    "bootstrap requires a project runner to execute the selected Gherkin features from GIVN_FEATURES"
 )]
-fn setup_example_uses_givn_features(_world: &mut GivnWorld) {
+fn bootstrap_requires_selected_features(_world: &mut GivnWorld) {
     let template = commands_template();
     assert!(
-        template.contains("GIVN_FEATURES")
-            && template.contains("--test features_runner")
-            && !template.contains("parallel hand-maintained"),
-        "the served setup example does not execute the selected Gherkin features"
-    );
-}
-
-#[then("a shared runner selects regular or E2E scenarios explicitly through GIVN_RESULT_SCOPE")]
-fn shared_runner_uses_result_scope(_world: &mut GivnWorld) {
-    let template = commands_template();
-    assert!(
-        template.contains("GIVN_RESULT_SCOPE")
-            && template.contains("regular) tags='not @e2e'")
-            && template.contains("e2e) tags='@e2e'"),
-        "the served runner does not select scope explicitly"
+        template.contains("adapt or create the project's Gherkin runner")
+            && template.contains("adapter must execute GIVN_FEATURES"),
+        "the template does not require a project runner to execute selected features"
     );
 }
 
 #[then(
-    "every invocation writes fresh results to GIVN_RESULT_FILE with total passed failed and skipped counts"
+    "bootstrap requires change to execute every delta scenario and regular/E2E to partition permanent scenarios"
 )]
-fn invocation_writes_fresh_counts(_world: &mut GivnWorld) {
+fn bootstrap_requires_scope_partition(_world: &mut GivnWorld) {
     let template = commands_template();
     assert!(
-        template.contains("GIVN_RESULT_FILE")
-            && template.contains("rm -f \"$result\"")
-            && template.contains("total, passed, failed, and skipped counts"),
-        "the served runner does not write fresh four-count results"
+        template.contains("`change` executes every delta")
+            && template.contains("including @e2e")
+            && template.contains("regular\n# excludes @e2e from permanent specs")
+            && template.contains("e2e selects only @e2e from permanent specs"),
+        "the template does not define change and archive scope selection"
+    );
+}
+
+#[then("bootstrap requires fresh actual counts in GIVN_RESULT_FILE")]
+fn bootstrap_requires_fresh_actual_counts(_world: &mut GivnWorld) {
+    let template = commands_template();
+    assert!(
+        template.contains("fresh GIVN_RESULT_FILE")
+            && template.contains("actual total, passed, failed, and skipped\n# counts"),
+        "the template does not require fresh actual runner counts"
+    );
+}
+
+#[then("bootstrap distinguishes setup failure from a behavior assertion RED")]
+fn bootstrap_distinguishes_setup_from_red(_world: &mut GivnWorld) {
+    let workflow = std::fs::read_to_string(crate::common::repo_path("docs/workflow.md"))
+        .expect("read workflow guide");
+    assert!(
+        workflow.contains("Setup failures") && workflow.contains("not the observed RED"),
+        "the workflow does not distinguish bootstrap failure from behavior RED"
+    );
+}
+
+#[then("the runner contract keeps missing malformed zero failed and skipped results fail-closed")]
+fn runner_contract_is_fail_closed(_world: &mut GivnWorld) {
+    let reference = std::fs::read_to_string(crate::common::repo_path("docs/reference.md"))
+        .expect("read runner reference");
+    assert!(
+        reference.contains("missing,\nunreadable, malformed, non-reconciling")
+            && reference.contains("zero-scenario, failed, or skipped result blocks"),
+        "the runner reference does not preserve the fail-closed result contract"
     );
 }
 
 #[then(
-    "total equals passed plus failed plus skipped and successful verification requires a nonzero total with zero failures and skips"
+    "the commands template points to the runner contract instead of shipping a generic runner script"
 )]
-fn counts_reconcile_and_success_requires_green(_world: &mut GivnWorld) {
+fn template_points_to_runner_contract(_world: &mut GivnWorld) {
     let template = commands_template();
     assert!(
-        template.contains("zero, or inconsistent result exit nonzero")
-            && template.contains("failed, undefined, pending, ambiguous, or skipped scenario"),
-        "the served example does not fail closed on inconsistent or non-green counts"
-    );
-}
-
-#[then(
-    "undefined pending ambiguous or failed steps and skipped scenarios cannot produce passing verification"
-)]
-fn non_green_steps_fail_closed(_world: &mut GivnWorld) {
-    let template = commands_template();
-    assert!(
-        template.contains("undefined, pending, ambiguous, or skipped scenario"),
-        "the served example permits undefined/pending/ambiguous/skipped success"
-    );
-}
-
-#[then("runner failures exit nonzero and missing or malformed results cannot imply success")]
-fn runner_failures_exit_nonzero(_world: &mut GivnWorld) {
-    let template = commands_template();
-    assert!(
-        template.contains("exit nonzero") && template.contains("test -s \"$result\""),
-        "the served example does not fail on runner failure or missing results"
-    );
-}
-
-#[then("the guidance supplies executable runner and matching verification configuration examples")]
-fn guidance_supplies_executable_example(_world: &mut GivnWorld) {
-    let template = commands_template();
-    assert!(
-        template.contains("#!/bin/sh")
-            && template.contains("command: \"./run-tests.sh\"")
-            && template.contains("e2e_command: \"./run-tests.sh\""),
-        "the served guidance does not supply an executable runner and matching configuration"
+        template.contains("docs/reference.md#runner-contract")
+            && !template.contains("#!/bin/sh")
+            && !template.contains("regular) tags='not @e2e'"),
+        "the commands template still ships a generic runner script"
     );
 }
 

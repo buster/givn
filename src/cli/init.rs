@@ -242,10 +242,12 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     }
 
     println!("\n{}", "─".repeat(52));
-    println!("\nReady. Three steps to your first change:\n");
-    println!("  1. Start a change    givn new <change-id>");
-    println!("  2. Plan it           /givn-propose  (in your AI agent)");
-    println!("  3. Implement it      /givn-implement");
+    println!("\nInitialized. Next:\n");
+    println!(
+        "  1. In your selected agent, invoke givn-explore and describe what you want to build."
+    );
+    println!("  2. It routes to ideation or proposal; propose creates the change.");
+    println!("  3. The first product change establishes executable verification before archive.");
     println!();
 
     Ok(())

@@ -12,50 +12,21 @@
 # ============================================================================
 
 # --- Test runner -------------------------------------------------------------
-# The command givn invokes to run your test suite. Keep the normal project
-# command in a script so the README and this file describe the same workflow.
+# The command givn invokes to run your Gherkin suite. Keep its normal command
+# in a project script so this file and the README describe the same workflow.
 #
-# RECOMMENDED — coverage-instrumented runners (the review gate requires
-# coverage data to measure gaps):
-#   cargo llvm-cov --test features_runner                (Rust — line/branch coverage)
-#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"  (Node.js)
-#   coverage run -m behave givn/specs && coverage report  (Python)
-#   mvn verify                                            (Java)
+# During the first product change, adapt or create the project's Gherkin runner.
+# The adapter must execute GIVN_FEATURES, handle GIVN_RESULT_SCOPE, remove/write
+# a fresh GIVN_RESULT_FILE, and report actual total, passed, failed, and skipped
+# counts. `change` executes every delta scenario, including @e2e; regular
+# excludes @e2e from permanent specs; e2e selects only @e2e from permanent specs.
+# A failed, undefined, pending, ambiguous, or skipped scenario must fail the
+# command. Run the default sentinel for runner/tooling choices and see
+# docs/reference.md#runner-contract for the complete contract.
 #
-# Fallback — bare test runners (no coverage; prototyping only):
-#   cargo test --test features_runner
-#   behave
-#   pytest
-#   npx cucumber-js "givn/specs/**/*.feature"
-#
-# Served runner setup example — copy this script to ./run-tests.sh and make it
-# executable. It executes the selected Gherkin features from GIVN_FEATURES,
-# selects regular or E2E explicitly through GIVN_RESULT_SCOPE, and writes a
-# fresh GIVN_RESULT_FILE with total, passed, failed, and skipped counts. A
-# failed, undefined, pending, ambiguous, or skipped scenario and a missing,
-# malformed, zero, or inconsistent result exit nonzero.
-#
-#   #!/bin/sh
-#   set -eu
-#   scope=${GIVN_RESULT_SCOPE:-regular}
-#   features=${GIVN_FEATURES:-givn/specs}
-#   result=${GIVN_RESULT_FILE:?GIVN_RESULT_FILE must be set}
-#   rm -f "$result"
-#   case "$scope" in
-#     regular) tags='not @e2e' ;;
-#     e2e) tags='@e2e' ;;
-#     *) echo "unsupported GIVN_RESULT_SCOPE: $scope" >&2; exit 2 ;;
-#   esac
-#   GIVN_FEATURES="$features" GIVN_RESULT_SCOPE="$scope" GIVN_RESULT_FILE="$result" \
-#     cargo test --test features_runner -- --tags "$tags"
-#   test -s "$result"
-#
-# Matching verification configuration:
-#   verify:
-#     command: "./run-tests.sh"
-#     e2e_command: "./run-tests.sh"
-#
-# See arc42 ch.8.10 for details.
+# The coverage commands below are separate archive inputs. They must produce
+# distinct regular and E2E Cobertura reports; selecting a coverage-instrumented
+# runner alone is not a complete coverage setup.
 verify:
   command: "givn missing-testrunner"   # unconfigured sentinel: prints setup guidance and exits nonzero
 

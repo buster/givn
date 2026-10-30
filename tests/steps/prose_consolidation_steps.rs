@@ -5,15 +5,6 @@ use givn::skills::targets::AgentTarget;
 
 // --- decision-ready questions: delegated question preparation ---------------
 
-pub(crate) const DELEGATING_COMMANDS: [&str; 6] = [
-    "givn-propose",
-    "givn-design-review",
-    "givn-implement",
-    "givn-review",
-    "givn-characterize",
-    "givn-reverse-engineer",
-];
-
 pub(crate) const DELEGATING_SKILLS: [&str; 6] = [
     "givn-implement",
     "givn-design-review",
@@ -22,61 +13,6 @@ pub(crate) const DELEGATING_SKILLS: [&str; 6] = [
     "givn-ideation",
     "givn-reverse-engineer",
 ];
-
-const DELEGATION_INHERITANCE: &str = "does not inherit the parent's loaded policy";
-const DELEGATION_FRESH_LOAD: &str = "load it in the fresh context before the first question";
-const DELEGATION_RESPONSIBILITY: &str = "presenting agent remains responsible for the question";
-const DELEGATION_TOOL_LIMIT: &str = "question tool's recommendation or option label does not replace context and answer consequences";
-const DELEGATION_POLICY: &str = "effective policy from `givn instructions dialog`";
-
-/// Slice every fenced prompt block that opens with a self-contained
-/// instruction ("You are a ...") out of a delivered command document.
-pub(crate) fn delegated_prompt_blocks(content: &str) -> Vec<String> {
-    let mut blocks = Vec::new();
-    let mut current: Option<Vec<&str>> = None;
-    for line in content.lines() {
-        if line.trim_start().starts_with("```") {
-            match current.take() {
-                Some(block) => {
-                    if block
-                        .iter()
-                        .any(|l| l.trim_start().starts_with("You are a"))
-                    {
-                        blocks.push(block.join("\n"));
-                    }
-                }
-                None => current = Some(Vec::new()),
-            }
-            continue;
-        }
-        if let Some(block) = current.as_mut() {
-            block.push(line);
-        }
-    }
-    if let Some(block) = current
-        && block
-            .iter()
-            .any(|l| l.trim_start().starts_with("You are a"))
-    {
-        blocks.push(block.join("\n"));
-    }
-    blocks
-}
-
-fn assert_delegation_obligation(where_: &str, text: &str) {
-    for marker in [
-        DELEGATION_POLICY,
-        DELEGATION_INHERITANCE,
-        DELEGATION_FRESH_LOAD,
-        DELEGATION_RESPONSIBILITY,
-        DELEGATION_TOOL_LIMIT,
-    ] {
-        assert!(
-            text.contains(marker),
-            "{where_} is missing the delegated-dialog obligation marker {marker:?}: {text}"
-        );
-    }
-}
 
 // --- decision-ready questions: project-owned replacements -------------------
 
@@ -106,7 +42,7 @@ fn project_with_all_skill_targets(world: &mut GivnWorld) {
 }
 
 #[given(
-    "valid project-owned skill and command replacements intentionally omit the bundled dialog obligation"
+    "a valid project-owned skill replacement and legacy command intentionally omit the bundled dialog obligation"
 )]
 fn project_replacements_omit_obligation(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("replacement fixture is missing");
@@ -124,7 +60,7 @@ fn project_replacements_omit_obligation(world: &mut GivnWorld) {
     );
 }
 
-#[then("the project-owned skill and command source bytes remain unchanged")]
+#[then("the project-owned skill source and legacy command bytes remain unchanged")]
 fn replacement_sources_unchanged(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("replacement fixture is missing");
     let skill = std::fs::read_to_string(env.path("givn/skills/givn-propose/SKILL.md.tmpl"))
@@ -159,17 +95,9 @@ fn skill_consumers_receive_replacement(world: &mut GivnWorld) {
     }
 }
 
-#[then(
-    "the opencode command consumer receives the authoritative rendered replacement without a bundled prefix"
-)]
-fn command_consumer_receives_replacement(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("replacement fixture is missing");
-    let delivered = std::fs::read_to_string(env.path(".opencode/commands/givn-propose.md"))
-        .expect("delivered command missing");
-    assert_eq!(
-        delivered, REPLACEMENT_COMMAND,
-        "the delivered command is not the authoritative replacement"
-    );
+#[then("the legacy command remains user-owned without generated replacement")]
+fn legacy_command_remains_user_owned(world: &mut GivnWorld) {
+    user_owned_legacy_command_unchanged(world);
 }
 
 #[then("the managed project-start guidance still references the effective dialog policy")]
@@ -276,77 +204,32 @@ fn author_reads_delegation_instructions(world: &mut GivnWorld) {
     );
 }
 
-#[then(
-    "every question-preparing delegation explicitly requires the effective dialog policy in the fresh context"
-)]
-fn delegations_require_policy_in_fresh_context(world: &mut GivnWorld) {
+#[then("every question-preparing skill stays thin and directs the agent to served instructions")]
+fn delegating_skills_stay_thin(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("delegation fixture is missing");
-    for command in DELEGATING_COMMANDS {
-        let rel = format!(".opencode/commands/{command}.md");
-        let content = std::fs::read_to_string(env.path(&rel))
-            .unwrap_or_else(|e| panic!("{rel} missing: {e}"));
-        let blocks = delegated_prompt_blocks(&content);
-        assert!(
-            !blocks.is_empty(),
-            "{rel} carries no self-contained delegated prompt"
-        );
-        for (index, block) in blocks.iter().enumerate() {
-            assert_delegation_obligation(&format!("{rel} prompt {}", index + 1), block);
-        }
-    }
     for skill in DELEGATING_SKILLS {
         let rel = format!(".opencode/skills/{skill}/SKILL.md");
         let content = std::fs::read_to_string(env.path(&rel))
             .unwrap_or_else(|e| panic!("{rel} missing: {e}"));
-        assert_delegation_obligation(&rel, &content);
-    }
-}
-
-#[then("the delegation instructions do not assume the parent's loaded policy is inherited")]
-fn delegations_do_not_assume_inheritance(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("delegation fixture is missing");
-    for command in DELEGATING_COMMANDS {
-        let content =
-            std::fs::read_to_string(env.path(&format!(".opencode/commands/{command}.md")))
-                .expect("command missing");
-        for block in delegated_prompt_blocks(&content) {
-            assert!(
-                block.contains(DELEGATION_INHERITANCE),
-                "{command} prompt assumes inherited policy: {block}"
-            );
-        }
-    }
-}
-
-#[then("the presenting agent remains responsible for the question before it reaches the person")]
-fn presenting_agent_remains_responsible(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("delegation fixture is missing");
-    for skill in DELEGATING_SKILLS {
-        let content =
-            std::fs::read_to_string(env.path(&format!(".opencode/skills/{skill}/SKILL.md")))
-                .expect("skill missing");
         assert!(
-            content.contains(DELEGATION_RESPONSIBILITY),
-            "{skill} does not keep the presenting agent responsible: {content}"
+            content.contains("givn instructions")
+                && !content.contains("effective policy from `givn instructions dialog`")
+                && !content.contains("does not inherit the parent's loaded policy"),
+            "{rel} is not a thin pointer to served instructions: {content}"
         );
     }
 }
 
-#[then(
-    "a question-tool recommendation or option label does not replace context and answer consequences"
-)]
-fn question_tools_do_not_replace_context(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("delegation fixture is missing");
-    let content = std::fs::read_to_string(env.path(".opencode/commands/givn-design-review.md"))
-        .expect("design-review command missing");
-    for block in delegated_prompt_blocks(&content) {
-        assert!(
-            block.contains(DELEGATION_TOOL_LIMIT),
-            "design-review prompt lets a question tool replace context: {block}"
-        );
-    }
+#[then("the bootstrap owns the effective dialog policy without relying on skill inheritance")]
+fn bootstrap_owns_dialog_policy(world: &mut GivnWorld) {
+    let block = project_start_block(world);
+    assert!(
+        block.contains("effective dialog policy")
+            && block.contains("givn instructions dialog")
+            && block.contains("load it once per context"),
+        "the bootstrap does not own the dialog policy: {block}"
+    );
 }
-
 use crate::common;
 use crate::steps::GivnWorld;
 

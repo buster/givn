@@ -180,6 +180,38 @@ unreadable, malformed, non-reconciling (`passed + failed + skipped != total`),
 zero-scenario, failed, or skipped result blocks. The previous result file is
 removed before launch.
 
+### Bootstrap the project runner
+
+During the first useful product change, adapt or create the project's
+Gherkin/Cucumber runner rather than copying a generic command line. It must:
+
+1. Execute exactly the selected feature path from `GIVN_FEATURES`.
+2. Handle `change`, `regular`, and `e2e` in `GIVN_RESULT_SCOPE`. `change`
+   executes every active delta scenario at `GIVN_FEATURES`, including both
+   `@e2e` and non-E2E scenarios. `regular` and `e2e` use the permanent corpus:
+   regular excludes `@e2e`; E2E selects only `@e2e`.
+3. Remove and write `GIVN_RESULT_FILE` on every invocation with actual scenario
+   totals and outcomes.
+4. Exit non-zero for runner failures, including failed, undefined, pending,
+   ambiguous, or skipped scenarios.
+5. Be validated before behavior-batch RED/GREEN work begins. A missing binding,
+   dependency, fixture, or result file is bootstrap failure, not assertion RED.
+
+The change runner is `verify.command`, even for a delta that contains `@e2e`
+scenarios. `verify.e2e_command` runs only the archive's permanent E2E scope;
+it is not a replacement for complete delta verification.
+
+Use the project runner's own framework and scripts. Givn's own
+[`run-tests.sh`](../run-tests.sh) is a tested reference adapter for this
+contract, not a generic script to copy into another project. `givn test-result`
+can write the required four-count result for a simple adapter, but does not
+execute features or prove the counts. Coverage is separate: when enabled, its commands
+must produce distinct regular and E2E Cobertura reports. Meaningful E2E tests
+exercise the product's public boundary: a CLI process, service protocol, or
+library public API, as appropriate. The archive E2E scope remains mechanically
+not applicable when the merged corpus has no `@e2e` scenario; bootstrap and
+review guidance, not a new archive gate, establish the method's E2E expectation.
+
 ### Change verification
 
 `givn check tasks --change <id>` runs `verify.command` once against the change's
@@ -285,6 +317,36 @@ Selected targets receive:
 `communication-policy` (when that addon is enabled). The retired
 `absolute-mode` block is removed during sync while surrounding content is
 preserved.
+
+### Initialization, ownership, and regeneration
+
+`givn init` writes `givn/config.yaml`, `givn/commands.yaml`, and the `givn/`
+scaffolding; initializes enabled addon-owned paths; persists selected targets;
+and runs skill synchronization. The commands file is project-owned executable
+configuration. Un-commented configuration values are project-owned and retained
+by upgrade; generated skills, integrations, and managed fenced blocks are
+refreshed by `givn skills sync`.
+
+Synchronization writes the target content in the table above, installs the
+Git attribution hook where applicable, refreshes the managed `AGENTS.md`
+blocks, and merges the documented Claude and Maki registration files. Generated
+integration files are overwritten on synchronization; managed blocks preserve
+surrounding user text. Custom legacy command files are preserved and reported,
+not removed automatically.
+
+The default `rules: local-only` writes ignore entries for generated Givn rules
+and removes matching tracked generated rule paths from the backend index while
+leaving their working files in place. Set `rules: versioned` when those files
+must remain versioned. This policy covers generated skills, target integrations,
+and `.githooks/commit-msg`; it does not make user-owned merged Maki files into
+rules. Disabling an addon removes its workflow effect but leaves existing
+project files for an explicit project decision.
+
+Recording defaults to `record.mode: on` and writes `givn/history/`. It is
+ignored by default, not private: existing tracked or historical recordings are
+not removed. Set `record.mode: off` to stop new recording; it does not purge
+entries or uninstall reporters. The [development record](development-report.md#settings)
+documents captured data, sensitivity, and retention limits.
 
 ## Repository development scripts
 
