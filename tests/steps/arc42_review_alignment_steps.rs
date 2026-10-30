@@ -358,21 +358,6 @@ fn outline_supports_source_confirmed_review(world: &mut GivnWorld) {
 }
 
 #[then(
-    "mixed-language coverage is disclosed without forcing outline analysis of unsupported Go or Java components"
-)]
-fn mixed_language_coverage_is_disclosed(world: &mut GivnWorld) {
-    let content = normalized_guidance(world);
-    assert!(
-        content.contains("Disclose which languages and components it covers and which it omits"),
-        "outline coverage is not disclosed"
-    );
-    assert!(
-        content.contains("Unsupported Go or Java components receive direct source assessment"),
-        "unsupported components are forced through the outline"
-    );
-}
-
-#[then(
     "mixed-language coverage is disclosed without forcing outline analysis of unsupported components"
 )]
 fn unsupported_coverage_is_disclosed(world: &mut GivnWorld) {
@@ -535,20 +520,6 @@ fn ejected_template_records_arc42_conformance(world: &mut GivnWorld) {
         content.contains("Arc42 design tasks and the completed")
             && content.contains("implementation against available evidence"),
         "ejected review template does not record implementation conformance: {content}"
-    );
-}
-
-#[then(
-    "the template records evidence and material mismatches without an outline verdict or metric waiver"
-)]
-fn template_records_evidence_without_outline_verdict(world: &mut GivnWorld) {
-    let content =
-        std::fs::read_to_string(project_root(world).join("givn/artifacts/review/review.md"))
-            .expect("read ejected review template");
-    assert!(
-        content.contains("records evidence and material")
-            && content.contains("mismatches without an outline verdict or metric waiver"),
-        "ejected review template lacks evidence/mismatch wording: {content}"
     );
 }
 

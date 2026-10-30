@@ -1109,13 +1109,6 @@ fn no_per_scenario_production_diff(world: &mut GivnWorld) {
     );
 }
 
-#[given(
-    "a behavior batch changes supported Rust or Python components alongside unsupported Go or Java components"
-)]
-fn mixed_supported_unsupported_batch(world: &mut GivnWorld) {
-    batch_guidance(world);
-}
-
 #[given("a behavior batch changes supported and unsupported components")]
 fn supported_and_unsupported_batch(world: &mut GivnWorld) {
     batch_guidance(world);
@@ -1124,18 +1117,6 @@ fn supported_and_unsupported_batch(world: &mut GivnWorld) {
 #[when("the author reads the REFACTOR guidance")]
 fn author_reads_refactor_guidance(world: &mut GivnWorld) {
     assert!(!normalized_guidance(world).is_empty());
-}
-
-#[then(
-    "one advisory outline inspection per batch covers supported changed components and relevant neighbors"
-)]
-fn one_advisory_outline_per_batch(world: &mut GivnWorld) {
-    assert!(
-        normalized_guidance(world).contains(
-            "inspect its advisory report once per batch for supported Rust/Python changed components and relevant neighbors"
-        ),
-        "guidance does not define one advisory outline inspection per batch"
-    );
 }
 
 #[then("supported changed components receive one advisory outline inspection per batch")]
@@ -1157,16 +1138,6 @@ fn assessment_discloses_outline_coverage(world: &mut GivnWorld) {
             "Disclose which languages and components the outline covers and which it omits"
         ),
         "guidance does not disclose outline coverage"
-    );
-}
-
-#[then("Go or Java components receive direct source assessment without forced outline analysis")]
-fn unsupported_components_directly_assessed(world: &mut GivnWorld) {
-    assert!(
-        normalized_guidance(world).contains(
-            "Go or Java components receive direct source assessment using the same responsibility, interface, dependency-direction, and decomposition questions"
-        ),
-        "guidance forces unsupported components through the outline"
     );
 }
 
@@ -1246,11 +1217,6 @@ fn nonstructural_edits_do_not_rerun_outline(world: &mut GivnWorld) {
             .contains("nonstructural edits alone do not require rerunning the outline"),
         "guidance reruns the outline for nonstructural edits"
     );
-}
-
-#[given("a behavior batch changes Go or Java components unsupported by the outline")]
-fn unsupported_only_batch(world: &mut GivnWorld) {
-    batch_guidance(world);
 }
 
 #[given("a behavior batch changes unsupported components")]
