@@ -125,26 +125,14 @@ Feature: Initialize skills-only project integrations
     And verification configuration does not assume `./run-tests.sh` or `./run-tests.sh --e2e` exists
 
   @givn.added
-  Scenario Outline: The served runner setup example fulfills the verification contract when executed
+  Scenario: The served runner guidance states the complete adapter contract
     Given a project initialized with unconfigured verification runners
-    And a Givn maintainer installs the executable runner and matching configuration from the served setup example without repairs
-    And selected features containing "<case>" alongside unselected features that would fail if executed
-    When the documented runner is invoked with the selected GIVN_FEATURES and explicit "<scope>" GIVN_RESULT_SCOPE
-    Then only the selected features and requested scenario scope execute
-    And fresh GIVN_RESULT_FILE output reports actual total passed failed and skipped counts
-    And total equals passed plus failed plus skipped
-    And the invocation "<outcome>"
-
-    Examples:
-      | scope   | case                             | outcome                                                 |
-      | regular | passing regular and E2E scenarios | succeeds with a nonzero total and zero failed or skipped |
-      | e2e     | passing regular and E2E scenarios | succeeds with a nonzero total and zero failed or skipped |
-      | regular | a failed assertion               | exits nonzero and cannot pass verification               |
-      | regular | an undefined step                | exits nonzero and cannot pass verification               |
-      | regular | a pending step                   | exits nonzero and cannot pass verification               |
-      | regular | an ambiguous step                | exits nonzero and cannot pass verification               |
-      | regular | a skipped scenario               | cannot pass verification                                |
-      | regular | no selected scenarios            | cannot pass verification                                |
+    When the user invokes the unconfigured test-runner sentinel
+    Then the commands template requires selected GIVN_FEATURES and every GIVN_RESULT_SCOPE
+    And the commands template requires fresh actual counts and fail-closed outcomes
+    And the commands template points to the runner contract instead of a generic script
+    And the sentinel names runner choices and the adapter contract
+    And the sentinel exits non-zero
 
   @givn.added
   Scenario Outline: Target selection edits preserve unrelated YAML or refuse before writing

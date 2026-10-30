@@ -49,6 +49,43 @@ without producing lifecycle artifacts. `givn-challenge` examines a supplied
 proposal, test, specification, design, implementation, or whole change with
 evidence; it is not a lifecycle gate.
 
+## Initial adoption and artifact ownership
+
+For a fresh project, enter through explore and let the agent route to ideation
+or proposal. The first useful product change establishes the runner, coverage
+commands, and run declaration during its normal lifecycle. Setup failures such
+as a missing binding, dependency, or result file are not the observed RED for a
+new behavior: first make the adapter execute the selected features and write
+valid results, then observe the behavior assertion fail before a production
+edit.
+
+For an existing project, use an initial formal change to establish a
+project-wide documented baseline. Inventory existing architecture, domain, and
+persona material; map it into the canonical owners below; reconcile
+contradictions; retire or redirect superseded documents and links; and record
+unknowns explicitly. This establishes durable understanding and working public-
+boundary E2E testing; it does not require executable characterization of every
+legacy behavior.
+
+| Artifact | Owns | Must not become |
+| --- | --- | --- |
+| Proposal | Problem, intended outcome, scope, rationale | A second technical design |
+| Use case | Actor goal, boundaries, system guarantees | Implementation details or copied scenarios |
+| Feature | Executable examples of observable behavior | An implementation plan |
+| Change design | Implementation approach, alternatives, consequential decisions | A copy of the architecture manual |
+| Arc42 and ADRs | Durable architecture and lasting decisions | A chronological log of every change |
+| Persona | Relevant user context, needs, goals, constraints | Another behavior specification |
+| Tasks | Batches, execution evidence, revision references | A rewritten proposal or design |
+| Review | Findings, dispositions, evidence references, verdict | A transcript or copy of every result |
+
+Overlap is intentional when a use-case guarantee is illustrated by a feature or
+a lasting design decision is promoted into an ADR. Each subject still has one
+authoritative home. An affected/unaffected Arc42 assessment owns architecture
+impact; design and review may summarize or link to it, but should not reproduce
+competing checklists. Accurate unaffected architecture chapters, personas, and
+glossary entries stay unchanged. Initial adoption cannot use no-impact claims to
+excuse unpopulated scaffolds or an inaccurate baseline.
+
 ## Behavior batches
 
 Related scenarios form one coherent behavior batch. The batch gets one test

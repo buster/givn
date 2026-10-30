@@ -6,13 +6,12 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Given a Givn project with an active change
     When the author requests the design instructions through the Givn CLI
     Then the guidance requires explicit regular and E2E scope selection and the appropriate real interface driver
-    And the setup example executes the selected Gherkin features supplied through GIVN_FEATURES rather than a parallel hand-maintained test suite
-    And a shared runner selects regular or E2E scenarios explicitly through GIVN_RESULT_SCOPE
-    And every invocation writes fresh results to GIVN_RESULT_FILE with total passed failed and skipped counts
-    And total equals passed plus failed plus skipped and successful verification requires a nonzero total with zero failures and skips
-    And undefined pending ambiguous or failed steps and skipped scenarios cannot produce passing verification
-    And runner failures exit nonzero and missing or malformed results cannot imply success
-    And the guidance supplies executable runner and matching verification configuration examples
+    And bootstrap requires a project runner to execute the selected Gherkin features from GIVN_FEATURES
+    And bootstrap requires change to execute every delta scenario and regular/E2E to partition permanent scenarios
+    And bootstrap requires fresh actual counts in GIVN_RESULT_FILE
+    And bootstrap distinguishes setup failure from a behavior assertion RED
+    And the runner contract keeps missing malformed zero failed and skipped results fail-closed
+    And the commands template points to the runner contract instead of shipping a generic runner script
     And runner strictness is proved at initial setup and after relevant runner version invocation or failure-configuration changes
     And local infrastructure is required only for dependencies the product actually has
     And the guidance retains framework justification interaction coverage and applicable visual evidence

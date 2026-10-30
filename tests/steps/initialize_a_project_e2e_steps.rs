@@ -1059,17 +1059,7 @@ fn persisted_selection_unchanged(world: &mut GivnWorld) {
     );
 }
 
-// --- served runner setup example -------------------------------------------
-
-fn runner_fixture(world: &GivnWorld) -> serde_json::Value {
-    serde_json::from_str(
-        world
-            .additional_output
-            .as_deref()
-            .expect("runner fixture is missing"),
-    )
-    .expect("runner fixture is not JSON")
-}
+// --- served runner bootstrap guidance --------------------------------------
 
 #[given("a project initialized with unconfigured verification runners")]
 fn runner_fixture_project(world: &mut GivnWorld) {
@@ -1079,203 +1069,96 @@ fn runner_fixture_project(world: &mut GivnWorld) {
         commands.contains("givn missing-testrunner"),
         "verification runners are not unconfigured: {commands}"
     );
-    let root = std::env::temp_dir().join(format!(
-        "givn-runner-fixture-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .expect("clock")
-            .as_nanos()
-    ));
-    std::fs::create_dir_all(root.join("selected")).expect("create selected dir");
-    std::fs::create_dir_all(root.join("unselected")).expect("create unselected dir");
-    std::fs::write(
-        root.join("unselected/failing.feature"),
-        "Feature: unselected\n  Scenario: unselected fails\n    Given a step the fixture never defines\n",
-    )
-    .expect("write unselected feature");
-    let fixture = serde_json::json!({
-        "root": root.to_string_lossy(),
-        "case": "",
-        "scope": "",
-        "result": root.join("result.json").to_string_lossy(),
-    });
-    world.additional_output = Some(fixture.to_string());
     world.env = Some(env);
 }
 
-#[given(
-    "a Givn maintainer installs the executable runner and matching configuration from the served setup example without repairs"
-)]
-fn install_served_runner(world: &mut GivnWorld) {
-    let fixture = runner_fixture(world);
-    let root = std::path::PathBuf::from(fixture["root"].as_str().expect("fixture root"));
+#[when("the user invokes the unconfigured test-runner sentinel")]
+fn invoke_unconfigured_test_runner(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("runner fixture is missing");
+    world.last_output = Some(common::run_givn(env, &["missing-testrunner"]));
+}
+
+#[then("the commands template requires selected GIVN_FEATURES and every GIVN_RESULT_SCOPE")]
+fn template_requires_features_and_scopes(_world: &mut GivnWorld) {
     let template = std::fs::read_to_string(common::repo_path("assets/commands.yaml.tmpl"))
         .expect("read commands template");
-    let mut script = String::new();
-    let mut in_script = false;
-    for line in template.lines() {
-        if line.trim() == "#   #!/bin/sh" {
-            in_script = true;
-        }
-        if in_script {
-            if !line.starts_with("#   ") && !line.trim().is_empty() && line.trim() != "#" {
-                break;
-            }
-            script.push_str(line.strip_prefix("#   ").unwrap_or(""));
-            script.push('\n');
-        }
+    for required in [
+        "execute GIVN_FEATURES",
+        "GIVN_RESULT_SCOPE",
+        "`change` executes every delta",
+        "including @e2e",
+        "regular",
+        "e2e selects only @e2e",
+    ] {
+        assert!(
+            template.contains(required),
+            "commands template is missing {required:?}: {template}"
+        );
     }
+}
+
+#[then("the commands template requires fresh actual counts and fail-closed outcomes")]
+fn template_requires_counts_and_failure_handling(_world: &mut GivnWorld) {
+    let template = std::fs::read_to_string(common::repo_path("assets/commands.yaml.tmpl"))
+        .expect("read commands template");
+    for required in [
+        "fresh GIVN_RESULT_FILE",
+        "actual total, passed, failed, and skipped",
+        "failed, undefined, pending, ambiguous, or skipped scenario",
+        "must fail the",
+    ] {
+        assert!(
+            template.contains(required),
+            "commands template is missing {required:?}: {template}"
+        );
+    }
+}
+
+#[then("the commands template points to the runner contract instead of a generic script")]
+fn template_points_to_contract(_world: &mut GivnWorld) {
+    let template = std::fs::read_to_string(common::repo_path("assets/commands.yaml.tmpl"))
+        .expect("read commands template");
     assert!(
-        script.starts_with("#!/bin/sh"),
-        "served runner example missing"
+        template.contains("docs/reference.md#runner-contract")
+            && !template.contains("#!/bin/sh")
+            && !template.contains("regular) tags='not @e2e'"),
+        "commands template still ships a generic runner script: {template}"
     );
-    let path = root.join("run-tests.sh");
-    std::fs::write(&path, script).expect("write runner");
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let mut permissions = std::fs::metadata(&path).expect("stat runner").permissions();
-        permissions.set_mode(0o755);
-        std::fs::set_permissions(&path, permissions).expect("chmod runner");
+}
+
+#[then("the sentinel names runner choices and the adapter contract")]
+fn sentinel_names_choices_and_contract(world: &mut GivnWorld) {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("sentinel output is missing");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    for required in [
+        "cargo llvm-cov",
+        "Cucumber.js",
+        "Behave",
+        "pytest-bdd",
+        "GIVN_FEATURES",
+        "GIVN_RESULT_SCOPE",
+        "`change` runs every delta scenario, including `@e2e`",
+        "regular",
+        "e2e selects only `@e2e`",
+    ] {
+        assert!(
+            stderr.contains(required),
+            "sentinel guidance is missing {required:?}: {stderr}"
+        );
     }
 }
 
-#[given(
-    regex = r#"^selected features containing "([^"]+)" alongside unselected features that would fail if executed$"#
-)]
-fn select_runner_features(world: &mut GivnWorld, case: String) {
-    let mut fixture = runner_fixture(world);
-    let root = std::path::PathBuf::from(fixture["root"].as_str().expect("fixture root"));
-    let body = match case.as_str() {
-        "passing regular and E2E scenarios" => {
-            "Feature: selected\n  Scenario: regular passes\n    Given a placeholder step\n  @e2e\n  Scenario: e2e passes\n    Given a placeholder step\n".to_string()
-        }
-        "a failed assertion" => {
-            "Feature: selected\n  Scenario: assertion fails\n    Given the fixture assertion fails\n".to_string()
-        }
-        "an undefined step" => {
-            "Feature: selected\n  Scenario: undefined\n    Given a step the fixture never defines\n".to_string()
-        }
-        "a pending step" => {
-            "Feature: selected\n  Scenario: pending\n    Given the fixture step is pending\n".to_string()
-        }
-        "an ambiguous step" => {
-            "Feature: selected\n  Scenario: ambiguous\n    Given the fixture step is ambiguous\n".to_string()
-        }
-        "a skipped scenario" => {
-            "Feature: selected\n  Scenario: skipped\n    Given the fixture assertion fails\n    And a step the fixture never defines\n".to_string()
-        }
-        "no selected scenarios" => {
-            "Feature: selected\n  @e2e\n  Scenario: only e2e\n    Given a placeholder step\n".to_string()
-        }
-        other => panic!("unknown runner case '{other}'"),
-    };
-    std::fs::write(root.join("selected/selected.feature"), body).expect("write selected feature");
-    fixture["case"] = serde_json::json!(case);
-    world.additional_output = Some(fixture.to_string());
-}
-
-#[when(
-    regex = r#"^the documented runner is invoked with the selected GIVN_FEATURES and explicit "([^"]+)" GIVN_RESULT_SCOPE$"#
-)]
-fn invoke_served_runner(world: &mut GivnWorld, scope: String) {
-    let mut fixture = runner_fixture(world);
-    let root = std::path::PathBuf::from(fixture["root"].as_str().expect("fixture root"));
-    let result = std::path::PathBuf::from(fixture["result"].as_str().expect("fixture result"));
-    std::fs::remove_file(&result).ok();
-    let output = std::process::Command::new(root.join("run-tests.sh"))
-        .current_dir(common::repo_path("."))
-        .env("GIVN_FEATURES", root.join("selected"))
-        .env("GIVN_RESULT_SCOPE", &scope)
-        .env("GIVN_RESULT_FILE", &result)
-        .output()
-        .expect("run served runner example");
-    fixture["scope"] = serde_json::json!(scope);
-    world.additional_output = Some(fixture.to_string());
-    world.last_output = Some(output);
-}
-
-fn runner_counts(world: &GivnWorld) -> serde_json::Value {
-    let fixture = runner_fixture(world);
-    let result = std::path::PathBuf::from(fixture["result"].as_str().expect("fixture result"));
-    let text = std::fs::read_to_string(&result).expect("fresh GIVN_RESULT_FILE missing");
-    serde_json::from_str(&text).expect("GIVN_RESULT_FILE is malformed")
-}
-
-#[then("only the selected features and requested scenario scope execute")]
-fn runner_executes_selected_scope(world: &mut GivnWorld) {
-    let counts = runner_counts(world);
-    let fixture = runner_fixture(world);
-    assert_eq!(
-        counts["scope"], fixture["scope"],
-        "the runner reported the wrong scope"
-    );
-    let output = world.last_output.as_ref().expect("runner output missing");
-    let transcript = String::from_utf8_lossy(&output.stdout);
+#[then("the sentinel exits non-zero")]
+fn sentinel_exits_nonzero(world: &mut GivnWorld) {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("sentinel output is missing");
     assert!(
-        !transcript.contains("unselected fails"),
-        "the unselected feature executed:\n{transcript}"
+        !output.status.success(),
+        "the unconfigured sentinel unexpectedly succeeded"
     );
 }
-
-#[then("fresh GIVN_RESULT_FILE output reports actual total passed failed and skipped counts")]
-fn runner_reports_four_counts(world: &mut GivnWorld) {
-    let counts = runner_counts(world);
-    for key in ["total", "passed", "failed", "skipped"] {
-        assert!(
-            counts[key].as_u64().is_some(),
-            "GIVN_RESULT_FILE is missing a numeric {key}: {counts}"
-        );
-    }
-}
-
-#[then("total equals passed plus failed plus skipped")]
-fn runner_counts_reconcile(world: &mut GivnWorld) {
-    let counts = runner_counts(world);
-    let total = counts["total"].as_u64().expect("total");
-    let passed = counts["passed"].as_u64().expect("passed");
-    let failed = counts["failed"].as_u64().expect("failed");
-    let skipped = counts["skipped"].as_u64().expect("skipped");
-    assert_eq!(total, passed + failed + skipped, "counts do not reconcile");
-}
-
-#[then(regex = r#"^the invocation "([^"]+)"$"#)]
-fn runner_invocation_outcome(world: &mut GivnWorld, outcome: String) {
-    let counts = runner_counts(world);
-    let output = world.last_output.as_ref().expect("runner output missing");
-    if outcome.starts_with("succeeds") {
-        assert!(
-            output.status.success(),
-            "the documented runner failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        assert!(
-            counts["total"].as_u64().unwrap_or(0) > 0
-                && counts["failed"].as_u64() == Some(0)
-                && counts["skipped"].as_u64() == Some(0),
-            "successful invocation is not green: {counts}"
-        );
-    } else {
-        assert!(
-            !output.status.success() || counts["total"].as_u64() == Some(0),
-            "a non-passing invocation reported success: {counts}"
-        );
-    }
-}
-
-#[then("the fixture assertion fails")]
-fn fixture_assertion_fails(_world: &mut GivnWorld) {
-    panic!("fixture assertion failed");
-}
-
-#[then("the fixture step is pending")]
-fn fixture_step_pending(_world: &mut GivnWorld) {
-    todo!("fixture step pending")
-}
-
-#[then("the fixture step is ambiguous")]
-fn fixture_step_ambiguous_first(_world: &mut GivnWorld) {}
-
-#[then(regex = r"^the fixture step is ambiguous$")]
-fn fixture_step_ambiguous_second(_world: &mut GivnWorld) {}
