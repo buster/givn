@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Generate docs/workflow.svg — GitHub-safe rendering of the givn lifecycle.
 
-Layout mirrors docs/workflow.html: three columns (action/step, artifact,
-check). The flow starts at `givn-explore`, which routes either through the
-optional `givn-ideation` pre-phase or directly to `givn-propose`, then runs
-proposal -> specs -> design -> arc42-docs (addon) -> design-review -> tasks ->
-implementation -> review -> archive.
+Three-column layout: action/step, artifact, check. The flow starts at
+`givn-explore`, which routes either through the optional `givn-ideation`
+pre-phase or directly to `givn-propose`, then runs proposal -> specs -> design
+-> arc42-docs (addon) -> design-review -> tasks -> implementation -> review ->
+archive.
 
 No <style>, no classes, no foreignObject, no filters, no external resources;
 solid light background for theme independence.
