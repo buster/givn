@@ -11,6 +11,9 @@ mod python_adapter;
 mod resolve;
 mod syn_adapter;
 
+#[cfg(test)]
+mod tree_sitter_eval;
+
 use anyhow::Result;
 
 pub use analyzer::{SourceAnalyzer, outline_analyzer};
