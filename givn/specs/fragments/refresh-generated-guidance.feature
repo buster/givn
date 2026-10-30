@@ -40,3 +40,10 @@ Feature: Refresh generated guidance
     And  no generated skill copies built-in instruction rules
     And  dialog policy and delegation boilerplate are not repeated in thin skills
     And  no separately authored agent command is generated
+
+  @refresh-generated-guidance
+  Scenario: Generated implementation guidance routes to the task and step instructions
+    Given  a givn project with all agent skill targets enabled
+    When  the user runs `givn skills sync`
+    Then  the generated givn-implement skill names both givn instructions tasks and givn instructions steps
+    And  the served tasks instruction names givn instructions steps
