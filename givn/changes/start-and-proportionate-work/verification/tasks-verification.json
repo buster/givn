@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "start-and-proportionate-work",
+  "status": "passed",
+  "head": "a84e1ad34de2a9d7e44230ab46860acd1f2f60fe",
+  "features_path": "givn/changes/start-and-proportionate-work/specs",
+  "features_digest": "e8e4fa492e5082c965474c584d53ca66d60ca6cfc80bc3e471932039e80edc5c",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "bfec606903bd6aad89ee1efb289e2d8bb09e3b5ce72c2d88f36706710cd7ef13",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 20,
+    "passed": 20,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793385764
+}
