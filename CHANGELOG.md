@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.14] - 2026-10-30
+
+### Features
+
+- **outline:** Record a differential Tree-sitter evaluation for Rust and Python and retain the current adapters where parity is incomplete
+
 ## [0.9.13] - 2026-10-30
 
 ### Features
@@ -826,3 +832,5 @@ for the complete 0.2.0 feature set.
 [0.9.12]: https://github.com/buster/givn/compare/v0.9.11...v0.9.12
 
 [0.9.13]: https://github.com/buster/givn/compare/v0.9.12...v0.9.13
+
+[0.9.14]: https://github.com/buster/givn/compare/v0.9.13...v0.9.14
