@@ -10,7 +10,7 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 
 ### Features
 
-- **outline:** Add Java and TypeScript/TSX support through bundled Tree-sitter grammars while keeping Rust and Python on their existing adapters; schema version 4
+- **outline:** Add Java and TypeScript/TSX support through bundled Tree-sitter grammars while keeping Rust and Python on their existing adapters; add the `interface` type kind and advance the JSON schema to version 4
 
 ## [0.9.14] - 2026-10-30
 
