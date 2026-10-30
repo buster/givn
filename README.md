@@ -82,10 +82,25 @@ In your agent, invoke the skills it received:
 | neutral `agents` target | skill discovery by name |
 | Maki | an explicit request, or an agent-selected skill such as `givn-propose` |
 
-Typical sequence: `givn-propose` → `givn-spec` → `givn-design` →
+Choose the entry point:
+
+| Situation | Start with |
+|---|---|
+| The change's goal and scope are clear | `givn-propose` |
+| The idea is vague, or you need to compare approaches or investigate the codebase | `givn-explore` |
+| The domain needs event storming, use cases, personas, stable terms, or several future changes | `givn-ideation` |
+
+`givn-explore` produces no artifacts. It routes to `givn-propose` when the
+change is clear, and to `givn-ideation` when the work becomes durable domain
+work. `givn-ideation` persists its topic state and ends with change seeds; each
+seed is input to `givn-propose`, not a change. Neither pre-change skill starts a
+change.
+
+The change lifecycle is `givn-propose` → `givn-spec` → `givn-design` →
 `givn-design-review` → `givn-tasks` → `givn-implement` → `givn-review`, then
-`givn archive`. `givn-ideation` is the optional pre-change exploration skill;
-`givn-explore` clarifies an idea without producing lifecycle artifacts.
+`givn archive`. The propose step creates the change and writes the proposal;
+its served instruction continues through specs and design, stopping before
+design-review and tasks.
 
 Before the first archive, set `verify.command` in `givn/commands.yaml` to a
 Gherkin runner that executes the `.feature` files, and set `run:` if the project
