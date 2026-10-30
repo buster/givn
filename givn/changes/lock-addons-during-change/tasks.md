@@ -72,6 +72,6 @@ Design constraints:
 
 - [x] Update `docs/reference.md`, the affected arc42 chapters, and
       `docs/glossary.md`.
-- [ ] Record the outcome in `docs/improvements/0.9.16/agent-addon-mutation.md`.
+- [x] Record the outcome in `docs/improvements/0.9.16/agent-addon-mutation.md`.
 - [x] Confirm every delta step phrase has a permanent binding.
 - [x] COMMIT: 492dff09 -- Batch: addon-lock-documentation-closeout
