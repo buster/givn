@@ -348,8 +348,8 @@ Model the domain as a chain of past-tense domain events.
 - Term collisions (same word, different meaning; different words, same
   meaning) go to the domain terms file. Before a term reaches `confirmed`,
   run and record the search-before-coin procedure:
-  1. Grep the project's durable documentation, including `docs/glossary.md`
-     when present, for the term and its synonyms.
+  1. Grep the durable glossary (`docs/glossary.md` when present) for the term
+     and its synonyms.
   2. Grep every sibling topic's `domain-terms.md` and the repository for the
      term.
   3. Record the commands run and the hit counts in the `Collision check`
