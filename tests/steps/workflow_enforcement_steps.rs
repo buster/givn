@@ -111,6 +111,7 @@ fn set_verify_true(world: &GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    crate::common::remove_addon_locks(env);
     crate::steps::archive_proof_support::write_result_runner(env, "pass");
     set_verify_command_in_config(world, "./emit-result.sh regular");
     let commands_path = project_root(world).join("givn/commands.yaml");
@@ -135,6 +136,12 @@ fn set_verify_true(world: &GivnWorld) {
 /// a change specs dir containing "changes") and exits 1 during post-merge verify
 /// (GIVN_FEATURES points to "givn/specs").
 fn set_coverage_true(world: &GivnWorld) {
+    crate::common::remove_addon_locks(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+    );
     let cmds_path = project_root(world).join("givn/commands.yaml");
     let content = std::fs::read_to_string(&cmds_path).unwrap_or_default();
     let sentinel = "givn missing-coverage";
@@ -153,6 +160,12 @@ fn set_coverage_true(world: &GivnWorld) {
 }
 
 fn disable_coverage_addon(world: &GivnWorld) {
+    crate::common::remove_addon_locks(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+    );
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
     let updated = config.replace("coverage: true", "coverage: false");
@@ -160,6 +173,12 @@ fn disable_coverage_addon(world: &GivnWorld) {
 }
 
 fn disable_outline_addon(world: &GivnWorld) {
+    crate::common::remove_addon_locks(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+    );
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
     let updated = config.replace("outline: true", "outline: false");
@@ -740,6 +759,12 @@ fn project_arc42_disabled(world: &mut GivnWorld) {
     let config = std::fs::read_to_string(&config_path).unwrap();
     let new_config = config.replace("arc42: true", "arc42: false");
     std::fs::write(&config_path, new_config).unwrap();
+    crate::common::remove_addon_locks(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+    );
 }
 
 #[given("a givn project with arc42 addon enabled")]
