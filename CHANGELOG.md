@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.11] - 2026-10-30
+
+### Features
+
+- **outline:** Render outline guidance only when the addon is enabled, route implementation to the shared step mechanics, and treat changed code that cannot explain itself from its outline as a review finding
+
 ## [0.9.10] - 2026-10-30
 
 ### Bug Fixes
@@ -802,3 +808,5 @@ for the complete 0.2.0 feature set.
 [0.9.2]: https://github.com/buster/givn/compare/v0.9.1...v0.9.2
 
 [0.9.10]: https://github.com/buster/givn/compare/v0.9.9...v0.9.10
+
+[0.9.11]: https://github.com/buster/givn/compare/v0.9.10...v0.9.11
