@@ -1,6 +1,6 @@
 Scenario: An agent synchronizes skills and the domain skill is routed
 argv: givn (scenario invocation)
-cwd (fixture project root): /tmp/.tmpO0Qzqc
+cwd (fixture project root): /tmp/.tmpmvT3nH
 exit code: 0
 --- stdout ---
 Syncing skills...

@@ -85,11 +85,11 @@ fn generated_skill_loads_during_every_workflow_step(world: &mut GivnWorld) {
     );
 }
 
-#[then("the generated skill instructs maintaining the project's arc42 glossary")]
+#[then("the generated skill instructs maintaining the project's glossary")]
 fn generated_skill_instructs_maintaining_glossary(world: &mut GivnWorld) {
     let content = generated_skill(world);
     assert!(
-        content.contains("maintaining the project's arc42 glossary"),
-        "generated skill does not instruct maintaining the arc42 glossary"
+        content.contains("maintaining the project's glossary"),
+        "generated skill does not instruct maintaining the standalone glossary"
     );
 }
