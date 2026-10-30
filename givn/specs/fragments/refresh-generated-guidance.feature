@@ -1,26 +1,24 @@
 Feature: Refresh generated guidance
 
-  @e2e
+  @e2e @refresh-generated-guidance
   Scenario: Synchronized guidance explains how to resolve the deterministic gates
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
-    Then  stdout contains "Syncing skills and agent commands..."
-    And  the generated givn-review guidance directs the reviewer to the review instruction
-    And  the generated givn-design guidance directs the designer to the design instruction
-    And  the generated givn-steps guidance directs the step writer to the steps instruction
-    And  the served review instruction contains "Overlap dispositions"
-    And  the served review instruction contains "split-or-keep"
-    And  the served review instruction contains "removed+added"
-    And  the served design instruction contains "Black-Box-First"
-    And  the served steps instruction contains "which case this test covers"
-    And  generated guidance does not contain "Run `givn spec index`"
+    Then  synchronization reports skills rather than skills and agent commands
+    And  generated review design and steps skills direct readers to their canonical instructions
+    And  the served review instruction retains split-or-keep while treating shape matches as advisory
+    And  the served design and steps instructions retain black-box behavior and distinct requirement coverage
+    And  generated skills contain no repeated dialog-loading or delegation policy blocks
+    And  no separately authored agent commands are generated
+    And  the terminal transcript is captured for this scenario
 
+  @refresh-generated-guidance
   Scenario: Review instructions require deterministic gate dispositions
-    Given a givn project
-    When the user runs `givn instructions review --change skill-rewrites`
-    Then stdout contains "Overlap"
-    And stdout contains "split-or-keep"
-    And stdout contains "removed+added"
+    Given  a givn project
+    When  the user runs `givn instructions review --change skill-rewrites`
+    Then  the guidance requires split-or-keep and a brief reason for keeping a long scenario
+    And  the guidance requires completing a chosen split before sign-off
+    And  shape-match findings do not require blocking dispositions
 
   Scenario: Design and step instructions require the Black-Box-First decision
     Given a givn project
@@ -33,8 +31,12 @@ Feature: Refresh generated guidance
     When the user runs `givn instructions specs --change skill-rewrites`
     Then stdout contains "User Interaction Inventory"
     And stdout does not contain "Run `givn spec index`"
+
+  @refresh-generated-guidance
   Scenario: Generated guidance carries no copy of a built-in rule
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
-    Then  every generated skill and command carries trigger metadata and a direction
-    And  no generated skill or command copies the built-in rules of its instruction
+    Then  every generated skill carries trigger metadata and a direction to its served instruction
+    And  no generated skill copies built-in instruction rules
+    And  dialog policy and delegation boilerplate are not repeated in thin skills
+    And  no separately authored agent command is generated

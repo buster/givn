@@ -1,12 +1,13 @@
 Feature: Start the declared product
 
-  @e2e
+  @e2e @start-the-declared-product
   Scenario: The started server reports readiness and forwards a clean exit
-    Given a project with a server run declaration that becomes ready and exits cleanly
-    When the user runs `givn run`
-    Then the command exits 0
-    And stdout contains a line beginning with "givn run: ready at http://127.0.0.1:"
-    And the ready line names the readiness path "/healthz"
+    Given  a server declaration with a readiness deadline whose server becomes ready before that deadline and exits cleanly
+    When  the consumer runs `givn run`
+    Then  the command exits 0
+    And  stdout reports readiness at the declared port and readiness path
+    And  the reported ready outcome follows a successful response through the declared boundary
+    And  the terminal transcript is captured for this scenario
 
   @e2e
   Scenario: A caller-provided port is handed to the product
@@ -48,11 +49,13 @@ Feature: Start the declared product
     Then the command exits 1
     And stderr mentions "port_env"
 
+  @start-the-declared-product
   Scenario: A readiness timeout abandons the start
-    Given a project with a server run declaration whose readiness path never succeeds
-    When the user runs `givn run`
-    Then the command exits 2
-    And stdout does not contain "givn run: ready"
+    Given  a server declaration whose readiness path never succeeds within its declared deadline
+    When  the user runs `givn run`
+    Then  the command exits 2 within the readiness deadline plus bounded process cleanup time
+    And  the output names the readiness timeout without reporting ready
+    And  the started product is stopped and reaped
 
   Scenario: An early product exit is forwarded before readiness
     Given a project with a server run declaration whose product exits 3 before readiness
@@ -85,10 +88,12 @@ Feature: Start the declared product
     Given a readiness probe against a listener that answers 204
     Then the probe reports ready on the first attempt
 
+  @start-the-declared-product
   Scenario: The readiness probe gives up after the timeout
-    Given a readiness probe against a listener that never answers success
-    When the readiness timeout elapses
-    Then the probe reports a timeout
+    Given  a readiness endpoint whose failing responses consume almost all the declared readiness time
+    When  the readiness deadline elapses
+    Then  no additional connection attempt receives a fresh full timeout
+    And  the probe reports a timeout within the original total deadline
 
   Scenario: A terminate request is forwarded and the start waits
     Given givn run is executing a product that stays ready
@@ -114,3 +119,25 @@ Feature: Start the declared product
     Then the command exits 1
     And stderr mentions "run.command is unset"
     And stdout does not contain "givn missing-run-command"
+
+  @start-the-declared-product
+  Scenario Outline: A stalled readiness exchange cannot outlive the total deadline
+    Given  a server declaration with a finite readiness deadline
+    And  the readiness endpoint "<stall>"
+    When  the consumer runs `givn run`
+    Then  the command exits 2 within that deadline plus bounded process cleanup time
+    And  no ready line is printed
+    And  the started product is stopped and reaped
+    Examples:
+      | stall |
+      | does not complete a connection |
+      | accepts a connection but does not read the request |
+      | reads the request but never responds |
+      | sends a partial response and leaves the connection open |
+
+  @start-the-declared-product
+  Scenario: Readiness retries share one deadline across connection and exchange
+    Given  a readiness endpoint that delays connection, request consumption, and response across repeated attempts
+    When  the consumer starts the product with a declared readiness timeout
+    Then  the combined connection, write, read, and retry waits consume no more than the total readiness deadline
+    And  an expired deadline triggers the existing product cleanup rather than another full probe wait

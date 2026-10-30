@@ -14,12 +14,20 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then the CLI output contains the complete interaction and E2E policy
     And the CLI output no longer advertises retrieval commands
 
+  @instruction-integrity
   Scenario: Design guidance requires the complete E2E setup record
     Given  a Givn project with an active change
     When  the author requests the design instructions through the Givn CLI
-    Then  the returned design guidance requires the runner scope strictness proof separate bindings real driver and local infrastructure
-    And  the returned design guidance requires framework justification and a matching interaction coverage matrix
-    And  the returned design guidance distinguishes terminal transcripts from Web UI viewport evidence
+    Then  the guidance requires explicit regular and E2E scope selection and the appropriate real interface driver
+    And  bootstrap requires a project runner to execute the selected Gherkin features from GIVN_FEATURES
+    And  bootstrap requires change to execute every delta scenario and regular/E2E to partition permanent scenarios
+    And  bootstrap requires fresh actual counts in GIVN_RESULT_FILE
+    And  bootstrap distinguishes setup failure from a behavior assertion RED
+    And  the runner contract keeps missing malformed zero failed and skipped results fail-closed
+    And  the commands template points to the runner contract instead of shipping a generic runner script
+    And  runner strictness is proved at initial setup and after relevant runner version invocation or failure-configuration changes
+    And  local infrastructure is required only for dependencies the product actually has
+    And  the guidance retains framework justification interaction coverage and applicable visual evidence
 
   Scenario: Machine-readable instructions describe the effective artifact
     Given the effective specs artifact metadata is available
@@ -52,12 +60,14 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the returned guidance does not offer advisory or blocking retrieval paths
     And  the returned guidance keeps the deterministic spec toolchain wording
 
+  @instruction-integrity
   Scenario: Review guidance names the deterministic disposition gates
     Given  a Givn project with an active change
     When  the reviewer requests the review instructions through the Givn CLI
-    Then  the returned review guidance requires a disposition for every reported overlap pair with a reason
-    And  the returned review guidance requires a split-or-keep decision for every reported long scenario
-    And  the returned review guidance distinguishes an advisory finding from completed verification evidence
+    Then  the guidance requires split-or-keep for each reported long scenario with a brief keep reason
+    And  a chosen split must be completed before sign-off
+    And  shape-match pairs are advisory discovery rather than mandatory dispositions
+    And  advisory findings are not completed verification evidence
 
   Scenario: The canonical dialog policy is retrievable through the Givn CLI
     Given  a Givn project with an active change for the dialog policy
@@ -69,14 +79,15 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the returned policy directs the author to settle discoverable facts and confirmed constraints before asking
     And  the returned policy distinguishes authoring obligations from runtime enforcement
 
+  @instruction-integrity
   Scenario: The canonical dialog policy demonstrates the full question record
     Given  an initialized Givn project
     When  the author requests the dialog policy through the Givn CLI
-    Then  the decision-record guidance keeps the complete context alternatives consequences and resolution
-    And  the chosen and rejected alternatives retain their reasons after the question closes
-    And  decision-relevant cross-references carry their meaning rather than only their identifier
-    And  routine information requests are not forced into invented alternatives or tradeoffs
-    And  confirmations disclose both acceptance and revision consequences without treating consent as a rule waiver
+    Then  the concise policy requires decision-relevant context alternatives consequences and resolution
+    And  chosen and rejected alternatives retain their reasons
+    And  routine clarification does not require invented alternatives
+    And  confirmations explain acceptance and revision consequences without making consent a rule waiver
+    And  the policy indexes the companion regression examples by question type
 
   Scenario: The dialog policy is retrievable without an active change
     Given  a project root with givn/ initialised
@@ -99,6 +110,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the ejected design-review template contains "In practice:"
     And  the ejected design-review template contains "Recommended:"
     And  the ejected design-review template contains "Rejected:"
+
   Scenario: The review instruction carries the use-case scope rejection criteria
     Given  the review instructions are requested
     When  the reviewer reads the use-case scope criteria
@@ -156,6 +168,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the file "givn/artifacts/design/design.md" contains "## Decisions"
     And  the file "givn/artifacts/design/design.md" contains "Decides D"
     And  the file "givn/artifacts/design-review/design-review.md" contains "ledger"
+
   Scenario: The propose guidance carries the no-signal routing rule
     Given  a givn project
     And  the proposal instructions are requested
@@ -164,24 +177,24 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the guidance keeps the recorded decision mandatory
     When  the user runs `givn eject proposal:template`
     Then  the file "givn/artifacts/proposal/proposal.md" contains "no signal"
+
+  @instruction-integrity
   Scenario: Dialog teaching contrasts show complete decisions rather than bare labels
     Given  an initialized Givn project
-    When  the author requests the dialog policy through the Givn CLI
-    Then  the returned teaching examples identify their records as hypothetical rather than current product behavior
-    And  the goal-confirmation contrast displays every proposed goal and bounds what acceptance authorizes
-    And  the clarification contrast asks only the missing human intent and shows how the answer scopes subsequent work
-    And  the behavior-choice contrast shows the observable outcome of both answers rather than implementation labels
-    And  the commitment contrast shows the saved-information benefit compatibility restriction and later-change work
-    And  the diagnostic contrast reports a researched assertion defect rather than asking the person to inspect unseen scenarios
-    And  every good contrast links to its own supplied decision record
-    And  the diagnostic contrast excludes an answer that violates the confirmed one-answer constraint
+    When  the author follows the dialog policy index to its companion regression examples
+    Then  the companion retains the scope-approval target-selection behavior-choice persistent-format-commitment and discoverable-diagnosis examples
+    And  the examples distinguish hypothetical teaching records from current product behavior
+    And  each good example supplies its decision record and concrete answer consequences
+    And  the diagnostic example reports the researched assertion defect without asking the person to inspect unseen scenarios
+    And  no answer violates a confirmed one-answer constraint
 
+  @instruction-integrity
   Scenario: Migration consent does not imply an unverified recovery guarantee
     Given  an initialized Givn project
-    When  the author reads the material-commitment teaching contrast from the returned dialog instructions
-    Then  the contrast distinguishes required recovery verification from already implemented recovery support
-    And  the less-committing answer leaves saved projects unchanged rather than promising a reversible upgrade
-    And  the policy requires unknown compatibility facts to be established or consent narrowed before rollout approval
+    When  the author reads the persistent-format-commitment example linked from the dialog policy
+    Then  the example distinguishes recovery requiring verification from recovery already supported
+    And  the less-committing answer leaves saved projects unchanged without promising a reversible upgrade
+    And  unknown compatibility facts must be established or consent narrowed before rollout approval
 
   Scenario: A project dialog override remains the effective policy after synchronization
     Given  an initialized Givn project with a project-owned dialog instruction override
@@ -191,14 +204,15 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the project-owned override remains unchanged on disk
     And  the synchronized entry guidance directs authors to the effective policy rather than a bundled policy copy
 
-  @e2e
+  @e2e @instruction-integrity
   Scenario: Author starts a session with the universal dialog obligation
     Given  an initialized Givn project without an active change
     When  the author requests the normal Givn startup instructions through the Givn CLI
     Then  the startup guidance requires loading the effective dialog policy before the context's first user-facing question
-    And  the startup guidance applies that obligation outside named skills and to delegated question preparation
-    And  the startup guidance distinguishes loading once per context from rereading before every question
+    And  the bootstrap owns that obligation independently of optional addons and named skills
+    And  the policy is loaded once per context and reloaded if lost
     And  the startup guidance still explains how to begin a change
+    And  the terminal transcript is captured for this scenario
 
   Scenario: Machine-readable startup guidance retains the dialog obligation while reporting an active change
     Given  an initialized Givn project with an active change awaiting specifications
@@ -206,12 +220,13 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then  the response preserves the active change identity and next required artifact
     And  the response includes the same universal effective-dialog loading obligation in its guidance
     And  the response does not embed a second complete dialog policy
+
+  @instruction-integrity
   Scenario: The characterization guidance requests the reverse review from Givn
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
-    Then  the generated givn-characterize guidance requests `givn instructions review-reverse`
-    And  the generated givn-characterize command requests `givn instructions review-reverse`
-    And  every command-owning agent target receives the givn-characterize command
+    Then  every selected target receives a givn-characterize skill directing the author to `givn instructions review-reverse`
+    And  no separately generated characterization command is installed
 
   Scenario: The generated guidance references resolve with the default configuration
     Given  a givn project with all agent skill targets enabled
@@ -240,14 +255,17 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  a specs instruction override that names the missing file "givn/reference-that-resolves-nowhere.md"
     When  the author requests the specs instructions through the Givn CLI
     Then  the printed reference check fails and names "givn/reference-that-resolves-nowhere.md"
+
   Scenario: A configured target without synchronized guidance fails the check
     Given  a givn project with all agent skill targets enabled
     When  the skills of the agent target ".claude" are removed
     Then  the configured-target check fails and names the agent target ".claude"
+
+  @instruction-integrity
   Scenario: Every instruction id named by generated guidance resolves through the Givn CLI
     Given  a givn project with all agent skill targets enabled and an active change
     When  the user runs `givn skills sync`
-    Then  every generated skill and command names a served instruction
+    Then  every generated skill names a served instruction
     And  every named instruction id resolves through the Givn CLI
 
   Scenario: Every generated direction is invokable in its documented context
@@ -257,8 +275,52 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  every direction to a policy or step instruction names no change context
     And  every named instruction id resolves in the context the direction names
 
+  @instruction-integrity
   Scenario: Every generated skill and command directs to exactly one served instruction id
     Given  a givn project with all agent skill targets enabled and an active change
     When  the user runs `givn skills sync`
     Then  the command succeeds
-    And  every generated skill and command directs to exactly one served instruction id
+    And  every generated skill directs to exactly one served instruction id
+    And  no separately authored agent command is generated
+
+  @instruction-integrity
+  Scenario: Relevant dialog examples are required before the first question of their type
+    Given  the effective dialog policy has been loaded in the current context
+    When  the author prepares the first question of a type indexed by the policy
+    Then  the policy requires reading that type's companion examples before presenting the question
+    And  repeated questions of that type do not require rereading examples retained in context
+    And  questions remain one at a time
+
+  @instruction-integrity
+  Scenario Outline: Givn shipped templates render parser-compatible documents and examples
+    Given  Givn's shipped "<asset>" template with its documented example values
+    When  a Givn maintainer renders the template for its documented use
+    Then  frontmatter is valid wherever the document requires it
+    And  Markdown fences are balanced and preserve the intended example boundaries
+    And  ordinary parsers for the documented formats accept the step tables and configuration samples without Givn-specific repairs
+    Examples:
+      | asset |
+      | artifact documents |
+      | agent skills |
+      | step tables |
+      | verification configuration |
+
+  @instruction-integrity
+  Scenario Outline: Current shipped guidance and help exclude harness-project leakage without rewriting history
+    Given  Givn's current "<surface>" and preserved historical evidence
+    When  a Givn maintainer inspects the release's consumer-facing content
+    Then  harness-project paths fixture names and recording content are absent from current consumer guidance
+    And  legitimate generic examples remain usable outside Givn's own repository
+    And  historical decisions and evidence remain unchanged and are clearly distinguished from current guidance
+    Examples:
+      | surface |
+      | shipped guidance assets |
+      | command help |
+
+  @instruction-integrity
+  Scenario: Givn release distribution excludes local recordings and harness fixtures
+    Given  a Givn release checkout containing local runtime recordings and harness fixtures
+    When  a Givn maintainer prepares the release distribution
+    Then  the distributed package contains neither runtime recordings nor harness fixtures
+    And  the checkout's historical evidence remains unchanged
+    And  this Givn distribution requirement installs no release gate in consumer projects

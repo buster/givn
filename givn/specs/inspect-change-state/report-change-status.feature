@@ -64,19 +64,22 @@ Feature: report-change-status
     Then the command exits non-zero
     And stderr contains "change 'nosuch' not found"
 
+  @report-change-status
   Scenario: Detail mode — archived change (text)
-    Given a project root with givn/ initialised
-    And a change "old" exists in archive
-    When the user runs `givn status --change old`
-    Then the command exits 0
-    And stdout mentions "archived"
+    Given  a project root with givn/ initialised
+    And  a change "old" has a proven archive with a matching archive receipt
+    When  the user runs `givn status --change old`
+    Then  the command exits 0
+    And  stdout reports a proven archive
 
+  @report-change-status
   Scenario: Detail mode — archived change (JSON)
-    Given a project root with givn/ initialised
-    And a change "old" exists in archive
-    When the user runs `givn status --change old --json`
-    Then the command exits 0
-    And stdout mentions "\"id\": \"old\""
+    Given  a project root with givn/ initialised
+    And  a change "old" has a proven archive with a matching archive receipt
+    When  the user runs `givn status --change old --json`
+    Then  the command exits 0
+    And  stdout mentions "\"id\": \"old\""
+    And  the JSON status reports a proven archive
 
   Scenario: Detail mode — active change with proposal only (text)
     Given a project root with givn/ initialised
@@ -89,15 +92,17 @@ Feature: report-change-status
     And stdout mentions "proposal"
     And stdout mentions "Next required:"
 
+  @e2e @report-change-status
   Scenario: Detail mode — active change with all required done (text)
-    Given a project root with givn/ initialised
-    And a change "done" exists with all required artifacts complete
-    And the project declares a complete run declaration
-    When the user runs `givn status --change done`
-    Then the command exits 0
-    And stdout mentions "ready-to-archive"
-    And stdout mentions "Ready to archive"
-    And stdout mentions "givn archive --change done"
+    Given  a project root with givn/ initialised
+    And  a change "done" exists with all required artifacts complete
+    And  the change has no verification receipt
+    When  the user invokes `givn status --change done`
+    Then  the command exits 0
+    And  stdout reports that required artifacts are complete
+    And  stdout reports verification as not checked
+    And  stdout does not claim "ready-to-archive" or "Ready to archive"
+    And  the terminal transcript is captured for this scenario
 
   Scenario: Detail mode — task progress shown for tasks artifact
     Given a project root with givn/ initialised
@@ -148,6 +153,7 @@ Feature: report-change-status
     When the user runs `givn status --change my-feature`
     Then the command exits 0
     And stdout mentions "arc42-docs"
+
   Scenario Outline: Status names the active SCM backend
     Given  a <backend> project
     When  the user runs `givn status`
@@ -164,3 +170,54 @@ Feature: report-change-status
     Then  the command exits 0
     And  stdout reports the active backend as none
     And  stdout names archive and managed upgrade as unavailable
+
+  @report-change-status
+  Scenario Outline: Status reports receipt freshness separately from artifact completion
+    Given  a change "done" exists with all required artifacts complete
+    And  <receipt condition>
+    When  the user runs <command>
+    Then  the command exits 0
+    And  the status reports required artifacts as complete
+    And  the status reports verification as <verification state>
+    And  the status does not claim that artifact completion establishes archive readiness
+    Examples:
+      | receipt condition | command | verification state |
+      | a green receipt matches the current relevant inputs | `givn status --change done` | current |
+      | tested executable inputs changed after a green receipt | `givn status --change done` | stale |
+      | no verification receipt exists | `givn status --change done` | not checked |
+      | a green receipt matches the current relevant inputs | `givn status --change done --json` | current |
+      | tested executable inputs changed after a green receipt | `givn status --change done --json` | stale |
+      | no verification receipt exists | `givn status --change done --json` | not checked |
+
+  @report-change-status
+  Scenario Outline: An archive candidate without current proof is not a proven archive
+    Given  a change "candidate" exists in the archive directory
+    And  <proof condition>
+    When  the user runs <command>
+    Then  the command exits 0
+    And  the status reports a pending archive candidate
+    And  the status does not report a proven archive
+    Examples:
+      | proof condition | command |
+      | the archive receipt is missing | `givn status --change candidate` |
+      | the archive receipt is stale | `givn status --change candidate` |
+      | the archive receipt is missing | `givn status --change candidate --json` |
+      | the archive receipt is stale | `givn status --change candidate --json` |
+
+  @report-change-status
+  Scenario Outline: Inspecting status never executes verification
+    Given  a project with complete active artifacts for change "done" and a pending archive candidate "candidate"
+    And  verification commands record every invocation and fail if invoked
+    And  the change artifacts and receipts are snapshotted
+    When  the user runs <command>
+    Then  the command exits 0
+    And  no verification command was invoked
+    And  the change artifacts and receipts are unchanged
+    Examples:
+      | command |
+      | `givn status` |
+      | `givn status --json` |
+      | `givn status --change done` |
+      | `givn status --change done --json` |
+      | `givn status --change candidate` |
+      | `givn status --change candidate --json` |

@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:254386e0a93fd765e52f9817c3955608987104d431cf89b6085a7429dd6abb7f -->
 # Use case: operate-product
 
 ## Level
@@ -34,7 +35,10 @@ The operator starts the declared product.
 ## Rules
 
 - A server has exactly one port source.
-- Readiness is confirmed through the declared boundary.
+- Readiness is confirmed only by a successful response through the declared boundary before its deadline.
+- Connection, request write, response read, and retry waits all share one finite total readiness deadline. Every operation is bounded by the remaining time, never a fresh full timeout after the deadline.
+- A stalled connection, unconsumed request, absent response, or incomplete response cannot wait indefinitely or print ready.
+- Readiness expiry exits with code 2 within the deadline plus bounded existing cleanup time; the started product is stopped and reaped. This adds no supervision framework.
 
 ## Examples
 
@@ -42,11 +46,11 @@ The operator starts the declared product.
 
 ## Minimal guarantee
 
-The product is not reported ready when its declaration is invalid or it fails to start.
+The product is never reported ready for an invalid declaration, failed start, or expired readiness deadline; stalled readiness exchanges terminate with bounded product cleanup.
 
 ## Success guarantee
 
-The operator observes the product's lifecycle outcome.
+The operator observes the product's lifecycle outcome, with declared readiness bounded across connection and exchange and failures cleaned up rather than left waiting indefinitely.
 
 ## Personas
 
@@ -92,5 +96,3 @@ flowchart LR
   Plan --> Product[[Start product]]
   Product --> Ready[[Observe readiness]]
 ```
-
-<!-- givn:base-sha256:be5fb2589446c883a1b236e8adf9e24075084dc83ac9ddd779c62167f1ec9056 -->

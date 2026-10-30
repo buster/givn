@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:695ebf7e750ed87b9caa64aa7480af5e1637bce5c459401f00d4e1ad9edb7a89 -->
 # Use case: obtain-effective-guidance
 
 ## Level
@@ -18,7 +19,7 @@ extension.
 
 The authoring agent requests the guidance for an instruction id
 (`givn instructions <id> [--change <id>] [--json]`), typically because an
-invoked skill or slash command directs it there; the developer may request
+invoked skill directs it there; the developer may request
 the same id manually.
 
 ## Preconditions
@@ -60,6 +61,20 @@ the same id manually.
 - A request never mutates project state: it resolves configuration and content and prints. A rejected configuration entry warns and is skipped; the request still succeeds and serves the built-in rules alone for it.
 - The unknown-id refusal, the change-context rules, and the machine contract shape are unchanged.
 - The built-in rules stay technology-agnostic; project-specific guidance arrives only through the extension.
+- Managed bootstrap owns loading the effective dialog policy once per context before the first user-facing question, independently of addons or named skills; reload it if lost. Thin skills do not repeat dialog, handoff, or delegation blocks.
+- The concise dialog policy indexes a preserved companion of regression examples. Read the relevant examples before the first scope-approval, target-selection, behavior-choice, persistent-format-commitment, or discoverable-diagnosis question in the context; ask one question at a time and retain concrete decision consequences and resolved reasons.
+- Effective implementation and steps guidance plans a coherent named behavior batch with scenarios, validation, and intended commit boundary. Tests and bindings run before production edits; meaningful behavioral RED is not a missing binding, syntax, registration, fixture, or environment failure.
+- Record the actual RED command and short observed failure as it happens, then briefly record actual GREEN and REFACTOR checks. An immediately passing distinct requirement is explicitly existing behavior protected and needs no production edit for that requirement.
+- Admit skipped RED; never backdate evidence, rewrite history, break finished behavior, or present mutation/discrimination tests as historical RED. Separate phase commits and retrospective commit-shape or TDD-order gates are not required.
+- Inspect the intended explicit-path diff, commit a coherent completed batch, record its actual reachable implementation or regression-test revision, then complete scenario tasks. Multiple scenarios may share a batch revision; implicit staging of all work and per-scenario production-diff requirements are not part of the contract.
+- Prove runner strictness at initial setup and relevant runner, version, invocation, or failure-configuration changes, not for every behavior batch. New behavior still requires behavioral RED.
+- During REFACTOR inspect the advisory outline once per batch for changed Rust/Python components and relevant neighbors. Assess cohesive responsibility, narrow interfaces, dependency direction, and understandable decomposition, confirming suspected issues against source. Structural call order is not a complete runtime trace; uncertain or omitted edges limit conclusions.
+- Assess unsupported Go/Java components directly against source using the same questions, without failure, waiver, outline verdict, or forced reviewer context. Outline supports final review but never supplies its own blocking verdict.
+- Modular boundaries apply from the first implementation: cohesive responsibility modules, narrow consumer contracts and Interface Segregation, external adapters, separate composition, and explicit dependency direction. Narrow module APIs suffice unless isolation or substitution requires an explicit interface; do not invent hypothetical providers or plugin registries.
+- Make concrete encountered cleanup in separate explicit-path behavior-preserving refactoring commits with actual GREEN checks, not speculative features or broad abstraction rewrites.
+- Instruction and skill regressions may assert focused meaningful content; a giant whole-output substring does not substitute for discrimination.
+- Optional challenge uses the same effective-instruction request action with subject variants for proposal, tests, specs, design, code, and whole changes; it adds no mandatory lifecycle gate. Research first, report discoverable defects as bounded actionable findings, label hypotheses, and ask only unresolved human decisions.
+- Challenge uses evidence, counterexamples, discriminating assertions, root causes, compatibility consequences, justified special cases, failure/recovery paths, and measured performance where relevant. General principles are referenced canonically through dev-principles rather than copied; accepted modularity and fix-forward choices take precedence over blanket compatibility or rollback prescriptions.
 
 ## Examples
 
@@ -95,7 +110,7 @@ machine-readable paths.
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| serve-extended-rules | request effective instructions by id (artifact, general policy, JSON, and change context are variants) | An agent receives the extended rules through the Givn CLI |
+| serve-extended-rules | request effective instructions by id (artifact, policy, step, challenge subject, JSON, and change context are variants) | An agent receives the extended rules through the Givn CLI |
 
 ## Includes
 

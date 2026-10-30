@@ -42,14 +42,14 @@ Feature: Generate ideation guidance
     When  the agent requests the explore instructions through the Givn CLI
     Then  the served explore instruction contains "givn-ideation"
 
-  @e2e
+  @generate-ideation-guidance
   Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
-    Then  stdout contains "Syncing skills and agent commands..."
+    Then  stdout contains "Syncing skills..."
     And  stdout contains "synced skill: givn-ideation"
     And  the served ideation instruction contains "Frame"
-    And  the generated givn-ideation command directs the ideator to the ideation instruction
+    And  the generated givn-ideation guidance directs the ideator to the ideation instruction
 
   Scenario: The ideation guidance carries the seed schema and its status values
     Given  a Givn project
@@ -140,6 +140,7 @@ Feature: Generate ideation guidance
     And  the template names the own vocabulary and success criterion
     And  the template carries an append-only running record
     And  the template carries a dated topic stances appendix
+
   Scenario: The ideation guidance carries the open-question qualifier rule
     Given  a Givn project
     When  the agent requests the ideation instructions through the Givn CLI
@@ -276,8 +277,9 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "append-only"
     And  the served ideation instruction contains "Topic stances"
 
+  @generate-ideation-guidance
   Scenario: The generated ideation files direct the agent to the ideation instruction
     Given  a givn project with all agent skill targets enabled
     When  the user runs `givn skills sync`
     Then  the generated givn-ideation guidance directs the ideator to the ideation instruction
-    And  the generated givn-ideation command directs the ideator to the ideation instruction
+    And  no separately authored agent command is generated

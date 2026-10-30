@@ -6,17 +6,14 @@ Feature: check-specification-health
     Then the command exits 0
     And stdout contains a line "givn lint: no .feature files found under givn/"
 
+  @e2e @check-specification-health
   Scenario: All clean .feature files report a clean summary on stdout
-    Given a project root with givn/ initialised
-    And a .feature file at "givn/specs/foo/foo.feature" with:
-      """
-      Feature: Foo
-        Scenario: Bar
-          Given x
-      """
-    When the user runs `givn lint`
-    Then the command exits 0
-    And stdout contains a line "givn lint: 1 file(s) checked — clean"
+    Given  a project root with givn/ initialised
+    And  a structurally valid specification corpus with one clean feature
+    When  the user invokes `givn lint`
+    Then  the command exits 0
+    And  stdout contains a line "givn lint: 1 file(s) checked — clean"
+    And  the terminal transcript is captured for this scenario
 
   Scenario: A parse error is reported on stderr and exits 1
     Given a project root with givn/ initialised
@@ -148,6 +145,7 @@ Feature: check-specification-health
     And stderr contains "[WIP  ]"
     And stderr contains "[ERROR]"
     And stderr contains "givn lint: 2 file(s) checked, 2 finding(s)"
+
   Scenario: A removed placeholder suppresses the @wip warning on itself
     Given a project root with givn/ initialised
     And a feature file with a removed-wip placeholder at "givn/specs/foo/foo.feature"
@@ -162,6 +160,7 @@ Feature: check-specification-health
     Then the command exits 2
     And stderr contains "[WIP  ]"
     And stderr contains "scenario 'NewNotDone' is tagged @wip"
+
   Scenario: The lint exit-code contract is preserved after refactor
     Given a project root with givn/ initialised
     And a .feature file at "givn/specs/clean/clean.feature" with:
@@ -173,6 +172,7 @@ Feature: check-specification-health
     When the user runs `givn lint`
     Then the command exits 0
     And stdout contains a line "givn lint: 1 file(s) checked — clean"
+
   Scenario: A change seed without a status line is reported as an advisory
     Given  a project root with givn/ initialised
     And  a change seed at "givn/ideation/topic/changes/seed-one.md" with:
@@ -277,6 +277,7 @@ Feature: check-specification-health
     Then  the command exits 0
     And  stderr contains "[SEED ]"
     And  stderr contains "givn lint: 1 file(s) checked, 1 finding(s)"
+
   Scenario: A dangling persona reference is reported as an advisory
     Given  a project root with givn/ initialised
     And  a change use-case document at "givn/changes/persona-change/specs/persona-change/usecase.md" records the persona "missing-persona"
@@ -298,6 +299,7 @@ Feature: check-specification-health
     Then  the command exits 0
     And  stderr contains "[PERS ]"
     And  stderr contains "missing-persona"
+
   Scenario: A blocking finding renders its severity
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/bad/bad.feature" with:
@@ -343,3 +345,92 @@ Feature: check-specification-health
     When  the user runs `givn lint`
     Then  the command exits 2
     And  stderr contains "[WIP  ] finding"
+
+  @check-specification-health
+  Scenario Outline: Explicit relationship namespaces disambiguate equal identifiers
+    Given  a structurally valid corpus with a use case named "support" and a fragment named "support"
+    And  another use case Includes "<target>"
+    When  the user runs `givn lint`
+    Then  the relationship resolves to the <owner> named "support"
+    And  no ambiguous relationship target finding is reported
+    Examples:
+      | target | owner |
+      | usecase: support | use case |
+      | fragment: support | fragment |
+
+  @check-specification-health
+  Scenario Outline: A relationship cannot resolve through the other namespace
+    Given  a structurally valid corpus containing only a <existing owner> named "support"
+    And  another use case Includes "<target>"
+    When  the user runs `givn lint`
+    Then  the command exits 1
+    And  the findings name the unresolved typed target "<target>"
+    Examples:
+      | existing owner | target |
+      | fragment | usecase: support |
+      | use case | fragment: support |
+
+  @check-specification-health
+  Scenario: A fragment cannot be an extension target even when a use case has the same identifier
+    Given  a structurally valid corpus with a use case named "support" and a fragment named "support"
+    And  another use case Extends "fragment: support"
+    When  the user runs `givn lint`
+    Then  the command exits 1
+    And  the findings say that Extends cannot target a fragment
+
+  @check-specification-health
+  Scenario Outline: Cycles follow use-case includes and extends relationships
+    Given  structurally valid use cases "first" and "second"
+    And  "first" <relationship> "usecase: second"
+    And  "second" Includes "usecase: first"
+    When  the user runs `givn lint`
+    Then  the command exits 1
+    And  a use-case cycle finding names "first" and "second"
+    Examples:
+      | relationship |
+      | Includes |
+      | Extends |
+
+  @check-specification-health
+  Scenario: A fragment inclusion does not invent an edge to a same-named use case
+    Given  structurally valid use cases "first" and "support" and a fragment named "support"
+    And  "first" Includes "fragment: support"
+    And  the use case "support" Includes "usecase: first"
+    When  the user runs `givn lint`
+    Then  no use-case cycle finding is reported
+
+  @check-specification-health
+  Scenario Outline: Interaction evidence cannot be credited from another capability
+    Given  a structurally valid <owner> declaring capabilities "place-order" and "cancel-order"
+    And  its interaction inventory maps "place-order" to "Consumer submits an order"
+    And  only "cancel-order" has an E2E scenario titled "Consumer submits an order"
+    When  the user runs `givn lint`
+    Then  the command exits 1
+    And  the findings report missing E2E evidence for "place-order" and "Consumer submits an order"
+    And  the scenario in "cancel-order" does not satisfy that interaction
+    Examples:
+      | owner |
+      | use case |
+      | fragment |
+
+  @check-specification-health
+  Scenario: Fragment interactions are checked in their declaring fragment
+    Given  a structurally valid fragment declaring capability "show-help"
+    And  its interaction inventory maps "show-help" to "Consumer requests help"
+    And  "show-help" has an E2E scenario titled "Consumer requests help"
+    And  two use cases include that fragment without copying its interaction inventory
+    When  the user runs `givn lint`
+    Then  no missing or unlisted interaction finding is reported for "Consumer requests help"
+
+  @check-specification-health
+  Scenario Outline: A malformed Unicode use-case title produces a diagnostic instead of a panic
+    Given  an otherwise valid use-case document whose first heading is "<heading>"
+    When  the user runs `givn lint`
+    Then  the command exits 1
+    And  the findings identify the malformed use-case title and its document
+    And  stderr does not contain "panicked"
+    Examples:
+      | heading |
+      | # Use Case: Étude |
+      | # Use case: 注文 |
+      | # 使用例: 注文 |
