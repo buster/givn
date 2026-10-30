@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.15] - 2026-10-30
+
+### Features
+
+- **outline:** Add Java and TypeScript/TSX support through bundled Tree-sitter grammars while keeping Rust and Python on their existing adapters; schema version 4
+
 ## [0.9.14] - 2026-10-30
 
 ### Features
@@ -834,3 +840,5 @@ for the complete 0.2.0 feature set.
 [0.9.13]: https://github.com/buster/givn/compare/v0.9.12...v0.9.13
 
 [0.9.14]: https://github.com/buster/givn/compare/v0.9.13...v0.9.14
+
+[0.9.15]: https://github.com/buster/givn/compare/v0.9.14...v0.9.15
