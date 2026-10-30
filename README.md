@@ -87,7 +87,7 @@ You don't need to write tests for every legacy feature up front. Run an initial 
 - [`docs/INDEX.md`](docs/INDEX.md) — Full documentation index
 - [`docs/workflow.md`](docs/workflow.md) — Lifecycle phases and blocking gates
 - [`docs/reference.md`](docs/reference.md) — CLI commands, configuration, and runner contracts
-- [`docs/outline.md`](docs/outline.md) — Static code structure reports (Rust & Python)
+- [`docs/outline.md`](docs/outline.md) — Static code structure reports (Rust, Python, Java, TypeScript)
 - [`docs/development-report.md`](docs/development-report.md) — Local activity recording and HTML timelines
 - [`docs/use-case-model.md`](docs/use-case-model.md) — Use-case scoping and review criteria
 - [`docs/arc42/README.md`](docs/arc42/README.md) — Givn's own architecture and ADR log

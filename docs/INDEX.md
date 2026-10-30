@@ -39,7 +39,7 @@ Status values:
   component boundaries, and ports/adapters, with its expected outcome and
   warning signs.
 - [Outline addon](outline.md) — reference; advisory per-component call-tree
-  report, supported Rust/Python scope, REFACTOR and review use, honest
+  report, supported Rust/Python/Java/TypeScript scope, REFACTOR and review use, honest
   measurement limits, and no gate or verdict.
 - [Development Record and Report](development-report.md) — current; local,
   ignored recording, its sensitivity and best-effort limits, report screens, and

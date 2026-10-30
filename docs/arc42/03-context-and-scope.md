@@ -115,7 +115,7 @@ sync; the current optional presentation block is `communication-policy`.
   beyond the declared readiness probe; a daemon mode for `givn run`.
 - A configurable Arc42 output directory or chapter-selection cascade.
 - A project-wide outline baseline or watchlist, a feedback ledger, an outline
-  review gate, language adapters beyond Rust and Python, or automatic
+  review gate, language adapters beyond the supported set, or automatic
   refactoring.
 - Recording redaction, encryption, retention, or a privacy-filtering guarantee.
 - Multi-repository workflow coordination.

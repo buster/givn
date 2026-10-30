@@ -82,6 +82,13 @@ Malformed source is recorded as a parse error by the evaluation. The current
 file-level failure boundary remains: no partial outline is claimed from an
 error tree.
 
+## 0.9.15 update
+
+The 0.9.15 release keeps the Rust and Python adapters and adds production
+Tree-sitter adapters for Java and TypeScript/TSX. This record remains the
+Rust/Python decision; it is not evidence that the Java/TypeScript mappings have
+full Rust/Python parity.
+
 ## Follow-up
 
 A later change may replace or retain each current adapter after a fuller
