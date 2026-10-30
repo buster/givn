@@ -2,7 +2,7 @@
 
 Feature: initialize-a-project
 
-  @givn.added @wip
+  @givn.added
   Scenario: Initialization onboarding names the proportionate entry point
     Given a project root without a givn/ directory
     When the user runs `givn init --agents opencode`

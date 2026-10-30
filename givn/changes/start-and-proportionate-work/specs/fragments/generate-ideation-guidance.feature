@@ -6,12 +6,12 @@ Feature: Generate ideation guidance
   Scenario: The explore guidance points to ideation for structured domain work
     Given placeholder
 
-  @givn.added @wip
+  @givn.added
   Scenario: The start guidance points to ideation for structured domain work
     Given a Givn project
     Then the served start instruction contains "givn-ideation"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance compares start rather than explore
     Given a Givn project
     Then the served ideation instruction contains "givn-start"

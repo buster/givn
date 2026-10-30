@@ -24,7 +24,7 @@ Feature: Instruction integrity
     And  the response says the reported step applies when continuing that change
     And  the response says the reported step does not authorize unrelated work
 
-  @givn.added @wip
+  @givn.added
   Scenario: Machine-readable no-active startup guidance carries the start route
     Given  an initialized Givn project without an active change
     When  the author requests the normal Givn startup instructions as JSON
@@ -32,7 +32,7 @@ Feature: Instruction integrity
     And  the response keeps givn new as the direct command
     And  the response presents the direct command as optional
 
-  @givn.added @wip
+  @givn.added
   Scenario: The active-change startup guidance qualifies its next step
     Given  an initialized Givn project with an active change awaiting specifications
     When  the author requests the normal Givn startup instructions through the Givn CLI
