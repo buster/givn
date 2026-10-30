@@ -2,12 +2,12 @@
   "schema": 2,
   "change": "evaluate-tree-sitter-outline",
   "status": "passed",
-  "head": "2759cd308c3136c6aeea5285b101616ee0a739f3",
+  "head": "dcba01de152f7bd4392daa569a59866fde74e97b",
   "features_path": "givn/changes/evaluate-tree-sitter-outline/specs",
   "features_digest": "0769bd801e35c48b9611f060198115aba8251be36888603705a48ad915096ffc",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
   "command": "./run-tests.sh --non-e2e",
-  "tested_content_digest": "958f28801122cb14c8c2fa2c05a0dfeebf221d2107fda2e7859ebff2b1c2c46b",
+  "tested_content_digest": "c44e77ec200d55e413a3a48ec36fc8ced265c7feddfbcc92f764401fdfedd8f4",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1793387641
+  "finished_at_unix": 1793387667
 }
