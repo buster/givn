@@ -1,8 +1,4 @@
 # 12. Glossary
 
-<!-- Domain and technical terms used in this project. Entries are alphabetically
-     ordered. Use the same terms consistently throughout all documentation. -->
-
-| Term | Definition |
-|---|---|
-| | |
+The project's vocabulary lives in [the standalone glossary](../glossary.md).
+This chapter links to that single authority and does not repeat its terms.
