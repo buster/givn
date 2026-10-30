@@ -10,14 +10,15 @@ runner, and recovery contracts live in [the reference](reference.md); the rules
 an agent follows during a step are served by `givn instructions <id>` and belong
 to the instruction assets, not to this overview.
 
-![Givn change lifecycle: givn-explore routes through optional givn-ideation or directly to givn-propose, then proposal → specs → design → arc42-docs → design-review → tasks → implement → review → archive](workflow.svg)
+![Givn change lifecycle: givn-start may stop with an answer or direct work, or route through optional givn-ideation or directly to givn-propose, then proposal → specs → design → arc42-docs → design-review → tasks → implement → review → archive](workflow.svg)
 
 ```
-givn-explore → [givn-ideation] → proposal → specs → design → [arc42-docs] → design-review → tasks → implement → review → archive
+givn-start → [givn-ideation] → proposal → specs → design → [arc42-docs] → design-review → tasks → implement → review → archive
 ```
 
-`givn-explore` may route directly to proposal when the change is concrete, or
-through `givn-ideation` when the domain needs structured discovery first.
+`givn-start` may stop with an answer or direct work, run `givn new <change-id>`
+directly for an already-clear change, route through `givn-ideation` when the
+domain needs structured discovery, or hand off to `givn-propose`.
 `arc42-docs` appears when the arc42 addon is enabled (the default). The graph is
 configurable through `givn/config.yaml`; a project may add, remove, or reorder
 artifacts.
@@ -43,9 +44,12 @@ an explicit request or an agent-selected skill. Givn generates no commands.
 The exact rules for each step come from `givn instructions <id>`; do not copy
 those obligations into a second local policy.
 
-`givn-ideation` and `givn-explore` are optional pre-phases. Explore clarifies a
-problem without producing lifecycle artifacts; it routes to proposal directly
-or to ideation when the domain needs durable, structured discovery. Ideation
+`givn-start` is the default entry for new or unclassified work. It clarifies the
+problem without producing lifecycle artifacts and may stop with an answer or
+direct work; it routes to proposal through `givn new` or `givn-propose` when a
+formal change is warranted, or to ideation when the domain needs durable,
+structured discovery. `givn-ideation` remains a direct entry when the user
+already knows durable domain work is needed. Ideation
 storms a domain into use cases and change seeds under `givn/ideation/<topic>/`;
 it produces no manifest artifact and has no gate, and its change seeds are
 inputs to `givn-propose`. `givn-challenge` examines a supplied proposal, test,
@@ -54,8 +58,8 @@ a lifecycle gate.
 
 ## Initial adoption and artifact ownership
 
-For a fresh project, enter through explore and let the agent route to ideation
-or proposal. The first useful product change establishes the runner, coverage
+For a fresh project, enter through start and let the agent recommend an answer,
+direct work, ideation, or a formal change. The first useful product change establishes the runner, coverage
 commands, and run declaration during its normal lifecycle. Setup failures such
 as a missing binding, dependency, or result file are not the observed RED for a
 new behavior: first make the adapter execute the selected features and write

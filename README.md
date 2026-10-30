@@ -53,18 +53,19 @@ givn init
 
 ### 2. Start a change from your agent
 
-Invoke the exploration skill in your coding agent and describe what you want to build:
+Invoke the start skill in your coding agent and describe the problem, question, or improvement:
 
 | Agent Harness | Command |
 |---|---|
-| Claude Code, OpenCode | `/givn-explore` |
-| OMP | `/skill:givn-explore` |
-| Maki | Ask to run the `givn-explore` skill |
+| Claude Code, OpenCode | `/givn-start` |
+| OMP | `/skill:givn-start` |
+| Maki | Ask to run the `givn-start` skill |
 | Generic `agents` target | Skill discovery by name |
 
 > **Example:** *"I want a CLI that validates CSV files and reports invalid rows."*
 
-- **`givn-explore`** investigates the codebase without writing files, then routes to **ideation** (for broader domain discovery) or directly to **`givn-propose`**.
+- **`givn-start`** investigates without writing files and recommends a proportionate outcome: answer and stop, direct work without a Givn change, **ideation** for durable domain work, or **`givn-propose`** for a formal change.
+- For a change whose goal and scope are already clear, run `givn new <change-id>` directly.
 - **`givn-propose`** scaffolds the change and guides the agent through writing `.feature` specs, design, tasks, and TDD implementation batches.
 - On your first change, the agent wires up your project's Gherkin test runner and coverage commands in `givn/commands.yaml` (see the [runner contract](docs/reference.md#runner-contract)).
 

@@ -45,9 +45,9 @@ flowchart TD
 |---|---|
 | `main.rs` | Parse `clap` commands, dispatch, install the development recorder, and map results to process exit. |
 | `lib.rs` | Re-export the CLI and history modules for the binary and tests. |
-| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable every registered addon unless `--no-addons`, prompt/parse agent targets, scaffold addon files, and sync. A sync failure exits non-zero with the failed destination and leaves the scaffold for retry. |
+| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable every registered addon unless `--no-addons`, prompt/parse agent targets, scaffold addon files, sync, and report `givn-start` as the entry point. A sync failure exits non-zero with the failed destination and leaves the scaffold for retry. |
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
-| `cli::instructions` | Resolve artifact instructions and non-artifact policy/step instructions through the project-overrides-first cascade; render addon conditionals; append project extensions; return text or JSON; provide context-aware next-step guidance without an id. Domain-skill routing depends only on the `domain_modeling` addon. |
+| `cli::instructions` | Resolve artifact instructions and non-artifact policy/step instructions through the project-overrides-first cascade; render addon conditionals; append project extensions; return text or JSON; provide context-aware state and request-routing guidance without an id. The no-active path recommends `givn-start` and names `givn new` as the direct alternative. Domain-skill routing depends only on the `domain_modeling` addon. |
 | `cli::lint` | Parse features, report WIP/PENDING, run the default overlap scan with exit precedence 1, 3, 2, 0, report advisory seed and persona findings, and classify every finding as `advisory`, `finding`, or `blocking`. Runs no tests. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks. Review runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks; it executes no suite. Tasks runs change verification and writes the receipt. Also serves `check migration` and `check rules`. |
 | `cli::test_result` | Write the four-count runner result to `GIVN_RESULT_FILE` for simple runners. |
@@ -78,7 +78,7 @@ flowchart TD
 | `config::extensions` | Load the `extensions:` map, warn and drop unknown ids or malformed entries, and append the marked project-extension section. |
 | `config::render` | Render the managed `config.yaml` scaffold. |
 | `skills::render` | Render skill templates and addon-conditional sections from one known-addon map. |
-| `skills::targets` | Resolve selected targets; write skills; install per-target attribution/reporter integrations and merged Claude/Maki configuration; reconcile legacy commands, disabled addon skills, managed paths, and AGENTS blocks. The domain-modeling skill is generated from its own addon flag, independent of arc42. |
+| `skills::targets` | Resolve selected targets; write skills; install per-target attribution/reporter integrations and merged Claude/Maki configuration; reconcile legacy commands, disabled addon skills, retired generated explore skills, managed paths, and AGENTS blocks. Retired exploration output is removed only when recognizable; project content is preserved with a manual notice. |
 | `skills::rules` | Resolve the generated-rules policy, write file-precise ignore entries in both destinations, transition tracked rules to local-only without deleting files, and report tracked/reachable-history occurrences. |
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
 | `gherkin::content` | Encode executable feature content for preservation and duplicate comparisons. |

@@ -12,7 +12,7 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | --- | --- |
 | `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml` and `givn/commands.yaml`, install selected addons, and generate skills. Every addon is enabled by default; `--no-addons` writes explicit `false` for all. `--agents` accepts `opencode`, `agents`, `claude`, `omp`, `maki`, or `all`. |
 | `givn new <id> [--skip a,b]` | Create a change directory. `--skip` writes `.givn-skip` and marks artifacts as intentionally not produced. |
-| `givn instructions [<id>] [--change <id>] [--json]` | No id: context-aware next-step guidance. With an artifact id: its rendered instruction. With a policy or step id (`dialog`, `dialog-examples`, `challenge`, `dev-principles`, `domain-modeling`, `architecture-principles`, `review-reverse`, `specs-reverse`, `tasks-reverse`): the same cascade without a lifecycle stage. JSON carries `id`, `generates`, `requires`, `instruction`, and, while domain modeling applies, `skill_to_load`. |
+| `givn instructions [<id>] [--change <id>] [--json]` | No id: project state and request routing; no-active text recommends `givn-start` and names `givn new` as the direct alternative, and JSON carries `next_command`, `next_skill`, and `overview`. With an artifact id: its rendered instruction. With a policy or step id (`start`, `dialog`, `dialog-examples`, `challenge`, `dev-principles`, `domain-modeling`, `architecture-principles`, `review-reverse`, `specs-reverse`, `tasks-reverse`): the same cascade without a lifecycle stage. Artifact JSON carries `id`, `generates`, `requires`, `instruction`, and, while domain modeling applies, `skill_to_load`. `explore` is retired and refused. |
 | `givn lint [--change <id>] [paths...] [--json]` | Static feature and use-case analysis; runs no project tests. Exit codes: `0` clean, `1` parse error, `2` `@wip`/`PENDING`, `3` duplicate title, empty feature, invalid use-case document, or interaction mismatch. Precedence is `1 > 3 > 2 > 0`. |
 | `givn check` | Prints guidance and executes nothing. |
 | `givn check <artifact> [--change <id>]` | Runs the artifact's mandatory checks and then its configured `post` hooks. `tasks` runs WIP protection and change verification; `review` runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks. `givn check migration --change <id>` runs the preservation comparison; `givn check rules` reports rule cleanliness. |
@@ -65,17 +65,19 @@ a selection. Givn generates no command files.
 
 Choose the entry point:
 
-- Start with `givn-propose` when the change's goal and scope are clear.
-- Start with `givn-explore` when the idea is vague or needs approach
-  comparison or codebase investigation. It produces no artifacts and routes to
-  `givn-propose` or `givn-ideation`.
+- Start with `givn-start` for new or unclassified work. It investigates and
+  recommends answer only, direct work without a Givn change, `givn-ideation`,
+  or `givn-propose`. It produces no artifacts.
+- Run `givn new <change-id>` directly when the change's goal and scope are
+  already clear.
+- Start with `givn-propose` when a formal change is already authorized.
 - Start with `givn-ideation` when the domain needs event storming, use cases,
   personas, stable terms, or several future changes. Handoff produces change
   seeds, each an input to `givn-propose`, not a change.
 
 | Skill | When to use it |
 | --- | --- |
-| `givn-explore` | Clarify a vague idea, compare approaches, or investigate the codebase without artifacts; routes to propose or ideation. |
+| `givn-start` | Investigate a problem, question, or improvement and recommend answer only, direct work, ideation, or a formal change; creates no artifacts. |
 | `givn-ideation` | Turn a vague idea into change-ready use cases through event storming, personas, and change seeds; does not start a change. |
 | `givn-propose` | Create the change and write the proposal: WHAT and WHY, release note, capability routing, open questions; the served propose step continues through specs and design. |
 | `givn-spec` | Write Gherkin delta features with observable behavior and no implementation detail. |

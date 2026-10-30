@@ -2,11 +2,11 @@
 
 ## Status and purpose
 
-Discussion handoff recorded on 2026-10-30 for implementation in a fresh context. The intended improvement target is Givn 0.9.12; the directory is not a release commitment.
+Discussion handoff recorded on 2026-10-30 for implementation in a fresh context. The intended improvement target is Givn 0.9.13; the directory is not a release commitment.
 
 This document preserves the confirmed behavior, rationale, rejected alternatives, integration evidence, and verification expectations. It is not a formal proposal, executable specification, technical design, or authorization to implement. The user authorized creating this document only. No new Givn change was started.
 
-When this discussion began, `givn instructions` reported the existing change `prepare-0-9-10` as verification-pending and ready to archive. That was unrelated to this discussion. Recheck current state in the future session; do not attach this improvement to an existing change merely because it is active.
+When this discussion began, `givn instructions` reported the existing change `prepare-0-9-10` as verification-pending and ready to archive. That was unrelated to this discussion. 0.9.12 has since been archived as `standalone-domain-model`; see the revalidation section below. Recheck current state in the future session; do not attach this improvement to an existing change merely because it is active.
 
 Before future work:
 
@@ -158,6 +158,13 @@ Suggested output meaning, not a fixed literal or CLI schema:
 
 When no active change exists, the guidance should point new/unclassified work toward start and explicitly allow outcomes with no formal change. It must not default to mandatory `givn new` or proposal creation.
 
+Resolution recorded 2026-10-30:
+
+- The no-active text recommends loading `givn-start` so the agent can investigate and choose the next action.
+- It may also name `givn new <change-id>` as the direct alternative for a change whose goal and scope are already clear.
+- JSON carries `next_skill: "givn-start"`; `next_command` remains `givn new <change-id>` as the direct executable alternative. The summary must present it as optional, never as the mandatory default.
+- Active-change guidance keeps its existing `next_command` / `next_skill` pair and adds the request-relative qualification: the reported lifecycle step does not authorize resuming that change for an unrelated request.
+
 Pending verification and archive recovery state must still be reported truthfully. These obligations are not erased by choosing to discuss unrelated work.
 
 ### Suggested generated agent guidance
@@ -257,6 +264,24 @@ Representative conversation cases:
 - "Discuss this possible improvement." while an unrelated change is ready to archive -> discuss; do not archive or create a change automatically.
 - "Discuss this and then create the proposal." -> honor that conditional continuation once ready; ask only necessary unresolved questions.
 
+## Revalidation against the 0.9.12 checkout (2026-10-30)
+
+The confirmed user-facing decisions above remain current. The implementation map changed:
+
+- The next release target is 0.9.13. `v0.9.11` and `v0.9.12` are annotated tags; the working tree is clean.
+- `docs/glossary.md` is now the sole vocabulary authority; `docs/arc42/12-glossary.md` is only a link. Use the standalone glossary when checking terms.
+- `assets/skills/givn-explore/SKILL.md.tmpl`, `assets/instructions/explore.md`, and `src/skills/render.rs:100-113` still register the explore entry point.
+- `src/cli/instructions.rs:242-298` owns no-active reporting; `next_command` is still `givn new <change-id>` and there is no `next_skill`. The overview at `:522` does not mention start or direct work.
+- `src/cli/init.rs:247` still tells the developer to invoke `givn-explore` and says it routes to ideation or proposal.
+- `assets/agents-project-hint.md` still says `givn instructions` tells the next step without separating state discovery from request routing.
+- `docs/workflow.svg` embeds `givn-explore` in its title, description, and node labels. The earlier integration map omitted this file.
+- `docs/reference.md:66-80`, `docs/workflow.md:13-57`, and `README.md:66` still route through explore.
+- Hardcoded skill lists remain in `tests/steps/prose_consolidation_e2e_steps.rs` (`ALL_SKILL_FAMILIES`, `ALL_COMMANDS`) and `tests/steps/instruction_integrity_steps.rs` (`CORE_SKILL_FAMILIES`, the `explore` instruction-id mapping).
+- The cleanup gap is confirmed: `reconcile_addon_artifacts` at `src/skills/targets.rs:382` removes only addon skills, so dropping `givn-explore` from the defaults leaves stale generated explore skills. `legacy_command_names` at `:414` and `managed_generated_paths` at `:499` both derive from the current default list, so a rename would stop recognizing old generated commands and would not stage an old tracked explore skill for removal.
+- `givn/specs/fragments/generate-ideation-guidance.feature:40` still asserts the served explore instruction points to ideation; it must move to the start capability.
+
+The largest implementation risk is safe removal of old generated explore output. The design must recognize generated output before deleting it, preserve project-authored files and overrides, and keep the upgrade allowlist capable of removing old tracked generated skills. The note's earlier warning about unrelated working-tree edits is obsolete; the current tree is clean.
+
 ## Technical details left for the future design
 
 These do not reopen the confirmed user-facing decisions:
@@ -271,7 +296,7 @@ These do not reopen the confirmed user-facing decisions:
 
 This handoff does not redesign ideation's artifacts or propose's downstream lifecycle, add a new shell command, weaken existing formal-change gates, invent a minor-change workflow, authorize release/version edits, or authorize commits.
 
-At recording time, the working tree already contained modifications to `CHANGELOG.md`, `README.md`, `docs/arc42/12-glossary.md`, and `docs/reference.md`, plus the existing untracked `docs/improvements/0.9.11/` handoff. Preserve and distinguish those unrelated edits. The document-only work for this discussion should add only this file.
+The revalidation above records the current checkout. This handoff has been updated in place; it is still not a proposal or implementation authorization.
 
 For implementation, follow the repository's current validation requirements. Current guidance prefers `cargo check`, `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`, and `./run-tests.sh` (nextest by default), with `./run-tests.sh --e2e` for relevant integration coverage. Acceptance prerequisites include Git, Fossil, pinned git-cliff 2.13.1, and util-linux `script`.
 
