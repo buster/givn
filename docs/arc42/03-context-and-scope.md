@@ -97,7 +97,7 @@ sync; the current optional presentation block is `communication-policy`.
   communication-policy and dialog instructions and the challenge instruction.
 - Explicit-path commit publication on Git and Fossil, with optional
   attribution.
-- Pre-proposal ideation and explore guidance.
+- Pre-proposal start guidance and ideation.
 - Deterministic specification toolchain (`spec find`, `spec tree`,
   `spec duplicates`, `spec coverage`, `spec route`).
 - Repository-owned compiled-CLI acceptance fixtures.

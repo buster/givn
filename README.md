@@ -95,7 +95,7 @@ You don't need to write tests for every legacy feature up front. Run an initial 
 
 ### Workflow Overview
 
-![Givn change lifecycle: explore to archive](docs/workflow.svg)
+![Givn change lifecycle: start to archive](docs/workflow.svg)
 
 ## License
 
