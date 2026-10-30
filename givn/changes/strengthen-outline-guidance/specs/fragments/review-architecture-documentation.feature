@@ -11,7 +11,7 @@ Feature: Review architecture documentation
     And the template contains no outline verdict phrase
     And the terminal transcript is captured for this scenario
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Final architecture review uses the advisory outline without a second verdict
     Given an outline report is available for changed components
     When the reviewer reads the final architecture review guidance
@@ -23,7 +23,7 @@ Feature: Review architecture documentation
     And no outline verdict metric waiver forced reviewer context or independent outline review is required
     And the outline alone cannot block review or archive
 
-  @givn.added @wip
+  @givn.added
   Scenario: A changed unit unreadable from its outline rejects PASS
     Given an outline report is available for changed components
     When the reviewer reads the final architecture review guidance

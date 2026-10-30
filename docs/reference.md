@@ -109,7 +109,7 @@ replacement (`communication_policy` or `challenge`); no alias is accepted.
 | `dev_principles` | Generates the `givn-dev-principles` skill. |
 | `architecture_principles` | Serves architecture-principles guidance for proposal, design, design-review, dialog, review, and tasks. |
 | `challenge` | Generates the `givn-challenge` skill and serves the canonical challenge instruction. |
-| `outline` | Enables `givn outline report` and its advisory evidence in steps and review. No gate, verdict, waiver, or stored baseline. |
+| `outline` | Enables `givn outline report` and its advisory evidence in steps and review; that guidance renders only when the addon is enabled. No gate, verdict, waiver, or stored baseline. |
 
 ## Configuration authority
 

@@ -27,7 +27,7 @@ Instead of letting agents jump straight from a prompt to unverified code, Givn s
 - **Thin agent skills.** `givn skills sync` generates slash commands/skills for Claude Code, OpenCode, OMP, Maki, or generic `AGENTS.md` setups. Rules are served dynamically via `givn instructions <id>` and customized in `givn/config.yaml`.
 - **Built-in architecture & code health addons:**
   - `arc42`: Keeps architecture docs (`docs/arc42/`) and ADRs in sync with design changes.
-  - `outline`: Generates static call-tree and coupling/cohesion reports for Rust and Python code to guide refactoring.
+  - `outline`: Generates advisory call-tree and coupling/cohesion reports that make changed units readable from their declarations, names, and call order, so REFACTOR and review judge comprehension rather than only metrics.
   - `history` / `timeline`: Logs local agent activity (tool calls, turns, token usage) to `givn/history/` and exports self-contained HTML timelines.
 
 ## Install

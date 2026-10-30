@@ -1116,6 +1116,11 @@ fn mixed_supported_unsupported_batch(world: &mut GivnWorld) {
     batch_guidance(world);
 }
 
+#[given("a behavior batch changes supported and unsupported components")]
+fn supported_and_unsupported_batch(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
 #[when("the author reads the REFACTOR guidance")]
 fn author_reads_refactor_guidance(world: &mut GivnWorld) {
     assert!(!normalized_guidance(world).is_empty());
@@ -1128,6 +1133,16 @@ fn one_advisory_outline_per_batch(world: &mut GivnWorld) {
     assert!(
         normalized_guidance(world).contains(
             "inspect its advisory report once per batch for supported Rust/Python changed components and relevant neighbors"
+        ),
+        "guidance does not define one advisory outline inspection per batch"
+    );
+}
+
+#[then("supported changed components receive one advisory outline inspection per batch")]
+fn supported_components_receive_outline_inspection(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "inspect its advisory report once per batch for supported changed components and relevant neighbors"
         ),
         "guidance does not define one advisory outline inspection per batch"
     );
@@ -1150,6 +1165,16 @@ fn unsupported_components_directly_assessed(world: &mut GivnWorld) {
     assert!(
         normalized_guidance(world).contains(
             "Go or Java components receive direct source assessment using the same responsibility, interface, dependency-direction, and decomposition questions"
+        ),
+        "guidance forces unsupported components through the outline"
+    );
+}
+
+#[then("unsupported components receive direct source assessment without forced outline analysis")]
+fn unsupported_components_receive_direct_assessment(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Unsupported components receive direct source assessment using the same responsibility, interface, dependency-direction, and decomposition questions, without forced outline analysis"
         ),
         "guidance forces unsupported components through the outline"
     );
@@ -1228,13 +1253,23 @@ fn unsupported_only_batch(world: &mut GivnWorld) {
     batch_guidance(world);
 }
 
+#[given("a behavior batch changes unsupported components")]
+fn unsupported_components_only_batch(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
+#[given("a behavior batch changes a unit whose outline cannot carry its story")]
+fn unreadable_unit_batch(world: &mut GivnWorld) {
+    batch_guidance(world);
+}
+
 #[then(
     "the same responsibility interface dependency and decomposition questions are assessed directly against source"
 )]
 fn unsupported_same_questions_directly(world: &mut GivnWorld) {
     assert!(
         normalized_guidance(world).contains(
-            "Go or Java components receive direct source assessment using the same responsibility, interface, dependency-direction, and decomposition questions"
+            "Unsupported components receive direct source assessment using the same responsibility, interface, dependency-direction, and decomposition questions"
         ),
         "unsupported components do not get the same questions from source"
     );
@@ -1268,6 +1303,74 @@ fn no_outline_verdict_or_context(world: &mut GivnWorld) {
     assert!(
         !content.contains("OUTLINE: PASS"),
         "REFACTOR guidance still requires an outline verdict"
+    );
+}
+
+#[then(
+    "the outline must state the unit's responsibility and ordered call flow without bodies or comments"
+)]
+fn outline_states_responsibility_and_call_flow(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content
+            .contains("State the unit's responsibility in one sentence and its ordered call flow")
+            && content.contains("without bodies or comments"),
+        "REFACTOR guidance does not require responsibility and call flow from the outline"
+    );
+}
+
+#[then("unit type method parameter return and called-type names must state the domain operation")]
+fn names_state_the_domain_operation(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "The unit and type names, method names, parameter names and types, return types, and called type names must state the domain operation in the project's vocabulary"
+        ),
+        "REFACTOR guidance does not require domain names on the outline"
+    );
+}
+
+#[then("generic machinery names are readability findings")]
+fn generic_machinery_names_are_findings(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world)
+            .contains("A generic or machinery name where a domain noun exists"),
+        "REFACTOR guidance accepts generic machinery names"
+    );
+    assert!(
+        normalized_guidance(world).contains("is a readability finding"),
+        "REFACTOR guidance does not classify generic names as findings"
+    );
+}
+
+#[then("metrics and classifications never overrule an unreadable outline")]
+fn metrics_never_overrule_readability(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "a clean metric never excuses an unreadable outline, and no metric waives it"
+        ),
+        "REFACTOR guidance lets metrics overrule an unreadable outline"
+    );
+}
+
+#[then("source confirms a suspected problem rather than substituting for the outline story")]
+fn source_confirms_without_substituting(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "Source confirms a suspected problem; it never substitutes for the outline story"
+        ),
+        "REFACTOR guidance substitutes source reading for the outline story"
+    );
+}
+
+#[then(
+    "an unreadable changed unit is fixed in REFACTOR or recorded as a substantive review finding"
+)]
+fn unreadable_unit_is_fixed_or_recorded(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("fix it in REFACTOR")
+            && content.contains("record a substantive review finding"),
+        "REFACTOR guidance neither fixes nor records an unreadable unit"
     );
 }
 

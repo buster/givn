@@ -4,7 +4,7 @@
 report for production Rust and Python. Read a unit's outline — a per-component
 call tree of method declarations, signatures, and calls, without bodies or data
 — to explain its responsibility and call order. Use it once per behavior batch
-during REFACTOR for changed Rust/Python components and relevant neighbors, and
+during REFACTOR for changed supported components and relevant neighbors, and
 reuse relevant reports during review. Metrics are hints. The report never blocks
 review or archive, needs no verdict, waiver, or second reviewer, stores no
 baseline, and is not a product guarantee: the schema, thresholds, and
@@ -29,7 +29,20 @@ classifications may change.
 
 The addon is not a size counter. Its central idea is that a reader given only a
 unit's outline should be able to state (a) what the unit is responsible for and
-(b) why its calls happen in that order.
+(b) why its calls happen in that order. That is the comprehension test: state
+the responsibility in one sentence and the ordered call flow from
+declarations, signatures, and call order alone, without bodies or comments.
+
+The names are the contract. The unit and type names, method names, parameter
+names and types, return types, and called type names state the domain operation
+in the project's vocabulary. A generic or machinery name where a domain noun
+exists (`handle`, `process`, `data`, `item`, `manager`, `util`, `helper`) is a
+readability finding. A clean metric never excuses an unreadable outline and no
+metric waives it.
+
+The outline judges the operation narrative and its signature vocabulary, not
+data-model completeness: fields and enum variants are absent, so a complete
+data model is not visible here.
 
 The outline lists the unit's method declarations and signatures, their order,
 and the calls each method makes. The unit is the root: every method is a
@@ -107,8 +120,13 @@ Both directions are valid:
 | Unreadable | clean | The responsibility or call order is still unclear. |
 | Unreadable | flag | The metric and the outline agree that the shape needs attention. |
 
-An unreadable outline is a prompt to improve the code, not a gate outcome. No
-waiver or justification artifact exists.
+An unreadable outline is a prompt to improve the code, not a gate outcome. The
+implementer fixes the unit in REFACTOR; if the unit cannot be fixed within the
+batch, the reviewer records a substantive readability finding. A clean metric
+never excuses an unreadable outline, and no metric waives it. The report itself
+supplies no verdict; the review finding is about the changed code and can
+reject PASS until the unit is made readable. No waiver or justification
+artifact exists.
 
 ## Workflow
 
@@ -122,7 +140,7 @@ project-wide scope requirement.
 
 ### Once per behavior batch
 
-During REFACTOR, generate one report for the changed Rust/Python components and
+During REFACTOR, generate one report for the changed supported components and
 their relevant neighbors. Ask the substantive questions against the outline:
 
 1. Does each changed unit have one cohesive responsibility?
@@ -137,9 +155,16 @@ make it stale; do not rerun it for every edit. The canonical REFACTOR cadence is
 owned by the served `givn instructions steps`; review refers to this evidence
 and does not trigger another audit loop.
 
-Unsupported production languages — for example Java or Go — receive direct
-source assessment using the same questions. They are not a report failure and
-need no waiver.
+Unsupported production languages receive direct source assessment using the
+same questions. They are not a report failure and need no waiver.
+
+### Guidance is served only when enabled
+
+The steps REFACTOR block and the review advisory block render only when the
+`outline` addon is enabled. With the addon disabled, no served instruction and
+no generated skill carries outline guidance, and the review template carries no
+outline verdict phrase. Project instruction overrides remain the project's
+responsibility.
 
 ### Review
 
@@ -150,10 +175,18 @@ adds no per-unit verdict, no metric decision, no forced reviewer context, and no
 gate. A report that could not cover some components is disclosed and assessed
 from source.
 
+Before the architecture questions, the reviewer reconstructs each changed unit
+from its outline: responsibility in one sentence and ordered call flow, without
+reading bodies or comments. The names, parameters, return types, and type names
+must state the domain operation; a generic or machinery name where a domain noun
+exists is a readability finding. An outline that cannot carry the story is a
+substantive readability finding that rejects PASS until the unit is made
+readable. The report itself supplies no verdict.
+
 | Phase | Produced by the addon | Checked by the addon |
 |---|---|---|
 | Proposal / design | Nothing automatic. You may run the report as evidence. | Nothing. |
-| Implement / REFACTOR | One advisory report per behavior batch for changed Rust/Python components and relevant neighbors. | Nothing. |
+| Implement / REFACTOR | One advisory report per behavior batch for changed supported components and relevant neighbors. | Nothing. |
 | Review | Reused reports as context for substantive architecture review. | Nothing. |
 | Archive | Nothing new. | Nothing. |
 
@@ -205,7 +238,9 @@ The report analyzes production sources:
 
 ## Language scope
 
-The addon analyzes production Rust and Python.
+The addon currently analyzes production Rust and Python. This is the analyzer's
+present capability, not the guidance rule: guidance says supported and
+unsupported.
 
 - **Rust** is parsed in-process by `syn`.
 - **Python** is parsed by a `python3` subprocess that runs a bundled
@@ -222,7 +257,7 @@ The addon analyzes production Rust and Python.
 | Python file when `python3` is unavailable | Named `analyzer-unavailable`; the report continues |
 | Non-source file under production roots | Ignored |
 | Python test module (`test_*.py`, `*_test.py`) | Excluded as test source |
-| Production source in Java, Go, or another unsupported language | Not analyzed; assessment is source-based, not a waiver |
+| Production source in an unsupported language | Not analyzed; assessment is source-based, not a waiver |
 
 Python's dynamic nature limits the outline: a call through a dynamic attribute
 or an inferred type is not resolved precisely, so it appears as `name_only`
@@ -236,7 +271,7 @@ language's syntax.
 
 ## Expected outcome
 
-- A changed Rust/Python component is read through its outline at least once per
+- A changed supported component is read through its outline at least once per
   behavior batch, and relevant reports are reused in review.
 - Unsupported components are assessed directly from source with the same
   responsibility, contract, dependency-direction, and decomposition questions.

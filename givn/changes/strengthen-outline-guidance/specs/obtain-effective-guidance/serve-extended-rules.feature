@@ -1,7 +1,7 @@
 @givn.delta @serve-extended-rules
 Feature: The served instruction carries the built-in rules and the project's extension
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Refactor guidance uses the outline once for supported changed components and their neighbors
     Given a behavior batch changes supported and unsupported components
     When the author reads the REFACTOR guidance
@@ -16,7 +16,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And the report is reused until structural changes make its relevant evidence stale
     And nonstructural edits alone do not require rerunning the outline
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Unsupported outline languages receive source assessment without a waiver
     Given a behavior batch changes unsupported components
     When the author reads the REFACTOR guidance
@@ -24,7 +24,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And unavailable outline support is not failure or a reason for a waiver
     And no outline verdict metric waiver or forced reviewer context is required
 
-  @givn.added @wip
+  @givn.added
   Scenario: Refactor guidance treats an unreadable changed unit as a finding
     Given a behavior batch changes a unit whose outline cannot carry its story
     When the author reads the REFACTOR guidance
@@ -35,7 +35,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And source confirms a suspected problem rather than substituting for the outline story
     And an unreadable changed unit is fixed in REFACTOR or recorded as a substantive review finding
 
-  @givn.added @wip
+  @givn.added
   Scenario: Implementation guidance routes to the shared step mechanics
     Given a Givn project with an active change
     When the author requests the tasks instruction
