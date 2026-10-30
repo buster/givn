@@ -230,8 +230,8 @@ mod tests {
         assert_eq!(lock.addons.get("coverage"), Some(&false));
         let entry = lock.overrides.last().expect("override");
         assert_eq!(entry.addon, "coverage");
-        assert_eq!(entry.from, true);
-        assert_eq!(entry.to, false);
+        assert!(entry.from);
+        assert!(!entry.to);
         assert_eq!(entry.reason, "dependency unavailable");
     }
 }
