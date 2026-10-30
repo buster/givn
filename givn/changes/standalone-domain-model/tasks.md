@@ -297,4 +297,4 @@ guidance — `src/cli/instructions.rs`.
 ### Scenario: An agent synchronizes skills and the domain skill is routed
 
 - [x] Scenario: An agent synchronizes skills and the domain skill is routed
-  - [x] COMMIT: 39a87413 -- Batch: standalone-domain-e2e
+  - [x] COMMIT: 5a5c9e9c -- Batch: standalone-domain-e2e
