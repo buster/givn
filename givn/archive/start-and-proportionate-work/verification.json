@@ -1,36 +1,67 @@
 {
   "schema": 1,
   "change": "start-and-proportionate-work",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
-  "scope_evidence": {},
-  "coverage_inputs": null,
-  "merge_completed": true,
-  "merged_deltas": [
-    "fragments/generate-ideation-guidance.feature",
-    "fragments/instruction-integrity.feature",
-    "fragments/refresh-generated-guidance.feature",
-    "initialize-project/initialize-a-project.feature",
-    "obtain-effective-guidance/serve-extended-rules.feature"
-  ],
-  "merge_in_progress": null,
-  "merge_plan": [
-    "fragments/generate-ideation-guidance.feature",
-    "fragments/instruction-integrity.feature",
-    "fragments/refresh-generated-guidance.feature",
-    "initialize-project/initialize-a-project.feature",
-    "obtain-effective-guidance/serve-extended-rules.feature"
-  ],
-  "merge_targets": {
-    "fragments/generate-ideation-guidance.feature": "givn/specs/fragments/generate-ideation-guidance.feature",
-    "fragments/instruction-integrity.feature": "givn/specs/fragments/instruction-integrity.feature",
-    "fragments/refresh-generated-guidance.feature": "givn/specs/fragments/refresh-generated-guidance.feature",
-    "initialize-project/initialize-a-project.feature": "givn/specs/initialize-project/initialize-a-project.feature",
-    "obtain-effective-guidance/serve-extended-rules.feature": "givn/specs/obtain-effective-guidance/serve-extended-rules.feature"
+  "status": "proven",
+  "candidate_revision": "8a1999611e3b5575b7ebfeb7037926d6ba70d913",
+  "tested_revision": "8a1999611e3b5575b7ebfeb7037926d6ba70d913",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 109,
+      "passed": 109,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 60.717835995
+    },
+    "regular": {
+      "status": "passed",
+      "total": 1003,
+      "passed": 1003,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 206.561161222
+    }
   },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 16992,
+    "line_valid": 25454,
+    "line_percent": 66
+  },
+  "scope_evidence": {
+    "e2e": {
+      "inputs": {
+        "revision": "8a1999611e3b5575b7ebfeb7037926d6ba70d913",
+        "features_digest": "72d82672ce24e7fc91e850e596ca15b5990900e14a85de59667bd45fb2b7005b",
+        "command_digest": "d81a6a674480a9b649087ff98e5e170dd9d92d8506b870fbb17fc5eff5999398",
+        "content_digest": "505777398ff5779d03999d6e21bad32870758edb091cb3921bb0d8440fc20f08",
+        "scope": "e2e"
+      },
+      "result_digest": "96953e07ad52531cf8704391893714d20f1469ab1e409272a7edf3d8c917ba97"
+    },
+    "regular": {
+      "inputs": {
+        "revision": "8a1999611e3b5575b7ebfeb7037926d6ba70d913",
+        "features_digest": "72d82672ce24e7fc91e850e596ca15b5990900e14a85de59667bd45fb2b7005b",
+        "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+        "content_digest": "505777398ff5779d03999d6e21bad32870758edb091cb3921bb0d8440fc20f08",
+        "scope": "regular"
+      },
+      "result_digest": "72d66f3b372ab2d4b1c48603fe02746b8c3da638a32d5b8b50605881cd881f2b"
+    }
+  },
+  "coverage_inputs": {
+    "revision": "8a1999611e3b5575b7ebfeb7037926d6ba70d913",
+    "features_digest": "72d82672ce24e7fc91e850e596ca15b5990900e14a85de59667bd45fb2b7005b",
+    "command_digest": "16b6296c6b3d3f329e8b035453b00bf9212254940aef50d3404ae7f509a74424",
+    "content_digest": "505777398ff5779d03999d6e21bad32870758edb091cb3921bb0d8440fc20f08",
+    "scope": "coverage"
+  },
+  "merge_completed": true,
+  "merged_deltas": [],
+  "merge_in_progress": null,
+  "merge_plan": [],
+  "merge_targets": {},
   "started_at_unix": 1793385898,
-  "finished_at_unix": null
+  "finished_at_unix": 1793386352
 }
