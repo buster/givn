@@ -1,0 +1,10 @@
+Scenario: The review template includes the Arc42 conformance block
+argv: givn eject
+cwd (fixture project root): /tmp/.tmpxAyx0h
+exit code: 0
+--- stdout ---
+ejected  /tmp/.tmpxAyx0h/givn/artifacts/review/review.md
+Edit this file to customise the template for 'review'.
+
+--- stderr ---
+

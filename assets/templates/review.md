@@ -180,7 +180,7 @@ change and the current durable documentation. Then compare the change-level
 Arc42 claims. Read each chapter named by either assessment and record concrete
 evidence in the table. This block records Arc42 design tasks and the completed
 implementation against available evidence, and records evidence and material
-mismatches without an outline verdict or metric waiver:
+mismatches:
 
 | Arc42 chapter or architectural fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Completed implementation evidence | Match? / finding |
 |---|---|---|---|---|---|---|
