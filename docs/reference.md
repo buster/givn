@@ -35,7 +35,7 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn skills sync` | Regenerate skills, reporters, managed `AGENTS.md` blocks, and ignore state for the persisted target selection. Recognizable old generated command files are removed; custom files are preserved with a manual notice. |
 | `givn skills targets add <agent[,agent...]>` | Add targets to `skills.targets`, touching only that line, then sync. |
 | `givn upgrade` | Refresh the managed config scaffold and generated guidance in a clean checkout, preserving user-owned values. Refuses retired keys and executable settings misplaced in `config.yaml`. |
-| `givn outline report [--json] [--out <path>] [--path <dir>...]` | Advisory structure report. Defaults to `src/`; explicit `--path` roots are required when `src/` is absent. Metrics never change the exit code. |
+| `givn outline report [--json] [--out <path>] [--path <dir>...]` | Advisory structure report for Rust, Python, Java, and TypeScript. Defaults to `src/`; explicit `--path` roots are required when `src/` is absent. Schema version 4; metrics never change the exit code. |
 | `givn run [--port <n>] [--print]` | Start the declared product. `--print` emits one sh-eval-able start line. Exit codes: `0` clean/library, `1` preflight finding, `2` readiness timeout, `130` SIGINT, `143` SIGTERM, otherwise the child's exit code. |
 | `givn commit -m <message> <path...>` | Create one attributed revision through the selected backend. Explicit paths are required; unsafe, absolute, or escaping selections are refused. |
 | `givn completions <bash\|zsh\|fish>` | Print a shell completion script. |

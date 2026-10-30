@@ -1,7 +1,7 @@
 # Outline addon
 
 **TL;DR:** The `outline` addon is enabled by default and produces an advisory
-report for production Rust and Python. Read a unit's outline — a per-component
+report for production Rust, Python, Java, and TypeScript. Read a unit's outline — a per-component
 call tree of method declarations, signatures, and calls, without bodies or data
 — to explain its responsibility and call order. Use it once per behavior batch
 during REFACTOR for changed supported components and relevant neighbors, and
@@ -15,7 +15,7 @@ classifications may change.
 - **Report.** `givn outline report` prints each unit's per-component call tree
   first — method declarations, signatures, and calls, with same-unit calls
   nested and other components as tagged leaves — then the metric hints. Human
-  text is the default; `--json` emits schema version 3; `--out` writes the
+  text is the default; `--json` emits schema version 4; `--out` writes the
   selected form to a path.
 - **No gate.** The report is advisory. It never changes review or archive
   behavior, never requires a per-unit verdict, and never asks for a metric
@@ -95,7 +95,7 @@ then compiling, with normalization delegated to the module component
   the candidate target for inspection and is always a leaf; it never nests and
   never joins methods for cohesion.
 
-Calls are resolved by call shape, not name alone, for Rust and Python alike. A
+Calls are resolved by call shape, not name alone, for every supported language. A
 free function call with no qualifier can target a module function; a qualified
 call (`Type::method`, `crate::module::function`) must match that owner; a method
 call must match `self`/`cls` or a named receiver. A method call on an unknown
@@ -197,7 +197,7 @@ The report analyzes production sources:
 - **Scope.** Only production `.rs` and `.py` files under `src/` (or explicit
   `--path` roots). `tests/`, `benches/`, `examples/`, and `target/` are
   excluded; `#[cfg(test)]` items are excluded; `src/bin/**` is included.
-  Python test modules (`test_*.py`, `*_test.py`) and cache, virtualenv, build,
+  Python test modules (`test_*.py`, `*_test.py`), Java test/build roots, and TypeScript test/build/dependency roots. Python cache, virtualenv, build,
   and dependency directories (`__pycache__`, `.venv`, `venv`, `.tox`,
   `.mypy_cache`, `.pytest_cache`, `build`, `dist`, `node_modules`) are skipped.
 - **Units.** A unit is a type (struct, enum, trait, union, or type alias) or a
@@ -238,7 +238,7 @@ The report analyzes production sources:
 
 ## Language scope
 
-The addon currently analyzes production Rust and Python. This is the analyzer's
+The addon analyzes production Rust, Python, Java, and TypeScript. This is the analyzer's
 present capability, not the guidance rule: guidance says supported and
 unsupported.
 
@@ -252,12 +252,12 @@ unsupported.
 
 | Input | Report |
 |---|---|
-| Rust or Python file with an unsupported construct | Named in `unsupported` and reported; not a failure by itself |
-| Rust or Python file that cannot be parsed | Named as a parse failure; other units continue |
+| Supported file with an unsupported construct | Named in `unsupported` and reported; not a failure by itself |
+| Supported file that cannot be parsed | Named as a parse failure; other units continue |
 | Python file when `python3` is unavailable | Named `analyzer-unavailable`; the report continues |
 | Non-source file under production roots | Ignored |
 | Python test module (`test_*.py`, `*_test.py`) | Excluded as test source |
-| Production source in an unsupported language | Not analyzed; assessment is source-based, not a waiver |
+| Go, JavaScript, or JSX production source | Not analyzed; assessment is source-based, not a waiver |
 
 Python's dynamic nature limits the outline: a call through a dynamic attribute
 or an inferred type is not resolved precisely, so it appears as `name_only`

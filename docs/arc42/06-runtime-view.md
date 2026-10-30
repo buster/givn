@@ -816,14 +816,16 @@ sequenceDiagram
 2. With the addon enabled, the orchestration scans the requested production
    roots: `src/` by default, or every explicit `--path` root. A project without
    `src/` and without `--path` refuses and asks for production paths. The scan
-   excludes test, benchmark, example, target, and Python cache/virtualenv
-   directories, Python test modules, and `#[cfg(test)]` items, discovers `.rs`
-   and `.py` files, and presents a deterministic request to the
-   `SourceAnalyzer`. The Python adapter starts `python3` only after `.py`
-   discovery, so a Rust-only scope never invokes it; a missing interpreter
-   becomes a per-file `analyzer-unavailable` diagnostic, not an abort. An
-   unsupported-only scope names the unsupported production sources and refuses
-   rather than claiming no sources exist.
+   excludes test, benchmark, example, target, Java test/build roots,
+   TypeScript test/spec/build/dependency roots, Python cache/virtualenv
+   directories, Python test modules, and `#[cfg(test)]` items, discovers `.rs`,
+   `.py`, `.java`, `.ts`, and `.tsx` files, and presents a deterministic
+   request to the `SourceAnalyzer`. The Python adapter starts `python3` only
+   after `.py` discovery, so a Rust-only scope never invokes it; a missing
+   interpreter becomes a per-file `analyzer-unavailable` diagnostic, not an
+   abort. Java and TypeScript are parsed in-process; `.tsx` selects the TSX
+   grammar. An unsupported-only scope names the unsupported production sources
+   and refuses rather than claiming no sources exist.
 3. The adapter returns one neutral `Analysis`. A shared resolution pass matches
    every call's shape — free function with an optional qualifier, or method
    with `self`/named/unknown receiver evidence — against candidate owners. It
@@ -845,7 +847,7 @@ sequenceDiagram
    Every analyzed unit receives exactly one classification and its evidence;
    no action or recommendation is produced, and wholly unsupported units are
    not classified and are named.
-5. The selected renderer writes human text or schema-v3 JSON. JSON call objects
+5. The selected renderer writes human text or schema-v4 JSON. JSON call objects
    carry `callee`, `resolution`, and `target`; human tags lead with the
    resolution label. Hints never change the exit code; the only write is the
    explicit `--out` path. The command appends no development-record entry and
