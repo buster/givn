@@ -114,10 +114,10 @@ pub fn evaluate(
     let current = super::analyzer::outline_analyzer().analyze(&request)?;
     let mut facts = Facts::default();
     for source in super::scan::discover(project_root, roots, &[Language::Rust])? {
-        extract_rust(&source.path.as_str(), &source.content, &mut facts)?;
+        extract_rust(source.path.as_str(), &source.content, &mut facts)?;
     }
     for source in super::scan::discover(project_root, roots, &[Language::Python])? {
-        extract_python(&source.path.as_str(), &source.content, &mut facts)?;
+        extract_python(source.path.as_str(), &source.content, &mut facts)?;
     }
 
     let current_units: BTreeSet<String> = current.units.iter().map(unit_key).collect();
