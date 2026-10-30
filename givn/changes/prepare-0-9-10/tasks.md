@@ -441,8 +441,8 @@ REFACTOR: targeted suites rerun clean after the fixes; the advisory outline was 
   - [x] COMMIT: 8d576d01 -- Batch: initialization-acceptance
 - [x] Scenario: A new project declares verification runners as unconfigured (regular)
   - [x] COMMIT: 8d576d01 -- Batch: initialization-acceptance
-- [x] Scenario: The served runner setup example fulfills the verification contract when executed (regular)
-  - [x] COMMIT: 8d576d01 -- Batch: initialization-acceptance
+- [x] Scenario: The served runner guidance states the complete adapter contract (regular)
+  - [x] COMMIT: 9b4281bc -- Batch: initialization-acceptance
 - [x] Scenario: Target selection edits preserve unrelated YAML or refuse before writing (regular)
   - [x] COMMIT: 8d576d01 -- Batch: initialization-acceptance
 
