@@ -853,7 +853,7 @@ fn own_instruction_id(path: &std::path::Path) -> String {
         "implement" => "tasks",
         "review" => "review",
         "archive" => "archive",
-        "explore" => "explore",
+        "start" => "start",
         "ideation" => "ideation",
         "steps" => "steps",
         "reverse-engineer" => "reverse-engineer",
@@ -1593,7 +1593,7 @@ pub(crate) const CORE_SKILL_FAMILIES: [&str; 13] = [
     "givn-implement",
     "givn-review",
     "givn-archive",
-    "givn-explore",
+    "givn-start",
     "givn-design-review",
     "givn-steps",
     "givn-reverse-engineer",
@@ -3262,4 +3262,90 @@ fn distribution_installs_no_gate(world: &mut GivnWorld) {
             "{asset} installs a release-distribution gate in consumer projects"
         );
     }
+}
+
+// --- proportionate entry: startup guidance ---------------------------------
+
+#[then("the startup guidance says to load givn-start for new or unclassified work")]
+fn startup_guidance_names_start(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("givn-start") && output.contains("new or unclassified work"),
+        "startup guidance does not route new or unclassified work to givn-start: {output}"
+    );
+}
+
+#[then("the startup guidance names givn new as the direct alternative")]
+fn startup_guidance_names_direct_new(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("givn new") && output.contains("direct alternative"),
+        "startup guidance does not name givn new as the direct alternative: {output}"
+    );
+}
+
+#[then("the response says the reported step applies when continuing that change")]
+fn startup_json_scope_continuing(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    let overview = value["overview"].as_str().unwrap_or_default();
+    assert!(
+        overview.contains("applies when continuing that change"),
+        "startup JSON does not qualify the reported step: {value}"
+    );
+}
+
+#[then("the response says the reported step does not authorize unrelated work")]
+fn startup_json_scope_not_unrelated(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    let overview = value["overview"].as_str().unwrap_or_default();
+    assert!(
+        overview.contains("does not authorize unrelated work"),
+        "startup JSON does not refuse unrelated work: {value}"
+    );
+}
+
+#[then("the response names givn-start as the next skill")]
+fn startup_json_names_start(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    assert_eq!(
+        value["next_skill"], "givn-start",
+        "startup JSON does not name givn-start: {value}"
+    );
+}
+
+#[then("the response keeps givn new as the direct command")]
+fn startup_json_keeps_direct_new(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    assert_eq!(
+        value["next_command"], "givn new <change-id>",
+        "startup JSON does not keep the direct command: {value}"
+    );
+}
+
+#[then("the response presents the direct command as optional")]
+fn startup_json_marks_direct_optional(world: &mut GivnWorld) {
+    let value = startup_json(world);
+    let overview = value["overview"].as_str().unwrap_or_default();
+    assert!(
+        overview.contains("optional direct alternative") || overview.contains("direct alternative"),
+        "startup JSON does not present the direct command as an alternative: {value}"
+    );
+}
+
+#[then("the startup guidance says the reported step applies when continuing that change")]
+fn startup_guidance_scope_continuing(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("applies when continuing this change"),
+        "startup guidance does not qualify the reported step: {output}"
+    );
+}
+
+#[then("the startup guidance says the reported step does not authorize unrelated work")]
+fn startup_guidance_scope_not_unrelated(world: &mut GivnWorld) {
+    let output = cli_stdout(world);
+    assert!(
+        output.contains("does not authorize unrelated work"),
+        "startup guidance does not refuse unrelated work: {output}"
+    );
 }

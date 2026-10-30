@@ -5,6 +5,7 @@ use anyhow::{Result, bail};
 /// Instruction ids served outside the artifact manifest. They resolve through
 /// the same cascade and are named in the unknown-id diagnostic.
 const POLICY_INSTRUCTION_IDS: &[&str] = &[
+    "start",
     "dialog",
     "dialog-examples",
     "challenge",
@@ -15,6 +16,10 @@ const POLICY_INSTRUCTION_IDS: &[&str] = &[
     "specs-reverse",
     "tasks-reverse",
 ];
+
+/// Instruction ids retired from the callable surface. They are refused before
+/// the cascade so a project-owned override cannot restore an old entry point.
+const RETIRED_INSTRUCTION_IDS: &[(&str, &str)] = &[("explore", "givn instructions start")];
 
 /// Show instructions.
 ///
@@ -44,6 +49,15 @@ fn run_artifact(
     project_root: &std::path::Path,
     json: bool,
 ) -> Result<()> {
+    if let Some((_, replacement)) = RETIRED_INSTRUCTION_IDS
+        .iter()
+        .find(|(retired, _)| *retired == artifact)
+    {
+        bail!(
+            "the '{}' entry point is retired; use `{replacement}` instead",
+            artifact
+        );
+    }
     let manifest = load_effective()?;
     let artifact_definition = manifest.artifacts.iter().find(|a| a.id == artifact);
     let extension_rules = extension_rules(project_root, artifact);
@@ -227,6 +241,7 @@ fn report_not_initialised(json: bool) -> Result<()> {
             &summary,
             &next_command,
             None,
+            None,
             &generic_overview(),
         )
     } else {
@@ -250,6 +265,11 @@ fn report_no_active_changes(
     } else {
         "givn new <change-id>".to_string()
     };
+    let next_skill = if unproven.is_empty() {
+        "givn-start"
+    } else {
+        "givn-archive"
+    };
     let summary = if !unproven.is_empty() {
         format!(
             "No active changes. {} unproven archive candidate(s): {}.",
@@ -272,6 +292,7 @@ fn report_no_active_changes(
             &summary,
             &next_command,
             None,
+            Some(next_skill),
             &generic_overview(),
         )
     } else {
@@ -292,10 +313,16 @@ fn report_no_active_changes(
             println!();
         }
         if unproven.is_empty() {
-            println!("Next: run `{next_command}` to start one, or invoke the `givn-propose`");
-            println!("skill (OMP: `/skill:givn-propose`) to plan and scaffold it in one pass.");
+            println!(
+                "Next: for new or unclassified work, load the `givn-start` skill (OMP: `/skill:givn-start`) to investigate and choose the next action."
+            );
+            println!(
+                "For a change whose goal and scope are already clear, `{next_command}` remains the direct alternative."
+            );
         } else {
-            println!("Next: run `{next_command}` to resume the candidate.");
+            println!(
+                "Next: run `{next_command}` to resume the candidate, or load the `givn-archive` skill."
+            );
         }
         Ok(())
     }
@@ -354,6 +381,7 @@ fn report_archived_change(id: &str, json: bool) -> Result<()> {
                 &summary,
                 &next_command,
                 None,
+                Some("givn-archive"),
                 &generic_overview(),
             );
         }
@@ -370,8 +398,9 @@ fn report_archived_change(id: &str, json: bool) -> Result<()> {
         print_json(
             "archived",
             &summary,
-            "givn new <id>",
+            "givn new <change-id>",
             None,
+            Some("givn-start"),
             &generic_overview(),
         )
     } else {
@@ -430,6 +459,9 @@ fn report_change(
         if let Some(skill) = next_skill {
             println!("  (load the `{skill}` skill; in OMP: `/skill:{skill}`)");
         }
+        println!(
+            "This step applies when continuing this change; it does not authorize unrelated work."
+        );
     }
     Ok(())
 }
@@ -533,7 +565,11 @@ fn generic_overview() -> String {
  obligation applies with optional addons disabled and outside any named \
  skill. Before the first question of a policy-indexed type, read that type's companion examples \
  from `givn instructions dialog-examples`; the policy is not loaded \
- automatically."
+ automatically. A reported next step applies when continuing that change; it \
+ does not authorize unrelated work. For new or unclassified work, load \
+ `givn-start` to choose answer-only, direct work, ideation, or a formal change; \
+ `givn new <change-id>` remains the optional direct alternative. Direct entry to \
+ ideation, proposal, and clearly authorized direct work remains available."
         .to_string()
 }
 
@@ -542,6 +578,7 @@ fn print_json(
     summary: &str,
     next_command: &str,
     change_id: Option<&str>,
+    next_skill: Option<&str>,
     overview: &str,
 ) -> Result<()> {
     let mut out = serde_json::json!({
@@ -552,6 +589,9 @@ fn print_json(
     });
     if let Some(id) = change_id {
         out["id"] = serde_json::json!(id);
+    }
+    if let Some(skill) = next_skill {
+        out["next_skill"] = serde_json::json!(skill);
     }
     println!("{}", serde_json::to_string_pretty(&out)?);
     Ok(())

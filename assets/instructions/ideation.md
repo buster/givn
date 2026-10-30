@@ -1,7 +1,7 @@
 # Instruction: ideation
 
 Work a vague idea into change-ready use cases. This is the structured,
-artifact-producing alternative to `givn-explore`: explore answers "do we want
+artifact-producing alternative to `givn-start`: start answers "do we want
 this, and which approach?" without artifacts; ideation answers "what does the
 solution look like, domain-wise?" and ends with change-ready use cases, one
 per future givn change.
@@ -11,7 +11,7 @@ from `givn instructions dialog`; load it before this context's first question.
 
 ## When to use
 
-| | givn-explore | givn-ideation |
+| | givn-start | givn-ideation |
 |---|---|---|
 | Question | "Do we want this? Which option?" | "How does the solution look, domain-wise?" |
 | Structure | none, emergent | phases, notation, reviews |

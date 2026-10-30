@@ -1439,3 +1439,15 @@ fn no_hypothetical_providers(world: &mut GivnWorld) {
         "development principles demand hypothetical providers"
     );
 }
+
+// --- start entry point ------------------------------------------------------
+
+#[given("a Givn project with a project-owned explore instruction override")]
+fn project_with_explore_override(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let dir = env.path("givn/artifacts/explore");
+    std::fs::create_dir_all(&dir).expect("create explore override dir");
+    std::fs::write(dir.join("instructions.md"), "# Project explore override\n")
+        .expect("write explore override");
+    world.env = Some(env);
+}
