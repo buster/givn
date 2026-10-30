@@ -858,3 +858,27 @@ fn addons_list_effective_outline(world: &mut GivnWorld) {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("[enabled ]  outline"), "{stdout}");
 }
+
+// --- Standalone domain documentation scaffolding ---------------------------
+
+#[given(regex = r#"^a project file "([^"]+)" with content "([^"]+)"$"#)]
+fn project_file_with_content(world: &mut GivnWorld, rel: String, content: String) {
+    let path = env(world).path(&rel);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("create parent directories");
+    }
+    std::fs::write(&path, content).expect("write project file");
+}
+
+#[then(regex = r#"^the file "([^"]+)" does not contain "([^"]+)"$"#)]
+fn file_does_not_contain(world: &mut GivnWorld, rel: String, text: String) {
+    let path = env(world).path(&rel);
+    let content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+    assert!(
+        !content.contains(&text),
+        "expected {} not to contain {:?}:\n{content}",
+        rel,
+        text
+    );
+}

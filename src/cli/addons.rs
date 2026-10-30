@@ -35,7 +35,7 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
     },
     AddonSpec {
         id: "domain_modeling",
-        description: "Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design",
+        description: "Skill — maintain the standalone glossary and structural domain model before design; does not require arc42",
         default_enabled: true,
     },
     AddonSpec {
@@ -123,12 +123,19 @@ pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
     // Addon-specific scaffolding.
     if name == "arc42" {
         scaffold_arc42()?;
+        scaffold_glossary()?;
         println!("The '{name}' artifact is now part of the effective workflow.");
         println!("It will appear after 'design' in `givn status`.");
         println!();
         println!("Next steps:");
         println!("  givn status              — see the updated workflow");
         println!("  givn eject {name}:instruction   — customise the instruction (optional)");
+    } else if name == "domain_modeling" {
+        scaffold_glossary()?;
+        scaffold_domain_model()?;
+        println!("The standalone domain documents follow the `domain_modeling` addon.");
+        println!("The generated skill is refreshed on the next `givn skills sync`.");
+        println!();
     } else if name == "communication_policy" {
         println!(
             "The managed communication policy block follows this setting on the next `givn skills sync`."
@@ -152,6 +159,54 @@ pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
         println!("  and coverage.merge_command to use your project scripts.");
     }
 
+    Ok(())
+}
+
+/// Write the standalone glossary when it is missing. The scaffold never
+/// overwrites an existing file.
+fn scaffold_glossary() -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    scaffold_document_at(
+        &project_root,
+        "docs/glossary.md",
+        "templates/glossary.md",
+        "glossary",
+    )
+}
+
+/// Write the standalone structural model when it is missing. The scaffold
+/// never overwrites an existing file.
+fn scaffold_domain_model() -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    scaffold_document_at(
+        &project_root,
+        "docs/domain-model.md",
+        "templates/domain-model.md",
+        "domain model",
+    )
+}
+
+/// Materialize one embedded documentation template when the destination does
+/// not exist. Existing content is project-owned and preserved byte-for-byte.
+fn scaffold_document_at(
+    project_root: &std::path::Path,
+    relative_path: &str,
+    asset_key: &str,
+    label: &str,
+) -> Result<()> {
+    let dest = project_root.join(relative_path);
+    if dest.exists() {
+        println!("  exists   {relative_path}  (content preserved)");
+        return Ok(());
+    }
+
+    let content = crate::config::embedded::Assets::get_str(asset_key)
+        .ok_or_else(|| anyhow::anyhow!("embedded {label} template missing: {asset_key}"))?;
+    if let Some(parent) = dest.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&dest, content)?;
+    println!("  created  {relative_path}");
     Ok(())
 }
 
@@ -705,6 +760,58 @@ givn_config_version: \"0.9.9\"
             assert!(message.contains("manual"), "{message}");
         }
     }
+    #[test]
+    fn documentation_templates_are_embedded() {
+        for key in ["templates/glossary.md", "templates/domain-model.md"] {
+            assert!(
+                crate::config::embedded::Assets::get(key).is_some(),
+                "embedded documentation template missing: {key}"
+            );
+        }
+    }
+
+    #[test]
+    fn scaffold_document_preserves_existing_bytes() {
+        let directory = tempfile::tempdir().unwrap();
+        let docs = directory.path().join("docs");
+        std::fs::create_dir_all(&docs).unwrap();
+        std::fs::write(docs.join("glossary.md"), "# Project glossary\n").unwrap();
+
+        scaffold_document_at(
+            directory.path(),
+            "docs/glossary.md",
+            "templates/glossary.md",
+            "glossary",
+        )
+        .unwrap();
+
+        assert_eq!(
+            std::fs::read_to_string(docs.join("glossary.md")).unwrap(),
+            "# Project glossary\n"
+        );
+    }
+
+    #[test]
+    fn scaffold_document_creates_a_missing_file_from_the_embedded_template() {
+        let directory = tempfile::tempdir().unwrap();
+
+        scaffold_document_at(
+            directory.path(),
+            "docs/domain-model.md",
+            "templates/domain-model.md",
+            "domain model",
+        )
+        .unwrap();
+
+        let created = std::fs::read_to_string(directory.path().join("docs/domain-model.md"))
+            .expect("domain model scaffold");
+        assert!(
+            created.contains("## Boundaries and responsibilities"),
+            "{created}"
+        );
+        assert!(created.contains("layout: elk"), "{created}");
+    }
+
     #[test]
     fn addon_registry_matches_the_manifest_schema_and_defaults() {
         let manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
