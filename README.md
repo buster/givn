@@ -28,7 +28,7 @@ Instead of letting agents jump straight from a prompt to unverified code, Givn s
 - **Built-in architecture & code health addons:**
   - `arc42`: Keeps architecture docs (`docs/arc42/`) and ADRs in sync with design changes.
   - `domain_modeling`: Maintains the standalone `docs/glossary.md` and `docs/domain-model.md`; independent of arc42.
-  - `outline`: Generates advisory call-tree and coupling/cohesion reports that make changed units readable from their declarations, names, and call order, so REFACTOR and review judge comprehension rather than only metrics.
+  - `outline`: Generates advisory call-tree and coupling/cohesion reports for Rust, Python, Java, and TypeScript that make changed units readable from their declarations, names, and call order, so REFACTOR and review judge comprehension rather than only metrics.
   - `history` / `timeline`: Logs local agent activity (tool calls, turns, token usage) to `givn/history/` and exports self-contained HTML timelines.
 
 ## Install
