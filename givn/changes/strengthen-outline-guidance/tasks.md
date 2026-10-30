@@ -201,21 +201,21 @@ Design constraints for every scenario in this batch:
 
 ### Scenario: Implementation guidance routes to the shared step mechanics
 
-- [ ] RED: `--name '^Implementation guidance routes to the shared step mechanics$'` fails; the tasks instruction does not name `givn instructions steps`.
-- [ ] GREEN: `1 scenario (1 passed)` after the tasks routing paragraph and binding.
-- [ ] REFACTOR: Re-run; zero exit.
-- [ ] COMMIT: pending -- Batch: implementation-routing
+- [x] RED (pre-change assets): `the served guidance names givn instructions steps as the step mechanics` failed; the tasks instruction did not route to the steps mechanics.
+- [x] GREEN: `1 scenario (1 passed)`, `3 steps (3 passed)`.
+- [x] REFACTOR: Re-ran; `1 scenario (1 passed)`.
+- [x] COMMIT: `ebcd2fd9` -- `docs(tasks): route to step mechanics` (Batch: implementation-routing)
 
 ### Scenario: Generated implementation guidance routes to the task and step instructions
 
-- [ ] RED: `--name '^Generated implementation guidance routes to the task and step instructions$'` fails; the generated `givn-implement` skill names only the tasks instruction.
-- [ ] GREEN: `1 scenario (1 passed)` after the skill template change, `givn skills sync`, and the new bindings.
-- [ ] REFACTOR: Re-run; zero exit.
-- [ ] COMMIT: pending -- Batch: implementation-routing
+- [x] RED (pre-change assets): `the generated givn-implement skill names both givn instructions tasks and givn instructions steps` failed; the generated skill named only the tasks instruction.
+- [x] GREEN: `1 scenario (1 passed)`, `4 steps (4 passed)` after the skill template change and `./target/debug/givn skills sync`.
+- [x] REFACTOR: Re-ran; `1 scenario (1 passed)`.
+- [x] COMMIT: `ebcd2fd9` -- `docs(tasks): route to step mechanics` (Batch: implementation-routing)
 
 ## Closeout
 
-- [ ] Every delta phrase has a permanent binding in the files named above.
+- [x] Every delta phrase has a permanent binding in the files named above.
 - [ ] Post-archive cleanup: remove the obsolete language-specific bindings
       from `tests/steps/serve_extended_rules_steps.rs` and
       `tests/steps/arc42_review_alignment_steps.rs`; rerun the full suite;
