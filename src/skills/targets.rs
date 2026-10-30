@@ -300,6 +300,8 @@ pub fn sync(project_root: &Path) -> Result<()> {
     // Self-reconcile: remove managed generated files that are no longer valid
     // for the current configuration.
     reconcile_addon_artifacts(project_root, &manifest, &targets)?;
+    reconcile_retired_skills(project_root, &targets)?;
+    report_retired_explore_overrides(project_root);
 
     // Always-on blocks: unconditional, refreshed every sync.
     crate::cli::project_hint::apply(project_root)?;
@@ -409,12 +411,94 @@ fn reconcile_addon_artifacts(
     Ok(())
 }
 
+/// Skills that Givn used to generate but no longer does. Their output is
+/// removed only when it is recognizable as generated content.
+const RETIRED_MANAGED_SKILLS: &[&str] = &["givn-explore"];
+
 /// Names of the command files Givn generated before the skills-only surface.
 fn legacy_command_names() -> Vec<&'static str> {
     let mut names = default_skill_names();
+    names.extend(RETIRED_MANAGED_SKILLS);
     names.push("grill-me");
     names.push("grill-with-docs");
     names
+}
+
+/// Whether a skill file is recognizable Givn-generated output for `name`.
+fn is_generated_skill(content: &str, name: &str) -> bool {
+    let instruction = name.strip_prefix("givn-").unwrap_or(name);
+    content.contains(&format!("name: {name}"))
+        && (content.contains(&format!("givn instructions {name}"))
+            || content.contains(&format!("givn instructions {instruction}")))
+}
+
+/// Remove retired generated skills from every selected target. A same-named
+/// project-authored file is preserved and reported for manual transition.
+fn reconcile_retired_skills(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
+    for target in targets {
+        for name in RETIRED_MANAGED_SKILLS {
+            let dir = project_root.join(target.dir()).join("skills").join(name);
+            let skill = dir.join("SKILL.md");
+            if !skill.exists() {
+                continue;
+            }
+            let content = std::fs::read_to_string(&skill)?;
+            if is_generated_skill(&content, name) {
+                std::fs::remove_dir_all(&dir)?;
+                println!("  removed retired skill: {name}");
+            } else {
+                println!(
+                    "  manual transition: preserved {}; use `givn-start` instead",
+                    skill.strip_prefix(project_root).unwrap_or(&skill).display()
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Surface project-owned explore overrides without altering them. No callable
+/// explore instruction or generated skill remains.
+fn report_retired_explore_overrides(project_root: &Path) {
+    for relative in [
+        "givn/skills/givn-explore/SKILL.md.tmpl",
+        "givn/artifacts/explore/instructions.md",
+    ] {
+        let path = project_root.join(relative);
+        if path.exists() {
+            println!(
+                "  manual transition: preserved retired explore override {relative}; use `givn-start` instead"
+            );
+        }
+    }
+}
+
+/// Paths that retirement reconciliation may remove. The upgrade staging path
+/// uses this list so a tracked generated explore skill is deleted from the
+/// revision even when synchronization already removed it from disk.
+pub fn retired_managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::PathBuf>> {
+    let targets = configured_targets(project_root)?;
+    let mut paths = Vec::new();
+    for target in &targets {
+        for skill in RETIRED_MANAGED_SKILLS {
+            paths.push(
+                project_root
+                    .join(target.dir())
+                    .join("skills")
+                    .join(skill)
+                    .join("SKILL.md"),
+            );
+            paths.push(
+                project_root
+                    .join(target.dir())
+                    .join("commands")
+                    .join(format!("{skill}.md")),
+            );
+        }
+    }
+    paths.sort();
+    paths.dedup();
+    Ok(paths)
 }
 
 /// Whether file bytes are a recognizable Givn-generated command from an
@@ -1080,6 +1164,25 @@ mod tests {
 
         manifest.addons.domain_modeling = false;
         assert!(!domain_modeling_present(&manifest));
+    }
+
+    #[test]
+    fn retired_explore_skill_is_recognized_only_by_generated_bytes() {
+        let generated = "---\nname: givn-explore\ndescription: fixture\n---\n\n# givn-explore\n\nThe rules for this step are served by `givn instructions explore` — load the instruction and follow it.\n";
+        assert!(is_generated_skill(generated, "givn-explore"));
+        assert!(!is_generated_skill("# Custom explore\n", "givn-explore"));
+        assert!(!is_generated_skill(
+            "---\nname: givn-explore\ndescription: custom\n---\n\nCustom body without the pointer.\n",
+            "givn-explore"
+        ));
+    }
+
+    #[test]
+    fn retired_managed_skill_names_include_explore() {
+        assert!(RETIRED_MANAGED_SKILLS.contains(&"givn-explore"));
+        assert!(legacy_command_names().contains(&"givn-explore"));
+        assert!(default_skill_names().contains(&"givn-start"));
+        assert!(!default_skill_names().contains(&"givn-explore"));
     }
 
     #[test]

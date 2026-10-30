@@ -244,9 +244,14 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     println!("\n{}", "─".repeat(52));
     println!("\nInitialized. Next:\n");
     println!(
-        "  1. In your selected agent, invoke givn-explore and describe what you want to build."
+        "  1. In your selected agent, load givn-start and describe the problem, question, or improvement."
     );
-    println!("  2. It routes to ideation or proposal; propose creates the change.");
+    println!(
+        "     It recommends answer only, direct work, ideation, or a formal change, without creating artifacts."
+    );
+    println!(
+        "  2. For a change whose goal and scope are already clear, run `givn new <change-id>` directly."
+    );
     println!("  3. The first product change establishes executable verification before archive.");
     println!();
 
