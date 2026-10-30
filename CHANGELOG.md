@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.12] - 2026-10-30
+
+### Features
+
+- **domain-modeling:** Keep the project's glossary and structural model in standalone `docs/glossary.md` and `docs/domain-model.md`, scaffold both from shipped templates, and decouple domain modeling from arc42
+
 ## [0.9.11] - 2026-10-30
 
 ### Features
@@ -810,3 +816,5 @@ for the complete 0.2.0 feature set.
 [0.9.10]: https://github.com/buster/givn/compare/v0.9.9...v0.9.10
 
 [0.9.11]: https://github.com/buster/givn/compare/v0.9.10...v0.9.11
+
+[0.9.12]: https://github.com/buster/givn/compare/v0.9.11...v0.9.12
