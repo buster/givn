@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.16] - 2026-10-30
+
+### Features
+
+- **addons:** Record the effective add-on configuration in each change and refuse add-on mutation, forced init changes, or configuration drift until the change is archived; an interactive operator override with a reason is recorded in the change lock
+
 ## [0.9.15] - 2026-10-30
 
 ### Features
@@ -842,3 +848,5 @@ for the complete 0.2.0 feature set.
 [0.9.14]: https://github.com/buster/givn/compare/v0.9.13...v0.9.14
 
 [0.9.15]: https://github.com/buster/givn/compare/v0.9.14...v0.9.15
+
+[0.9.16]: https://github.com/buster/givn/compare/v0.9.15...v0.9.16
