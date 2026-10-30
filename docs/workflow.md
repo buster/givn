@@ -10,13 +10,14 @@ runner, and recovery contracts live in [the reference](reference.md); the rules
 an agent follows during a step are served by `givn instructions <id>` and belong
 to the instruction assets, not to this overview.
 
-Lifecycle rendering: [`workflow.svg`](workflow.svg) (GitHub-safe) and
-[`workflow.html`](workflow.html) (self-contained HTML).
+![Givn change lifecycle: givn-explore routes through optional givn-ideation or directly to givn-propose, then proposal → specs → design → arc42-docs → design-review → tasks → implement → review → archive](workflow.svg)
 
 ```
-proposal → specs → design → [arc42-docs] → design-review → tasks → review → archive
+givn-explore → [givn-ideation] → proposal → specs → design → [arc42-docs] → design-review → tasks → implement → review → archive
 ```
 
+`givn-explore` may route directly to proposal when the change is concrete, or
+through `givn-ideation` when the domain needs structured discovery first.
 `arc42-docs` appears when the arc42 addon is enabled (the default). The graph is
 configurable through `givn/config.yaml`; a project may add, remove, or reorder
 artifacts.
@@ -42,12 +43,14 @@ an explicit request or an agent-selected skill. Givn generates no commands.
 The exact rules for each step come from `givn instructions <id>`; do not copy
 those obligations into a second local policy.
 
-`givn-ideation` and `givn-explore` are optional pre-phases. Ideation storms a
-domain into use cases and change seeds under `givn/ideation/<topic>/`; it
-produces no manifest artifact and has no gate. Explore clarifies a problem
-without producing lifecycle artifacts. `givn-challenge` examines a supplied
-proposal, test, specification, design, implementation, or whole change with
-evidence; it is not a lifecycle gate.
+`givn-ideation` and `givn-explore` are optional pre-phases. Explore clarifies a
+problem without producing lifecycle artifacts; it routes to proposal directly
+or to ideation when the domain needs durable, structured discovery. Ideation
+storms a domain into use cases and change seeds under `givn/ideation/<topic>/`;
+it produces no manifest artifact and has no gate, and its change seeds are
+inputs to `givn-propose`. `givn-challenge` examines a supplied proposal, test,
+specification, design, implementation, or whole change with evidence; it is not
+a lifecycle gate.
 
 ## Initial adoption and artifact ownership
 
@@ -118,8 +121,8 @@ guidance or advisory reporting.
 | Gate | Command | Stops |
 |---|---|---|
 | Change verification | `givn check tasks --change <id>` | non-removed `@wip`, missing or unreachable scenario commits, a dirty tree, a failing delta suite; writes the change verification receipt |
-| Review | `givn check review --change <id>` | integrity failures, an unconfigured run declaration, change-scoped lint failures, invalid capability placement, unresolved overlap dispositions, a missing or stale receipt, missing scenario commits |
-| Archive | `givn archive --change <id>` | incomplete tasks/review, an unsigned design-review, unbound delta step definitions, a missing E2E runner when `@e2e` is in scope, merge conflicts, red regular or E2E scopes, a failing coverage gate, a tested tree that moved |
+| Review | `givn check review --change <id>` | integrity failures, an unconfigured run declaration, change-scoped lint failures, undisclosed retirement, invalid capability placement, unresolved overlap dispositions, a missing or stale receipt, missing scenario commits |
+| Archive | `givn archive --change <id>` | incomplete tasks/review/arc42-docs, an unsigned design-review, unbound delta step definitions, failed archive hooks, an unconfigured run declaration, incomplete README, invalid use-case or delta documents, a missing E2E runner when `@e2e` is in scope, merge conflicts and stale narrative bases, red regular or E2E scopes, a failing coverage gate, a tested tree that moved |
 | Lint | `givn lint` | parse errors, duplicate titles, empty features, invalid use-case documents, interaction mismatches; review runs the change-scoped form |
 | Commit path | `givn commit` | an empty path selection or a path outside the checkout |
 

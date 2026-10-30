@@ -21,9 +21,9 @@ Status values:
 - [Reference](reference.md) — authoritative CLI, configuration authority,
   skills and invocation, addons, runner and receipt contracts, recovery, and
   generated project layout.
-- [Workflow Swimlane (HTML)](workflow.html) — self-contained lifecycle swimlane
-  with producing artifacts, checking processes, and chokepoints. The SVG
-  rendering is [workflow.svg](workflow.svg).
+- [Workflow View (HTML)](workflow.html) — self-contained three-column lifecycle
+  view: action, producing artifact, and checks. The markdown workflow embeds
+  [workflow.svg](workflow.svg).
 - [Documentation Index](INDEX.md) — this navigation document.
 
 ## Project and Process
