@@ -430,10 +430,12 @@ pub fn prepare_managed_upgrade(
         .context("read the checkpoint revision before a managed upgrade")?;
     let mut report = UpgradeReport::new(checkpoint);
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
+    let retired_paths = crate::skills::targets::retired_managed_generated_paths(project_root)?;
     let commands_path = project_root.join("givn/commands.yaml");
     let mut snapshot_paths: Vec<PathBuf> = std::iter::once(config_path.to_path_buf())
         .chain(std::iter::once(commands_path.clone()))
         .chain(managed_paths.iter().cloned())
+        .chain(retired_paths.iter().cloned())
         .collect();
     for extra in [".gitignore", ".fossil-settings/ignore-glob"] {
         let path = project_root.join(extra);
@@ -456,6 +458,7 @@ pub fn prepare_managed_upgrade(
         &backend,
         config_path,
         &managed_paths,
+        &retired_paths,
         commit_message,
     ) {
         Ok(hash) => {
@@ -610,6 +613,7 @@ fn commit_managed_upgrade(
     backend: &crate::scm::Backend,
     config_path: &Path,
     managed_paths: &[PathBuf],
+    retired_paths: &[PathBuf],
     commit_message: &str,
 ) -> Result<Option<String>> {
     let policy = crate::config::overlay::load_rules_policy(project_root)?;
@@ -633,7 +637,12 @@ fn commit_managed_upgrade(
                 .cloned(),
         );
     }
-    let relative = relative_managed_paths(project_root, paths)?;
+    let mut relative = relative_managed_paths(project_root, paths)?;
+    if !policy.is_local_only() {
+        relative.extend(tracked_retired_paths(project_root, backend, retired_paths)?);
+        relative.sort();
+        relative.dedup();
+    }
     backend
         .stage_paths(&relative, !policy.is_local_only())
         .context("the selected backend could not stage the managed upgrade files")?;
@@ -646,6 +655,33 @@ fn commit_managed_upgrade(
         .commit_staged(commit_message)
         .context("the selected backend could not create the managed upgrade revision")?;
     Ok(Some(backend.revision()?))
+}
+
+/// Retired managed paths that exist in the checkpoint revision. They are
+/// included even when synchronization removed them from disk so the deletion is
+/// staged. A path that was never tracked is skipped.
+fn tracked_retired_paths(
+    project_root: &Path,
+    backend: &crate::scm::Backend,
+    retired_paths: &[PathBuf],
+) -> Result<Vec<PathBuf>> {
+    let mut relative = Vec::new();
+    for path in retired_paths {
+        let rel = path
+            .strip_prefix(project_root)
+            .map(Path::to_path_buf)
+            .with_context(|| {
+                format!(
+                    "retired managed path '{}' is outside project root '{}'",
+                    path.display(),
+                    project_root.display()
+                )
+            })?;
+        if backend.revision_file(&rel.to_string_lossy())?.is_some() {
+            relative.push(rel);
+        }
+    }
+    Ok(relative)
 }
 
 /// Existing managed paths, relative to the project root. Path filtering is
@@ -1267,6 +1303,7 @@ mod tests {
             &backend,
             &config,
             std::slice::from_ref(&config),
+            &[],
             "chore(givn): refresh managed files",
         )
         .unwrap();
