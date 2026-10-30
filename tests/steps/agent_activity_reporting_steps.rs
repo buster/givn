@@ -1980,10 +1980,11 @@ local ok, err = pcall(reporter.run)
 if not ok then maki.log.error("driver flush failed: " .. tostring(err)) end
 "#;
     std::fs::write(&fence_path, format!("{generated}\n{driver}")).expect("write maki driver");
+    let maki = support::maki_binary();
     let mut command = Command::new("timeout");
     command
         .arg("8")
-        .arg("maki")
+        .arg(&maki)
         .arg("--trust")
         .arg("prompt")
         .current_dir(env.root())
