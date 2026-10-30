@@ -1954,7 +1954,7 @@ const CLAUDE_TOOL_MS: u64 = 40;
 /// The Maki binary the Maki scenarios run: the setup script's local bin
 /// directory (`GIVN_E2E_BIN`, defaulting to `~/.cache/givn-e2e/bin`), then
 /// `PATH`. A missing binary fails the fixture, never skips it.
-fn maki_binary() -> PathBuf {
+pub(crate) fn maki_binary() -> PathBuf {
     if let Some(dir) = std::env::var_os("GIVN_E2E_BIN") {
         let candidate = PathBuf::from(dir).join("maki");
         if candidate.is_file() {
