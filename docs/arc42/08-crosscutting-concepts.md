@@ -1263,6 +1263,14 @@ review authority:
   (`src/cli/instructions.rs`). A project that disables the addon receives no
   outline obligation.
 
+A test-only Tree-sitter evaluation compares the current Rust and Python facts
+with parallel grammars. It is not a production engine: the default outline
+command and schema are unchanged. The evaluation's decision record retains the
+current adapters because the comparison found missing required units, methods,
+calls, and spans. Tree-sitter and its grammars are dev dependencies, so the
+release binary does not link them. See
+[the evaluation record](../outline-tree-sitter-evaluation.md).
+
 The historical blocking gate and its verdict vocabulary are retired. They are
 not current architecture; see [the advisory outline guide](../outline.md).
 
