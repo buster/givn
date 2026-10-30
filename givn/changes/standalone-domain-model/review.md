@@ -5,6 +5,9 @@ Author: Maki
 Reviewer context: Maki
 
 README-IMPACT: updated - Description
+PERSONAS: agent--technical-role
+PERSONAS: developer--primary-user
+PERSONAS: givn-maintainer--owner
 
 ## Scope
 

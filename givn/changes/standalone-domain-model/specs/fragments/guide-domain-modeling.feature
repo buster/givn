@@ -17,6 +17,7 @@ Feature: Guide domain modeling
     Then  the generated domain skill names the domain-modeling skill
     And  the generated skill loads during every workflow step of a change
     And  the generated givn-domain-modeling guidance directs the domain modeler to the domain-modeling instruction
+    And  the generated skill instructs maintaining the project's glossary
     And  the served domain-modeling instruction contains "maintaining the project's glossary"
     And  the generated skill does not describe the givn change lifecycle
     And  the terminal transcript is captured for this scenario
