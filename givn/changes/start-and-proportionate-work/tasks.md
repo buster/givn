@@ -194,7 +194,7 @@ Design constraints for every scenario in this batch:
 
 ## Batch D — documentation closeout
 
-- [ ] Update `assets/agents-project-hint.md`, `README.md`,
+- [x] Update `assets/agents-project-hint.md`, `README.md`,
       `docs/reference.md`, `docs/workflow.md`, `docs/workflow.svg`,
       `docs/arc42/03-context-and-scope.md`,
       `docs/arc42/04-solution-strategy.md`,
@@ -202,9 +202,9 @@ Design constraints for every scenario in this batch:
       `docs/arc42/06-runtime-view.md`,
       `docs/arc42/08-crosscutting-concepts.md`,
       `docs/arc42/11-risks-and-technical-debt.md`, and `docs/glossary.md`.
-- [ ] Confirm every delta step phrase has a permanent binding and no
+- [x] Confirm every delta step phrase has a permanent binding and no
       unimplemented stub remains.
-- [ ] COMMIT: <hash> -- Batch: start-documentation-closeout
+- [x] COMMIT: 0fed58ed -- Batch: start-documentation-closeout
 
 ## Batch E — @e2e
 
@@ -215,10 +215,10 @@ terminal transcript. Do not replace the subprocess with an in-process call.
 
 ### Scenario: Author starts a session with the universal dialog obligation
 
-- [ ] Scenario: Author starts a session with the universal dialog obligation
-  - [ ] COMMIT: <hash> -- Batch: start-entry-e2e
+- [x] Scenario: Author starts a session with the universal dialog obligation
+  - [x] COMMIT: 5ef3624b -- Batch: start-entry-e2e
 
 ### Scenario: Consumer runs init non-interactively and gets opencode skills
 
-- [ ] Scenario: Consumer runs init non-interactively and gets opencode skills
-  - [ ] COMMIT: <hash> -- Batch: start-entry-e2e
+- [x] Scenario: Consumer runs init non-interactively and gets opencode skills
+  - [x] COMMIT: 2df5429a -- Batch: skill-retirement
