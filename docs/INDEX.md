@@ -21,9 +21,9 @@ Status values:
 - [Reference](reference.md) — authoritative CLI, configuration authority,
   skills and invocation, addons, runner and receipt contracts, recovery, and
   generated project layout.
-- [Workflow View (HTML)](workflow.html) — self-contained three-column lifecycle
-  view: action, producing artifact, and checks. The markdown workflow embeds
-  [workflow.svg](workflow.svg).
+- [Workflow Diagram](workflow.svg) — three-column lifecycle view: action,
+  producing artifact, and checks. The diagram is embedded in
+  [workflow.md](workflow.md).
 - [Documentation Index](INDEX.md) — this navigation document.
 
 ## Project and Process
