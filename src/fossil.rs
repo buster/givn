@@ -551,7 +551,7 @@ mod tests {
                 String::from_utf8_lossy(&output.stderr)
             );
         };
-        run(&["init", "-q", repository.to_str().unwrap()]);
+        run(&["init", repository.to_str().unwrap()]);
         run(&["open", repository.to_str().unwrap()]);
         std::fs::write(root.join("tracked.txt"), "tracked\n").unwrap();
         run(&["add", "tracked.txt"]);
