@@ -104,11 +104,12 @@ Feature: Outline report
     Then  the report names the unsupported construct
     And  the report does not classify the unsupported unit
 
+  @outline-report
   Scenario: The JSON report carries the schema and rules versions
     Given  a Givn project with the outline experiment enabled
     And  a production source unit
     When  the developer runs "givn outline report --json"
-    Then  the JSON report has schema version 3
+    Then  the JSON report has schema version 4
     And  the JSON report has rules version 1
 
   @outline-report
@@ -394,21 +395,6 @@ Feature: Outline report
     Then  the outline addon is listed as disabled
 
   @outline-report
-  Scenario Outline: Unsupported-only production sources are not reported as absent
-    Given  a Givn project with the outline experiment enabled
-    And  the requested scope contains only production source files written in <language>
-    When  the developer runs "givn outline report --path ."
-    Then  the command exits with code 1
-    And  stderr names the requested scope
-    And  stderr says there are no supported production sources
-    And  stderr names Rust and Python as the supported source languages
-    And  stderr does not claim that no production sources exist
-    Examples:
-      | language |
-      | Java |
-      | Go |
-
-  @outline-report
   Scenario Outline: Unavailable outline measurements are not reported as measured zero
     Given  a Givn project with the outline experiment enabled
     And  a supported production source unit for which <measurement> is unavailable
@@ -432,9 +418,60 @@ Feature: Outline report
     And  neither report presents tight class cohesion as loose class cohesion
 
   @outline-report
-  Scenario: The Tree-sitter evaluation leaves the current outline engine in place
+  Scenario: A Java production class is reported
     Given  a Givn project with the outline experiment enabled
-    And  a production source unit
+    And  a Java production class
     When  the developer runs "givn outline report --json"
-    Then  the JSON report has schema version 3
-    And  the JSON report names Rust and Python as the supported source languages
+    Then  the JSON report names the unit "Widget" with language "java"
+    And  the JSON report gives the type kind "class" to "Widget"
+
+  @outline-report
+  Scenario: A TypeScript production class and function are reported
+    Given  a Givn project with the outline experiment enabled
+    And  a TypeScript production class and function
+    When  the developer runs "givn outline report --json"
+    Then  the JSON report names the unit "Widget" with language "typescript"
+    And  the JSON report names the function "makeWidget" with language "typescript"
+
+  @outline-report
+  Scenario: A TypeScript interface is reported with its own type kind
+    Given  a Givn project with the outline experiment enabled
+    And  a TypeScript production interface
+    When  the developer runs "givn outline report --json"
+    Then  the JSON report gives the type kind "interface" to "Drawable"
+
+  @outline-report
+  Scenario: A mixed-language report discloses every supported language
+    Given  a Givn project with the outline experiment enabled
+    And  a mixed Rust Python Java and TypeScript production source set
+    When  the developer runs "givn outline report --json"
+    Then  the JSON report names all supported languages
+    And  the JSON report names the unit "Widget" with language "java"
+    And  the JSON report names the unit "Widget" with language "typescript"
+
+  @outline-report
+  Scenario: A malformed Java file does not hide a valid TypeScript file
+    Given  a Givn project with the outline experiment enabled
+    And  a malformed Java production file beside a valid TypeScript production file
+    When  the developer runs "givn outline report --json"
+    Then  the JSON report records a parse failure for "src/Broken.java"
+    And  the JSON report names the unit "Widget" with language "typescript"
+
+  @outline-report
+  Scenario: Java and TypeScript test and dependency sources are excluded
+    Given  a Givn project with the outline experiment enabled
+    And  Java and TypeScript test and dependency sources
+    When  the developer runs "givn outline report --json"
+    Then  stdout does not contain "IgnoredJava"
+    And  stdout does not contain "IgnoredTypeScript"
+
+  @outline-report
+  Scenario: Unsupported-only Go production sources are not reported as absent
+    Given  a Givn project with the outline experiment enabled
+    And  the requested scope contains only production source files written in Go
+    When  the developer runs "givn outline report --path ."
+    Then  the command exits with code 1
+    And  stderr names the requested scope
+    And  stderr says there are no supported production sources
+    And  stderr names all supported source languages
+    And  stderr does not claim that no production sources exist
