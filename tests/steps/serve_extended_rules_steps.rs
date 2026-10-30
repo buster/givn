@@ -1374,6 +1374,22 @@ fn unreadable_unit_is_fixed_or_recorded(world: &mut GivnWorld) {
     );
 }
 
+#[when("the author requests the tasks instruction")]
+fn author_requests_tasks_instruction(world: &mut GivnWorld) {
+    let env = world.env.get_or_insert_with(common::make_init_root);
+    world.additional_output = Some(served_instruction(env, "tasks"));
+}
+
+#[then("the served guidance names givn instructions steps as the step mechanics")]
+fn tasks_guidance_names_step_mechanics(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("Step mechanics: `givn instructions steps`")
+            && content.contains("Read that instruction before writing or running any step"),
+        "the tasks instruction does not route to the shared step mechanics"
+    );
+}
+
 #[given("the author encounters a concrete cleanup opportunity while implementing agreed behavior")]
 fn cleanup_opportunity_encountered(world: &mut GivnWorld) {
     batch_guidance(world);

@@ -250,6 +250,11 @@ this.
 served instruction the implement files route to; artifact authors follow the
 task-list rules above.
 
+**Step mechanics: `givn instructions steps`.** Read that instruction before
+writing or running any step. It owns the RED/GREEN/REFACTOR loop, step reuse,
+and the REFACTOR outline obligation. This section owns batch sequencing,
+verification, and commit evidence.
+
 Work the task list in the current context. The user or harness may split it into
 behavior batches across sessions; the artifacts remain the handoff, and no step
 requires or forbids that topology. Follow the test-first order described by the
