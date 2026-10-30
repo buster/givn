@@ -24,24 +24,48 @@ impl SourceAnalyzer for CompositeAnalyzer {
     fn capabilities(&self) -> AnalyzerCapabilities {
         let rust = rust_analyzer().capabilities();
         let python = super::python_adapter::PythonAnalyzer.capabilities();
+        let java = super::tree_sitter_adapter::JavaAnalyzer.capabilities();
+        let typescript = super::tree_sitter_adapter::TypeScriptAnalyzer.capabilities();
         AnalyzerCapabilities {
-            languages: vec![Language::Rust, Language::Python],
-            supported_constructs: unique(rust.supported_constructs, python.supported_constructs),
-            limitations: unique(rust.limitations, python.limitations),
-            resolution_labels: unique(rust.resolution_labels, python.resolution_labels),
+            languages: vec![
+                Language::Rust,
+                Language::Python,
+                Language::Java,
+                Language::TypeScript,
+            ],
+            supported_constructs: unique(
+                unique(rust.supported_constructs, python.supported_constructs),
+                unique(java.supported_constructs, typescript.supported_constructs),
+            ),
+            limitations: unique(
+                unique(rust.limitations, python.limitations),
+                unique(java.limitations, typescript.limitations),
+            ),
+            resolution_labels: unique(
+                unique(rust.resolution_labels, python.resolution_labels),
+                unique(java.resolution_labels, typescript.resolution_labels),
+            ),
         }
     }
 
     fn analyze(&self, request: &AnalysisRequest) -> Result<Analysis> {
         let rust = rust_analyzer().analyze(request)?;
         let python = super::python_adapter::PythonAnalyzer.analyze(request)?;
+        let java = super::tree_sitter_adapter::JavaAnalyzer.analyze(request)?;
+        let typescript = super::tree_sitter_adapter::TypeScriptAnalyzer.analyze(request)?;
         let mut merged = Analysis::default();
         merged.files.extend(rust.files);
         merged.files.extend(python.files);
+        merged.files.extend(java.files);
+        merged.files.extend(typescript.files);
         merged.units.extend(rust.units);
         merged.units.extend(python.units);
+        merged.units.extend(java.units);
+        merged.units.extend(typescript.units);
         merged.diagnostics.extend(rust.diagnostics);
         merged.diagnostics.extend(python.diagnostics);
+        merged.diagnostics.extend(java.diagnostics);
+        merged.diagnostics.extend(typescript.diagnostics);
         merged
             .files
             .sort_by(|left, right| left.path.cmp(&right.path));

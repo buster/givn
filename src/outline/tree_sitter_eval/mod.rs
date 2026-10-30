@@ -231,6 +231,7 @@ fn unit_key(unit: &super::model::SourceUnit) -> String {
         UnitKind::Type(TypeKind::Union) => "union",
         UnitKind::Type(TypeKind::TypeAlias) => "alias",
         UnitKind::Type(TypeKind::Class) => "class",
+        UnitKind::Type(TypeKind::Interface) => "interface",
         UnitKind::Module => "module",
     };
     format!("{}:{kind}:{}", language_label(unit.language), unit.name)
@@ -252,6 +253,8 @@ fn language_label(language: Language) -> &'static str {
     match language {
         Language::Rust => "rust",
         Language::Python => "python",
+        Language::Java => "java",
+        Language::TypeScript => "typescript",
     }
 }
 
@@ -544,12 +547,19 @@ mod tests {
     }
 
     #[test]
-    fn the_default_analyzer_keeps_the_current_languages() {
+    fn the_default_analyzer_includes_the_added_languages() {
         let capabilities = super::super::analyzer::outline_analyzer().capabilities();
-        assert_eq!(
-            capabilities.languages,
-            vec![Language::Rust, Language::Python]
-        );
+        for language in [
+            Language::Rust,
+            Language::Python,
+            Language::Java,
+            Language::TypeScript,
+        ] {
+            assert!(
+                capabilities.languages.contains(&language),
+                "{language:?} is missing from {capabilities:?}"
+            );
+        }
         assert!(
             capabilities
                 .supported_constructs
@@ -559,6 +569,11 @@ mod tests {
             capabilities
                 .supported_constructs
                 .contains(&Construct::Class)
+        );
+        assert!(
+            capabilities
+                .supported_constructs
+                .contains(&Construct::Interface)
         );
     }
 }

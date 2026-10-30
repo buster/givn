@@ -36,6 +36,8 @@ impl fmt::Display for RepoPath {
 pub enum Language {
     Rust,
     Python,
+    Java,
+    TypeScript,
 }
 
 impl Language {
@@ -43,6 +45,8 @@ impl Language {
         match self {
             Self::Rust => "rust",
             Self::Python => "python",
+            Self::Java => "java",
+            Self::TypeScript => "typescript",
         }
     }
 }
@@ -73,8 +77,11 @@ pub enum Construct {
     FileModule,
     FreeFunction,
     Class,
+    Interface,
     Function,
     ItemMacro,
+    Record,
+    Namespace,
 }
 
 impl Construct {
@@ -91,8 +98,11 @@ impl Construct {
             Self::FileModule => "file_module",
             Self::FreeFunction => "free_function",
             Self::Class => "class",
+            Self::Interface => "interface",
             Self::Function => "function",
             Self::ItemMacro => "item-macros",
+            Self::Record => "record",
+            Self::Namespace => "namespace",
         }
     }
 }
@@ -104,6 +114,13 @@ pub enum Limitation {
     NonUtf8File,
     PythonDynamicCalls,
     PythonTypeInference,
+    JavaPackageScope,
+    JavaRecordsMappedToClass,
+    JavaAnonymousClasses,
+    TypeScriptDialectSelection,
+    TypeScriptTypeOnlyDeclarations,
+    TypeScriptNamespaces,
+    CrossLanguageNameResolution,
     StructuralCallOrderNotRuntimeTrace,
     UncertainCallEdges,
 }
@@ -116,6 +133,13 @@ impl Limitation {
             Self::NonUtf8File => "non-utf8-file",
             Self::PythonDynamicCalls => "python-dynamic-calls",
             Self::PythonTypeInference => "python-type-inference",
+            Self::JavaPackageScope => "java-package-private-is-crate-scope",
+            Self::JavaRecordsMappedToClass => "java-records-are-reported-as-classes",
+            Self::JavaAnonymousClasses => "java-anonymous-classes-are-not-outlined",
+            Self::TypeScriptDialectSelection => "typescript-tsx-dialect-selected-by-extension",
+            Self::TypeScriptTypeOnlyDeclarations => "typescript-declaration-files-are-excluded",
+            Self::TypeScriptNamespaces => "typescript-namespaces-are-not-expanded",
+            Self::CrossLanguageNameResolution => "calls-never-resolve-across-languages",
             Self::StructuralCallOrderNotRuntimeTrace => {
                 "structural call order is not a complete runtime trace"
             }
@@ -238,6 +262,7 @@ pub enum TypeKind {
     Union,
     TypeAlias,
     Class,
+    Interface,
 }
 
 impl TypeKind {
@@ -249,6 +274,7 @@ impl TypeKind {
             Self::Union => "union",
             Self::TypeAlias => "type_alias",
             Self::Class => "class",
+            Self::Interface => "interface",
         }
     }
 }

@@ -16,8 +16,8 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
 
     let project_root = std::env::current_dir().context("resolve the project root")?;
     let roots = if paths.is_empty() {
-        // `src/` is the conventional Rust root. It is the only implicit root;
-        // Python or mixed layouts must name their production paths explicitly.
+        // `src/` is the conventional root for the supported languages. Other
+        // layouts must name their production paths explicitly.
         if project_root.join("src").is_dir() {
             vec![PathBuf::from("src")]
         } else {
@@ -41,13 +41,24 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
     let request = AnalysisRequest {
         project_root: project_root.clone(),
         scope: SourceScope {
-            languages: vec![Language::Rust, Language::Python],
+            languages: vec![
+                Language::Rust,
+                Language::Python,
+                Language::Java,
+                Language::TypeScript,
+            ],
             roots: roots.clone(),
             include_test_sources: false,
         },
     };
     let analyzer = outline::outline_analyzer();
     let capabilities = analyzer.capabilities();
+    let supported = capabilities
+        .languages
+        .iter()
+        .map(|language| language.label())
+        .collect::<Vec<_>>()
+        .join(", ");
     let analysis = outline::analyze(&request, analyzer.as_ref())?;
     if analysis.files.is_empty() {
         let scope = roots
@@ -59,12 +70,12 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
         if unsupported.is_empty() {
             bail!(
                 "outline report: no supported production sources found in: {scope}; \
-                 supported source languages: Rust, Python"
+                 supported source languages: {supported}"
             );
         }
         bail!(
             "outline report: no supported production sources found in: {scope}; \
-             supported source languages: Rust, Python; the scope contains production sources \
+             supported source languages: {supported}; the scope contains production sources \
              in unsupported languages: {}",
             unsupported
                 .iter()

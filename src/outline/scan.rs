@@ -21,9 +21,23 @@ const PYTHON_EXCLUDED_DIRS: &[&str] = &[
     "node_modules",
 ];
 
+/// Java build, generated, and test roots.
+const JAVA_EXCLUDED_DIRS: &[&str] = &["build", "out", "generated", "test"];
+
+/// TypeScript build, dependency, and test roots.
+const TYPESCRIPT_EXCLUDED_DIRS: &[&str] = &[
+    "node_modules",
+    "dist",
+    "build",
+    ".next",
+    "coverage",
+    "out",
+    "__tests__",
+];
+
 /// Source extensions that are production code but outside the supported
-/// Rust/Python analyzers.
-const UNSUPPORTED_SOURCE_EXTENSIONS: &[&str] = &["go", "java"];
+/// supported analyzers.
+const UNSUPPORTED_SOURCE_EXTENSIONS: &[&str] = &["go", "js", "jsx"];
 
 #[derive(Clone, Debug)]
 pub struct ScannedSource {
@@ -214,6 +228,8 @@ struct ScannedSourcePath {
 fn excluded_dir(name: &str, language: Language) -> bool {
     EXCLUDED_DIRS.contains(&name)
         || (language == Language::Python && PYTHON_EXCLUDED_DIRS.contains(&name))
+        || (language == Language::Java && JAVA_EXCLUDED_DIRS.contains(&name))
+        || (language == Language::TypeScript && TYPESCRIPT_EXCLUDED_DIRS.contains(&name))
 }
 
 fn language_for_path(path: &Path, languages: &[Language]) -> Option<Language> {
@@ -226,6 +242,23 @@ fn language_for_path(path: &Path, languages: &[Language]) -> Option<Language> {
                 return None;
             }
             Language::Python
+        }
+        "java" if languages.contains(&Language::Java) => {
+            if name.ends_with("Test.java") || name.ends_with("Tests.java") {
+                return None;
+            }
+            Language::Java
+        }
+        "ts" | "tsx" if languages.contains(&Language::TypeScript) => {
+            if name.ends_with(".d.ts")
+                || name.ends_with(".test.ts")
+                || name.ends_with(".spec.ts")
+                || name.ends_with(".test.tsx")
+                || name.ends_with(".spec.tsx")
+            {
+                return None;
+            }
+            Language::TypeScript
         }
         _ => return None,
     };
@@ -253,6 +286,13 @@ fn classify_line(line: &str, language: Language) -> LineKind {
         }
         Language::Python => {
             if trimmed.starts_with('#') {
+                LineKind::Comment
+            } else {
+                LineKind::Code
+            }
+        }
+        Language::Java | Language::TypeScript => {
+            if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*') {
                 LineKind::Comment
             } else {
                 LineKind::Code

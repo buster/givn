@@ -217,13 +217,18 @@ fn classify_type(
     code_lines: MetricValue,
     over_type_limit: bool,
 ) -> Option<(Classification, Vec<Evidence>)> {
-    let trait_over_limit = type_kind == TypeKind::Trait && over_type_limit;
+    let trait_over_limit =
+        matches!(type_kind, TypeKind::Trait | TypeKind::Interface) && over_type_limit;
     let many_public_methods = metrics.public_methods > 50;
     if trait_over_limit || many_public_methods {
         let mut items = Vec::new();
         if trait_over_limit {
             items.push(evidence(
-                "type-kind-trait",
+                if type_kind == TypeKind::Interface {
+                    "type-kind-interface"
+                } else {
+                    "type-kind-trait"
+                },
                 MetricValue::Count(1),
                 MetricValue::Count(1),
                 Comparison::Equal,

@@ -10,6 +10,7 @@ pub mod scan;
 mod python_adapter;
 mod resolve;
 mod syn_adapter;
+mod tree_sitter_adapter;
 
 #[cfg(test)]
 mod tree_sitter_eval;
