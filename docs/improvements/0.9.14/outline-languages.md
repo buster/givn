@@ -2,7 +2,7 @@
 
 ## Status and purpose
 
-Discussion draft started on 2026-10-30. Givn 0.9.13 is the intended improvement target, not a release commitment.
+Discussion draft started on 2026-10-30. Givn 0.9.14 is the implementation target for the evaluation-only phase, not a release commitment for replacement or language expansion.
 
 The user requested an improvement document discussing Tree-sitter as the parser for creating outlines. The confirmed direction is to evaluate Tree-sitter for Rust and Python alongside the current implementations, compare the outline features Givn needs, decide on replacement only after that comparison, and then add additional languages. The additional language set remains open.
 
@@ -190,6 +190,15 @@ Existing entry points include `givn/specs/assess-code-structure/outline-report.f
 - **Error-recovery behavior:** whether the current file-level parse-failure boundary is sufficient or useful output from malformed files warrants a separate completeness-contract change. Conservative behavior above remains a recommendation, not a confirmed requirement.
 
 The evaluation-first sequence is settled and must not be re-asked without new evidence. Exact dependency versions, query organization, extraction fixtures, capability representation, and any necessary neutral-model changes belong to the future design. None of this work is authorized now.
+
+## Implementation outcome (2026-10-30)
+
+The evaluation-only phase was implemented in the `evaluate-tree-sitter-outline`
+change and archived for 0.9.14. The test-only comparison is recorded in
+`docs/outline-tree-sitter-evaluation.md`; it classified units, methods, calls,
+and spans as missing required facts and retained the current Rust and Python
+adapters. No production engine switch, `python3` removal, or additional
+language is part of that release.
 
 ## Upstream references
 
