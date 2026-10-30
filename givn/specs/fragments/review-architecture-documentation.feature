@@ -92,3 +92,26 @@ Feature: Review architecture documentation
     And  a generic or machinery name is a substantive readability finding
     And  an unreadable changed unit rejects PASS until made readable
     And  the report itself supplies no verdict metric waiver or second review context
+
+  @review-architecture-documentation
+  Scenario: Review guidance checks vocabulary and structure at their owners
+    Given  a project root with givn/ initialised
+    And  an existing change named "review-domain-owners"
+    Then  the served review instruction contains "docs/glossary.md"
+    And  the served review instruction contains "docs/domain-model.md"
+    And  the served review instruction contains "structural impact"
+
+  @review-architecture-documentation
+  Scenario: Design-review guidance checks vocabulary and structure at their owners
+    Given  a project root with givn/ initialised
+    And  an existing change named "design-review-domain-owners"
+    Then  the served design-review instruction contains "docs/glossary.md"
+    And  the served design-review instruction contains "docs/domain-model.md"
+    And  the served design-review instruction contains "structural impact"
+
+  @review-architecture-documentation
+  Scenario: Review does not accept a no-op model edit as maintenance evidence
+    Given  a project root with givn/ initialised
+    And  an existing change named "review-no-op-model"
+    Then  the served review instruction contains "no-op document edit"
+    And  the served review instruction contains "not evidence"

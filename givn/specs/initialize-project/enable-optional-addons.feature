@@ -7,6 +7,8 @@ Feature: enable-optional-addons
     Then  all optional addons including communication_policy and challenge are explicitly disabled
     And  no addon skills or generated commands exist
     And  the mandatory dialog-policy startup obligation remains installed
+    And  the file "docs/glossary.md" does not exist
+    And  the file "docs/domain-model.md" does not exist
 
   Scenario: givn addons exposes architecture principles as opt-in
     Given a project root with givn/ initialised without addons
@@ -110,6 +112,8 @@ Feature: enable-optional-addons
     Then  every current addon including communication_policy and challenge is effectively enabled
     And  the selected target receives addon skills without generated commands
     And  no grill_me, grill_with_docs, or absolute_mode setting is generated
+    And  the file "docs/glossary.md" exists
+    And  the file "docs/domain-model.md" exists
 
   @enable-optional-addons
   Scenario: givn addons list reports every addon enabled by default
@@ -204,3 +208,59 @@ Feature: enable-optional-addons
       | workflow | givn/commands.yaml | givn/config.yaml |
       | verify.command | givn/config.yaml | givn/commands.yaml |
       | run.command | givn/config.yaml | givn/commands.yaml |
+
+  @enable-optional-addons
+  Scenario: The scaffolded glossary is the standalone vocabulary authority
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init --agents opencode`
+    Then  the file "docs/glossary.md" contains "| Term | Definition |"
+    And  the file "docs/glossary.md" contains "sole vocabulary authority"
+
+  @enable-optional-addons
+  Scenario: The scaffolded domain model carries the notation legend
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init --agents opencode`
+    Then  the file "docs/domain-model.md" contains "Collapsed consistency boundary"
+    And  the file "docs/domain-model.md" contains "External system"
+    And  the file "docs/domain-model.md" contains "layout: elk"
+    And  the file "docs/domain-model.md" contains "This is notation only, not part of the domain model"
+
+  @enable-optional-addons
+  Scenario: Existing domain documents survive initialization
+    Given  a project root with givn/ initialised
+    And  a project file "docs/glossary.md" with content "# Project glossary"
+    And  a project file "docs/domain-model.md" with content "# Project model"
+    When  the user runs `givn init --agents opencode`
+    Then  the file "docs/glossary.md" contains "# Project glossary"
+    And  the file "docs/domain-model.md" contains "# Project model"
+
+  @enable-optional-addons
+  Scenario: Enabling arc42 scaffolds only the standalone glossary
+    Given  an initialized addon-free project selecting opencode
+    When  the user runs `givn addons enable arc42`
+    Then  the file "docs/glossary.md" exists
+    And  the file "docs/domain-model.md" does not exist
+    And  the file "docs/arc42/12-glossary.md" contains "../glossary.md"
+    And  the file "docs/arc42/12-glossary.md" does not contain "| Term | Definition |"
+
+  @enable-optional-addons
+  Scenario: Enabling domain modeling scaffolds both durable documents
+    Given  an initialized addon-free project selecting opencode
+    When  the user runs `givn addons enable domain_modeling`
+    Then  the file "docs/glossary.md" exists
+    And  the file "docs/domain-model.md" exists
+
+  @enable-optional-addons
+  Scenario: Enabling an addon preserves an existing glossary
+    Given  an initialized addon-free project selecting opencode
+    And  a project file "docs/glossary.md" with content "# Project glossary"
+    When  the user runs `givn addons enable domain_modeling`
+    Then  the file "docs/glossary.md" contains "# Project glossary"
+
+  @enable-optional-addons
+  Scenario: Disabling domain modeling leaves the durable documents in place
+    Given  an initialized addon-free project selecting opencode
+    When  the user runs `givn addons enable domain_modeling`
+    And  the user runs `givn addons disable domain_modeling`
+    Then  the file "docs/glossary.md" exists
+    And  the file "docs/domain-model.md" exists

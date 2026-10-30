@@ -62,17 +62,6 @@ Feature: Match guidance to enabled addons
     And  no generated review command exists
     And  the terminal transcript is captured for this scenario
 
-  @e2e
-  Scenario Outline: A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
-    Given  a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
-    When  a consumer disables the <addon> addon through the Givn CLI
-    Then  no generated domain-modeling skill exists
-    And  the served review instruction omits the Ubiquitous language conformance section
-    Examples:
-      | addon |
-      | arc42 |
-      | domain-modeling |
-
   @match-guidance-to-enabled-addons
   Scenario: An unbalanced conditional in a skill template fails the synchronization
     Given  a Givn project with a project skill template that contains an unbalanced conditional
@@ -103,3 +92,25 @@ Feature: Match guidance to enabled addons
       | state | outcome |
       | enabled | contains |
       | disabled | omits |
+
+  @match-guidance-to-enabled-addons
+  Scenario: Disabling arc42 keeps the generated domain-modeling skill
+    Given  a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+    When  a consumer disables the arc42 addon through the Givn CLI
+    Then  a generated domain-modeling skill exists
+    And  the served review instruction contains the Ubiquitous language conformance section
+
+  @match-guidance-to-enabled-addons
+  Scenario: Disabling the domain-modeling addon removes the generated domain-modeling skill
+    Given  a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
+    When  a consumer disables the domain-modeling addon through the Givn CLI
+    Then  no generated domain-modeling skill exists
+    And  the served review instruction omits the Ubiquitous language conformance section
+
+  @match-guidance-to-enabled-addons
+  Scenario: Enabling domain modeling without arc42 generates the domain-modeling skill
+    Given  a Givn project with the arc42 and domain-modeling addons disabled and the skills synchronized
+    When  a consumer enables the domain-modeling addon through the Givn CLI
+    Then  a generated domain-modeling skill exists
+    And  the served review instruction contains the Ubiquitous language conformance section
+    And  the served design-review instruction omits the Architecture documentation (arc42) branch
