@@ -539,17 +539,32 @@ changes have made its relevant evidence stale; only structurally stale
 relevant evidence requires rerunning the outline. Nonstructural edits alone do
 not require a rerun.
 
-The report covers supported Rust and Python components and their relevant
-neighbors. Disclose which languages and components it covers and which it
-omits. Unsupported Go or Java components receive direct source assessment using
-the same responsibility, interface, dependency-direction, and decomposition
-questions; unavailable outline support is not a failure and needs no waiver.
+The report covers supported components and their relevant neighbors. Disclose
+which languages and components it covers and which it omits. Unsupported
+components receive direct source assessment using the same responsibility,
+interface, dependency-direction, and decomposition questions; unavailable
+outline support is not a failure and needs no waiver.
+
+Before the architecture questions, reconstruct each changed unit from its
+outline: state its responsibility in one sentence and its ordered call flow,
+without reading bodies or comments. Read the names as the contract: unit and
+type names, method names, parameter names and types, return types, and called
+type names must state the domain operation in the project's vocabulary. A
+generic or machinery name where a domain noun exists is a readability finding.
+If the outline cannot carry that story, record a substantive readability
+finding and reject PASS until the unit is made readable; do not substitute
+source reading or clean metrics for the outline. Source confirms a suspected
+problem; it does not explain the unit.
 
 Ask whether responsibilities are cohesive, public interfaces narrow,
 dependencies correctly directed, and decomposition understandable. Confirm any
 suspected problem against source before drawing conclusions or editing. The
 structural call order is not a complete runtime trace, and uncertain or omitted
-edges limit the conclusions. The outline alone cannot block review or archive.
+edges limit the conclusions.
+
+The outline alone cannot block review or archive; the report supplies no
+verdict. A substantive readability finding about the changed code is an
+ordinary review finding and can reject PASS.
 {{/if}}
 
 ## Result

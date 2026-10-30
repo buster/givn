@@ -204,9 +204,10 @@ Individual examples do not need their own failing test or production diff.
 
    Ask whether responsibilities are cohesive, public interfaces narrow,
    dependencies correctly directed, and decomposition understandable. Confirm
-   suspected problems against source before conclusions or edits; source
-   never substitutes for the outline story. Structural call order is not a
-   complete runtime trace; uncertain or omitted edges limit the conclusions.
+   suspected problems against source before conclusions or edits. Source
+   confirms a suspected problem; it never substitutes for the outline story.
+   Structural call order is not a complete runtime trace; uncertain or omitted
+   edges limit the conclusions.
    Metrics and classifications are hints: a clean metric never excuses an
    unreadable outline, and no metric waives it. Reuse the report until
    structural changes make its relevant evidence stale: a later structural

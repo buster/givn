@@ -14,7 +14,7 @@ already resolves `{{#if addons.outline}}` from project configuration.
 
 ## Setup
 
-- [ ] Confirm the existing runner and strict mode; no new runner is installed.
+- [x] Confirm the existing runner and strict mode; no new runner is installed.
       Evidence:
       ```text
       tests/features_runner.rs: GivnWorld::cucumber().fail_on_skipped()
@@ -23,22 +23,23 @@ already resolves `{{#if addons.outline}}` from project configuration.
       ```
       Strict-mode probe (undefined step):
       ```text
-      $ GIVN_FEATURES=<probe> cargo test --locked --test features_runner -- --name '^undefined step$'
+      $ GIVN_FEATURES=/tmp/strict-probe cargo test --locked --test features_runner -- --name '^undefined step$'
       Scenario: undefined step
         ✘  Given an undefined strict probe step
       Step doesn't match any function
-      1 scenario (1 failed)
+      1 scenario (1 failed), 1 step (1 failed)
       exit status: 1
       ```
       Probe removed; the suite returned to its passing baseline.
-- [ ] Confirm the step definition files named by design.md exist and stay the
+      Probe removed; the suite returned to its passing baseline.
+- [x] Confirm the step definition files named by design.md exist and stay the
       homes for this change:
       `tests/steps/serve_extended_rules_steps.rs`,
       `tests/steps/template_conditional_rendering_steps.rs` (+
       `template_conditional_rendering_support.rs`),
       `tests/steps/arc42_review_alignment_steps.rs`,
       `tests/steps/skill_rewrites_steps.rs`.
-- [ ] No new E2E action is added. The changed `@e2e` scenario keeps the
+- [x] No new E2E action is added. The changed `@e2e` scenario keeps the
       existing `givn eject review:template` action, its real CLI driver, and
       its terminal transcript evidence.
 
@@ -77,17 +78,17 @@ Design constraints for every scenario in this batch:
 
 ### Scenario: Outline guidance follows the opt-in addon
 
-- [ ] RED: `GIVN_FEATURES=givn/changes/strengthen-outline-guidance/specs cargo test --locked --test features_runner -- --name '^Outline guidance follows the opt-in addon'` fails because both instructions still contain `outline` when the addon is disabled.
-- [ ] GREEN: `3 scenarios (3 passed)`? Record the actual example count and zero exit after the conditional wrappers are in place.
-- [ ] REFACTOR: Re-run the same name filter; zero exit.
-- [ ] COMMIT: pending -- Batch: addon-conditional-outline
+- [x] RED: both example steps were undefined; `Step doesn't match any function` for the enabled and disabled rows.
+- [x] GREEN: `2 scenarios (2 passed)`, `8 steps (8 passed)` with the conditional wrappers and step bindings.
+- [x] REFACTOR: Re-ran the same name filter; `2 scenarios (2 passed)`.
+- [x] COMMIT: `8c1e999b` -- `fix(serve-extended-rules): outline guidance follows the addon` (Batch: addon-conditional-outline)
 
 ### Scenario: The review template includes the Arc42 conformance block (@e2e)
 
-- [ ] RED: `GIVN_FEATURES=givn/changes/strengthen-outline-guidance/specs cargo test --locked --test features_runner -- --name '^The review template includes the Arc42 conformance block$'` fails on the retired-gate phrase.
-- [ ] GREEN: `1 scenario (1 passed)` after the template sentence changes and the delta assertion binds.
-- [ ] REFACTOR: Re-run the same name filter; zero exit. The transcript is written under `givn/changes/strengthen-outline-guidance/evidence/visual/`.
-- [ ] COMMIT: pending -- Batch: addon-conditional-outline
+- [x] RED: `the template records evidence and material mismatches` failed on the retired-gate phrase.
+- [x] GREEN: `1 scenario (1 passed)`, `7 steps (7 passed)` after the template sentence changed and the delta assertion bound.
+- [x] REFACTOR: Re-ran the same name filter; `1 scenario (1 passed)`. Transcript written under `givn/changes/strengthen-outline-guidance/evidence/visual/the-review-template-includes-the-arc42-conformance-block/`.
+- [x] COMMIT: `8c1e999b` -- `fix(serve-extended-rules): outline guidance follows the addon` (Batch: addon-conditional-outline)
 
 ## Batch B — the readability contract
 

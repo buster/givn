@@ -373,6 +373,82 @@ fn mixed_language_coverage_is_disclosed(world: &mut GivnWorld) {
 }
 
 #[then(
+    "mixed-language coverage is disclosed without forcing outline analysis of unsupported components"
+)]
+fn unsupported_coverage_is_disclosed(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("Disclose which languages and components it covers and which it omits"),
+        "outline coverage is not disclosed"
+    );
+    assert!(
+        content.contains("Unsupported components receive direct source assessment"),
+        "unsupported components are forced through the outline"
+    );
+}
+
+#[then("the reviewer must reconstruct responsibility and ordered call flow from the outline alone")]
+fn reviewer_reconstructs_unit_from_outline(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("reconstruct each changed unit from its outline")
+            && content
+                .contains("state its responsibility in one sentence and its ordered call flow")
+            && content.contains("without reading bodies or comments"),
+        "review guidance does not require responsibility and call flow from the outline"
+    );
+}
+
+#[then("names parameters return types and type names must state the domain operation")]
+fn review_names_state_domain_operation(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "unit and type names, method names, parameter names and types, return types, and called type names must state the domain operation in the project's vocabulary"
+        ),
+        "review guidance does not require domain names on the outline"
+    );
+}
+
+#[then("a generic or machinery name is a substantive readability finding")]
+fn review_generic_name_is_finding(world: &mut GivnWorld) {
+    assert!(
+        normalized_guidance(world).contains(
+            "A generic or machinery name where a domain noun exists is a readability finding"
+        ),
+        "review guidance accepts generic machinery names"
+    );
+}
+
+#[then("an unreadable changed unit rejects PASS until made readable")]
+fn review_unreadable_unit_rejects_pass(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    assert!(
+        content.contains("record a substantive readability finding")
+            && content.contains("reject PASS until the unit is made readable"),
+        "review guidance does not reject PASS for an unreadable unit"
+    );
+}
+
+#[then("the report itself supplies no verdict metric waiver or second review context")]
+fn report_supplies_no_verdict(world: &mut GivnWorld) {
+    let content = normalized_guidance(world);
+    for marker in [
+        "no verdict",
+        "no metric waiver",
+        "no forced reviewer context",
+    ] {
+        assert!(
+            content.contains(marker),
+            "outline report guidance still supplies {marker:?}"
+        );
+    }
+    assert!(
+        !content.contains("OUTLINE: PASS") && !content.contains("OUTLINE: FAIL"),
+        "outline report guidance requires an outline verdict"
+    );
+}
+
+#[then(
     "unsupported components receive direct source assessment using the same architecture questions"
 )]
 fn unsupported_components_source_assessed(world: &mut GivnWorld) {
