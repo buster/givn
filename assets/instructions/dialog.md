@@ -2,7 +2,7 @@
 
 The canonical dialog policy. It applies to every user-facing question an
 agent asks in a Givn project — with or without a named workflow, while
-clarifying, confirming, reviewing, or delegating. Ideation, explore, proposal ambiguity flagging, challenge findings,
+clarifying, confirming, reviewing, or delegating. Ideation, start, proposal ambiguity flagging, challenge findings,
 design-review grilling, review dispositions, and archive confirmations are
 covered; the obligation is not limited to them.
 

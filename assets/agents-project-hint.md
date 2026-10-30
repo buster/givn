@@ -2,9 +2,15 @@ This project uses **givn** for spec-driven development. This block is
 auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
 
 - Run `givn instructions` as the first action of every session. Do not
-  search, grep, or explore files to determine what to do next — this command
-  inspects the current project state and tells you the next step, including
-  `--change <CHANGE>` for active changes.
+  search, grep, or inspect files to determine what to do next — this command
+  reports the current project state and the next lifecycle step, including
+  `--change <CHANGE>` for active changes. A reported step applies when
+  continuing that change; it does not authorize unrelated work or require every
+  task to become a Givn change.
+- For new or unclassified work, load `givn-start` to choose answer only, direct
+  work without a Givn change, ideation, or a formal change. For a change whose
+  goal and scope are already clear, run `givn new <change-id>` directly. Honor
+  an explicitly requested, applicable path without another routing conversation.
 - For every user-facing question, follow the effective dialog policy from
   `givn instructions dialog`; load it once per context before the first
   question, including clarification and confirmation outside a named
