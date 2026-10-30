@@ -83,11 +83,11 @@ Feature: The served instruction carries the built-in rules and the project's ext
 
   @serve-extended-rules
   Scenario: Refactor guidance uses the outline once for supported changed components and their neighbors
-    Given  a behavior batch changes supported Rust or Python components alongside unsupported Go or Java components
+    Given  a behavior batch changes supported and unsupported components
     When  the author reads the REFACTOR guidance
-    Then  one advisory outline inspection per batch covers supported changed components and relevant neighbors
+    Then  supported changed components receive one advisory outline inspection per batch
     And  the assessment discloses which languages and components the outline covers and which it omits
-    And  Go or Java components receive direct source assessment without forced outline analysis
+    And  unsupported components receive direct source assessment without forced outline analysis
     And  the assessment asks whether responsibilities are cohesive public interfaces narrow dependencies correctly directed and decomposition understandable
     And  suspected problems are confirmed against source before conclusions or edits
     And  structural call order is not represented as a complete runtime trace
@@ -98,7 +98,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
 
   @serve-extended-rules
   Scenario: Unsupported outline languages receive source assessment without a waiver
-    Given  a behavior batch changes Go or Java components unsupported by the outline
+    Given  a behavior batch changes unsupported components
     When  the author reads the REFACTOR guidance
     Then  the same responsibility interface dependency and decomposition questions are assessed directly against source
     And  unavailable outline support is not failure or a reason for a waiver
@@ -118,3 +118,20 @@ Feature: The served instruction carries the built-in rules and the project's ext
     Then  the guidance requires cohesive responsibility modules narrow consumer contracts external adapters separate composition and explicit dependency direction
     And  a narrow module API is acceptable unless isolation or substitution needs an explicit interface
     And  the guidance does not demand hypothetical providers or plugin registries
+
+  @serve-extended-rules
+  Scenario: Refactor guidance treats an unreadable changed unit as a finding
+    Given  a behavior batch changes a unit whose outline cannot carry its story
+    When  the author reads the REFACTOR guidance
+    Then  the outline must state the unit's responsibility and ordered call flow without bodies or comments
+    And  unit type method parameter return and called-type names must state the domain operation
+    And  generic machinery names are readability findings
+    And  metrics and classifications never overrule an unreadable outline
+    And  source confirms a suspected problem rather than substituting for the outline story
+    And  an unreadable changed unit is fixed in REFACTOR or recorded as a substantive review finding
+
+  @serve-extended-rules
+  Scenario: Implementation guidance routes to the shared step mechanics
+    Given  a Givn project with an active change
+    When  the author requests the tasks instruction
+    Then  the served guidance names givn instructions steps as the step mechanics
