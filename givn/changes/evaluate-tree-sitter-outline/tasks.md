@@ -41,9 +41,9 @@ Design constraints:
 
 ## Batch B — documentation closeout
 
-- [ ] Update `docs/arc42/08-crosscutting-concepts.md` 8.26,
+- [x] Update `docs/arc42/08-crosscutting-concepts.md` 8.26,
       `docs/arc42/11-risks-and-technical-debt.md` R-130/R-131, and
       `docs/glossary.md`.
-- [ ] Confirm every delta step phrase has a permanent binding and no
+- [x] Confirm every delta step phrase has a permanent binding and no
       unimplemented stub remains.
-- [ ] COMMIT: <hash> -- Batch: tree-sitter-documentation-closeout
+- [x] COMMIT: 9912d5ed -- Batch: tree-sitter-documentation-closeout
