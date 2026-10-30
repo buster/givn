@@ -234,6 +234,14 @@ Options:
 The design must prevent an autonomous agent from invoking the override as an
 ordinary command.
 
+## Implementation outcome (2026-10-30)
+
+Implemented in `lock-addons-during-change` for 0.9.16. New changes record
+`config-lock.yaml`; add-on mutation is refused during a locked change; review
+and archive fail on drift; the operator override requires a TTY and reason and
+is recorded. Missing locks are skipped for older changes, and deliberate lock
+deletion remains a documented residual limit.
+
 ## Non-goals
 
 - No benchmark-specific rule.
