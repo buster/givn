@@ -75,6 +75,12 @@ You don't need to write tests for every legacy feature up front. Run an initial 
 
 ## Configuration
 
+Add-on configuration is operator-owned. A new change records the effective add-ons in
+`givn/changes/<id>/config-lock.yaml`; `givn addons enable|disable` and a changing
+`givn init --force` are refused while that change is active. Review and archive
+fail if the project configuration drifts from the record. An operator can use
+`--operator --reason "<reason>"` on an interactive terminal.
+
 | File / Command | Purpose |
 |---|---|
 | `givn/config.yaml` | Toggle addons (`false` to opt out), configure agent targets, and extend agent instructions. |

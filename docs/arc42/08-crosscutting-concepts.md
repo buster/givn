@@ -556,6 +556,20 @@ the durable chapters are side-effect files maintained by the agent. Disabling
 the addon removes it from the effective workflow but does not delete existing
 Arc42 files.
 
+### 8.11a The Add-on Configuration Lock
+
+A new change records the effective nine add-on values in
+`givn/changes/<id>/config-lock.yaml` (format version 1). The file also carries
+operator overrides with addon, before/after, reason, and timestamp.
+
+While a locked change is active, `givn addons enable|disable` refuses. The
+operator override is `--operator --reason "<reason>"` on an interactive
+terminal; it updates the recorded value and appends the override. A forced init
+refuses only when its proposed add-on set differs from the record. Review and
+archive compare the current effective configuration with the lock and fail on
+drift. A missing lock means a change created before the lock and is skipped;
+deliberate lock deletion remains a documented residual limit.
+
 ## 8.12 Hooks, Command Execution, and Mandatory Checks
 
 There are two distinct mechanisms.

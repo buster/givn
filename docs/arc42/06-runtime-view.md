@@ -486,6 +486,14 @@ model, and variant are recorded where known; unavailable usage stays explicit.
 
 ## 6.12 Addons and Completion Commands
 
+`givn new` records the effective add-on values in
+`givn/changes/<id>/config-lock.yaml`. While that change is active,
+`givn addons enable|disable` refuses unless an operator uses
+`--operator --reason "<reason>"` on an interactive terminal; the override is
+recorded in the lock. `givn init --force` refuses only when it would change the
+add-on set. Review and archive compare the current effective values with the
+lock and refuse on drift.
+
 `givn addons list` reads enabled flags from `givn/config.yaml` and lists every
 registered addon with its effective default. All registered addons are enabled
 by default; a missing key resolves to enabled, and only an explicit `false`

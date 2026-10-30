@@ -4,6 +4,7 @@
 
 | Term | Definition |
 |---|---|
+| **Add-on lock** | The change-local `config-lock.yaml` recording the effective add-on values when a change starts, plus recorded operator overrides. Review and archive fail on drift. Anti-term: config snapshot (it is policy, not a copy of the whole configuration). |
 | **Addon** | Embedded behavior toggled through `addons.<name>`. Every registered addon is enabled by default; a missing key in a partial block means enabled, and only an explicit `false` (written by `givn init --no-addons` or `givn addons disable <name>`) opts out. |
 | **Addon default** | The enabled-by-default posture shared by the embedded manifest, the `Addons` serde defaults, and the registry. Anti-term: opt-in default (the rejected mixed posture). |
 | **Addon-aware generation** | Generation that includes only the template sections whose declared addon condition matches the current effective addon set; an addon that is off leaves no trace in the generated skill. |
@@ -223,6 +224,7 @@
 | **Aggregate marker** | One report tick that stands for a group of entries too short to draw individually at the current phase zoom, naming how many entries it covers and their combined duration; the sub-pixel threshold applies at every zoom, so it resolves into individual ticks only where the current zoom permits. Anti-term: cluster (reserved for use-case grouping). |
 | **Subagent span** | The recorded start and end of one delegated subagent execution, nested under the turn that spawned it, so fan-out into many small subagents is visible. |
 | **Advisory outline** | The enabled-by-default `outline` addon's report and its use during REFACTOR and review. It is structural evidence confirmed against source, not a verdict, gate, or quality score. |
+| **Operator override** | The interactive `--operator --reason "<reason>"` path that records a deliberate add-on change in the active change lock. It is not an ordinary non-interactive agent command. |
 | **Outline report** | The deterministic human or JSON snapshot of production Rust, Python, Java, and TypeScript units: each unit's per-component call tree first, then metrics and one classification as hints. Each call carries a resolution label, and each JSON call carries its resolved target. It emits no action, recommendation, verdict, or waiver; stores no baseline or history; uses schema version 4; and represents an unavailable measurement as `unavailable`/`null`, never zero. Anti-term: outline baseline. |
 | **Call shape** | The neutral fact an adapter supplies about how a call is written: a free function with an optional path qualifier, or a method with `self`/`cls`, a named owner, or unknown receiver evidence. It decides which candidate owners the resolver may accept. Anti-term: callee name (a name alone is not evidence of a call target). |
 | **Call resolution** | The label stating how far a call target is evidenced: `same_file`, `project_other_file`, `name_only`, `ambiguous`, `dynamic`, or `external`. `name_only` keeps a unique candidate for audit but never nests and never joins methods for cohesion. Anti-term: resolved call (a name-only guess is not resolved). |

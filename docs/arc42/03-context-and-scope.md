@@ -50,11 +50,12 @@ sync; the current optional presentation block is `communication-policy`.
 | `GIVN_FEATURES` | in | Feature path or scope exported to project command processes. |
 | `GIVN_RESULT_FILE` | out | Per-scope result path exported to the verification runner; the runner writes the fail-closed four-count result Givn reconciles. |
 | `GIVN_RESULT_SCOPE` | out | `change`, `regular`, or `e2e`; a result that declares a different scope is refused. |
+| `givn addons enable|disable` | in/out | Refused while a locked change is active; the interactive operator override records the add-on, before/after, reason, and timestamp in the change lock. |
 | `givn instructions [<id>] [--json]` | out | No id: project state and request routing (`next_command`, `next_skill`, `overview`). With an artifact id: one object with `id`, `generates`, `requires`, and resolved `instruction`; policy ids use empty artifact arrays and may add `skill_to_load`. |
 | `givn instructions arc42-docs` / `design-review` | out | Effective architecture and review guidance; the project cascade may override the default source. |
 | `givn instructions dialog` / `dialog-examples` / `challenge` | out | The mandatory question policy, its worked examples, and the evidence-first challenge policy. They resolve without a lifecycle change. |
 | `givn spec find/tree/duplicates/coverage/route` | in/out | Deterministic specification queries and advisory routing. |
-| `givn check review --change <id>` | in/out | Integrity, run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks. It runs no suite and no outline gate. |
+| `givn check review --change <id>` | in/out | Integrity, run declaration, change-scoped lint, overlap, retirement, routing, receipt, add-on drift, and scenario-commit checks. It runs no suite and no outline gate. |
 | `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development/run managed block damage or ambiguity, unmanaged or missing README; exit status reflects findings. |
 | `givn run [--port <n>] [--print]` | in/out | Starts the declared product; for servers waits for readiness, prints `givn run: ready at http://127.0.0.1:<port><ready_path>` on stdout, forwards the child's exit code, and forwards SIGINT/SIGTERM on unix. `--print` emits one sh-eval-able start line without executing. |
 | `givn upgrade` | in/out | Clean-checkout preflight through the selected backend, managed scaffold and guidance refresh, checkpoint reporting, and one allowlist-only revision when files changed. No pre-1.0 route is shipped. |
