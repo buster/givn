@@ -49,12 +49,3 @@ Feature: The served instruction carries the built-in rules and the project's ext
     When the user runs `givn instructions explore`
     Then the command fails
     And stderr contains "givn instructions start"
-
-  @givn.modified
-  Scenario: The served implementation guidance requires behavioral RED before production edits
-    Given a coherent named behavior batch is planned in tasks with scenarios validation and an intended commit boundary
-    When the author requests the implementation and steps guidance
-    Then tests and bindings must run before production edits for new behavior
-    And the observed RED must be a meaningful behavioral failure rather than missing bindings syntax registration fixtures or environment failure
-    And the actual command and short observed failure are recorded compactly in the batch task as they occur
-    And minimum implementation is followed by actual GREEN and REFACTOR checks recorded briefly
