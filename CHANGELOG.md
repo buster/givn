@@ -4,27 +4,185 @@ All notable changes to Givn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
-## [Unreleased]
+## [0.9.10] - Unreleased
 
-## [0.9.9] - 2026-10-29
+### Breaking Changes
+
+- **guidance:** generated agent command files are removed. Givn now emits
+  skills only: Claude Code and OpenCode use their skill invocation, the neutral
+  `.agents` target uses skill discovery, OMP uses `/skill:givn-<step>`, and
+  Maki uses an explicit request or an agent-selected skill. `givn skills sync`
+  and `givn upgrade` remove **recognizable Givn-generated** command files from
+  the selected targets; custom or modified command files are preserved and
+  reported for manual transition. No replacement `/givn-*` command files are
+  generated.
+- **commit:** `givn commit` now requires explicit paths. Invoking it without
+  paths fails before staging. Only the named paths are committed; unrelated
+  staged and unstaged work is preserved on Git and Fossil.
+- **configuration:** `givn/commands.yaml` now accepts only command/runtime
+  settings (`verify`, `coverage`, and `run`). Addon, artifact, apply, and other
+  policy configuration must live in `givn/config.yaml`; misplaced keys are
+  rejected with a file-ownership diagnostic instead of being silently applied.
+- **addons:** `absolute_mode` is renamed to `communication_policy`, and
+  `grill_me` plus `grill_with_docs` are consolidated into `challenge`
+  (`givn-challenge`). There are no compatibility aliases; retired keys are
+  rejected with manual-transition guidance.
+- **migration:** 1.0 is the supported migration baseline. Embedded 0.7/0.8
+  migration bundles and their aggregate routes are removed. Pre-1.0 projects
+  may need manual configuration repair; Givn does not silently convert old
+  configuration or apply a compatibility alias. Future migration routes remain
+  supported and are validated through disposable synthetic fixtures.
+- **review checks:** the outline review is advisory, not a blocking verdict
+  gate. Per-unit `OUTLINE: PASS/FAIL`, metric waivers, and forced outline
+  reviewer context are removed. Shape matches are advisory and no longer
+  require disposition rows. Long scenarios still require an explicit
+  `split`/`keep` decision with a reason; a promised split must be completed.
+- **commands:** bare `givn check` no longer runs configured artifact hooks or
+  implies verification. It prints the explicit check commands and executes
+  nothing.
 
 ### Features
 
-- **review:** run each change in one context by default, permit at most one
-  fresh independent review context for major or user-requested changes, record
-  `Review kind`, and make the outline gate use the recorded context. Prescriptive
-  subagent orchestration is removed from the generated guidance; the review
-  instruction is its only owner.
-- **addons:** enable every add-on by default, including the outline and
-  architecture-principles add-ons. `givn init --no-addons` writes an explicit
-  false for every known add-on, `givn addons list` reports the effective default,
-  and a partial `addons:` block changes only the keys it names.
+- **verification:** change verification removes stale runner output, snapshots
+  the revision and relevant inputs before execution, requires fresh valid
+  counts, and checks input stability afterward. A successful no-op runner can no
+  longer reuse old results.
+- **archive:** successful regular/E2E scope evidence is persisted and reused on
+  repair when its relevant inputs are unchanged. Evidence-only revisions do not
+  rerun suites; a changed verify command invalidates only its scope, while shared
+  source/content changes conservatively invalidate both. Existing broad
+  archive-evidence exemptions remain documented.
+- **no-behavior-change changes:** an explicit `Behavior change: none`
+  declaration with skipped specs records changed-scenario verification as not
+  applicable. It does not invent scenarios or substitute an automatic
+  full-suite run; archive still verifies the merged candidate.
+- **Gherkin:** supported publication preserves Feature Background, Scenario
+  Outline Examples, docstrings, tables, inherited execution tags, and moving
+  specifications. Rule blocks and non-English dialects are rejected before
+  mutation with actionable diagnostics instead of being silently changed.
+- **content comparison:** preservation and duplicate audits include supported
+  executable arguments and inherited setup while remaining path-independent.
+  `exact_duplicate` means literal supported executable equality; masked
+  structural similarity is reported separately as advisory.
+- **specification ownership:** review and archive share capability-owner
+  resolution for use cases and fragments, including `NEW`/`EXTEND` and ambiguity
+  refusal. Typed `usecase:`/`fragment:` relationships resolve only in their
+  declared namespace, and interaction evidence is keyed by capability plus
+  title.
+- **verification output:** independent cheap validation failures are reported
+  together; dependent checks are marked not performed after a prerequisite
+  failure. `givn status` distinguishes artifacts complete, verification
+  current/stale/not checked, pending archive candidates, and proven archives
+  without executing tests.
+- **commits:** explicit-path Git publication preserves unrelated staged work,
+  supports tracked deletions, refuses unmerged index states, and reports the
+  resulting revision. Optional attribution installation is repeatable with
+  `core.hooksPath=.githooks`, preserves user hooks, and cannot self-dispatch.
+- **runtime:** readiness waits use one total deadline across connect, write,
+  and read, so a server that accepts but never responds cannot hang the start
+  command. Reporter helpers have bounded waits and cannot block primary agent
+  work.
+- **configuration:** addon defaults and partial blocks resolve consistently;
+  repeated initialization preserves explicit opt-outs; addon edits update only
+  the intended setting or refuse unsupported YAML before writing. Required
+  skill-generation failures produce a nonzero, accurate partial-initialization
+  report.
+- **guidance:** bootstrap owns loading the dialog policy once per context; a
+  concise policy indexes preserved real-life examples by question type. Skills
+  are thin directions to canonical instructions and no longer repeat dialog,
+  delegation, review-loop, or commit prescriptions.
+- **challenge and communication:** new `givn-challenge` reviews proposals,
+  tests, specs, design, code, or complete changes by investigating first,
+  citing available sources, labeling hypotheses, and asking only unresolved
+  human decisions. `communication_policy` is presentation-only; mandatory
+  dialog correctness is independent of it.
+- **outline:** the report remains available as advisory structural evidence
+  for Rust and Python. Unsupported-only scopes distinguish “no supported
+  production sources” from “no production sources”; unavailable measurements
+  render as unavailable/`null`, not zero; unmeasured LCC is omitted.
+- **coverage and E2E:** equal coverage from honest runs no longer blocks proof;
+  reports must be fresh and valid. E2E scope is declared explicitly rather than
+  inferred from command strings or relative scenario counts. Justified
+  reclassification is allowed while required real-interface coverage remains.
+- **architecture:** modularity, narrow consumer contracts, adapters, and
+  explicit dependency direction are required from the first implementation.
+  The first completed arc42 change establishes all twelve proportionate
+  chapters; later changes maintain affected chapters. ADR qualification is
+  concise and recorded once.
+- **documentation:** README, workflow/reference guides, migration guidance,
+  ADRs, glossary, and the twelve arc42 chapters are reconciled to current
+  behavior. Post-1.0 work is tracked with concrete evidence instead of
+  duplicated operational rules.
 
 ### Bug Fixes
 
-- **spec routing:** name the absent `NEW in <usecase-id>` or
-  `EXTEND <capability>` decision in the missing-row diagnostic so an archive
-  failure explains the missing record.
+- Reject stale change results and receipts bound to inputs modified after
+  testing.
+- Keep archive proof valid through rejected finalization publications and
+  evidence-only repairs without unnecessary suite runs.
+- Preserve supported Gherkin instead of dropping Backgrounds or misreading
+  docstrings as structure; refuse conflicting Background replacement and
+  unsupported dialect before mutation.
+- Fix UTF-8-unsafe malformed use-case headings so invalid documents produce a
+  diagnostic instead of a panic.
+- Fix Git hook self-dispatch and preserve user hooks while keeping optional
+  attribution non-blocking.
+- Refuse ambiguous README managed markers before writing; preserve prose
+  outside managed blocks.
+- Parse actual verdicts instead of matching arbitrary substrings or examples
+  in comments and fenced blocks.
+- Correct stale agent-target, default-addon, coverage, attribution, commit, and
+  migration examples; remove Catopia/harness leakage from current shipped help
+  and guidance while preserving historical evidence.
+- Remove the retired outline gate, coverage equality gate, shape-disposition
+  paperwork, generated command surface, obsolete coverage template, and
+  embedded 0.x migration bundles.
+- Make validation diagnostics aggregate independent failures and name the
+  owning configuration file.
+
+### Chores
+
+- Compile the binary through the library module tree, eliminating duplicate
+  module compilation and dead-code warnings.
+- Ignore machine-local Maki permission state and exclude local recordings and
+  harness fixtures from release distribution.
+- Resynchronize all selected agent skills from the final canonical templates.
+- Add executable acceptance coverage for the changed behavior: 333 changed
+  scenarios/1,997 steps in the change suite, 30 E2E scenarios with individual
+  transcripts, and 444 library tests; strict Clippy is clean.
+
+## [0.9.9] - 2026-10-29
+
+### Breaking Changes
+
+- **review context:** a change now runs in one context by default. A fresh
+  independent review context is used only for a major change or an explicit
+  user request, and the recorded `Review kind` is authoritative. Projects that
+  relied on every review starting a fresh subagent must request independent
+  review explicitly.
+- **addons:** every add-on is enabled by default. Existing projects that
+  relied on add-ons being opt-in may gain behavior when reinitializing or
+  synchronizing. `givn init --no-addons` writes an explicit `false` for every
+  known add-on; a partial `addons:` block changes only the named keys.
+
+### Features
+
+- **review:** cap the review at one independent context, record the review
+  context, and make the outline gate use the recorded self/independent context.
+  Prescriptive subagent orchestration is removed from generated guidance; the
+  review instruction is its sole owner.
+- **addons:** enable all add-ons by default, report the effective default from
+  `givn addons list`, and let `givn init --no-addons` produce an explicit
+  opt-out for every known add-on.
+
+### Bug Fixes
+
+- **spec routing:** name the missing `NEW in <usecase-id>` or
+  `EXTEND <capability>` decision so an archive failure explains the absent
+  routing record.
+- **guidance:** remove the unconditional fresh-delegated-context prescription
+  from the generic overview; handoff guidance applies when work is actually
+  handed to another context.
 
 ## [0.9.8] - 2026-10-26
 
@@ -522,6 +680,10 @@ planned work.
 
 The master-branch baseline for the 0.3.0 migration. See the repository history
 for the complete 0.2.0 feature set.
+
+[0.9.9]: https://github.com/buster/givn/compare/v0.9.2...v0.9.9
+
+[0.9.10]: https://github.com/buster/givn/compare/v0.9.9...v0.9.10
 
 [0.8.3]: https://github.com/buster/givn/compare/v0.8.0...v0.8.3
 
