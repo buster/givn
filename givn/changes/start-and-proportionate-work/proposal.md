@@ -62,15 +62,15 @@ Onboarding, README, reference, workflow, the workflow diagram, the managed proje
 
 ## Capability Routing
 
-`givn spec route --change start-and-proportionate-work` reports no signal (the top candidates tie). The decisions below are recorded without a route recommendation.
+`givn spec route --change start-and-proportionate-work` reports no signal (the top candidates tie). The decisions below are recorded with `no signal` in the recommendation column.
 
-| Proposed capability | Decision | Rationale |
-|---|---|---|
-| `serve-extended-rules` | `EXTEND serve-extended-rules` | The start instruction and the no-active text/JSON guidance are served guidance owned by `obtain-effective-guidance`. |
-| `refresh-generated-guidance` | `EXTEND refresh-generated-guidance` | Generating `givn-start` and removing recognizable generated explore output is skill synchronization. |
-| `initialize-a-project` | `EXTEND initialize-a-project` | Onboarding text and fresh-init skill generation name the new entry point. |
-| `generate-ideation-guidance` | `EXTEND generate-ideation-guidance` | The ideation comparison and its permanent scenario describe start rather than explore. |
-| `instruction-integrity` | `EXTEND instruction-integrity` | The startup guidance and generated-skill reference checks cover the new instruction id. |
+| Proposed capability | Route's recommendation | Decision | Rationale |
+|---|---|---|---|
+| `serve-extended-rules` | no signal | `EXTEND serve-extended-rules` | The start instruction and the no-active text/JSON guidance are served guidance owned by `obtain-effective-guidance`. |
+| `refresh-generated-guidance` | no signal | `EXTEND refresh-generated-guidance` | Generating `givn-start` and removing recognizable generated explore output is skill synchronization. |
+| `initialize-a-project` | no signal | `EXTEND initialize-a-project` | Onboarding text and fresh-init skill generation name the new entry point. |
+| `generate-ideation-guidance` | no signal | `EXTEND generate-ideation-guidance` | The ideation comparison and its permanent scenario describe start rather than explore. |
+| `instruction-integrity` | no signal | `EXTEND instruction-integrity` | The startup guidance and generated-skill reference checks cover the new instruction id. |
 
 ## Out of Scope
 
