@@ -2,12 +2,12 @@
   "schema": 2,
   "change": "strengthen-outline-guidance",
   "status": "passed",
-  "head": "4d80f2f25d1a6c134dddadee3767104385e749ce",
+  "head": "4d884e1f6708023e0e9eea757968fb085873d4c1",
   "features_path": "givn/changes/strengthen-outline-guidance/specs",
   "features_digest": "b71769d44acd614b7d50cfe01e936702a4f78ec46bd8f323cfcc02e4f31b378e",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
   "command": "./run-tests.sh --non-e2e",
-  "tested_content_digest": "78ab6140a8dca6b0c5dc9ad54c152d51e0c5a09a643dd18ccab013836fe860d9",
+  "tested_content_digest": "2c8e87ae5752426c8f32e7b3c315e065ed837743fc064c6b60e2593e7fa38c1f",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1793377139
+  "finished_at_unix": 1793377324
 }

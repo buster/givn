@@ -82,7 +82,7 @@ excused.
 ## Scenario execution evidence
 
 `givn check tasks --change strengthen-outline-guidance` recorded a current
-receipt: 9 scenarios, 0 failed, 0 skipped at `4d80f2f2`. The receipt covers
+receipt: 9 scenarios, 0 failed, 0 skipped at `4d884e1f`. The receipt covers
 every delta scenario in the four touched capabilities.
 
 The full-suite run before the archive merge still exercises the permanent
