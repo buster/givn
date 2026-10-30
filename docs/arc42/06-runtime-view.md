@@ -26,11 +26,12 @@ The sequence is:
    `givn missing-run-command` sentinels plus coverage paths; it does not invent
    project scripts.
 6. Unless `--no-addons` is set, enable every registered addon. In the current
-   registry this scaffolds Arc42, manages the `communication-policy` fenced
-   block, may scaffold README content, enables the archive coverage gate, and
-   enables the project-level skills plus the advisory outline report. With
-   `--no-addons`, write an explicit `false` for every known addon instead, so
-   the opt-out is visible in `givn/config.yaml`.
+   registry this scaffolds Arc42, creates the missing standalone `docs/glossary.md`
+   and `docs/domain-model.md` from the embedded templates, manages the
+   `communication-policy` fenced block, may scaffold README content, enables the
+   archive coverage gate, and enables the project-level skills plus the advisory
+   outline report. With `--no-addons`, write an explicit `false` for every known
+   addon instead and write neither domain document.
 7. Synchronize skills and attribution/reporter integrations to the selected
    targets. The sync writes only skills (never command files), updates only
    givn-owned fenced blocks in `AGENTS.md`, removes the retired `absolute-mode`
@@ -136,6 +137,11 @@ is served with empty `generates` and `requires` arrays, an unresolvable id
 keeps the existing unknown-artifact error. A sole active change is
 auto-selected when no `--change` is given; multiple active changes require an
 explicit id.
+
+When the id resolves to the domain-modeling policy, the response names
+`givn-domain-modeling` as `skill_to_load` whenever the `domain_modeling` addon is
+enabled; arc42 is not a prerequisite. The served instruction owns
+`docs/glossary.md` and `docs/domain-model.md`.
 
 Without an artifact id, the command reports context-aware generic guidance from
 the project state. It does not create lifecycle artifacts. When the readme
@@ -488,9 +494,12 @@ model, and variant are recorded where known; unavailable usage stays explicit.
 registered addon with its effective default. All registered addons are enabled
 by default; a missing key resolves to enabled, and only an explicit `false`
 disables a flag. `enable arc42` sets the flag, scaffolds missing fixed-path
-chapter files, and expands the effective graph; `disable arc42` leaves existing
-docs in place. `enable outline` sets its flag and generates no skill or command
-file; `disable outline` makes the report exit 1 with the named disabled reason.
+chapter files and `docs/glossary.md`, and expands the effective graph;
+`disable arc42` leaves existing docs in place. `enable domain_modeling` sets the
+flag and creates missing `docs/glossary.md` and `docs/domain-model.md`;
+`disable domain_modeling` removes the generated skill but leaves the documents.
+`enable outline` sets its flag and generates no skill or command file;
+`disable outline` makes the report exit 1 with the named disabled reason.
 Enabling or disabling an addon resyncs generated skills.
 
 `givn skills sync` resolves the selected targets, writes generated skills and

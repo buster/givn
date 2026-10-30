@@ -89,7 +89,7 @@ Choose the entry point:
 | `givn-reverse-engineer` | Discover an existing capability's black-box boundary and write descriptive baseline specs. |
 | `givn-characterize` | Execute the characterization loop against existing behavior, with seams and a reverse review. |
 | `givn-challenge` | Evidence-first examination of a proposal, test, spec, design, code, or whole change; no lifecycle gate. Generated while `challenge` is enabled. |
-| `givn-domain-modeling` | Establish one domain vocabulary and maintain the arc42 glossary. Generated while both `domain_modeling` and `arc42` are enabled. |
+| `givn-domain-modeling` | Establish one domain vocabulary and structural model; maintain `docs/glossary.md` and `docs/domain-model.md`. Generated while `domain_modeling` is enabled, independent of arc42. |
 | `givn-dev-principles` | Apply the team's engineering principles while code is read or written. Generated while `dev_principles` is enabled. |
 
 ## Addons
@@ -101,11 +101,11 @@ replacement (`communication_policy` or `challenge`); no alias is accepted.
 
 | Addon | Effect |
 | --- | --- |
-| `arc42` | Adds the `arc42-docs` artifact after `design`, gates archive on it, and scaffolds missing chapters at the fixed `docs/arc42/` path. |
+| `arc42` | Adds the `arc42-docs` artifact after `design`, gates archive on it, scaffolds missing chapters at the fixed `docs/arc42/` path, and creates a missing `docs/glossary.md`. |
 | `communication_policy` | Manages the `communication-policy` fenced block in `AGENTS.md`. The dialog obligation is independent and always applies. |
 | `readme` | Scaffolds an initial README when none exists and enables the deterministic README completeness check and archive gate. |
 | `coverage` | Archive-level gate: runs project measurement and merge commands, validates Cobertura output, and updates managed README blocks. |
-| `domain_modeling` | Generates the `givn-domain-modeling` skill (requires `arc42`). |
+| `domain_modeling` | Generates the `givn-domain-modeling` skill and creates missing `docs/glossary.md` and `docs/domain-model.md`; does not require arc42. |
 | `dev_principles` | Generates the `givn-dev-principles` skill. |
 | `architecture_principles` | Serves architecture-principles guidance for proposal, design, design-review, dialog, review, and tasks. |
 | `challenge` | Generates the `givn-challenge` skill and serves the canonical challenge instruction. |
