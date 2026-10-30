@@ -4,7 +4,48 @@ All notable changes to Givn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
-Highlights and upgrade notes are reviewed by hand.
+## [Unreleased]
+
+## [0.9.10] - 2026-10-30
+
+### Bug Fixes
+
+- **runtime:** Bound readiness waits and refuse ambiguous README markers before writing
+
+- **guidance:** Ship parser-valid templates, remove harness-specific examples and exclude local runtime data from the package
+
+- **cli:** Describe the implemented skills-only, advisory and explicit-path commands accurately
+
+- **testrunner:** Preserve the caller-declared verification scope in the result contract
+
+- **review:** Align the design step map and outline help with the implemented files
+
+- **initialization-acceptance, full-suite-reconciliation:** Align onboarding and acceptance guidance
+
+- **deps:** Update tokio for RUSTSEC-2026-0386
+
+
+### Features
+
+- **specs:** Preserve supported Gherkin content and distinguish literal duplicates from structural similarity
+
+- **specs:** Resolve capability owners and typed references consistently while validating meaningful length decisions
+
+- **commits:** Require explicit paths and make optional attribution hook installation safe and repeatable
+
+- **verify:** Bind fresh verification results to stable inputs and reuse only valid unchanged scope evidence
+
+- **outline:** Keep structural reports advisory and report unavailable measurements honestly
+
+- **guidance:** Generate skills only and resolve addon configuration through one effective contract
+
+- **archive:** Prove supported specifications and recover valid scope evidence without redundant runs
+
+- **verify:** Report actual verification state and block only meaningful structural failures
+
+- **upgrade:** Complete skills-only initialization and migration-baseline recovery behavior
+
+- **guidance:** Align development, review and architecture instructions with genuine evidence and bounded closure
 
 ## [0.9.10] - Unreleased
 
@@ -759,3 +800,5 @@ for the complete 0.2.0 feature set.
 [0.9.1]: https://github.com/buster/givn/compare/v0.9.0...v0.9.1
 
 [0.9.2]: https://github.com/buster/givn/compare/v0.9.1...v0.9.2
+
+[0.9.10]: https://github.com/buster/givn/compare/v0.9.9...v0.9.10

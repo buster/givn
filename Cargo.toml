@@ -1,6 +1,6 @@
 [package]
 name = "givn"
-version = "0.9.9"
+version = "0.9.10"
 edition = "2024"
 description = "A single-binary, Gherkin-first spec-driven workflow tool"
 
