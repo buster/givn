@@ -222,3 +222,46 @@ fn generated_skills_copy_no_rules(world: &mut GivnWorld) {
 fn thin_skills_omit_policy_and_delegation(world: &mut GivnWorld) {
     generated_skills_repeat_no_policy(world);
 }
+
+#[then(
+    "the generated givn-implement skill names both givn instructions tasks and givn instructions steps"
+)]
+fn generated_implement_skill_names_tasks_and_steps(world: &mut GivnWorld) {
+    let mut checked = 0;
+    for (path, content) in installed_skill_texts(world) {
+        if !path.to_string_lossy().contains("givn-implement") {
+            continue;
+        }
+        checked += 1;
+        assert!(
+            content.contains("givn instructions tasks"),
+            "{} does not name the tasks instruction:\n{content}",
+            path.display()
+        );
+        assert!(
+            content.contains("givn instructions steps"),
+            "{} does not name the steps instruction:\n{content}",
+            path.display()
+        );
+    }
+    assert!(checked > 0, "no generated givn-implement skill was found");
+}
+
+#[then("the served tasks instruction names givn instructions steps")]
+fn served_tasks_instruction_names_steps(world: &mut GivnWorld) {
+    let env = env(world);
+    let output = common::run_givn(
+        env,
+        &["instructions", "tasks", "--change", "skill-rewrites"],
+    );
+    assert!(
+        output.status.success(),
+        "tasks instruction failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        text.contains("givn instructions steps"),
+        "the served tasks instruction does not name the steps instruction:\n{text}"
+    );
+}

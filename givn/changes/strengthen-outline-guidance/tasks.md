@@ -146,38 +146,38 @@ Design constraints for every scenario in this batch:
 
 ### Scenario: Refactor guidance uses the outline once for supported changed components and their neighbors
 
-- [ ] RED: `--name '^Refactor guidance uses the outline once for supported changed components and their neighbors$'` fails on the language-neutral phrases.
-- [ ] GREEN: `1 scenario (1 passed)` after the steps REFACTOR block changes.
-- [ ] REFACTOR: Re-run; zero exit.
-- [ ] COMMIT: pending -- Batch: outline-readability-contract
+- [x] RED: passed immediately after Batch A's committed supported/unsupported wording; kept as regression protection for the cadence contract. No production diff was forced.
+- [x] GREEN: `1 scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] REFACTOR: Re-ran the same name filter; `1 scenario (1 passed)`.
+- [x] COMMIT: `48e458a1` -- `docs(outline): readability contract` (Batch: outline-readability-contract)
 
 ### Scenario: Unsupported outline languages receive source assessment without a waiver
 
-- [ ] RED: `--name '^Unsupported outline languages receive source assessment without a waiver$'` fails on the language-neutral Given/Then.
-- [ ] GREEN: `1 scenario (1 passed)`.
-- [ ] REFACTOR: Re-run; zero exit.
-- [ ] COMMIT: pending -- Batch: outline-readability-contract
+- [x] RED: passed immediately after Batch A's committed supported/unsupported wording; kept as regression protection for the unsupported-only path.
+- [x] GREEN: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: Re-ran the same filter; `1 scenario (1 passed)`.
+- [x] COMMIT: `48e458a1` -- `docs(outline): readability contract` (Batch: outline-readability-contract)
 
 ### Scenario: Refactor guidance treats an unreadable changed unit as a finding
 
-- [ ] RED: `--name '^Refactor guidance treats an unreadable changed unit as a finding$'` fails; the comprehension, naming, metrics, source, and fix-or-finding Thens are unbound or unmatched.
-- [ ] GREEN: `1 scenario (1 passed)` after the new paragraphs and bindings.
-- [ ] REFACTOR: Re-run; zero exit.
-- [ ] COMMIT: pending -- Batch: outline-readability-contract
+- [x] RED (pre-change steps asset): `REFACTOR guidance substitutes source reading for the outline story` on the source-confirmation Then.
+- [x] GREEN: `1 scenario (1 passed)`, `8 steps (8 passed)` after the comprehension, naming, metrics, source, and fix-or-finding paragraphs.
+- [x] REFACTOR: Re-ran; `1 scenario (1 passed)`.
+- [x] COMMIT: `48e458a1` -- `docs(outline): readability contract` (Batch: outline-readability-contract)
 
 ### Scenario: Final architecture review uses the advisory outline without a second verdict
 
-- [ ] RED: `--name '^Final architecture review uses the advisory outline without a second verdict$'` fails on `unsupported components` after the review block changes.
-- [ ] GREEN: `1 scenario (1 passed)`.
-- [ ] REFACTOR: Re-run; zero exit.
-- [ ] COMMIT: pending -- Batch: outline-readability-contract
+- [x] RED (pre-change review asset): `mixed-language coverage is disclosed without forcing outline analysis of unsupported components` failed on the old Go/Java sentence.
+- [x] GREEN: `1 scenario (1 passed)`, `9 steps (9 passed)`.
+- [x] REFACTOR: Re-ran; `1 scenario (1 passed)`.
+- [x] COMMIT: `48e458a1` -- `docs(outline): readability contract` (Batch: outline-readability-contract)
 
 ### Scenario: A changed unit unreadable from its outline rejects PASS
 
-- [ ] RED: `--name '^A changed unit unreadable from its outline rejects PASS$'` fails; the readability Thens are unbound or unmatched.
-- [ ] GREEN: `1 scenario (1 passed)` after the review advisory block and bindings.
-- [ ] REFACTOR: Re-run; zero exit.
-- [ ] COMMIT: pending -- Batch: outline-readability-contract
+- [x] RED (pre-change review asset): `the reviewer must reconstruct responsibility and ordered call flow from the outline alone` failed; the comprehension and naming paragraphs were absent.
+- [x] GREEN: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: Re-ran; `1 scenario (1 passed)`.
+- [x] COMMIT: `48e458a1` -- `docs(outline): readability contract` (Batch: outline-readability-contract)
 
 ## Batch C — implementation routing
 
