@@ -2,12 +2,12 @@
   "schema": 2,
   "change": "standalone-domain-model",
   "status": "passed",
-  "head": "2dac7d783d4582875538a189dc6b80d60febfd5d",
+  "head": "3804ef6024546cfb1d746629b6affe459e911689",
   "features_path": "givn/changes/standalone-domain-model/specs",
-  "features_digest": "e85214b3a162227dac0354abe8aea96609971038b62bb989ddb903a307c3f9fa",
+  "features_digest": "7c56104ecb945a86db22b0bd614fa61dbb18b5d5cdc19f527462bb2d2f157618",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
   "command": "./run-tests.sh --non-e2e",
-  "tested_content_digest": "55483f1b1712942a368e3f1d0ca280157d80cd06719d238cd12095e1ec4b6060",
+  "tested_content_digest": "b305bfff8d89c82f0a731a106f163b243e5d4a3d27a92907074a490cf56f3cca",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1793382172
+  "finished_at_unix": 1793382670
 }
