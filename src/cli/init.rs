@@ -63,6 +63,23 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         None
     };
 
+    // A forced re-init that would alter add-on policy is an operator action.
+    // Refuse before the first write so a locked change cannot lose a gate.
+    if config_created && !crate::config::lock::locked_active_changes(&project_root)?.is_empty() {
+        let current = crate::config::overlay::load_effective()?;
+        let before = crate::config::lock::effective_addons(&current);
+        let proposed = crate::config::lock::proposed_addons(no_addons, preserved_addons.as_deref());
+        let changes = crate::config::lock::differences(&before, &proposed);
+        if !changes.is_empty() {
+            bail!(
+                "add-on configuration is locked by an active change; this forced init would change it:\n{}\n\
+                 Change the add-on with `givn addons enable|disable <name> --operator --reason \"<reason>\"` \
+                 on an interactive terminal, then retry init.",
+                changes.join("\n")
+            );
+        }
+    }
+
     // Create directory scaffolding.
     let dirs = ["givn/specs", "givn/changes", "givn/archive"];
     println!("\nScaffolding project...\n");

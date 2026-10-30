@@ -882,3 +882,73 @@ fn file_does_not_contain(world: &mut GivnWorld, rel: String, text: String) {
         text
     );
 }
+
+// --- add-on configuration lock ---------------------------------------------
+
+#[then(regex = r#"^the givn config keeps addon "([^"]+)" (enabled|disabled)$"#)]
+fn config_keeps_addon(world: &mut GivnWorld, name: String, state: String) {
+    let content = std::fs::read_to_string(env(world).path("givn/config.yaml"))
+        .expect("read givn/config.yaml");
+    let parsed: serde_yaml_ng::Value =
+        serde_yaml_ng::from_str(&content).expect("parse givn/config.yaml");
+    let value = parsed
+        .get("addons")
+        .and_then(|addons| addons.get(&name))
+        .and_then(|value| value.as_bool())
+        .unwrap_or(true);
+    assert_eq!(
+        value,
+        state == "enabled",
+        "addon {name} is not {state}: {content}"
+    );
+}
+
+#[when(regex = r#"^the project configuration sets addon "([^"]+)" to "([^"]+)"$"#)]
+fn project_configuration_sets_addon(world: &mut GivnWorld, name: String, value: String) {
+    let path = env(world).path("givn/config.yaml");
+    let content = std::fs::read_to_string(&path).expect("read givn/config.yaml");
+    let target = format!("  {name}: {value}");
+    let mut found = false;
+    let lines = content
+        .lines()
+        .map(|line| {
+            if !found
+                && !line.trim_start().starts_with('#')
+                && line.trim_start().starts_with(&format!("{name}:"))
+            {
+                found = true;
+                target.clone()
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>();
+    let mut updated = lines.join("\n");
+    if !found {
+        updated.push_str(&format!("\naddons:\n  {name}: {value}\n"));
+    } else {
+        updated.push('\n');
+    }
+    std::fs::write(&path, updated).expect("write givn/config.yaml");
+}
+
+#[when("the operator disables coverage with an override in the real terminal")]
+fn operator_overrides_in_terminal(world: &mut GivnWorld) {
+    let env = env(world);
+    let command = format!(
+        "{} addons disable coverage --operator --reason 'missing dependency'",
+        env!("CARGO_BIN_EXE_givn")
+    );
+    world.last_output = Some(common::run_command_in_terminal(env, &command));
+}
+
+#[then("the change lock records the operator override reason")]
+fn lock_records_override(world: &mut GivnWorld) {
+    let content =
+        std::fs::read_to_string(env(world).path("givn/changes/addon-lock/config-lock.yaml"))
+            .expect("read config-lock.yaml");
+    assert!(content.contains("coverage: false"), "{content}");
+    assert!(content.contains("reason: missing dependency"), "{content}");
+    assert!(content.contains("from: true"), "{content}");
+    assert!(content.contains("to: false"), "{content}");
+}
