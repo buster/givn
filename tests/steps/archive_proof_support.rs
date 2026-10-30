@@ -107,12 +107,14 @@ pub(crate) fn configure_commands(env: &common::TestEnv) {
 }
 
 pub(crate) fn disable_coverage(env: &common::TestEnv) {
+    common::remove_addon_locks(env);
     let path = env.path("givn/config.yaml");
     let config = fs::read_to_string(&path).expect("read config");
     fs::write(&path, config.replace("coverage: true", "coverage: false")).expect("write config");
 }
 
 pub(crate) fn enable_coverage(env: &common::TestEnv) {
+    common::remove_addon_locks(env);
     let path = env.path("givn/config.yaml");
     let config = fs::read_to_string(&path).expect("read config");
     fs::write(&path, config.replace("coverage: false", "coverage: true")).expect("write config");

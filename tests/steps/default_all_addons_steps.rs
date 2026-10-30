@@ -31,6 +31,7 @@ fn effective_manifest(world: &GivnWorld) -> Manifest {
 }
 
 fn replace_addons(world: &GivnWorld, block: &str) {
+    common::remove_addon_locks(env(world));
     let path = env(world).path("givn/config.yaml");
     let content = std::fs::read_to_string(&path).expect("read givn/config.yaml");
     let mut kept = Vec::new();

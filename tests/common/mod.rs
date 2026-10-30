@@ -464,12 +464,28 @@ pub fn run_command_in_terminal(env: &TestEnv, command: &str) -> Output {
     }
 }
 
+/// Remove change-local add-on locks for fixtures that intentionally change
+/// add-on configuration after creating a change. The lock scenarios use
+/// `givn new` directly and do not call this helper.
+pub fn remove_addon_locks(env: &TestEnv) {
+    let changes = env.path("givn/changes");
+    let Ok(entries) = fs::read_dir(&changes) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        if entry.path().is_dir() {
+            let _ = fs::remove_file(entry.path().join("config-lock.yaml"));
+        }
+    }
+}
+
 /// Replace the project's addon policy in `givn/config.yaml`.
 ///
 /// Addon flags are policy: `givn/commands.yaml` rejects them. Fixtures that
 /// need a specific addon set call this instead of writing an `addons:` block
 /// beside the command settings.
 pub fn replace_config_addons(env: &TestEnv, addons: &str) {
+    remove_addon_locks(env);
     let path = env.path("givn/config.yaml");
     let content = fs::read_to_string(&path).expect("read givn/config.yaml");
     let updated = replace_top_level_key(&content, "addons", addons);

@@ -99,11 +99,11 @@ Feature: create-a-change
     And stderr contains "already exists"
     And stderr contains the absolute path to givn/changes/dup-change
 
-  Scenario: Only proposal.md is created in the change directory
+  Scenario: Only proposal.md and the add-on lock are created in the change directory
     Given a project root with givn/ initialised
     When the user runs `givn new only-proposal`
     Then the command exits 0
-    And the change directory givn/changes/only-proposal/ contains exactly one file: proposal.md
+    And the change directory givn/changes/only-proposal/ contains exactly the files proposal.md and config-lock.yaml
     And no subdirectory named specs/ exists inside givn/changes/only-proposal/
 
   Scenario: proposal.md content equals the built-in template verbatim

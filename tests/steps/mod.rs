@@ -876,9 +876,9 @@ fn readme_has_coverage_fence(world: &mut GivnWorld) {
 // --- Then: change directory contents --------------------------------------
 
 #[then(
-    regex = r"^the change directory (givn/changes/[^/]+/) contains exactly one file: proposal\.md$"
+    regex = r"^the change directory (givn/changes/[^/]+/) contains exactly the files proposal\.md and config-lock\.yaml$"
 )]
-fn change_dir_exactly_proposal(world: &mut GivnWorld, rel: String) {
+fn change_dir_exactly_proposal_and_lock(world: &mut GivnWorld, rel: String) {
     let env = world
         .env
         .as_ref()
@@ -892,7 +892,7 @@ fn change_dir_exactly_proposal(world: &mut GivnWorld, rel: String) {
     entries.sort();
     assert_eq!(
         entries,
-        vec!["proposal.md".to_string()],
+        vec!["config-lock.yaml".to_string(), "proposal.md".to_string()],
         "change dir entries: {:?}",
         entries,
     );
@@ -1024,6 +1024,7 @@ fn givn_addon_key_is_set(world: &mut GivnWorld, name: String, value: String) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    crate::common::remove_addon_locks(env);
     let path = env.path("givn/config.yaml");
     let config = std::fs::read_to_string(&path).expect("read givn/config.yaml");
     let target_line = format!("  {name}: {value}");
@@ -1231,6 +1232,7 @@ fn manifest_has_optional_artifact(world: &mut GivnWorld, _id: String) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    common::remove_addon_locks(env);
     let out = common::run_givn(env, &["addons", "enable", "arc42"]);
     assert!(
         out.status.success(),

@@ -2873,6 +2873,7 @@ fn the_change_skips_the_artifact(world: &mut GivnWorld, artifact: String) {
     // The fixture's project enables the arc42 artifact graph, then records the
     // artifact as intentionally not produced, so the production state derives
     // it `skipped` — never a label the step writes into the report.
+    common::remove_addon_locks(env);
     run_fixture_command(env, &["addons", "enable", "arc42"]);
     let change_dir = env.root().join("givn").join("changes").join(&id);
     std::fs::write(change_dir.join(".givn-skip"), format!("{artifact}\n"))
