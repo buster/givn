@@ -333,11 +333,7 @@ Model the domain as a chain of past-tense domain events.
   a domain-noun root that receives commands and emits events under one
   invariant — never a record or a specification.
   Reuse the aggregates the project already declares
-{{#if addons.arc42}}
-  (the arc42 glossary's "Aggregates / boundaries"); a new aggregate is
-{{else}}
-  (the project's durable documentation); a new aggregate is
-{{/if}}
+  (the structural model in `docs/domain-model.md` when present); a new aggregate is
   introduced as a domain term — its root noun, invariant, commands, and
   events — and confirmed before the canvas relies on it.
 - A contract, a declaration, a configuration, a cursor position, a grant, a
@@ -352,12 +348,8 @@ Model the domain as a chain of past-tense domain events.
 - Term collisions (same word, different meaning; different words, same
   meaning) go to the domain terms file. Before a term reaches `confirmed`,
   run and record the search-before-coin procedure:
-{{#if addons.arc42}}
-  1. Grep the durable glossary (`docs/arc42/12-glossary.md`) for the term and
-     its synonyms.
-{{else}}
-  1. Grep the project's durable documentation for the term and its synonyms.
-{{/if}}
+  1. Grep the project's durable documentation, including `docs/glossary.md`
+     when present, for the term and its synonyms.
   2. Grep every sibling topic's `domain-terms.md` and the repository for the
      term.
   3. Record the commands run and the hit counts in the `Collision check`

@@ -157,9 +157,8 @@ content violates the diagram policy — treat this as a
   missing row, as a finding.
 {{/if}}
 {{#if addons.domain_modeling}}
-{{#if addons.arc42}}
-- **Ubiquitous language** — confirm that the ubiquitous language is used consistently and recorded in the project's arc42 glossary before sign-off is mandatory: `docs/arc42/12-glossary.md` must already contain the design's agreed terms. If the design introduces a term the glossary does not hold, or reuses an existing term inconsistently, raise it as a question — do not sign off.
-{{/if}}
+- **Ubiquitous language** — confirm that the ubiquitous language is used consistently and recorded in the project's `docs/glossary.md` before sign-off is mandatory: `docs/glossary.md` must already contain the design's agreed terms. If the design introduces a term the glossary does not hold, or reuses an existing term inconsistently, raise it as a question — do not sign off.
+- **Structural model** — confirm `docs/domain-model.md` reflects the design's boundaries and relationships, and that this change assessed its structural impact. A no-op document edit is not evidence of maintenance.
 {{/if}}
 
 If a question can be answered by exploring the existing codebase, explore it
