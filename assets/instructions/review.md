@@ -47,10 +47,12 @@ accepts only `Review kind: independent`; a self-review is never turned into an
 independent claim by gate inference. If independence is required but no fresh
 context is available, ask the user; do not silently fall back to self-review.
 
+{{#if addons.outline}}
 When the outline addon is enabled, its report is advisory evidence for the one
 recorded review context. A self-review uses the self context; an independent
 review uses the one independent reviewer. Never create a second outline review
 context, require an outline verdict, or treat the outline as a gate.
+{{/if}}
 
 The review writes only `review.md`. It does not edit production code, tests,
 specs, design, tasks, ADRs, glossary, coverage, or README.

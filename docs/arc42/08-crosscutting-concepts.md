@@ -1222,25 +1222,36 @@ contract is:
 The report supports one substantive architecture pass rather than a second
 review authority:
 
+- **Readable from the outline.** The outline is a readability contract, not a
+  metric review. A reader states each changed unit's responsibility in one
+  sentence and its ordered call flow from declarations, signatures, and call
+  order alone, without bodies or comments. The unit and type names, method
+  names, parameter names and types, return types, and called type names state
+  the domain operation in the project's vocabulary. A generic or machinery name
+  where a domain noun exists (for example `handle`, `process`, `data`, `item`,
+  `manager`, `util`, `helper`) is a readability finding.
 - **Once per behavior batch.** During REFACTOR, run one report for the changed
-  Rust/Python components and relevant neighbors. Ask whether each unit has one
+  supported components and relevant neighbors. Ask whether each unit has one
   cohesive responsibility, a narrow consumer contract, a sensible dependency
   direction, and an understandable decomposition. Confirm suspected concerns
   against source. Reuse the report until later structural changes make it stale.
 - **Review reuse.** Final review reuses relevant reports from implementation
   when they are current; rerun only for structurally stale evidence. The
-  reviewer may name a concern from the outline, but must confirm it in source.
-- **Unsupported languages.** Java, Go, or another unsupported production
-  language is assessed directly from source with the same questions. It is not a
-  report failure and needs no waiver.
-- **No per-unit verdict.** No `OUTLINE:` marker, `PASS`/`FAIL` explanation,
+  reviewer reconstructs each changed unit from its outline and treats a unit
+  that cannot carry the story as a substantive readability finding. The report
+  itself supplies no verdict.
+- **Unsupported languages.** A component the analyzer does not support is
+  assessed directly from source with the same questions. It is not a report
+  failure and needs no waiver.
+- **Advisory, never gating.** No `OUTLINE:` marker, `PASS`/`FAIL` explanation,
   metric decision, author/reviewer identity, or independent outline context is
-  required. The report cannot block review or archive.
-- **Serving path.** `assets/instructions/review.md` renders its advisory-outline
-  section behind `{{#if addons.outline}}`; `assets/instructions/steps.md` keeps
-  one conditional REFACTOR sentence that states the addon must be enabled. The
-  addon key is known to the renderer, the sync flag map
-  (`src/skills/targets.rs`), and the instruction CLI map
+  required. The report cannot block review or archive. A substantive
+  readability finding about the changed code is an ordinary review finding and
+  can reject PASS; the report is only its evidence.
+- **Serving path.** Both the steps REFACTOR block and the review advisory
+  section render behind `{{#if addons.outline}}`. The review template contains
+  no outline verdict phrase. The addon key is known to the renderer, the sync
+  flag map (`src/skills/targets.rs`), and the instruction CLI map
   (`src/cli/instructions.rs`). A project that disables the addon receives no
   outline obligation.
 

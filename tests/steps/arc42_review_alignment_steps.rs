@@ -475,3 +475,26 @@ fn template_records_evidence_without_outline_verdict(world: &mut GivnWorld) {
         "ejected review template lacks evidence/mismatch wording: {content}"
     );
 }
+
+#[then("the template records evidence and material mismatches")]
+fn template_records_evidence_and_mismatches(world: &mut GivnWorld) {
+    let content =
+        std::fs::read_to_string(project_root(world).join("givn/artifacts/review/review.md"))
+            .expect("read ejected review template");
+    let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        normalized.contains("records evidence and material mismatches"),
+        "ejected review template lacks evidence/mismatch wording: {content}"
+    );
+}
+
+#[then("the template contains no outline verdict phrase")]
+fn template_contains_no_outline_verdict(world: &mut GivnWorld) {
+    let content =
+        std::fs::read_to_string(project_root(world).join("givn/artifacts/review/review.md"))
+            .expect("read ejected review template");
+    assert!(
+        !content.to_lowercase().contains("outline verdict"),
+        "ejected review template still carries a retired-gate phrase: {content}"
+    );
+}

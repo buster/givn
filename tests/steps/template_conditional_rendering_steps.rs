@@ -502,6 +502,67 @@ fn no_generated_mentions_disabled_addon(world: &mut GivnWorld) {
     }
 }
 
+// --- Then: outline guidance follows the addon -------------------------------
+
+#[then("the served steps instruction contains the advisory outline section")]
+fn served_steps_instruction_contains_outline(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "steps");
+    let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        normalized.contains("inspect its advisory report once per batch"),
+        "the served steps instruction is missing the advisory outline section:\n{content}"
+    );
+}
+
+#[then("the served steps instruction omits the advisory outline section")]
+fn served_steps_instruction_omits_outline(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "steps");
+    assert!(
+        !content.to_lowercase().contains("outline"),
+        "the served steps instruction carries outline guidance:\n{content}"
+    );
+}
+
+#[then("the served review instruction contains the advisory outline section")]
+fn served_review_instruction_contains_outline(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "review");
+    let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        normalized.contains("## Advisory outline evidence"),
+        "the served review instruction is missing the advisory outline section:\n{content}"
+    );
+}
+
+#[then("the served review instruction omits the advisory outline section")]
+fn served_review_instruction_omits_outline(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "review");
+    assert!(
+        !content.to_lowercase().contains("outline"),
+        "the served review instruction carries outline guidance:\n{content}"
+    );
+}
+
+#[then("no generated skill carries outline guidance")]
+fn no_generated_skill_carries_outline(world: &mut GivnWorld) {
+    let dir = support::env(world).path(".opencode/skills");
+    let mut checked = 0;
+    let entries = std::fs::read_dir(&dir).expect("read generated skills directory");
+    for entry in entries.flatten() {
+        let path = entry.path().join("SKILL.md");
+        if !path.is_file() {
+            continue;
+        }
+        let text = std::fs::read_to_string(&path).expect("read generated skill");
+        checked += 1;
+        assert!(
+            !text.to_lowercase().contains("outline"),
+            "{} carries outline guidance:\n{text}",
+            path.display()
+        );
+    }
+    assert!(checked > 0, "no generated skills were found");
+}
+
 // --- Then: fail-closed error scenarios --------------------------------------
 
 #[then("the synchronization fails")]

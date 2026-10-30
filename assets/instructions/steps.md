@@ -180,23 +180,41 @@ Individual examples do not need their own failing test or production diff.
 8. Clean up without changing behaviour. Run the relevant scenarios; they must
    still exit zero. Capture the output.
 
+{{#if addons.outline}}
    When the `outline` addon is enabled, inspect its advisory report once per
-   batch for supported Rust/Python changed components and relevant neighbors.
-   Disclose which languages and components the outline covers and which it
-   omits. Go or Java components receive direct source assessment using the same
+   batch for supported changed components and relevant neighbors. Disclose
+   which languages and components the outline covers and which it omits.
+   Unsupported components receive direct source assessment using the same
    responsibility, interface, dependency-direction, and decomposition
    questions, without forced outline analysis. Unavailable outline support is
    not a failure and is not a reason for a waiver or an outline verdict.
 
+   Read the outline before the metrics: declarations, signatures, and call
+   order, without bodies or comments. State the unit's responsibility in one
+   sentence and its ordered call flow. If the outline cannot carry that story
+   without the body or a comment, the unit is unreadable: fix it in REFACTOR;
+   if it cannot be fixed within the batch, record a substantive review
+   finding. Do not waive it.
+
+   Names are the contract. The unit and type names, method names, parameter
+   names and types, return types, and called type names must state the domain
+   operation in the project's vocabulary. A generic or machinery name where a
+   domain noun exists (`handle`, `process`, `data`, `item`, `manager`, `util`,
+   `helper`) is a readability finding.
+
    Ask whether responsibilities are cohesive, public interfaces narrow,
    dependencies correctly directed, and decomposition understandable. Confirm
-   suspected problems against source before conclusions or edits. Structural
-   call order is not a complete runtime trace; uncertain or omitted edges limit
-   the conclusions. Reuse the report until structural changes make its relevant
-   evidence stale: a later structural edit is the reason to regenerate it, not
-   every small edit, and nonstructural edits alone do not require rerunning the
-   outline. The outline report is reused by final review as advisory evidence;
-   it supplies no blocking verdict, metric waiver, or forced reviewer context.
+   suspected problems against source before conclusions or edits; source
+   never substitutes for the outline story. Structural call order is not a
+   complete runtime trace; uncertain or omitted edges limit the conclusions.
+   Metrics and classifications are hints: a clean metric never excuses an
+   unreadable outline, and no metric waives it. Reuse the report until
+   structural changes make its relevant evidence stale: a later structural
+   edit is the reason to regenerate it, not every small edit, and
+   nonstructural edits alone do not require rerunning the outline. The outline
+   report is reused by final review as advisory evidence; it supplies no
+   blocking verdict, metric waiver, or forced reviewer context.
+{{/if}}
 
    Concrete cleanup encountered while implementing agreed behavior is made in a
    separate behavior-preserving refactoring commit with explicit paths and
