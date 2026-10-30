@@ -44,7 +44,7 @@ The developer asks for a outline report.
 ## Extensions
 
 - 1: the outline experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
-- 1: no supported production sources exist in the requested scope → the command names the scope, Rust and Python support, and exits non-zero; unsupported-only sources are not claimed absent; protects the success guarantee.
+- 1: no supported production sources exist in the requested scope → the command names the scope, all supported languages, and exits non-zero; unsupported-only sources are not claimed absent; protects the success guarantee.
 - 1: the requested scope does not exist → the command names the path and exits non-zero; protects the success guarantee.
 - 2: a source file cannot be analyzed → the report names the file and continues with the remaining units; protects the minimal guarantee.
 - 2: the analysis engine does not support a construct → the report marks the unit as unsupported and does not invent data; protects the minimal guarantee.
@@ -111,7 +111,7 @@ The developer receives a deterministic advisory outline for the supported produc
 
 - Outline-based review or archive enforcement; the outline is not a verdict.
 - A stored baseline or watchlist.
-- Languages other than Rust and Python.
+- Go, JavaScript, JSX, and other languages outside the supported set.
 - Automatic refactoring.
 - Automatic Cargo workspace discovery; the developer names members with
   `--path`.

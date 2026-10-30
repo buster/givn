@@ -1784,3 +1784,200 @@ fn tight_cohesion_is_not_loose(world: &mut GivnWorld) {
         "loose class cohesion is presented: {metrics}"
     );
 }
+
+// --- Java and TypeScript outline support -----------------------------------
+
+const JAVA_WIDGET: &str = r#"package com.example;
+
+public class Widget {
+    private String name;
+    protected int size;
+
+    public Widget(String name) {
+        this.name = name;
+    }
+
+    public int area() {
+        return size;
+    }
+
+    private void helper() {
+        area();
+    }
+}
+"#;
+
+const TYPESCRIPT_WIDGET: &str = r#"export class Widget {
+  private name: string;
+  public size: number = 1;
+
+  public area(): number {
+    return this.size;
+  }
+
+  private helper(): void {
+    this.area();
+  }
+}
+
+export function makeWidget(): Widget {
+  return new Widget();
+}
+"#;
+
+const TYPESCRIPT_INTERFACE: &str = "export interface Drawable {\n  draw(): void;\n}\n";
+
+#[given("a Java production class")]
+fn java_production_class(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/com/example/Widget.java",
+        JAVA_WIDGET,
+    );
+}
+
+#[given("a TypeScript production class and function")]
+fn typescript_production_class(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(env, "src/widget.ts", TYPESCRIPT_WIDGET);
+}
+
+#[given("a TypeScript production interface")]
+fn typescript_production_interface(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/drawable.ts",
+        TYPESCRIPT_INTERFACE,
+    );
+}
+
+#[given("a mixed Rust Python Java and TypeScript production source set")]
+fn mixed_production_sources(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(env, "src/small.rs", "pub struct Small;\n");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/app.py",
+        "class PythonWidget:\n    def area(self):\n        return 1\n",
+    );
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/com/example/Widget.java",
+        JAVA_WIDGET,
+    );
+    crate::steps::outline_report_support::write_source(env, "src/widget.ts", TYPESCRIPT_WIDGET);
+}
+
+#[given("a malformed Java production file beside a valid TypeScript production file")]
+fn malformed_java_bside_typescript(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/Broken.java",
+        "public class Broken {\n",
+    );
+    crate::steps::outline_report_support::write_source(env, "src/widget.ts", TYPESCRIPT_WIDGET);
+}
+
+#[given("Java and TypeScript test and dependency sources")]
+fn java_typescript_exclusions(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/test/java/IgnoredJava.java",
+        JAVA_WIDGET,
+    );
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/widget.test.ts",
+        TYPESCRIPT_WIDGET,
+    );
+    crate::steps::outline_report_support::write_source(
+        env,
+        "node_modules/IgnoredTypeScript.ts",
+        TYPESCRIPT_WIDGET,
+    );
+}
+
+#[then(regex = r#"^the JSON report names the unit "([^"]+)" with language "([^"]+)"$"#)]
+fn json_unit_with_language(world: &mut GivnWorld, name: String, language: String) {
+    let value = json_output(world);
+    let found = value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|unit| unit["name"] == name.as_str() && unit["language"] == language.as_str());
+    assert!(found, "unit {name} with language {language} not in {value}");
+}
+
+#[then(regex = r#"^the JSON report names the function "([^"]+)" with language "([^"]+)"$"#)]
+fn json_function_with_language(world: &mut GivnWorld, name: String, language: String) {
+    let value = json_output(world);
+    let found = value["units"].as_array().into_iter().flatten().any(|unit| {
+        unit["language"] == language.as_str()
+            && unit["outline"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .any(|item| item["name"] == name.as_str())
+    });
+    assert!(
+        found,
+        "function {name} with language {language} not in {value}"
+    );
+}
+
+#[then(regex = r#"^the JSON report gives the type kind "([^"]+)" to "([^"]+)"$"#)]
+fn json_type_kind(world: &mut GivnWorld, kind: String, name: String) {
+    let value = json_output(world);
+    let found = value["units"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|unit| unit["name"] == name.as_str() && unit["type_kind"] == kind.as_str());
+    assert!(found, "unit {name} with type kind {kind} not in {value}");
+}
+
+#[then("the JSON report names all supported languages")]
+fn json_names_all_languages(world: &mut GivnWorld) {
+    let value = json_output(world);
+    let languages = value["capabilities"]["languages"]
+        .as_array()
+        .expect("languages");
+    for language in ["rust", "python", "java", "typescript"] {
+        assert!(
+            languages.iter().any(|value| value == language),
+            "missing {language}: {value}"
+        );
+    }
+}
+
+#[then(regex = r#"^the JSON report records a parse failure for "([^"]+)"$"#)]
+fn json_records_parse_failure(world: &mut GivnWorld, path: String) {
+    let value = json_output(world);
+    let found = value["failures"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|failure| failure["path"] == path.as_str());
+    assert!(found, "no parse failure for {path}: {value}");
+}
+
+#[then("the JSON report has schema version 4")]
+fn json_schema_version_4(world: &mut GivnWorld) {
+    let value = json_output(world);
+    assert_eq!(value["schema_version"], 4, "unexpected schema version");
+}
+
+#[then("stderr names all supported source languages")]
+fn stderr_names_all_supported_languages(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world).to_lowercase();
+    for language in ["rust", "python", "java", "typescript"] {
+        assert!(
+            stderr.contains(language),
+            "stderr misses {language}: {stderr}"
+        );
+    }
+}
