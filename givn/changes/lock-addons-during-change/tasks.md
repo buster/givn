@@ -70,8 +70,8 @@ Design constraints:
 
 ## Batch B — documentation closeout
 
-- [ ] Update `docs/reference.md`, the affected arc42 chapters, and
+- [x] Update `docs/reference.md`, the affected arc42 chapters, and
       `docs/glossary.md`.
 - [ ] Record the outcome in `docs/improvements/0.9.16/agent-addon-mutation.md`.
-- [ ] Confirm every delta step phrase has a permanent binding.
-- [ ] COMMIT: <hash> -- Batch: addon-lock-documentation-closeout
+- [x] Confirm every delta step phrase has a permanent binding.
+- [x] COMMIT: 492dff09 -- Batch: addon-lock-documentation-closeout
