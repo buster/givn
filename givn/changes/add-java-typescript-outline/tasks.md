@@ -79,10 +79,10 @@ Design constraints:
 
 ## Batch B — documentation closeout
 
-- [ ] Update `docs/outline.md`, `docs/reference.md`, `README.md`,
+- [x] Update `docs/outline.md`, `docs/reference.md`, `README.md`,
       `docs/INDEX.md`, the affected arc42 chapters, and `docs/glossary.md`.
-- [ ] Record the 0.9.15 outcome in
+- [x] Record the 0.9.15 outcome in
       `docs/outline-tree-sitter-evaluation.md`.
-- [ ] Move the pending agent-add-on note to `docs/improvements/0.9.16`.
-- [ ] Confirm every delta step phrase has a permanent binding.
-- [ ] COMMIT: <hash> -- Batch: java-typescript-documentation-closeout
+- [x] Move the pending agent-add-on note to `docs/improvements/0.9.16`.
+- [x] Confirm every delta step phrase has a permanent binding.
+- [x] COMMIT: 4b3fdf28 -- Batch: java-typescript-documentation-closeout
