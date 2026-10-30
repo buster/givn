@@ -104,7 +104,8 @@ asset tree, consumed through `givn instructions`.
 | Capability | Step definition file | Permanent merge target |
 |---|---|---|
 | `serve-extended-rules` | `tests/steps/serve_extended_rules_steps.rs` | same file |
-| `match-guidance-to-enabled-addons` | `tests/steps/template_conditional_rendering_steps.rs` + `tests/steps/template_conditional_rendering_support.rs` | same files |
+| `match-guidance-to-enabled-addons` | `tests/steps/template_conditional_rendering_steps.rs` | same file |
+| `match-guidance-to-enabled-addons` (fixtures) | `tests/steps/template_conditional_rendering_support.rs` | same file |
 | `review-architecture-documentation` | `tests/steps/arc42_review_alignment_steps.rs` | same file |
 | `refresh-generated-guidance` | `tests/steps/skill_rewrites_steps.rs` | same file |
 
