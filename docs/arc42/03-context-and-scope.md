@@ -50,7 +50,7 @@ sync; the current optional presentation block is `communication-policy`.
 | `GIVN_FEATURES` | in | Feature path or scope exported to project command processes. |
 | `GIVN_RESULT_FILE` | out | Per-scope result path exported to the verification runner; the runner writes the fail-closed four-count result Givn reconciles. |
 | `GIVN_RESULT_SCOPE` | out | `change`, `regular`, or `e2e`; a result that declares a different scope is refused. |
-| `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`; policy ids use empty artifact arrays and may add `skill_to_load`. |
+| `givn instructions [<id>] [--json]` | out | No id: project state and request routing (`next_command`, `next_skill`, `overview`). With an artifact id: one object with `id`, `generates`, `requires`, and resolved `instruction`; policy ids use empty artifact arrays and may add `skill_to_load`. |
 | `givn instructions arc42-docs` / `design-review` | out | Effective architecture and review guidance; the project cascade may override the default source. |
 | `givn instructions dialog` / `dialog-examples` / `challenge` | out | The mandatory question policy, its worked examples, and the evidence-first challenge policy. They resolve without a lifecycle change. |
 | `givn spec find/tree/duplicates/coverage/route` | in/out | Deterministic specification queries and advisory routing. |

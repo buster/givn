@@ -11,12 +11,12 @@ is in the [ADR register](adr/README.md); mechanics are in
 | Language and packaging | Rust crate producing the `givn` CLI; defaults are embedded in the binary. |
 | Configuration | Embedded manifest plus a `givn/config.yaml` policy/graph overlay, then a dedicated `givn/commands.yaml` schema for executable settings. |
 | Facets | Project override wins over embedded template/instruction/skill asset. |
-| Lifecycle | Manifest `requires` graph; standard order is proposal, specs, design, design-review, tasks, review, archive. |
+| Lifecycle | Manifest `requires` graph; standard order is proposal, specs, design, design-review, tasks, review, archive. New or unclassified work enters through `givn-start`, which may recommend an answer, direct work, ideation, or a formal change. |
 | Specification | `.feature` files with `@givn.*` deltas; archive merges and strips givn tags. |
 | Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
-| Guidance | Skills only. Selected targets receive `<target>/skills/<name>/SKILL.md`; served instructions own the rules; project extensions are appended at request time. |
+| Guidance | Skills only. Selected targets receive `<target>/skills/<name>/SKILL.md`; served instructions own the rules; project extensions are appended at request time. `givn-start` is the proportionate entry skill; `givn instructions` reports state without authorizing unrelated work. |
 | Agent targets | `opencode`, `agents`, `claude`, `omp`, and `maki`. Invocation is harness-owned; no generated command files. |
 | Commit attribution | `givn commit` is the SCM-neutral explicit-path commit path; on Git a checked-in message hook additionally stamps raw commits, while a Fossil checkout relies on `givn commit`. OpenCode, Claude, and omp adapters provide best-effort runtime values without making human commits a gate. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |

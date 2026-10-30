@@ -302,7 +302,10 @@ policy or step direction resolves without one; the acceptance suite grades
 that. A full copy installed by an earlier Givn version is rewritten to the
 direction by the next synchronization or upgrade; a disabled addon's files are
 removed by the existing reconciliation; a project-owned replacement stays
-byte-for-byte and receives no injected text.
+byte-for-byte and receives no injected text. A retired generated skill is
+removed only when its bytes are recognizable as Givn output; custom content at
+the same path is preserved with a manual transition notice. `givn-start` is the
+default entry skill; `givn-explore` is no longer generated and has no alias.
 
 A project extends one instruction's built-in rules through the `extensions:`
 map in `givn/config.yaml`: an instruction id maps to project-owned rule
@@ -1327,5 +1330,30 @@ ordering, and replaces chapter 12 with the link. Givn does not parse or rewrite
 consumer Markdown automatically. While a migration is pending, chapter 12 is
 the older location and the new glossary must not be presented as a second
 authority; the agent completes the move before relying on the new file.
+
+## 8.28 Proportionate Entry and Retired Skill Reconciliation
+
+`givn-start` is the default entry for new or unclassified work. It investigates
+the problem and recommends one of four outcomes: answer and stop, direct work
+without a Givn change, durable ideation, or a formal change. It creates no
+workflow artifacts. Direct work skips change administration, not correctness:
+the relevant contract is read, specifications and documentation stay accurate,
+proportionate regression coverage and checks are used, and the modification and
+its limits are reported. Authorization to edit does not authorize commit,
+push, archive, or unrelated work.
+
+`givn instructions` reports state separately from request routing. With no
+active change, the text recommends `givn-start` and names `givn new` as the
+direct alternative; JSON carries `next_skill: "givn-start"` and keeps
+`next_command: "givn new <change-id>"` as the direct alternative. With an active
+change, the reported lifecycle step applies only when continuing that change.
+
+`givn skills sync` generates `givn-start` and removes a recognizable generated
+`givn-explore` skill. Recognition requires the generated frontmatter name and
+the served-instruction pointer; a same-named custom file is preserved and
+reported for manual transition. Legacy generated explore command files remain
+recognized for removal. The upgrade snapshot and versioned-rules staging include
+retired managed paths so a tracked generated explore skill is removed from the
+revision rather than left as an uncommitted deletion.
 
 *[Architecture documentation index](README.md)*

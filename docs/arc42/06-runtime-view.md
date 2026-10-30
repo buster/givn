@@ -143,11 +143,7 @@ When the id resolves to the domain-modeling policy, the response names
 enabled; arc42 is not a prerequisite. The served instruction owns
 `docs/glossary.md` and `docs/domain-model.md`.
 
-Without an artifact id, the command reports context-aware generic guidance from
-the project state. It does not create lifecycle artifacts. When the readme
-addon is enabled and the README check reports findings, both report paths
-append one text-only status line naming `givn readme check` and the finding
-count; the JSON report shape is unchanged.
+Without an artifact id, the command reports project state and request routing from the project state. It does not create lifecycle artifacts. The no-active text recommends loading `givn-start` to choose among answer-only, direct work, ideation, or a formal change, and names `givn new <change-id>` as the direct alternative. JSON carries `next_skill: "givn-start"` and keeps `next_command: "givn new <change-id>"` as the direct alternative. A reported active-change step applies only when continuing that change and does not authorize unrelated work. When the readme addon is enabled and the README check reports findings, both report paths append one text-only status line naming `givn readme check` and the finding count; the JSON report shape is otherwise unchanged.
 
 The shared generic overview directs each fresh context to load the effective
 dialog policy before its first user-facing question. Text and JSON state reports
@@ -505,9 +501,11 @@ Enabling or disabling an addon resyncs generated skills.
 `givn skills sync` resolves the selected targets, writes generated skills and
 per-target attribution/reporter integrations, refreshes the `givn-project`
 block, applies or removes the `communication-policy` block according to its
-addon flag, removes the retired `absolute-mode` block, and reconciles ignore
-state. No command files are generated; recognizable old ones are removed and
-custom files are reported for manual transition.
+addon flag, removes the retired `absolute-mode` block, removes a recognizable
+generated `givn-explore` skill while preserving custom content, and reconciles
+ignore state. No command files are generated; recognizable old ones, including
+a generated `givn-explore` command, are removed and custom files are reported
+for manual transition.
 
 `givn completions <shell>` writes no project files and prints a shell completion
 script to stdout.
