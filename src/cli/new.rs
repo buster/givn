@@ -40,6 +40,10 @@ pub fn run(id: &str, skip: &[String]) -> Result<()> {
 
     std::fs::create_dir_all(&change_dir)?;
 
+    // Record the operator-owned add-on configuration for this change.
+    let manifest = load_effective()?;
+    crate::config::lock::write_for_change(&change_dir, &manifest)?;
+
     // Write proposal stub from cascade, unless skipped.
     let skip_set: std::collections::HashSet<&str> = skip.iter().map(|s| s.as_str()).collect();
 

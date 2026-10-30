@@ -175,6 +175,9 @@ fn run_mandatory_checks(
                 if let Err(error) = check_change_receipt(manifest, project_root, id) {
                     failures.push(error.to_string());
                 }
+                if let Err(error) = crate::config::lock::check(project_root, id) {
+                    failures.push(error.to_string());
+                }
                 let change_dir = crate::state::resolve_change_dir(project_root, id)?;
                 let backend = crate::scm::select(project_root)?;
                 if let Err(error) = check_scenario_commits(&backend, &change_dir) {

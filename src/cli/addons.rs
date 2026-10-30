@@ -3,6 +3,7 @@
 /// Addons are pre-packaged artifact sets embedded in the binary and enabled
 /// via the `addons:` key in `givn/config.yaml`. See arc42 ch.8.11.
 use anyhow::{Result, bail};
+use std::io::IsTerminal;
 
 /// One registered addon.
 pub struct AddonSpec {
@@ -99,9 +100,29 @@ pub fn run_list() -> Result<()> {
 /// `givn addons enable <name>` — set addon to true in givn/config.yaml, run
 /// any one-time scaffolding for that addon, then regenerate skills/commands so
 /// generated guidance always matches the new configuration.
-pub fn run_enable(name: &str) -> Result<()> {
+pub fn run_enable(
+    name: &str,
+    operator: bool,
+    reason: Option<&str>,
+    change: Option<&str>,
+) -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    let before = crate::config::overlay::load_effective()?
+        .addons
+        .get(name)
+        .unwrap_or(true);
+    let target = guard_addon_mutation(&project_root, name, operator, reason, change)?;
     enable_scaffold(name)?;
-    crate::skills::targets::sync(&std::env::current_dir()?)?;
+    if let Some(change_dir) = target {
+        crate::config::lock::record_override(
+            &change_dir,
+            name,
+            before,
+            true,
+            reason.unwrap_or_default(),
+        )?;
+    }
+    crate::skills::targets::sync(&project_root)?;
     Ok(())
 }
 
@@ -268,10 +289,86 @@ fn scaffold_arc42() -> Result<()> {
 /// `givn addons disable <name>` — set addon to false in givn/config.yaml,
 /// run any cleanup for that addon, then regenerate skills/commands so
 /// generated guidance matches the new configuration.
-pub fn run_disable(name: &str) -> Result<()> {
+pub fn run_disable(
+    name: &str,
+    operator: bool,
+    reason: Option<&str>,
+    change: Option<&str>,
+) -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    let before = crate::config::overlay::load_effective()?
+        .addons
+        .get(name)
+        .unwrap_or(true);
+    let target = guard_addon_mutation(&project_root, name, operator, reason, change)?;
     disable_scaffold(name)?;
-    crate::skills::targets::sync(&std::env::current_dir()?)?;
+    if let Some(change_dir) = target {
+        crate::config::lock::record_override(
+            &change_dir,
+            name,
+            before,
+            false,
+            reason.unwrap_or_default(),
+        )?;
+    }
+    crate::skills::targets::sync(&project_root)?;
     Ok(())
+}
+
+/// Refuse an add-on mutation while a locked change is active. The operator
+/// override requires an interactive terminal and a recorded reason, so it is
+/// not an ordinary autonomous command.
+fn guard_addon_mutation(
+    project_root: &std::path::Path,
+    addon: &str,
+    operator: bool,
+    reason: Option<&str>,
+    change: Option<&str>,
+) -> Result<Option<std::path::PathBuf>> {
+    let locked = crate::config::lock::locked_active_changes(project_root)?;
+    if locked.is_empty() {
+        return Ok(None);
+    }
+    if !operator {
+        bail!(
+            "add-on configuration is operator-owned and is locked by active change(s): {}.              `givn addons` cannot change `{addon}` during a change. Install the missing dependency              in an isolated environment or report an environment failure; do not disable its gate.              An operator can override on an interactive terminal with `--operator --reason \"<reason>\"`.",
+            locked
+                .iter()
+                .map(|(id, _)| id.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+    if !std::io::stdin().is_terminal() {
+        bail!(
+            "the add-on operator override requires an interactive terminal; no configuration was changed"
+        );
+    }
+    let reason = reason.unwrap_or_default().trim();
+    if reason.is_empty() {
+        bail!(
+            "the add-on operator override requires a non-empty --reason; no configuration was changed"
+        );
+    }
+    let change_dir = match change {
+        Some(id) => {
+            let dir = crate::state::resolve_change_dir(project_root, id)?;
+            if crate::config::lock::read(&dir)?.is_none() {
+                bail!("change '{id}' has no add-on lock to override");
+            }
+            dir
+        }
+        None if locked.len() == 1 => locked[0].1.clone(),
+        None => bail!(
+            "several locked changes are active; select one with --change <id>: {}",
+            locked
+                .iter()
+                .map(|(id, _)| id.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    };
+    Ok(Some(change_dir))
 }
 
 /// The scaffold/cleanup half of disabling an addon (writes config, removes

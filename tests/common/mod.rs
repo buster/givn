@@ -429,6 +429,41 @@ pub fn run_init_in_terminal(env: &TestEnv, keys: &[u8]) -> Output {
     }
 }
 
+/// Run one already-built command through a real PTY, without sending keys.
+/// Used for commands whose only terminal requirement is a TTY check.
+pub fn run_command_in_terminal(env: &TestEnv, command: &str) -> Output {
+    use std::process::{Command, Output, Stdio};
+    use std::time::{Duration, Instant};
+
+    let transcript = env.path(".terminal-transcript.txt");
+    let mut child = Command::new("script")
+        .args(["-qec", command, &transcript.to_string_lossy()])
+        .current_dir(env.root())
+        .env_remove("GIVN_FEATURES")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("spawn `script` (util-linux) for a terminal command");
+    let deadline = Instant::now() + Duration::from_secs(60);
+    let status = loop {
+        match child.try_wait().expect("poll the PTY session") {
+            Some(status) => break status,
+            None if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(50)),
+            None => {
+                let _ = child.kill();
+                panic!("the terminal command did not finish within 60 seconds");
+            }
+        }
+    };
+    let bytes = std::fs::read(&transcript).expect("read the terminal transcript");
+    Output {
+        status,
+        stdout: bytes.clone(),
+        stderr: bytes,
+    }
+}
+
 /// Replace the project's addon policy in `givn/config.yaml`.
 ///
 /// Addon flags are policy: `givn/commands.yaml` rejects them. Fixtures that

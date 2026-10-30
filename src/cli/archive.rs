@@ -1143,6 +1143,7 @@ fn run_static_review_gates(
         manifest.addons.coverage,
         manifest.addons.readme,
     )?;
+    crate::config::lock::check(project_root, change)?;
     crate::overlap::analysis::run_review_overlap_gate(project_root, change)?;
     crate::cli::check::check_retirement_disclosed(project_root, change)?;
     crate::spec::routing_table::check_routing_consistency(project_root, change)?;

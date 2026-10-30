@@ -319,11 +319,29 @@ enum AddonsCommands {
     Enable {
         /// Addon name (e.g. arc42).
         name: String,
+        /// Operator override for an active change; requires an interactive terminal.
+        #[arg(long)]
+        operator: bool,
+        /// Reason recorded with an operator override.
+        #[arg(long)]
+        reason: Option<String>,
+        /// Change whose lock the override updates when several are active.
+        #[arg(long)]
+        change: Option<String>,
     },
     /// Disable an addon in givn/config.yaml.
     Disable {
         /// Addon name (e.g. arc42).
         name: String,
+        /// Operator override for an active change; requires an interactive terminal.
+        #[arg(long)]
+        operator: bool,
+        /// Reason recorded with an operator override.
+        #[arg(long)]
+        reason: Option<String>,
+        /// Change whose lock the override updates when several are active.
+        #[arg(long)]
+        change: Option<String>,
     },
 }
 
@@ -516,8 +534,18 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Eject { target, force } => cli::eject::run(&target, force),
         Commands::Addons { command } => match command {
             AddonsCommands::List => cli::addons::run_list(),
-            AddonsCommands::Enable { name } => cli::addons::run_enable(&name),
-            AddonsCommands::Disable { name } => cli::addons::run_disable(&name),
+            AddonsCommands::Enable {
+                name,
+                operator,
+                reason,
+                change,
+            } => cli::addons::run_enable(&name, operator, reason.as_deref(), change.as_deref()),
+            AddonsCommands::Disable {
+                name,
+                operator,
+                reason,
+                change,
+            } => cli::addons::run_disable(&name, operator, reason.as_deref(), change.as_deref()),
         },
         Commands::Readme {
             command: ReadmeCommands::Check,
