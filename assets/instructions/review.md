@@ -277,16 +277,23 @@ continue with the coverage classification.
 {{/if}}
 
 {{#if addons.domain_modeling}}
-{{#if addons.arc42}}
 ## Ubiquitous language conformance
 
 Before sign-off, run this mandatory
 check: confirm that the specs, design, and code reuse the durable glossary's
 exact terms — the ubiquitous language is used consistently everywhere and
-recorded in the project's arc42 glossary. Every spec or design term the
+recorded in the project's `docs/glossary.md`. Every spec or design term the
 glossary does not hold, or any inconsistent reuse, is a finding: fix the
-affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
-Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
+affected artifact and record the resolved term in `docs/glossary.md`.
+
+Check the structural model at its owner: `docs/domain-model.md`. Assess the
+structural impact: did this change alter the structure or an included
+explanatory view? If it did,
+confirm the rendered diagram and the boundaries/relationships tables match the
+implemented change. If it did not, leave the model unchanged; a no-op document edit is not evidence of maintenance.
+
+Do not write `REVIEW: PASS` while a ubiquitous-language or structural finding
+remains.
 
 When a domain term, schema, or governing rule changes, sweep README, glossary, ADRs,
 docs, tests, and code symbols for old values. Update them or mark them stale at
@@ -295,7 +302,6 @@ definitions are a finding.
 
 Examples: a glossary naming a deleted constant; a risk note still saying a
 migration backfills rows; a README still reporting the old rule or old coverage.
-{{/if}}
 {{/if}}
 
 ## Coverage

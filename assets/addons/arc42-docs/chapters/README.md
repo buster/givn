@@ -16,7 +16,7 @@ Maintained by the `arc42-docs` givn artifact — updated with each change via `g
 | 9 | [Architecture Decisions](09-architecture-decisions.md) | ADR register/index; individual ADRs are in [`adr/README.md`](adr/README.md) |
 | 10 | [Quality Requirements](10-quality-requirements.md) | Measurable quality scenarios |
 | 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks and debt |
-| 12 | [Glossary](12-glossary.md) | Domain and technical terms |
+| 12 | [Glossary](12-glossary.md) | Links to the standalone [`docs/glossary.md`](../glossary.md) |
 
 ## ADR Storage
 

@@ -126,7 +126,7 @@ ADR cap, and a foundational change may legitimately mint several genuine ADRs.
    port/adapter boundary, component split, storage boundary, or compatibility
    boundary. A boundary decision is not local merely because it touches one
    component. Example: a project identity key split is a data-model decision
-   owned by `design.md` and the glossary.
+   owned by `design.md` and `docs/glossary.md`.
 2. **No multi-change constraint.** The decision does not constrain at least two
    future changes or two components, and it defines no port/adapter boundary,
    component split, storage boundary, or compatibility boundary. A boundary
@@ -219,7 +219,7 @@ does not by itself qualify an ADR.
 | 9 | Architecture decisions (tradeoffs, ADRs) | 09 architecture-decisions |
 | 10 | New quality scenarios | 10 quality-requirements |
 | 11 | New risks or technical debt (including every "Bad, because..." consequence recorded against a new ADR in chapter 09) | 11 risks-and-technical-debt |
-| 12 | New domain terms | 12 glossary |
+| 12 | New domain terms | `docs/glossary.md` (chapter 12 links) |
 
 Rows are not mutually exclusive: treat correlated rows as a prompt to
 double-check, not evidence that any one of them is affected. An affected
