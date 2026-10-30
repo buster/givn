@@ -1,0 +1,14 @@
+Scenario: Author starts a session with the universal dialog obligation
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpqWiVGr
+exit code: 0
+--- stdout ---
+givn — from Given to done. This project uses givn for spec-driven development: the `.feature` file is the executable specification, and its owning use case supplies the domain contract. Consult `usecase.md` and any linked ideation topic before changing a capability; consult confirmed Personas as review lenses, not as Gherkin actors. Workflow: propose → spec → design → design-review → tasks → implement → review → archive. Generated guidance is skills-only; no `/givn-*` command files are installed. Claude Code and OpenCode use their native skill invocation, the neutral `.agents` target uses skill discovery, OMP uses `/skill:givn-<step>`, and Maki uses an explicit request or an agent-selected skill. Run `givn status` or `givn status --change <id>` for a full checklist view with pending tasks, or `givn instructions <artifact>` for that artifact's writing instructions. For every user-facing question, follow the effective dialog policy from `givn instructions dialog`; load it once per context before the first question (once per context rather than rereading before every question), including clarification and confirmation outside a named workflow, and pass the obligation explicitly when work is handed to another context. This obligation applies with optional addons disabled and outside any named skill. Before the first question of a policy-indexed type, read that type's companion examples from `givn instructions dialog-examples`; the policy is not loaded automatically. A reported next step applies when continuing that change; it does not authorize unrelated work. For new or unclassified work, load `givn-start` to choose answer-only, direct work, ideation, or a formal change; `givn new <change-id>` remains the optional direct alternative. Direct entry to ideation, proposal, and clearly authorized direct work remains available.
+
+Status: No changes exist yet.
+
+Next: for new or unclassified work, load the `givn-start` skill (OMP: `/skill:givn-start`) to investigate and choose the next action.
+For a change whose goal and scope are already clear, `givn new <change-id>` remains the direct alternative.
+
+--- stderr ---
+
