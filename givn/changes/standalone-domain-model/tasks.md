@@ -270,19 +270,19 @@ Design constraints for every scenario in this batch:
 
 ## Batch D — repository glossary migration and closeout
 
-- [ ] Move the current `docs/arc42/12-glossary.md` table to
+- [x] Move the current `docs/arc42/12-glossary.md` table to
       `docs/glossary.md`; replace chapter 12 with the heading and link to
       `../glossary.md`; keep every term and definition.
-- [ ] Create `docs/domain-model.md` for this repository using the shipped
+- [x] Create `docs/domain-model.md` for this repository using the shipped
       template; cover the documented givn domain without inventing structure.
-- [ ] Update `docs/arc42/08-crosscutting-concepts.md` (8.11, 8.27),
+- [x] Update `docs/arc42/08-crosscutting-concepts.md` (8.11, 8.27),
       `docs/arc42/05-building-block-view.md`,
       `docs/arc42/06-runtime-view.md`,
       `docs/arc42/11-risks-and-technical-debt.md` (R-127), and the index links
       to the standalone glossary.
-- [ ] Confirm every delta step phrase has a permanent binding (the step files
+- [x] Confirm every delta step phrase has a permanent binding (the step files
       named above), and no unimplemented `todo!()`/`unimplemented!()` remains.
-- [ ] COMMIT: <hash> -- Batch: standalone-documentation-closeout
+- [x] COMMIT: 40d1b63b -- Batch: standalone-documentation-closeout
 
 ## Batch E — @e2e
 
@@ -296,5 +296,5 @@ guidance — `src/cli/instructions.rs`.
 
 ### Scenario: An agent synchronizes skills and the domain skill is routed
 
-- [ ] Scenario: An agent synchronizes skills and the domain skill is routed
-  - [ ] COMMIT: <hash> -- Batch: standalone-domain-e2e
+- [x] Scenario: An agent synchronizes skills and the domain skill is routed
+  - [x] COMMIT: f49aa68 -- Batch: standalone-domain-e2e
