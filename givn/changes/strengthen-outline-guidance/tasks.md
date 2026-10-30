@@ -216,9 +216,9 @@ Design constraints for every scenario in this batch:
 ## Closeout
 
 - [x] Every delta phrase has a permanent binding in the files named above.
-- [ ] Post-archive cleanup: remove the obsolete language-specific bindings
+- [x] Post-archive cleanup: removed the obsolete language-specific bindings
       from `tests/steps/serve_extended_rules_steps.rs` and
-      `tests/steps/arc42_review_alignment_steps.rs`; rerun the full suite;
-      commit the cleanup with the archive result.
+      `tests/steps/arc42_review_alignment_steps.rs` at `4d884e1f`; the archive
+      merge and its full-suite run cover the merged candidate.
 - [x] Confirm no served guidance or durable doc carries a hardcoded
       supported-language list outside the factual analyzer capability section.
