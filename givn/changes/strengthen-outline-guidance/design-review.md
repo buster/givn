@@ -19,6 +19,7 @@ Reviewer context: agent
 | Q9 | Interface classification | Could this be a Web UI instead of a terminal interface? | Closed — no browser-rendered surface |
 | Q10 | ADR qualification | Does the guidance decision need a new ADR? | Closed — no; feature plus chapter 08 are the canonical homes |
 | Q11 | Architecture documentation | Does chapter 08 match the plan? | Closed — hardening updated the stale serving-path text |
+| Q12 | Testability | Does the Step Definitions table resolve to one existing file per row? | Closed — the combined cell was split into two rows |
 
 ### Q1 — Renderer support for the outline condition
 
@@ -274,6 +275,27 @@ Reviewer context: agent
   chapter to match the design. Rejected: deferral, because the review would be
   signing off a known contradiction.
 
+### Q12 — Step-definition path resolution
+
+- Status: closed (agent, review preflight)
+- Blocks: the review integrity check.
+- Context: the design named one capability with two step files in a single
+  table cell. The integrity hook resolves exactly one path per cell.
+- Question: Does every Step Definitions row name exactly one file that exists?
+- Recommended: split the combined cell into one row per file.
+- Options:
+  1. **One row per file** — both files resolve and exist.
+     In practice: the rows name `template_conditional_rendering_steps.rs` and
+     `template_conditional_rendering_support.rs` separately.
+     Gain: the integrity check resolves every path.
+     Cost: two rows for one capability.
+  2. **Keep the combined cell** — one capability row.
+     In practice: the integrity check reports the combined path as missing.
+     Gain: fewer rows.
+     Cost: a failing review preflight.
+- Resolution: **One row per file** because the integrity hook resolves one path
+  per cell. Rejected: the combined cell, because it cannot resolve.
+
 ## Resolved by codebase exploration
 
 | Branch | Finding |
@@ -342,6 +364,7 @@ codebase; no user decision was required.
 |---|---|
 | `docs/arc42/08-crosscutting-concepts.md` | Rewrote 8.26a: both outline blocks render behind `{{#if addons.outline}}`, the review template carries no outline verdict phrase, and the comprehension, naming, and ordinary-review-finding rules are recorded. |
 | `design.md` | Added the interface-classification rationale and the transcript evidence path. |
+| `design.md` | Split the combined Step Definitions cell into one row per file so the review integrity hook resolves an existing path. |
 
 ## Sign-off
 

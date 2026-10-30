@@ -220,5 +220,5 @@ Design constraints for every scenario in this batch:
       from `tests/steps/serve_extended_rules_steps.rs` and
       `tests/steps/arc42_review_alignment_steps.rs`; rerun the full suite;
       commit the cleanup with the archive result.
-- [ ] Confirm no served guidance or durable doc carries a hardcoded
+- [x] Confirm no served guidance or durable doc carries a hardcoded
       supported-language list outside the factual analyzer capability section.
