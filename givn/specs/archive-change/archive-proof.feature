@@ -65,15 +65,16 @@ Feature: Archive Proof
     Then  the command exits 0
     And  the verification receipt records the end-to-end scope as not applicable
 
+  @archive-proof
   Scenario Outline: Repairing a failed candidate forward proves it without repeating the merge
-    Given  an unproven archive candidate "proof-demo" in a <backend> project whose full suite failed
-    And  the developer commits a repair
-    And  the full suite now passes against the merged permanent specs
-    When  the user runs `givn archive --change proof-demo`
-    Then  the command exits 0
-    And  the archive candidate is proven
+    Given  an unproven archive candidate "proof-demo" in a <backend> project
+    And  its regular scope passed but its end-to-end scope failed
+    And  the developer commits a repair changing only inputs relevant to the end-to-end scope
+    When  the developer runs `givn archive --change proof-demo`
+    Then  the archive becomes proven after fresh passing end-to-end verification
+    And  the unchanged regular scope result is reused without another execution
     And  each merged scenario appears exactly once in the permanent specs
-    And  the verification receipt names the repaired revision
+    And  the receipt names the repaired revision and the reused scope evidence
     Examples:
       | backend |
       | Git |
@@ -132,14 +133,15 @@ Feature: Archive Proof
       | Git |
       | Fossil |
 
-  @e2e
+  @e2e @archive-proof
   Scenario: Consumer repairs a blocked archive and the rerun proves it
-    Given  a committed givn project with an unproven archive candidate "proof-repair"
-    And  the developer commits a repair
-    And  the project reports scenario counts for every verification scope
+    Given  a committed givn project with an unproven candidate whose scopes passed but finalization publication failed
+    And  the publication blocker is repaired without changing relevant verification inputs
     When  the user invokes `givn archive --change proof-repair`
-    Then  the command succeeds
-    And  the archive at givn/archive/proof-repair/ carries a proven verification receipt
+    Then  the command succeeds and terminal output reports a proven archive
+    And  the archive carries a proven receipt reusing its passed scope evidence
+    And  no verification suite runs again
+    And  the terminal transcript is captured for this scenario
 
   @e2e
   Scenario: Consumer inspects an unproven archive candidate
@@ -147,6 +149,7 @@ Feature: Archive Proof
     When  the user invokes `givn status`
     Then  stdout lists "proof-pending" as an unproven archive
     And  stdout routes the developer to resume it with `givn archive --change proof-pending`
+
   Scenario Outline: A proven archive records a verification receipt binding the tested revision
     Given  a <backend> project with a completed change "proof-demo" ready to archive
     And  the full suite passes against the merged permanent specs
@@ -241,6 +244,7 @@ Feature: Archive Proof
     And  stderr names the missing `fossil` executable
     And  the change directory still exists under givn/changes/
     And  no file in the project changed
+
   Scenario: A change present as both active and archived without a receipt is refused as corrupt
     Given  a change "proof-demo" that exists both under givn/changes/ and givn/archive/
     And  the archive candidate has no verification receipt
@@ -303,24 +307,23 @@ Feature: Archive Proof
       | evidence/final.log |
       | verification/notes.txt |
 
+  @archive-proof
   Scenario: A rejected finalization publication leaves the archive unproven
-    Given  a givn project with a completed change "proof-demo" ready to archive
-    And  a commit hook rejects the finalization revision
-    And  the full suite passes against the merged permanent specs
-    When  the user runs `givn archive --change proof-demo`
-    Then  the command exits non-zero
-    And  stderr names the finalization rejection
-    And  the tested history records the archive as unproven
-    When  the commit hook accepts the finalization revision
-    And  the user runs `givn archive --change proof-demo`
-    Then  the command exits 0
-    And  the archive candidate is proven
+    Given  an archive candidate has passed every applicable verification scope and coverage measurement
+    And  a commit hook rejects the evidence-only finalization publication
+    When  the developer runs `givn archive --change proof-demo`
+    Then  the command exits non-zero and names the finalization rejection
+    And  the candidate remains unproven and repairable in place
+    When  the hook accepts publication and the developer retries with unchanged relevant inputs
+    Then  the archive becomes proven using the recorded scope results and coverage
+    And  no verification suite or coverage measurement runs again
 
   Scenario: An interrupted archive move is surfaced by project status
     Given  an interrupted archive move for change "proof-demo" with an identical pending candidate
     When  the user runs `givn status`
     Then  stdout lists "proof-demo" as an unproven archive
     And  stdout routes the developer to resume it with `givn archive --change proof-demo`
+
   Scenario: Archive refuses a stale change verification receipt before merging
     Given  a clean committed givn project with a change whose delta specs pass
     And  the change has a current verification receipt
@@ -339,6 +342,7 @@ Feature: Archive Proof
     And  the archive candidate is proven
     And  the runner was invoked once for the regular scope with features path "givn/specs"
     And  the runner was never invoked with a change features path
+
   Scenario: CLI interaction transcripts are declared evidence
     Given  a clean committed givn project with a change whose delta specs pass
     And  the change has an uncommitted evidence file "evidence/cli/session.txt"
@@ -347,6 +351,7 @@ Feature: Archive Proof
     Then  the command exits 0
     And  the archive candidate is proven
     And  the archived change contains the evidence file "evidence/cli/session.txt"
+
   @e2e
   Scenario: Consumer archives a change after documentation-only review edits and the proof is reused
     Given  a clean committed change with a green change verification receipt recorded at an earlier revision
@@ -383,3 +388,80 @@ Feature: Archive Proof
       | delta feature |
       | verify command |
       | source code |
+
+  @archive-proof
+  Scenario: Evidence-only recovery reuses successful scopes and runs only the failed scope
+    Given  an unproven candidate has a passed regular scope and a failed end-to-end scope
+    And  only archive evidence has changed since those executions
+    And  the end-to-end runner now produces a fresh valid passing result
+    When  the developer retries `givn archive --change proof-demo`
+    Then  the archive becomes proven
+    And  the regular scope is not executed again
+    And  only the failed end-to-end scope executes
+
+  @archive-proof
+  Scenario: A changed relevant input invalidates each affected scope before reuse
+    Given  an unproven candidate has passed regular and end-to-end scope results
+    And  a committed source repair changes relevant inputs shared by both scopes
+    When  the developer retries `givn archive --change proof-demo`
+    Then  neither stale scope result is reused as proof
+    And  each affected scope executes once against the repaired candidate
+    And  proof requires fresh valid passing results for the repaired inputs
+
+  @archive-proof
+  Scenario: Retry uses cheap input checks rather than blanket review revalidation
+    Given  an unproven candidate has completed merging and passed verification
+    And  finalization publication failed
+    And  its relevant inputs and accepted review evidence are unchanged
+    When  the developer retries `givn archive --change proof-demo`
+    Then  revision and relevant-content checks confirm reusable evidence
+    And  the completed merge and review are not repeated
+    And  no full verification run is required solely because this is a retry
+
+  @archive-proof
+  Scenario: Archive-directory evidence exemptions remain broad during proof reuse
+    Given  an unproven candidate has valid passed verification results
+    And  only files within the exempt archive directory have changed
+    When  the developer retries `givn archive --change proof-demo`
+    Then  those changes do not invalidate the recorded scope results
+    And  proof reuse does not require an evidence-output allowlist
+    And  the command reports that executable changes inside exempt paths may escape cheap input checks
+
+  @archive-proof
+  Scenario: A stale passing scope result cannot prove a new archive execution
+    Given  a merged archive candidate has an old passing regular result file
+    And  regular verification is required and its runner exits successfully without writing output
+    When  the developer runs `givn archive --change proof-demo`
+    Then  the old result was removed before execution
+    And  the candidate remains unproven because fresh output is missing
+
+  @archive-proof
+  Scenario: Scope inputs are captured before archive verification and checked afterward
+    Given  a merged archive candidate is ready for regular verification
+    And  the runner writes fresh valid passing output but changes a relevant source file during execution
+    When  the developer runs `givn archive --change proof-demo`
+    Then  the candidate remains unproven because relevant inputs changed during execution
+    And  no passing scope evidence is rebound to the modified inputs
+
+  @archive-proof
+  Scenario: No-behavior-change archive retains merged-candidate verification
+    Given  a completed change declares "Behavior change: none", explicitly skips specs and has no delta feature files
+    And  changed-scenario verification is recorded as not applicable
+    And  applicable identity, integrity and review checks pass
+    When  the developer runs `givn archive --change maintenance-demo`
+    Then  archive does not require invented delta scenarios or a changed-scenario receipt
+    And  applicable merged-candidate verification still runs before the archive is proven
+
+  @archive-proof
+  Scenario Outline: An inconsistent no-behavior-change archive exemption is refused before mutation
+    Given  a completed change declares "Behavior change: none"
+    And  the change has <delta state> and <specs disposition>
+    And  changed-scenario verification is recorded as not applicable
+    When  the developer runs `givn archive --change maintenance-demo`
+    Then  the command exits non-zero and names <reason>
+    And  no active change, archive receipt or permanent specification is mutated
+    And  no merged-candidate verification runner executes
+    Examples:
+      | delta state | specs disposition | reason |
+      | executable delta features | an explicitly skipped specs artifact | executable deltas contradicting no behavior change |
+      | no delta feature files | no explicit specs skip | the missing explicit specs skip |

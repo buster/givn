@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:52b61b2d64f47251cd0827f3a6df8d19156cae1d0c4f3e878bc1eec2ec9cbd40 -->
+<!-- givn:base-sha256:0845502a519846c706dd1ce9598259650221abb77579dca42fb29b5ed80bb32b -->
 # Use case: upgrade-a-project
 
 ## Level
@@ -12,7 +12,7 @@
 
 ## Goal
 
-Cross a release gap with reviewable upgrade and migration revisions.
+Cross a supported release gap with reviewable managed revisions, preserving user-owned content and accurately reporting recovery from a committed checkpoint.
 
 ## Trigger
 
@@ -21,59 +21,58 @@ The maintainer upgrades Givn.
 ## Preconditions
 
 - The project configuration and repository state are available.
-- The active version-control system is selected and its clean-state witness is available.
+- Git or Fossil is selected, with a clean-state witness and a committed version-control checkpoint.
+- 1.0 is the supported migration baseline; configuration format is a separate concern. During 0.9.10 preparation a manually current-format 0.x project can receive a migration-free managed refresh. Older configurations may require manual repair before managed writes.
 
 ## Main flow
 
-1. The maintainer requests an upgrade; the system witnesses the clean state and refuses before any write when the project is dirty or has no version-control system.
-2. The system synchronizes the managed scaffold and the installed guidance: it refreshes the generated guidance to carry the direction, and a full copy from an earlier version is rewritten to it.
-3. The system publishes the allowlist-only upgrade revision; the project's extensions live outside the allowlist, so the revision never stages, merges, or rewrites them.
-4. Improved built-in rules need no revision: the next request serves them.
-5. When the upgrade carries migration requirements, the system publishes the plan revision recording the upgrade revision.
-6. The system names any command a release removed instead of leaving a silent gap.
+1. The maintainer requests an upgrade; the system records the committed checkpoint and refuses before writes for dirty projects or missing version control.
+2. The system detects the project version and validates configuration ownership. Pre-1.0 projects receive manual transition guidance, not embedded old migration bundles or compatibility aliases; unsupported old keys refuse before writes.
+3. For a supported project, the system synchronizes the managed scaffold and thin skills, removes only recognizable generated legacy commands, and leaves project-owned content authoritative.
+4. The system publishes the calculated allowlist-only managed revision, excluding project extensions and custom replacements; improved built-in rules are available at the next instruction request.
+5. An applicable future supported migration route produces a reviewable plan recording the actual managed upgrade revision. An existing plan is preserved and reported.
+6. The system reports completed writes and revisions, pending work, and any removed commands or manual transitions accurately.
 
 ## Extensions
 
-- 1: uncommitted changes exist → the upgrade is refused before any write, naming the dirty paths; protects the minimal guarantee.
-- 1: no version-control system is selected → the upgrade is refused by name before any write; protects the minimal guarantee.
-- 2: the project is already current → no revision is published and the state is reported; protects the success guarantee.
-- 3: a project-owned replacement exists → it stays authoritative and is never modified or injected; protects the minimal guarantee.
-- 3: the project records extensions → they survive the upgrade byte-for-byte and are never part of the revision; protects the success guarantee.
-- 5: a plan for the gap already exists → the existing proposal and design are preserved and reported; protects the success guarantee.
-- 6: a consumer invokes a command the release removed → the system reports the command as unavailable; protects the success guarantee.
+- 1: uncommitted changes exist → refuse before writes, naming dirty paths and preserving user work; protects the minimal guarantee.
+- 1: no supported version-control system or committed checkpoint exists → refuse before writes and name the checkpoint requirement; protects the minimal guarantee.
+- 2: unsupported old configuration exists → name offending keys and applicable manual communication_policy, challenge, and skills-only transitions without converting them; protects the minimal guarantee.
+- 3: the project is already current → report state and publish no revision; protects the success guarantee.
+- 3: a project-owned replacement, extension, or customized legacy command exists → preserve it byte-for-byte and report any manual transition; protects the minimal guarantee.
+- 4: writing or publication fails after some work completed → exit nonzero and identify the failed operation, checkpoint, completed writes, actual published revisions, and pending work; offer operator restoration or fix-forward without automatic reset or clean; protects the minimal guarantee.
+- 5: a migration plan already exists → preserve and identify its proposal and design; protects the success guarantee.
+- 6: a consumer invokes a removed command → report it unavailable rather than silently substituting another action; protects the success guarantee.
 
 ## Rules
 
-- Historical migration evidence remains reviewable.
-- Ignored managed paths are force-staged only through the calculated allowlist, on both supported systems.
-- The managed revision refreshes generated guidance only to the direction; it never carries the project's extensions.
-- Improved built-in rules are served without any revision, at the next request.
-- A project-owned replacement stays authoritative.
-- The plan revision records the upgrade revision identifier.
-- The managed upgrade and migration bundles run on both supported systems with the same guarantees; a migration-free upgrade publishes exactly one revision and no plan revision.
+- 1.0 is the supported migration baseline. Embedded pre-1.0 bundles and catalog routes are removed; 0.x configurations may break and need manual repair, not automatic conversion or compatibility aliases.
+- Version detection and the future migration mechanism remain available for applicable supported routes; historical migration rationale remains reviewable.
+- Managed upgrades use a clean committed checkpoint on both Git and Fossil. Ignored managed paths are staged only through the calculated allowlist.
+- The managed revision refreshes thin skills and managed integration only; it never stages, merges, rewrites, or injects into project extensions or custom replacements and never destroys specifications or user-owned files.
+- Recognizable generated legacy commands may be removed, but no new command surface is generated. Custom commands stay byte-for-byte and are reported for manual transition.
+- Improved built-in rules are served at the next request without another rule-content synchronization revision.
+- A future supported migration plan records the actual managed upgrade revision. A migration-free supported upgrade publishes exactly one allowlist-only revision and no plan revision.
+- Local-only upgrades can remove generated guidance from tracking while keeping refreshed local skills, without modifying committed human-authored AGENTS.md.
+- A failure can leave partial writes or published revisions. Report actual state and recovery from the checkpoint, distinguishing pending from completed work; never perform automatic reset/clean or promise complete rollback.
+- Operator-controlled restoration or fix-forward is the recovery contract; no expanded transaction or history-rewrite subsystem is implied.
 
 ## Examples
 
-- Git: a clean project without migration requirements receives one allowlist-only upgrade revision `a1b2c3d4e5f6...`.
-- Git migration: a project crossing a version gap receives the upgrade revision and then a plan revision recording it.
-- Fossil: the same project receives the allowlist-only check-in `c8d9e0f1a2b3...`; a migration-bearing upgrade adds the plan check-in.
-- Dirty project: `givn upgrade` refuses before writing, naming the dirty paths.
-- No SCM: `givn upgrade` refuses by name before writing.
-- Direction: a project whose installed guidance carries full copies receives a revision whose diff shows the direction; the rules now arrive only through `givn instructions`.
-- Extensions present: the same project records "Keep proposals under 500 words"; after the upgrade the extension is untouched and the next request serves it beside the improved built-in rules.
+- A clean Git project at the supported baseline receives one managed revision containing only allowlisted integration changes; a Fossil project receives the corresponding check-in shape.
+- A 0.7 project receives 1.0-baseline and manual key/skills transition guidance, not an aggregate embedded 0.x plan.
+- A future supported route adds a reviewable migration plan naming the actual upgrade revision; an existing proposal and design are never overwritten.
+- A dirty project or project without a committed checkpoint refuses before writes.
+- Publication failure after managed files were written names those files, any actual revisions, and the checkpoint; the operator restores deliberately or repairs forward.
+- A custom legacy command and an extension saying "Keep proposals under 500 words" remain byte-for-byte unchanged.
 
 ## Minimal guarantee
 
-The project is protected from partial automatic migration, and an upgrade
-never stages, merges, rewrites, or injects into the project's extensions or a
-project-owned replacement.
+Preflight refusal preserves project files. Later failures preserve user-owned specifications, extensions, and replacements and report actual partial state and checkpoint-based operator recovery without claiming rollback.
 
 ## Success guarantee
 
-The upgrade work is explicit in the project's history, any migration it
-carries is reviewable, and the installed guidance carries the direction to
-the served instruction with the improved built-in rules reachable at the
-next request — with the project's extensions unchanged.
+Supported upgrade work is explicit in version history, future migration plans are reviewable and revision-bound, and thin skills reach current effective rules while user-owned content remains unchanged; pre-1.0 transitions are explicitly manual.
 
 ## Personas
 
@@ -88,9 +87,7 @@ next request — with the project's extensions unchanged.
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
-| apply-a-managed-upgrade | plan a release migration | A clean 0.7.0 project receives a reviewable aggregate migration plan |
 | apply-a-managed-upgrade | run a managed upgrade | A clean project without migration requirements receives one managed upgrade commit |
-| apply-a-managed-upgrade | upgrade a Fossil project | A clean Fossil project receives the same managed upgrade revision shape |
 | apply-a-managed-upgrade | invoke a retired engine command | A consumer invoking a retired engine command is told it does not exist |
 | apply-a-managed-upgrade | invoke the retired history rewrite command | A consumer invoking the retired history rewrite command is told it does not exist |
 | apply-a-managed-upgrade | archive a maintenance migration | A completed maintenance migration can be archived without a product specification |

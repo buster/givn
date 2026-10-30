@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:79e373912026681a74159c7ecd93d43c890f4e75d838fe3ad670a962d6a5f3ac -->
 # Use case: assess-code-structure
 
 ## Level
@@ -43,14 +44,14 @@ The developer asks for a outline report.
 ## Extensions
 
 - 1: the outline experiment is disabled → the command reports that the experiment is disabled and exits non-zero; protects the preconditions.
-- 1: no production sources exist in the requested scope → the command names the empty scope and exits non-zero; protects the success guarantee.
+- 1: no supported production sources exist in the requested scope → the command names the scope, Rust and Python support, and exits non-zero; unsupported-only sources are not claimed absent; protects the success guarantee.
 - 1: the requested scope does not exist → the command names the path and exits non-zero; protects the success guarantee.
 - 2: a source file cannot be analyzed → the report names the file and continues with the remaining units; protects the minimal guarantee.
 - 2: the analysis engine does not support a construct → the report marks the unit as unsupported and does not invent data; protects the minimal guarantee.
 
 ## Rules
 
-- The report is advisory; when the outline addon is enabled, the review gate requires a verdict for every touched unit and fails on an unreadable outline.
+- The report is advisory only and never blocks review or archive. It requires no outline verdict, metric waiver, forced reviewer context, or stored rationale gate.
 - The report stores no baseline or historical classification.
 - The report is deterministic and offline.
 - The report uses production sources only, from the project-root `src/` or explicit `--path` roots, in the first release.
@@ -62,6 +63,9 @@ The developer asks for a outline report.
 - Same-unit calls nest under the caller; calls to another component are leaves tagged with the target and their resolution.
 - An unknown-receiver call stays a visible `name_only` leaf.
 - The metrics hint at potential problems; they do not decide.
+- Text and JSON disclose supported languages and constructs and analyzer limitations. Partial or unsupported analysis limits conclusions; structural call order is not a complete runtime trace, and uncertain or omitted call edges must not be treated as complete execution evidence.
+- Unavailable measurements are unavailable in text and null in JSON, never measured zero. Metrics not independently calculated are omitted; tight class cohesion is not relabeled as loose class cohesion.
+- During REFACTOR and final review, use available outlines to inspect changed components and relevant neighbors for cohesive responsibility, narrow public surfaces, understandable decomposition, and dependency direction; confirm suspected issues against source. Unsupported languages receive source assessment without a waiver.
 - The report attaches no action or recommendation to a unit; a finding states the classification, the measured metrics, and the evidence.
 
 ## Examples
@@ -73,15 +77,11 @@ The developer asks for a outline report.
 
 ## Minimal guarantee
 
-The developer receives a report that names every unit it could not analyze and
-every analyzed unit's classification; existing review, archive, and
-verification behaviour is unchanged.
+The report discloses supported languages, constructs, analysis scope, unsupported or unanalyzed sources, and limitations without inventing measurements or conferring a review or archive verdict.
 
 ## Success guarantee
 
-The developer receives a complete outline report for the production
-sources, with one classification and no recommendation for every analyzed
-unit.
+The developer receives a deterministic advisory outline for the supported production sources in the requested scope, with one classification per analyzed unit, honest measurement availability, and explicit limits on conclusions.
 
 ## Personas
 
@@ -109,7 +109,7 @@ unit.
 
 ## Out of scope
 
-- Review enforcement; that is the `outline-review-gate` capability under `verify-change`.
+- Outline-based review or archive enforcement; the outline is not a verdict.
 - A stored baseline or watchlist.
 - Languages other than Rust and Python.
 - Automatic refactoring.

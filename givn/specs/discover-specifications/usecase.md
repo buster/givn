@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:8d47251ad5915718615b3dc30648f46ddce3cec95dd583a8a6231c63c55b3242 -->
 # Use case: discover-specifications
 
 ## Level
@@ -34,6 +35,10 @@ The agent investigates a proposed behavior or the permanent corpus.
 
 - Discovery commands do not modify permanent specifications.
 - JSON output remains machine-readable.
+- Exact duplicates mean literally equal supported executable content: inherited Background setup and execution tags, step keywords and text, tables, docstrings, and all Scenario Outline Examples content. Titles and file paths identify endpoints rather than determine equality.
+- Masked quoted or numeric parameters, argument cells, docstrings, or Examples values may yield a structural match but cannot establish literal equality. Different actions or inherited setup likewise prevent an exact-duplicate claim.
+- Structural labels such as same_assertion_shape are advisory candidates, not proof of equivalent behavior or mandatory review/archive dispositions.
+- Endpoint and match ordering is deterministic in text and JSON and does not depend on filesystem enumeration.
 
 ## Examples
 
@@ -45,7 +50,7 @@ The corpus remains unchanged by discovery.
 
 ## Success guarantee
 
-The agent receives stable, actionable candidates and findings.
+The agent receives stable, actionable candidates that distinguish literal supported executable equality from advisory shape similarity without claiming semantic equivalence.
 
 ## Personas
 
@@ -62,7 +67,6 @@ The agent receives stable, actionable candidates and findings.
 |---|---|---|
 | keep-audit-output-clean | request JSON duplicate audit | The JSON duplicate audit is valid JSON without progress wording |
 | spec-duplicates | audit duplicates in one feature | Exact duplicates in one feature are reported together |
-| spec-duplicates | audit duplicates across features | Exact duplicates across features are reported together |
 
 ## Includes
 
@@ -83,5 +87,3 @@ flowchart LR
   Agent((Agent)) --> Search[[Search corpus]]
   Search --> Evidence[[Report deterministic evidence]]
 ```
-
-<!-- givn:base-sha256:c03449eed80b6f3143a0b5b1a5d352009680da200f1c0bf5ad71737b9b22a118 -->

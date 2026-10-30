@@ -49,3 +49,6 @@
 - capability: history-rewrite
   retired_date: 2026-10-15
   retired_by_change: drop-legacy-residue
+- capability: outline-review-gate
+  retired_date: 2026-10-30
+  retired_by_change: prepare-0-9-10

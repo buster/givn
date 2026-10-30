@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:6ff5689aa7a7c59b2ba0aba21e9f19dfec869d45b1c7128223676ea95ac23194 -->
 # Use case: keep-documentation-current
 
 ## Level
@@ -38,6 +39,9 @@ The maintainer checks project documentation.
 - Open documentation placeholders block completion.
 - A recorded documentation impact decision passes the review.
 - Managed blocks are refreshed from canonical sources, never hand-edited.
+- Both development and run managed blocks require exactly one opening and one closing marker in the correct order before replacement.
+- Reversed, duplicated, or multiple marker pairs are named and refused before README writes by both documentation checks and archive refresh. No ambiguous automatic marker repair is attempted.
+- A valid managed-block refresh preserves all surrounding user-authored prose byte-for-byte; a refused check or refresh leaves the README byte-for-byte unchanged.
 
 ## Examples
 
@@ -45,11 +49,11 @@ The maintainer checks project documentation.
 
 ## Minimal guarantee
 
-The documentation check never rewrites user-authored prose.
+Documentation checks never rewrite user-authored prose; ambiguous managed markers cause refusal before any README modification.
 
 ## Success guarantee
 
-The project's documentation has no unfinished required section and its managed blocks are current.
+The project's documentation has no unfinished required section, and valid managed blocks are refreshed without changing surrounding content.
 
 ## Personas
 

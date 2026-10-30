@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:175e4d9ef7fbf41de7e9f4163cf50f558a28dfae87fd24e02c7084d1b5885476 -->
+<!-- givn:base-sha256:fc36293f83b16812f39171dbd321008205c1de279c3e68f49e7a137f4df47259 -->
 # Use case: initialize-project
 
 ## Level
@@ -26,72 +26,63 @@ integrations.
 
 ## Main flow
 
-1. The developer selects at least one agent target — the interactive list
-   opens with `.opencode` marked and re-asks when nothing is marked; the
-   system writes generated guidance only to the selected targets and reports
-   what was skipped and why.
-2. The system renders each selected target's skill and command as a direction
-   to the served instruction: trigger metadata, invocation-specific
-   orchestration, and the call to `givn instructions <id>`; no built-in rule
-   content is copied.
-3. The system reconciles installed guidance: a full copy from an earlier
-   version is rewritten to carry the direction, a disabled addon's files are
-   removed, and a project-owned replacement stays byte-for-byte.
-4. The system refreshes the managed project-start block: the direction to
-   `givn instructions`, the dialog-policy obligation, and the task-checkoff
-   and commit-message obligations rendered from the canonical source that
-   `givn instructions` serves.
-5. The developer enables optional addons; the system records the choice.
-6. The system reports the detected version-control system and installs the
-   attribution plumbing only where it works, naming what was skipped.
+1. The developer selects at least one agent target. The interactive list opens with `.opencode` marked and re-asks when nothing is marked; generation affects selected targets only.
+2. The system scaffolds project configuration and thin skills with trigger metadata and a direction to the canonical served instruction, without separately authored command files, orchestration, or copied rulebooks.
+3. The system reconciles recognizable generated guidance, removes recognizable generated legacy commands and disabled-addon skills, preserves project-owned replacements and custom commands byte-for-byte, and reports custom commands requiring manual transition.
+4. The system refreshes one managed project-start block beside untouched human-authored instructions. Bootstrap owns loading the effective dialog policy before the first question once per context, reloading if lost, independently of addons and named skills.
+5. The system resolves effective addon defaults and explicit choices consistently and preserves existing explicit opt-outs on repeated initialization.
+6. The system reports the detected version-control system, installs supported attribution plumbing safely, and names installed or skipped integrations and limitations.
+7. Only after required skill generation succeeds does the system report initialization complete. No initialization or synchronization action implicitly commits project work.
 
 ## Extensions
 
-- 1: no version-control system exists → the system scaffolds the corpus, generates guidance, exits 0, and warns that archive and managed upgrade are unavailable; protects the success guarantee.
-- 1: the interactive confirmation marks no target → the system states that at least one agent target must be marked, shows the selection again, and proceeds only after a target is marked; protects the success guarantee.
-- 1: a non-interactive answer or an `--agents` value resolves to no known target → the system refuses with an error naming the valid agent targets, exits non-zero, and writes nothing; protects the minimal guarantee.
-- 2: a step has no installed file for the target → the system writes only the files the target owns and the report names what was skipped; protects the success guarantee.
-- 3: a project-owned skill or command replacement exists → it is preserved byte-for-byte and receives no injected text; protects the success guarantee.
-- 3: an addon is disabled → its generated files are removed; protects the success guarantee.
-- 6: the active version-control system lacks a capability (for example transparent attribution hooks) → the report and the generated guidance state the limitation instead of naming a command that would fail; protects the success guarantee.
+- 1: no version-control system exists → the system scaffolds the corpus, generates skills, exits 0, and warns that archive and managed upgrade are unavailable; protects the success guarantee.
+- 1: interactive confirmation marks no target → the selection is shown again with the at-least-one-target requirement; protects the success guarantee.
+- 1: a non-interactive answer or an agents value resolves to no known target → the system names valid targets, exits nonzero, and writes nothing; protects the minimal guarantee.
+- 3: a project-owned replacement or custom legacy command exists → its bytes remain authoritative and unchanged, and any manual command transition is reported; protects the minimal guarantee.
+- 3: an addon is disabled → only its recognizable generated guidance is removed; protects the success guarantee.
+- 5: configuration presentation cannot be safely edited → the request refuses before writes rather than duplicating sections or changing unrelated values; protects the minimal guarantee.
+- 6: attribution is unsupported by the active version-control system → the report and guidance name the limitation; protects the success guarantee.
+- 7: required skill synchronization fails → the command exits nonzero, names the failed destination and partial initialization, preserves successful scaffold writes and choices, and specifies `givn skills sync` after repair; it prints no unconditional Ready and promises no rollback; protects the minimal guarantee.
 
 ## Rules
 
-- Initialization without a version-control system does not refuse; it warns.
-- Initialization requires at least one selected agent target.
-- Generated guidance may name only commands that work in the active project.
-- The installation report names what was installed, what was skipped, and why.
-- Optional addons are enabled or disabled by explicit user decision.
-- A generated file carries trigger metadata, invocation-specific orchestration, and the direction to the served instruction only — subagent boundaries, stop conditions, reporting; rule content comes from the guidance request.
-- Every direction names an instruction id that resolves in the same Givn version or a later one.
-- Reconciliation never overwrites a project-owned replacement and never injects text into it.
-- The managed project-start block requires the effective dialog policy independently of optional addons and preserves human-authored instructions outside that block.
-- The managed project-start block renders its task-checkoff and commit-message obligations from the canonical source that `givn instructions` serves; the block's text and the served instruction cannot disagree.
-- Resynchronization refreshes the managed policy obligation without duplicating the block or changing the selected agent targets.
-- Fresh delegated contexts receive the obligation explicitly; the presenting agent remains responsible for user-facing questions.
-- Setup changes no workflow behavior: same targets, same files, same commands.
-- The generated content stays technology-agnostic; project-specific guidance arrives only through extensions.
+- Initialization without version control warns rather than refuses; at least one selected agent target is required.
+- Thin skills are the only generated invocation surface. Supported Claude and OpenCode versions use native skill invocation, agents use skill discovery, OMP uses `/skill:givn-propose`, and Maki uses explicit requests or agent-selected skills, not generated `/givn-*` commands.
+- Every generated skill directs to exactly one served instruction id that resolves; it copies neither built-in rules nor repeated dialog-loading, handoff, delegation, or orchestration blocks. Canonical rules remain served by `givn instructions`.
+- Reconciliation rewrites recognizable old generated full copies but never overwrites or injects into project-owned replacements. A matching command filename alone does not prove generated ownership; custom legacy commands require manual transition.
+- Managed bootstrap loads the effective dialog policy once before the context's first user-facing question, independently of optional addons; reload it if lost. Skills do not duplicate that obligation, and no portable skill autoload is assumed.
+- The managed project-start block preserves human-authored surrounding instructions and derives task-checkoff and revision-message obligations from the same canonical source as served startup instructions.
+- Resynchronization refreshes the block once without changing persisted targets or unrelated configuration.
+- All current optional addons default enabled. An absent or partial addons block uses the same effective defaults for artifacts, skills, listing, and execution; explicit choices, including opt-outs, survive init reentry and force initialization.
+- `--no-addons` explicitly disables every optional addon but never disables mandatory dialog correctness.
+- communication_policy replaces absolute_mode; challenge replaces grill_me and grill_with_docs. Retired names have no automatic aliases; refusal explains manual transition. Communication rules govern concrete presentation, not cognitive-rebuilding rhetoric.
+- Optional challenge installs one thin givn-challenge skill and adds no lifecycle gate. Its subject variants include proposals, tests, specs, design, code, and whole changes; its rules are obtained through the existing instruction-request action.
+- Workflow and addon policy belong in config.yaml; command and runtime settings belong in commands.yaml. Misplaced fields fail clearly naming their owner instead of being ignored or silently applied.
+- Addon and target edits change only intended values or refuse before writing, preserving unrelated YAML and guidance and introducing no duplicate sections.
+- New projects declare explicit unconfigured runners for regular and E2E verification; initialization never assumes test scripts exist. Setup guidance must satisfy scope, selected features, result-file, counts, and failure contracts.
+- Required skill failures are nonzero partial initialization, not success or rollback. Retrying synchronization retains persisted targets and addon choices; optional reporting remains non-blocking.
+- Git attribution hooks preserve user hooks, are safe under repeated installation and core.hooksPath=.githooks, and never dispatch themselves. Optional attribution failure must not break an ordinary human commit.
+- Init and synchronization create no implicit revisions. Later `givn commit` requires explicit file selections on Git and Fossil; raw Git hooks stamp attribution when available, while raw Fossil commits are not stamped.
+- Generated guidance remains technology-agnostic; project-specific guidance comes through extensions. Reports name what was installed, skipped, or failed and why.
 
 ## Examples
 
-- Git: `givn init` writes `.githooks/commit-msg`, chains an existing hook, generates skills, and reports `commit attribution: .githooks/commit-msg`. The agent then commits with `givn commit -m "feat: parser"` or raw `git commit`; both carry attribution.
-- Fossil: `givn init` scaffolds `givn/`, writes no hook, and reports `commit attribution: givn commit path only`. `givn commit -m "feat: parser"` stamps the check-in comment; raw `fossil commit` does not, and the managed project-start block states that.
-- No SCM: `givn init` exits 0 with a warning that archive and managed upgrade are unavailable; skills are generated; a later `givn archive` refuses by name.
-- Addon-free initialization still installs the managed dialog obligation beside existing human-authored project instructions; resynchronization updates only the managed block.
-- No agent target: the interactive prompt opens with `.opencode` marked; a confirmation that marks nothing prints an error naming the requirement and shows the list again. A scripted `givn init` without `--agents`, an empty answer, or an unknown-only value exits non-zero, names `.opencode`, `.agents`, `.claude`, and leaves the project unchanged.
-- Direction: `givn init` writes `.opencode/skills/givn-propose/SKILL.md` as a file that names `givn instructions proposal`; the rules arrive only when the agent pulls them.
-- Existing full copy: a file from an earlier version that carries the rules is rewritten to carry the direction on the next `givn skills sync`.
+- `givn init --no-addons --agents opencode` installs thin skills and mandatory dialog bootstrap without generated command files or an implicit commit.
+- Git initialization preserves an existing commit-msg hook under `.githooks`; a later explicit `givn commit src/parser.rs tests/parser.rs -m "feat: parser"` selects only the named files.
+- Fossil initialization installs no Git hook and reports explicit-path `givn commit` as the attribution path; raw Fossil commits are not stamped.
+- Without SCM, initialization exits 0 with an archive/upgrade warning and still generates skills.
+- A blank interactive target confirmation reopens the list; invalid scripted selection refuses before writes and names valid targets.
+- Repeated init preserves an explicit outline or challenge opt-out. A partial addons block disabling outline leaves omitted addons enabled everywhere.
+- A failed required skill destination leaves scaffold files available, reports partial initialization, and directs a retry with `givn skills sync` after the destination is repaired.
 
 ## Minimal guarantee
 
-The project remains unchanged when an invalid request is rejected, and no
-generated guidance names a command that cannot work in the active project.
+Invalid selections or unsafe configuration edits refuse before writes. Project-owned guidance and surrounding human-authored instructions are preserved; a later required generation failure is reported honestly as partial initialization, without an implicit commit or rollback claim.
 
 ## Success guarantee
 
-The project is initialized with the chosen agent integrations, and every
-selected target's generated guidance leads an agent to the effective
-instructions for its step while carrying no duplicated built-in rules.
+The project has the selected discoverable thin skills, one managed dialog bootstrap, consistent effective addon choices, truthful attribution reporting, and explicit unconfigured runner declarations where newly scaffolded; required generation has succeeded without duplicated built-in rules or implicit commits.
 
 ## Personas
 

@@ -17,18 +17,14 @@ Feature: Givn release metadata and migration route
     Then it contains the user-visible changes from the stacked release
     And it contains the 0.2.0 to 0.3.0 migration entry point
 
-  Scenario: The migration guide is an executable prompt sequence
-    Given  the 0.7.0 to 0.8.0 migration guide
-    When  an LLM reads the guide from a project using Givn
-    Then  it finds ordered prompts that begin with inventory and end with validation and archive
-    And  the guide requires the LLM to inspect the project before editing it
-    And  the guide keeps corpus repairs out of the maintenance change
-
+  @describe-the-release
   Scenario: The migration catalog defines complete release-owned bundles
-    Given the embedded Givn migration catalog
-    When a maintainer inspects the migration catalog
-    Then it declares a catalog schema and migration bundle entries
-    And every migration bundle has a source, target, order, proposal asset, and design asset
+    Given  the embedded Givn migration catalog with 1.0 as the supported migration baseline
+    When  a maintainer inspects the migration catalog
+    Then  it declares a catalog schema and a route collection that may be empty
+    And  it contains no embedded pre-1.0 migration routes
+    And  every declared migration bundle has a source, target, order, proposal asset, and design asset
+
   Scenario: A release section lists only the user-visible change groups
     Given  a release range with a feature, a bug fix, a performance change, a revert, and a breaking change
     And  a test-harness bug fix and an uncategorised revision in the same range
@@ -62,3 +58,18 @@ Feature: Givn release metadata and migration route
     When  the maintainer generates the changelog for the release range
     Then  the changelog lists "Givn reports the active SCM backend in givn status" exactly once
     And  the changelog lists no documentation entry
+
+  @describe-the-release
+  Scenario Outline: Synthetic future migration bundles retain complete metadata validation
+    Given  a synthetic future supported migration catalog fixture starting at or after the 1.0 baseline
+    And  its migration bundle omits only the "<field>" field
+    When  a maintainer validates the migration catalog fixture
+    Then  validation fails and names the incomplete bundle and missing "<field>"
+    And  the same fixture validates once the missing field is restored
+    Examples:
+      | field |
+      | source |
+      | target |
+      | order |
+      | proposal asset |
+      | design asset |
