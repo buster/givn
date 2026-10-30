@@ -4,25 +4,67 @@ All notable changes to Givn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
+Highlights and upgrade notes are reviewed by hand.
+
 ## [0.9.10] - Unreleased
+
+### Highlights
+
+- **Skills-only agent integration.** Givn now generates skills only.
+  Recognizable Givn-generated command files are removed from the selected
+  targets; custom or modified command files are preserved and reported for
+  manual transition.
+- **Fresh verification evidence.** Change verification rejects stale runner
+  output and requires fresh, stable results. Archive evidence is reused only
+  while its relevant inputs remain unchanged.
+- **Safer commits.** `givn commit` takes explicit paths and leaves unrelated
+  staged and unstaged work untouched on Git and Fossil.
+- **Clearer configuration and add-ons.** `givn/commands.yaml` keeps only
+  command/runtime settings; `givn/config.yaml` owns policy and add-on
+  configuration. Retired add-on keys are rejected with manual-transition
+  guidance.
+- **Durable specifications.** Archive preserves supported Gherkin
+  Backgrounds, Scenario Outline Examples, docstrings, tables, and inherited
+  execution tags. Unsupported constructs are refused before mutation.
+
+### Upgrade Notes
+
+- Run `givn skills sync` to remove stale generated command files and
+  regenerate the selected skills. `givn upgrade` performs the same cleanup.
+  Custom command files are preserved and reported.
+- Pass paths to `givn commit`; a call without paths fails before staging.
+- Move add-on, artifact, apply, and other policy keys from
+  `givn/commands.yaml` to `givn/config.yaml`. Only `verify`, `coverage`, and
+  `run` belong in `givn/commands.yaml`.
+- Rename `absolute_mode` to `communication_policy`; replace `grill_me` and
+  `grill_with_docs` with `challenge`. Retired keys are rejected; there are no
+  compatibility aliases.
+- For a pre-1.0 project, repair the configuration manually using
+  `docs/migrations/README.md`. The 1.0 baseline ships no 0.7/0.8 migration
+  bundles, and Givn does not convert old configuration or apply a
+  compatibility alias.
+- Replace bare `givn check` with the explicit check commands it prints. Bare
+  `givn check` no longer runs configured artifact hooks or implies
+  verification.
 
 ### Breaking Changes
 
-- **guidance:** generated agent command files are removed. Givn now emits
-  skills only: Claude Code and OpenCode use their skill invocation, the neutral
-  `.agents` target uses skill discovery, OMP uses `/skill:givn-<step>`, and
-  Maki uses an explicit request or an agent-selected skill. `givn skills sync`
-  and `givn upgrade` remove **recognizable Givn-generated** command files from
-  the selected targets; custom or modified command files are preserved and
+- **guidance:** generated command files are removed; Givn emits skills only.
+  Claude Code and OpenCode use native skill invocation, the neutral `.agents`
+  target uses skill discovery, OMP uses `/skill:givn-<step>`, and Maki uses an
+  explicit request or an agent-selected skill. `givn skills sync` and
+  `givn upgrade` remove **recognizable Givn-generated** command files from the
+  selected targets; custom or modified command files are preserved and
   reported for manual transition. No replacement `/givn-*` command files are
   generated.
-- **commit:** `givn commit` now requires explicit paths. Invoking it without
-  paths fails before staging. Only the named paths are committed; unrelated
-  staged and unstaged work is preserved on Git and Fossil.
+- **commit:** `givn commit` now requires explicit paths. A call without paths
+  fails before staging. Only the named paths are committed; unrelated staged
+  and unstaged work is preserved on Git and Fossil.
 - **configuration:** `givn/commands.yaml` now accepts only command/runtime
-  settings (`verify`, `coverage`, and `run`). Addon, artifact, apply, and other
-  policy configuration must live in `givn/config.yaml`; misplaced keys are
-  rejected with a file-ownership diagnostic instead of being silently applied.
+  settings (`verify`, `coverage`, and `run`). Add-on, artifact, apply, and
+  other policy configuration must live in `givn/config.yaml`; misplaced keys
+  are rejected with a file-ownership diagnostic instead of being silently
+  applied.
 - **addons:** `absolute_mode` is renamed to `communication_policy`, and
   `grill_me` plus `grill_with_docs` are consolidated into `challenge`
   (`givn-challenge`). There are no compatibility aliases; retired keys are
@@ -43,34 +85,34 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 
 ### Features
 
-- **verification:** change verification removes stale runner output, snapshots
+- **verification:** stale runner output is removed before a run. Givn captures
   the revision and relevant inputs before execution, requires fresh valid
-  counts, and checks input stability afterward. A successful no-op runner can no
-  longer reuse old results.
-- **archive:** successful regular/E2E scope evidence is persisted and reused on
-  repair when its relevant inputs are unchanged. Evidence-only revisions do not
-  rerun suites; a changed verify command invalidates only its scope, while shared
-  source/content changes conservatively invalidate both. Existing broad
-  archive-evidence exemptions remain documented.
+  counts, and checks input stability afterward. A successful no-op runner can
+  no longer reuse old results.
+- **archive:** successful regular/E2E scope evidence is persisted and reused
+  during repair when its relevant inputs are unchanged. Evidence-only
+  revisions do not rerun suites. A changed verify command invalidates only its
+  scope; shared source/content changes conservatively invalidate both.
+  Existing broad archive-evidence exemptions remain documented.
 - **no-behavior-change changes:** an explicit `Behavior change: none`
   declaration with skipped specs records changed-scenario verification as not
-  applicable. It does not invent scenarios or substitute an automatic
-  full-suite run; archive still verifies the merged candidate.
+  applicable. Givn does not invent scenarios or substitute an automatic
+  full-suite run. Archive still verifies the merged candidate.
 - **Gherkin:** supported publication preserves Feature Background, Scenario
   Outline Examples, docstrings, tables, inherited execution tags, and moving
   specifications. Rule blocks and non-English dialects are rejected before
-  mutation with actionable diagnostics instead of being silently changed.
+  mutation with actionable diagnostics; they are never silently changed.
 - **content comparison:** preservation and duplicate audits include supported
   executable arguments and inherited setup while remaining path-independent.
-  `exact_duplicate` means literal supported executable equality; masked
+  `exact_duplicate` means literal supported executable equality. Masked
   structural similarity is reported separately as advisory.
 - **specification ownership:** review and archive share capability-owner
-  resolution for use cases and fragments, including `NEW`/`EXTEND` and ambiguity
-  refusal. Typed `usecase:`/`fragment:` relationships resolve only in their
-  declared namespace, and interaction evidence is keyed by capability plus
-  title.
+  resolution for use cases and fragments, including `NEW`/`EXTEND` and
+  ambiguity refusal. Typed `usecase:`/`fragment:` relationships resolve only
+  in their declared namespace. Interaction evidence is keyed by capability
+  plus title.
 - **verification output:** independent cheap validation failures are reported
-  together; dependent checks are marked not performed after a prerequisite
+  together. Dependent checks are marked not performed after a prerequisite
   failure. `givn status` distinguishes artifacts complete, verification
   current/stale/not checked, pending archive candidates, and proven archives
   without executing tests.
@@ -82,12 +124,12 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
   and read, so a server that accepts but never responds cannot hang the start
   command. Reporter helpers have bounded waits and cannot block primary agent
   work.
-- **configuration:** addon defaults and partial blocks resolve consistently;
-  repeated initialization preserves explicit opt-outs; addon edits update only
-  the intended setting or refuse unsupported YAML before writing. Required
-  skill-generation failures produce a nonzero, accurate partial-initialization
-  report.
-- **guidance:** bootstrap owns loading the dialog policy once per context; a
+- **configuration:** add-on defaults and partial blocks resolve consistently.
+  Repeated initialization preserves explicit opt-outs. Add-on edits update
+  only the intended setting or refuse unsupported YAML before writing.
+  Required skill-generation failures produce a nonzero, accurate
+  partial-initialization report.
+- **guidance:** bootstrap owns loading the dialog policy once per context. A
   concise policy indexes preserved real-life examples by question type. Skills
   are thin directions to canonical instructions and no longer repeat dialog,
   delegation, review-loop, or commit prescriptions.
@@ -98,11 +140,11 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
   dialog correctness is independent of it.
 - **outline:** the report remains available as advisory structural evidence
   for Rust and Python. Unsupported-only scopes distinguish “no supported
-  production sources” from “no production sources”; unavailable measurements
+  production sources” from “no production sources”. Unavailable measurements
   render as unavailable/`null`, not zero; unmeasured LCC is omitted.
 - **coverage and E2E:** equal coverage from honest runs no longer blocks proof;
-  reports must be fresh and valid. E2E scope is declared explicitly rather than
-  inferred from command strings or relative scenario counts. Justified
+  reports must be fresh and valid. E2E scope is declared explicitly rather
+  than inferred from command strings or relative scenario counts. Justified
   reclassification is allowed while required real-interface coverage remains.
 - **architecture:** modularity, narrow consumer contracts, adapters, and
   explicit dependency direction are required from the first implementation.
@@ -121,7 +163,7 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 - Keep archive proof valid through rejected finalization publications and
   evidence-only repairs without unnecessary suite runs.
 - Preserve supported Gherkin instead of dropping Backgrounds or misreading
-  docstrings as structure; refuse conflicting Background replacement and
+  docstrings as structure. Refuse conflicting Background replacement and
   unsupported dialect before mutation.
 - Fix UTF-8-unsafe malformed use-case headings so invalid documents produce a
   diagnostic instead of a panic.
@@ -131,14 +173,14 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
   outside managed blocks.
 - Parse actual verdicts instead of matching arbitrary substrings or examples
   in comments and fenced blocks.
-- Correct stale agent-target, default-addon, coverage, attribution, commit, and
-  migration examples; remove Catopia/harness leakage from current shipped help
-  and guidance while preserving historical evidence.
+- Correct stale agent-target, default-addon, coverage, attribution, commit,
+  and migration examples. Remove Catopia/harness leakage from current shipped
+  help and guidance while preserving historical evidence.
 - Remove the retired outline gate, coverage equality gate, shape-disposition
   paperwork, generated command surface, obsolete coverage template, and
   embedded 0.x migration bundles.
-- Make validation diagnostics aggregate independent failures and name the
-  owning configuration file.
+- Aggregate independent validation failures and name the owning configuration
+  file.
 
 ### Chores
 
@@ -149,9 +191,28 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 - Resynchronize all selected agent skills from the final canonical templates.
 - Add executable acceptance coverage for the changed behavior: 333 changed
   scenarios/1,997 steps in the change suite, 30 E2E scenarios with individual
-  transcripts, and 444 library tests; strict Clippy is clean.
+  transcripts, and 444 library tests. Strict Clippy is clean.
 
 ## [0.9.9] - 2026-10-29
+
+### Highlights
+
+- **One review context by default.** A change no longer starts a fresh review
+  subagent automatically. A fresh independent context is reserved for a major
+  change or an explicit request.
+- **Missing add-on keys now mean enabled.** Before this release, an add-on
+  omitted from a partial `addons:` block was disabled. Existing projects that
+  want the old opt-in posture must now write explicit `false` values.
+
+### Upgrade Notes
+
+- If every review previously started a fresh subagent, request independent
+  review explicitly. The recorded `Review kind` is authoritative, including
+  for the outline gate.
+- If you relied on missing add-on keys being disabled, disable the add-ons you
+  do not want. `givn addons disable <name>` changes one key;
+  `givn init --no-addons` writes an explicit `false` for every known add-on at
+  once. A partial `addons:` block still changes only the keys it names.
 
 ### Breaking Changes
 
@@ -160,10 +221,11 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
   user request, and the recorded `Review kind` is authoritative. Projects that
   relied on every review starting a fresh subagent must request independent
   review explicitly.
-- **addons:** every add-on is enabled by default. Existing projects that
-  relied on add-ons being opt-in may gain behavior when reinitializing or
-  synchronizing. `givn init --no-addons` writes an explicit `false` for every
-  known add-on; a partial `addons:` block changes only the named keys.
+- **addons:** a missing add-on key now resolves to enabled. Existing projects
+  that relied on missing keys being disabled may gain behavior when
+  reinitializing or synchronizing. `givn addons disable <name>` opts out one
+  add-on; `givn init --no-addons` writes an explicit `false` for every known
+  add-on. A partial `addons:` block changes only the named keys.
 
 ### Features
 
@@ -171,9 +233,10 @@ Versions are selected manually and use annotated `vX.Y.Z` Git tags.
   context, and make the outline gate use the recorded self/independent context.
   Prescriptive subagent orchestration is removed from generated guidance; the
   review instruction is its sole owner.
-- **addons:** enable all add-ons by default, report the effective default from
-  `givn addons list`, and let `givn init --no-addons` produce an explicit
-  opt-out for every known add-on.
+- **addons:** resolve a missing add-on key to enabled, including `outline` and
+  `architecture_principles`; report the effective default from `givn addons
+  list`; and let `givn init --no-addons` produce an explicit opt-out for every
+  known add-on.
 
 ### Bug Fixes
 

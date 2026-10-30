@@ -63,11 +63,21 @@ The selection is stored in `skills.targets`. An absent block or an empty/unknown
 list falls back to `opencode` for `givn skills sync`; `givn init` itself requires
 a selection. Givn generates no command files.
 
+Choose the entry point:
+
+- Start with `givn-propose` when the change's goal and scope are clear.
+- Start with `givn-explore` when the idea is vague or needs approach
+  comparison or codebase investigation. It produces no artifacts and routes to
+  `givn-propose` or `givn-ideation`.
+- Start with `givn-ideation` when the domain needs event storming, use cases,
+  personas, stable terms, or several future changes. Handoff produces change
+  seeds, each an input to `givn-propose`, not a change.
+
 | Skill | When to use it |
 | --- | --- |
-| `givn-explore` | Think through ideas, investigate problems, and clarify requirements without producing lifecycle artifacts. |
-| `givn-ideation` | Turn a vague idea into change-ready use cases through domain event storming, personas, and seeds. |
-| `givn-propose` | Write the proposal: WHAT and WHY in domain language, release note, capability routing, open questions. |
+| `givn-explore` | Clarify a vague idea, compare approaches, or investigate the codebase without artifacts; routes to propose or ideation. |
+| `givn-ideation` | Turn a vague idea into change-ready use cases through event storming, personas, and change seeds; does not start a change. |
+| `givn-propose` | Create the change and write the proposal: WHAT and WHY, release note, capability routing, open questions; the served propose step continues through specs and design. |
 | `givn-spec` | Write Gherkin delta features with observable behavior and no implementation detail. |
 | `givn-design` | Write the technical design: technology, step locations, decisions, interaction matrix, visual contract, local runnability. |
 | `givn-design-review` | Stress-test the plan question by question, harden the artifacts, and sign off. |
