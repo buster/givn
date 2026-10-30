@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "change": "start-and-proportionate-work",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "fragments/generate-ideation-guidance.feature",
+    "fragments/instruction-integrity.feature",
+    "fragments/refresh-generated-guidance.feature",
+    "initialize-project/initialize-a-project.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "fragments/generate-ideation-guidance.feature",
+    "fragments/instruction-integrity.feature",
+    "fragments/refresh-generated-guidance.feature",
+    "initialize-project/initialize-a-project.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature"
+  ],
+  "merge_targets": {
+    "fragments/generate-ideation-guidance.feature": "givn/specs/fragments/generate-ideation-guidance.feature",
+    "fragments/instruction-integrity.feature": "givn/specs/fragments/instruction-integrity.feature",
+    "fragments/refresh-generated-guidance.feature": "givn/specs/fragments/refresh-generated-guidance.feature",
+    "initialize-project/initialize-a-project.feature": "givn/specs/initialize-project/initialize-a-project.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature": "givn/specs/obtain-effective-guidance/serve-extended-rules.feature"
+  },
+  "started_at_unix": 1793385898,
+  "finished_at_unix": null
+}

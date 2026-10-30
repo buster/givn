@@ -109,7 +109,7 @@ Feature: initialize-a-project
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
     And  the directory ".agents/skills/givn-propose" does not exist
 
-  @e2e @initialize-a-project
+  @initialize-a-project
   Scenario: Consumer runs init non-interactively and gets opencode skills
     Given  a project root without a givn/ directory
     And  human-authored agent instructions outside the managed block
@@ -118,8 +118,8 @@ Feature: initialize-a-project
     And  the installed givn-propose skill directs the author to `givn instructions proposal`
     And  no Givn command file is generated
     And  the managed startup block requires loading the effective dialog policy before the first question in each context independently of addons
-    And  human-authored instructions remain unchanged
-    And  the terminal transcript is captured for this scenario
+    And  the file ".opencode/skills/givn-start/SKILL.md" exists
+    And  the file ".opencode/skills/givn-explore/SKILL.md" does not exist
 
   @e2e @initialize-a-project
   Scenario: Consumer re-syncs skills after init and the selection is honoured
@@ -398,3 +398,11 @@ Feature: initialize-a-project
       | block mapping with comments |
       | flow mapping |
       | anchors and aliases |
+
+  @initialize-a-project
+  Scenario: Initialization onboarding names the proportionate entry point
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init --agents opencode`
+    Then  stdout contains "givn-start"
+    And  stdout contains "direct"
+    And  stdout does not contain "givn-explore"

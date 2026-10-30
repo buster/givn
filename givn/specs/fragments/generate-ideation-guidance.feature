@@ -37,11 +37,6 @@ Feature: Generate ideation guidance
     And  the served ideation instruction contains "docs/ideation/"
     And  the served ideation instruction contains "Handoff never starts a change"
 
-  Scenario: The explore guidance points to ideation for structured domain work
-    Given  a Givn project
-    When  the agent requests the explore instructions through the Givn CLI
-    Then  the served explore instruction contains "givn-ideation"
-
   @generate-ideation-guidance
   Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
     Given  a givn project with all agent skill targets enabled
@@ -283,3 +278,14 @@ Feature: Generate ideation guidance
     When  the user runs `givn skills sync`
     Then  the generated givn-ideation guidance directs the ideator to the ideation instruction
     And  no separately authored agent command is generated
+
+  @generate-ideation-guidance
+  Scenario: The start guidance points to ideation for structured domain work
+    Given  a Givn project
+    Then  the served start instruction contains "givn-ideation"
+
+  @generate-ideation-guidance
+  Scenario: The ideation guidance compares start rather than explore
+    Given  a Givn project
+    Then  the served ideation instruction contains "givn-start"
+    And  the served ideation instruction does not contain "givn-explore"
