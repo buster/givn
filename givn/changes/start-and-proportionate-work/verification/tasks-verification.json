@@ -2,20 +2,20 @@
   "schema": 2,
   "change": "start-and-proportionate-work",
   "status": "passed",
-  "head": "a84e1ad34de2a9d7e44230ab46860acd1f2f60fe",
+  "head": "3512ac819d471928440d697a26d8da51b58ada45",
   "features_path": "givn/changes/start-and-proportionate-work/specs",
-  "features_digest": "e8e4fa492e5082c965474c584d53ca66d60ca6cfc80bc3e471932039e80edc5c",
+  "features_digest": "ae4827e7020577b980a2cc809f34179067c2c6cc39cd8fa26aa7ebda027535e2",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
   "command": "./run-tests.sh --non-e2e",
-  "tested_content_digest": "bfec606903bd6aad89ee1efb289e2d8bb09e3b5ce72c2d88f36706710cd7ef13",
+  "tested_content_digest": "4343381530590fca655f6bc522bce32d4d4917d075434879491ba540ae15b62c",
   "content_scope": "change-proof/v1",
   "runner_exit": 0,
   "result": {
     "scope": "change",
-    "total": 20,
-    "passed": 20,
+    "total": 19,
+    "passed": 19,
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1793385764
+  "finished_at_unix": 1793385891
 }
