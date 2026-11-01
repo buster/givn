@@ -50,12 +50,17 @@ local function session_state(session_id)
     state = {
       id = key,
       model = nil,
+      title = nil,
       tools = {},
       turn_started = nil,
       wait_started = nil,
       wait_label = nil,
       compaction_started = nil,
       tasks = {},
+      -- Task ids whose span was already closed: a task's terminal status, its
+      -- stop, and its tool completion can arrive in any order, and one
+      -- subagent gets one entry.
+      closed = {},
     }
     sessions[key] = state
   end
@@ -306,53 +311,97 @@ local function record_mode()
   return mode
 end
 
--- The live transcript's last blocking `question` tool call, joined into the
--- always-captured text. `maki.session.messages` is the live transcript and
--- needs no permission beyond the reporter's existing grants; a transcript with
--- no matching call (a permission prompt, plan form, or Lua float also produces
--- `needs_input`) yields no text, never an invented one.
-local function transcript_question()
+-- One transcript read, shared by every helper below: the live transcript is
+-- the only source for turn content, tool output, question answers, and the
+-- receipts that name a moved call. A session id reads that session (a
+-- subagent's own transcript); no id reads the focused one, exactly as before.
+local function transcript_messages(last, session_id)
   local ok, messages = pcall(function()
-    return maki.session.messages({ last = 50 })
+    if session_id ~= nil then
+      return maki.session.messages({ session = session_id, last = last or 50 })
+    end
+    return maki.session.messages({ last = last or 50 })
   end)
   if not ok or type(messages) ~= "table" then
     return nil
   end
+  return messages
+end
+
+-- One message's blocks. Maki 0.7.0 returns `content = { blocks }`; a lone block
+-- and a string content are tolerated so an older or partial shape degrades to
+-- the same reading rather than dropping the message.
+local function blocks_of(message)
+  if type(message) ~= "table" then
+    return {}
+  end
+  local content = message.content
+  if type(content) == "string" then
+    return { { type = "text", text = content } }
+  end
+  if type(content) ~= "table" then
+    return {}
+  end
+  if content.type ~= nil then
+    return { content }
+  end
+  return content
+end
+
+-- One block's text: a string content as-is, otherwise the concatenated text of
+-- its text blocks. A tool result's content is a string in 0.7.0.
+local function block_text(content)
+  if type(content) == "string" then
+    return content
+  end
+  if type(content) ~= "table" then
+    return nil
+  end
+  local parts = content.type ~= nil and { content } or content
+  local text = {}
+  for _, part in ipairs(parts) do
+    if type(part) == "string" then
+      text[#text + 1] = part
+    elseif type(part) == "table" and type(part.text) == "string" then
+      text[#text + 1] = part.text
+    end
+  end
+  if #text == 0 then
+    return nil
+  end
+  return table.concat(text, "\n")
+end
+
+-- The live transcript's last blocking `question` tool call, joined into the
+-- always-captured text, and its answer when the transcript already holds the
+-- matching result. `maki.session.messages` is the live transcript and now
+-- needs the `session_read` grant; a transcript with no matching call (a
+-- permission prompt, plan form, or Lua float also produces `needs_input`)
+-- yields no text, never an invented one.
+local function transcript_question()
+  local messages = transcript_messages(50)
+  if not messages then
+    return nil, nil
+  end
+  local question_id = nil
   local questions = nil
+  local results = {}
   for _, message in ipairs(messages) do
-    if type(message) == "table" then
-      local parts = {}
-      local content = message.content
-      if type(content) == "table" then
-        if content.type ~= nil then
-          parts[#parts + 1] = content
-        else
-          for _, part in ipairs(content) do
-            parts[#parts + 1] = part
+    for _, part in ipairs(blocks_of(message)) do
+      if type(part) == "table" then
+        if part.type == "tool_use" and part.name == "question" then
+          if type(part.input) == "table" and type(part.input.questions) == "table" and #part.input.questions > 0 then
+            question_id = type(part.id) == "string" and part.id or nil
+            questions = part.input.questions
           end
-        end
-      end
-      if type(message.tool_calls) == "table" then
-        for _, call in ipairs(message.tool_calls) do
-          parts[#parts + 1] = call
-        end
-      end
-      for _, part in ipairs(parts) do
-        if
-          type(part) == "table"
-          and part.type == "tool_use"
-          and part.name == "question"
-          and type(part.input) == "table"
-          and type(part.input.questions) == "table"
-          and #part.input.questions > 0
-        then
-          questions = part.input.questions
+        elseif part.type == "tool_result" and type(part.tool_use_id) == "string" then
+          results[part.tool_use_id] = block_text(part.content)
         end
       end
     end
   end
   if not questions then
-    return nil
+    return nil, nil
   end
   local joined = {}
   for _, question in ipairs(questions) do
@@ -370,40 +419,27 @@ local function transcript_question()
       end
     end
   end
+  local answer = question_id and results[question_id] or nil
   if #joined == 0 then
-    return nil
+    return nil, answer
   end
-  return table.concat(joined, "\n")
+  return table.concat(joined, "\n"), answer
 end
 
 -- The last assistant message's text and thinking from the live transcript.
 -- The maki event stream does not carry the assistant message itself; the
--- transcript is the only source for turn content.
-local function transcript_turn()
-  local ok, messages = pcall(function()
-    return maki.session.messages({ last = 50 })
-  end)
-  if not ok or type(messages) ~= "table" then
+-- transcript is the only source for turn content. `messages` lets the caller
+-- read the transcript once for the turn and its moved-call receipts.
+local function transcript_turn(messages)
+  messages = messages or transcript_messages(50)
+  if not messages then
     return nil, nil
   end
   for i = #messages, 1, -1 do
     local message = messages[i]
     if type(message) == "table" and (message.role == "assistant" or message.role == "model") then
-      local parts = {}
-      local content = message.content
-      if type(content) == "string" then
-        parts[#parts + 1] = { type = "text", text = content }
-      elseif type(content) == "table" then
-        if content.type ~= nil then
-          parts[#parts + 1] = content
-        else
-          for _, part in ipairs(content) do
-            parts[#parts + 1] = part
-          end
-        end
-      end
       local assistant, thinking = {}, {}
-      for _, part in ipairs(parts) do
+      for _, part in ipairs(blocks_of(message)) do
         if type(part) == "table" then
           if part.type == "text" and type(part.text) == "string" then
             assistant[#assistant + 1] = part.text
@@ -423,48 +459,46 @@ local function transcript_turn()
   return nil, nil
 end
 
--- The last tool message's text from the live transcript. The ToolDone event
--- carries no output on the maki event stream; the transcript does.
-local function transcript_tool_output(tool_id)
-  local ok, messages = pcall(function()
-    return maki.session.messages({ last = 50 })
-  end)
-  if not ok or type(messages) ~= "table" then
+-- The tool result's text from the live transcript, by the harness's own call
+-- id. The ToolDone event carries no output on the maki event stream; the
+-- transcript does, as a `tool_result` block in a user message. Maki has never
+-- emitted a `role = "tool"` message, so the lookup reads blocks, not roles.
+local function transcript_tool_output(tool_id, messages)
+  messages = messages or transcript_messages(50)
+  if not messages then
     return nil
   end
   for i = #messages, 1, -1 do
-    local message = messages[i]
-    if type(message) == "table" and message.role == "tool" then
-      if tool_id ~= nil and message.tool_call_id ~= nil and message.tool_call_id ~= tool_id then
-        -- another call's result; keep looking
-      else
-        local content = message.content
-        if type(content) == "string" then
-          return content
+    for _, part in ipairs(blocks_of(messages[i])) do
+      if type(part) == "table" and part.type == "tool_result" then
+        if tool_id == nil or part.tool_use_id == nil or part.tool_use_id == tool_id then
+          return block_text(part.content)
         end
-        if type(content) == "table" then
-          local parts = content.type ~= nil and { content } or content
-          local text = {}
-          for _, part in ipairs(parts) do
-            if type(part) == "string" then
-              text[#text + 1] = part
-            elseif type(part) == "table" then
-              if type(part.text) == "string" then
-                text[#text + 1] = part.text
-              elseif type(part.content) == "string" then
-                text[#text + 1] = part.content
-              end
-            end
-          end
-          if #text > 0 then
-            return table.concat(text, "\n")
-          end
-        end
-        return nil
       end
     end
   end
   return nil
+end
+
+-- The call ids the transcript says moved to the background: Maki writes them
+-- on the message carrying the call's receipt, and the final result arrives as
+-- a later message without a second ToolDone event.
+local function transcript_receipts(messages)
+  if not messages then
+    return nil
+  end
+  local moved = nil
+  for _, message in ipairs(messages) do
+    if type(message) == "table" and type(message.receipts) == "table" then
+      for _, id in ipairs(message.receipts) do
+        if type(id) == "string" then
+          moved = moved or {}
+          moved[id] = true
+        end
+      end
+    end
+  end
+  return moved
 end
 
 -- One content field on the wire; the intake re-applies the content caps.
@@ -495,6 +529,211 @@ end
 -- Whether this project captures the complete content set.
 local function captures_content()
   return record_mode() == "full"
+end
+
+-- The task list is Maki's own view of the session's subagents: a tool-spawned
+-- task has no `plugin`, a plugin task has one, and the entry names the task's
+-- chat session and (where the host reports it) its cost. Every call is
+-- best-effort: a host without an interactive UI, or a task already gone, simply
+-- degrades to no session and no cost.
+local function task_list()
+  local ok, tasks = pcall(function()
+    return maki.task.list()
+  end)
+  if not ok or type(tasks) ~= "table" then
+    return nil
+  end
+  return tasks
+end
+
+local function task_info(id)
+  local tasks = task_list()
+  if not tasks then
+    return nil
+  end
+  for _, task in ipairs(tasks) do
+    if type(task) == "table" and task.id == id then
+      return {
+        session = type(task.session) == "string" and task.session or nil,
+        cost = type(task.cost) == "number" and task.cost or nil,
+        name = type(task.name) == "string" and task.name or nil,
+        status = type(task.status) == "string" and task.status or nil,
+      }
+    end
+  end
+  return nil
+end
+
+-- The record outcome a task status reports: a stopped task did not fail, so it
+-- is skipped; a finished task is completed; everything else is failed.
+local function task_outcome(status)
+  if status == "done" then
+    return "completed"
+  end
+  if status == "cancelled" or status == "idle" then
+    return "skipped"
+  end
+  return "failed"
+end
+
+-- The record status word for a span close, kept as the host's own word where
+-- the record knows it and normalised only for a finished task.
+local function task_status(status)
+  if status == "done" then
+    return "completed"
+  end
+  if status == "cancelled" then
+    return "cancelled"
+  end
+  if status == "error" then
+    return "failed"
+  end
+  return status
+end
+
+-- The tool calls a subagent's own transcript holds, emitted once under that
+-- subagent's session so the report can give it its own lane. A call without a
+-- result is not invented; content follows the project's capture mode, and the
+-- count is bounded so a long subagent cannot flood one flush.
+local MAX_LANE_TOOLS = 100
+local LANE_BYTE_CAP = 262144
+local emitted_lanes = {}
+
+-- Whether the buffer already carries this call under this session: a host that
+-- also delivers the subagent's own tool events must not get a second entry for
+-- the same call from the transcript.
+local function buffered_tool_event(session, id)
+  if id == nil then
+    return false
+  end
+  for _, event in ipairs(buffer) do
+    if event.kind == "tool" and event.session == session and event.tool_call_id == id then
+      return true
+    end
+  end
+  return false
+end
+
+local function push_subagent_tools(session)
+  if type(session) ~= "string" or session == "" or emitted_lanes[session] then
+    return
+  end
+  emitted_lanes[session] = true
+  local messages = transcript_messages(200, session)
+  if not messages then
+    return
+  end
+  local results = {}
+  for _, message in ipairs(messages) do
+    for _, part in ipairs(blocks_of(message)) do
+      if type(part) == "table" and part.type == "tool_result" and type(part.tool_use_id) == "string" then
+        results[part.tool_use_id] = part
+      end
+    end
+  end
+  local emitted = 0
+  local bytes = 0
+  local seen = {}
+  for _, message in ipairs(messages) do
+    for _, part in ipairs(blocks_of(message)) do
+      if emitted >= MAX_LANE_TOOLS or bytes >= LANE_BYTE_CAP then
+        return
+      end
+      if type(part) == "table" and part.type == "tool_use" then
+        local id = type(part.id) == "string" and part.id or nil
+        local result = id and results[id] or nil
+        if result and not (id and seen[id]) and not buffered_tool_event(session, id) then
+          if id then
+            seen[id] = true
+          end
+          local text = block_text(result.content)
+          if type(text) == "string" then
+            bytes = bytes + #text
+          end
+          local event = {
+            kind = "tool",
+            at = at_now(),
+            tool = type(part.name) == "string" and part.name or "tool",
+            label = tool_label({ tool = part.name, input = part.input }),
+            tool_call_id = id,
+            session = session,
+            outcome = result.is_error and "failed" or "ok",
+          }
+          if type(text) == "string" then
+            event.output_bytes = #text
+          end
+          if captures_content() then
+            local content = {}
+            local input = content_field(content_text(part.input))
+            if input then
+              content.tool_input = input
+            end
+            local output = content_field(text)
+            if output then
+              content.tool_output = output
+            end
+            if next(content) ~= nil then
+              event.content = content
+            end
+          end
+          push(event)
+          emitted = emitted + 1
+        end
+      end
+    end
+  end
+end
+
+-- Close the tasks still open when their session ends: the outcome is unknown,
+-- and the elapsed time observed for them is kept rather than invented as a
+-- completion or dropped with the process.
+local function close_open_tasks(state)
+  local keys = {}
+  for key in pairs(state.tasks) do
+    keys[#keys + 1] = key
+  end
+  table.sort(keys)
+  for _, key in ipairs(keys) do
+    local task = state.tasks[key]
+    local info = task_info(key)
+    local lane = (info and info.session) or (task and task.session)
+    local event = {
+      kind = "subagent",
+      at = at_now(),
+      subagent = key,
+      agent = task and task.name,
+      status = "unknown",
+      outcome = "unknown",
+      duration_ms = measured(task and task.started),
+    }
+    if lane then
+      event.session = lane
+    end
+    local cost = (info and info.cost) or (task and task.cost)
+    if cost ~= nil then
+      event.usage = { cost = cost }
+    end
+    push(event)
+    if lane then
+      push_subagent_tools(lane)
+    end
+  end
+  state.tasks = {}
+end
+
+-- Mark the buffered tool events whose call the transcript says moved to the
+-- background: one completion at move time is not the call's outcome.
+local function mark_backgrounded(messages)
+  local moved = transcript_receipts(messages)
+  if not moved then
+    return
+  end
+  for _, event in ipairs(buffer) do
+    if event.kind == "tool" and type(event.tool_call_id) == "string" and moved[event.tool_call_id] then
+      event.outcome = "unknown"
+      event.backgrounded = true
+    end
+  end
 end
 
 -- The callback table, exported so a test driver can drive a handler directly;
@@ -565,16 +804,56 @@ handlers.ToolDone = function(ev)
         title = input.prompt
       end
     end
-    push({
+    local task = state.tasks[key]
+    local info = task_info(key)
+    if info and (info.status == "working" or info.status == "idle") then
+      -- The task is still listed after its tool call returned: the call moved
+      -- the subagent to the background, so this completion is not its end. Keep
+      -- the span open, take what the completion knows, and close on the task's
+      -- terminal status or the session's end.
+      task = task or { started = os.clock() }
+      task.name = task.name or info.name
+      task.session = info.session or task.session
+      task.title = title or task.title
+      task.tool_duration = duration or task.tool_duration
+      task.tool_outcome = data.is_error and "failed" or "ok"
+      task.tool_status = data.is_error and "failed" or "completed"
+      state.tasks[key] = task
+      return
+    end
+    if state.closed[key] then
+      return
+    end
+    state.closed[key] = true
+    state.tasks[key] = nil
+    local lane = (info and info.session) or (task and task.session)
+    local final_outcome = data.is_error and "failed" or (task and task.outcome) or "ok"
+    local final_status = data.is_error and "failed"
+      or (task and task.status and task_status(task.status))
+      or "completed"
+    local subagent = {
       kind = "subagent",
       at = at_now(),
-      agent = "task",
-      subagent = tostring(data.tool_id or tool_name),
-      title = title,
-      status = data.is_error and "failed" or "completed",
-      duration_ms = duration,
-      outcome = data.is_error and "failed" or "ok",
-    })
+      agent = (task and task.name) or "task",
+      subagent = tostring(data.tool_id or key),
+      title = (task and task.title) or title,
+      status = final_status,
+      duration_ms = duration or (task and task.tool_duration),
+      outcome = final_outcome,
+    }
+    if lane then
+      -- The span lives in the subagent's own session so the report can name
+      -- its lane; the parent's lane keeps the tool call that spawned it.
+      subagent.session = lane
+    end
+    local cost = (info and info.cost) or (task and task.cost)
+    if cost ~= nil then
+      subagent.usage = { cost = cost }
+    end
+    push(subagent)
+    if lane then
+      push_subagent_tools(lane)
+    end
   end
 end
 
@@ -611,15 +890,19 @@ handlers.TurnEnd = function(ev)
     context_window = data.context_window,
   }
   -- A turn with no TurnStart (a headless or ACP session) is recorded
-  -- unmeasured rather than invented.
+  -- unmeasured rather than invented. One transcript read at the turn boundary
+  -- serves both the turn's content and the moved-call receipts: a call that
+  -- moved to the background has no final completion event.
   event.duration_ms = measured(state.turn_started)
+  local messages = transcript_messages(50)
+  mark_backgrounded(messages)
   if captures_content() then
     local content = {}
     local prompt = content_field(state.prompt)
     if prompt then
       content.user_prompt = prompt
     end
-    local assistant, thinking = transcript_turn()
+    local assistant, thinking = transcript_turn(messages)
     local assistant_field = content_field(assistant)
     if assistant_field then
       content.assistant_text = assistant_field
@@ -694,8 +977,9 @@ handlers.SessionStatusChanged = function(ev)
   end
   if data.status == "working" and state.wait_started then
     -- At the wait's close the live transcript names the blocking question
-    -- tool call; a transcript without one keeps the bounded title only.
-    local text = transcript_question()
+    -- tool call and, once answered, its result block; a transcript without
+    -- one keeps the bounded title only.
+    local text, answer = transcript_question()
     local event = {
       kind = "question",
       at = at_now(),
@@ -705,7 +989,12 @@ handlers.SessionStatusChanged = function(ev)
       status = "completed",
     }
     if text then
-      event.question = { text = text, truncated = false, bytes = #text }
+      event.question = content_field(text)
+    end
+    if answer then
+      event.answer = content_field(answer)
+      event.answered_by = "user"
+      event.answered_at = at_now()
     end
     state.wait_started = nil
     state.wait_label = nil
@@ -719,20 +1008,120 @@ handlers.TaskStatusChanged = function(ev)
   local state = session_state(data.session_id)
   local key = data.id or data.name or "task"
   if data.status == "working" then
-    state.tasks[key] = { started = os.clock(), name = data.name }
+    local task = state.tasks[key] or { started = os.clock() }
+    task.name = data.name or task.name
+    task.plugin = data.plugin or task.plugin
+    local info = task_info(key)
+    if info then
+      task.session = info.session or task.session
+    end
+    state.tasks[key] = task
     return
   end
-  local start = state.tasks[key]
+  if data.status == "idle" then
+    -- A plugin-owned task between prompts: it has not ended, so its span
+    -- stays open until a terminal status or the session's end.
+    return
+  end
+  local task = state.tasks[key] or { started = os.clock() }
+  task.name = data.name or task.name
+  task.status = data.status
+  task.outcome = task_outcome(data.status)
+  if state.tools[key] ~= nil and not state.closed[key] then
+    -- The spawning tool call has not completed yet: its completion carries the
+    -- title and the host duration, so remember this terminal status and close
+    -- there. A backgrounded subagent has no pending tool call here and closes
+    -- now.
+    state.tasks[key] = task
+    return
+  end
   state.tasks[key] = nil
+  if state.closed[key] then
+    return
+  end
+  state.closed[key] = true
+  local info = task_info(key)
+  local lane = (info and info.session) or task.session
   local event = {
     kind = "subagent",
     at = at_now(),
-    subagent = data.id or data.name or "task",
-    agent = data.name or (start and start.name),
-    status = data.status == "done" and "completed" or "failed",
+    subagent = key,
+    agent = task.name,
+    title = task.title,
+    status = task_status(task.status),
+    outcome = task.outcome,
   }
-  event.duration_ms = measured(start and start.started)
+  if lane then
+    event.session = lane
+  end
+  event.duration_ms = task.tool_duration or measured(task.started)
+  local cost = (info and info.cost) or task.cost
+  if cost ~= nil then
+    event.usage = { cost = cost }
+  end
   push(event)
+  if lane then
+    push_subagent_tools(lane)
+  end
+end
+
+-- A user stop. A plugin-owned task has no tool completion to close it; a
+-- tool-spawned task is closed by its own (cancelled) tool completion.
+handlers.TaskStopped = function(ev)
+  local data = ev.data or {}
+  local state = session_state(data.session_id)
+  local key = data.id or "task"
+  local task = state.tasks[key] or { started = os.clock() }
+  state.tasks[key] = nil
+  if state.closed[key] then
+    return
+  end
+  state.closed[key] = true
+  local info = task_info(key)
+  local lane = (info and info.session) or task.session
+  local event = {
+    kind = "subagent",
+    at = at_now(),
+    subagent = key,
+    agent = task.name,
+    title = task.title,
+    status = "cancelled",
+    outcome = "skipped",
+    duration_ms = task.tool_duration or measured(task.started),
+  }
+  if lane then
+    event.session = lane
+  end
+  local cost = (info and info.cost) or (task and task.cost)
+  if cost ~= nil then
+    event.usage = { cost = cost }
+  end
+  push(event)
+  if lane then
+    push_subagent_tools(lane)
+  end
+end
+
+-- A session title is a point entry: the report's lane naming reads it, and a
+-- session without one keeps its short id.
+handlers.SessionTitleChanged = function(ev)
+  local data = ev.data or {}
+  local state = session_state(data.session_id)
+  local title = data.title
+  if type(title) ~= "string" then
+    return
+  end
+  title = title:match("^[^\n]*") or ""
+  if title == "" or title == state.title then
+    return
+  end
+  state.title = title
+  push({
+    kind = "session",
+    at = at_now(),
+    session = data.session_id,
+    title = title,
+  })
 end
 
 handlers.ModelChanged = function(ev)
@@ -746,6 +1135,8 @@ end
 
 handlers.SessionEnd = function(ev)
   local data = ev.data or {}
+  local state = session_state(data.session_id)
+  close_open_tasks(state)
   local timeout = data.deadline_ms
   if type(timeout) ~= "number" or timeout <= 0 then
     timeout = nil
@@ -756,6 +1147,8 @@ end
 
 handlers.SessionReset = function(ev)
   local data = ev.data or {}
+  local state = session_state(data.session_id)
+  close_open_tasks(state)
   flush(nil)
   sessions[data.session_id or "maki"] = nil
 end
@@ -775,7 +1168,9 @@ function M.setup()
     "AutoCompacting",
     "CompactionDone",
     "SessionStatusChanged",
+    "SessionTitleChanged",
     "TaskStatusChanged",
+    "TaskStopped",
     "ModelChanged",
     "SessionEnd",
     "SessionReset",

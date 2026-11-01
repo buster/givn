@@ -395,8 +395,8 @@ fn guidance_includes_the_development_reporter(world: &mut GivnWorld, target: Str
 /// The Maki reporter is reachable only through `.maki/init.lua`: assert the
 /// generated project carries the exact fail-soft fence (never the
 /// `pcall(require, …).setup()` form, which indexes the boolean status) and the
-/// `.maki/plugin.toml` grants the reporter's calls, with all six keys named on
-/// the created file.
+/// `.maki/plugin.toml` grants the reporter's calls, with every grant and
+/// revocation named on the created file.
 fn assert_maki_merged_files(root: &std::path::Path) {
     let init = generated_file(root, ".maki/init.lua", "Maki init.lua");
     let fence = [
@@ -416,9 +416,13 @@ fn assert_maki_merged_files(root: &std::path::Path) {
         ("fs_read", "true"),
         ("fs_write", "true"),
         ("run", "true"),
+        ("session_read", "true"),
         ("net", "false"),
         ("env", "false"),
         ("agent", "false"),
+        ("session_write", "false"),
+        ("session_settings", "false"),
+        ("input", "false"),
     ] {
         assert!(
             grants
@@ -2350,5 +2354,727 @@ fn guidance_makes_no_privacy_guarantee(world: &mut GivnWorld) {
     assert!(
         normalized.contains("no redaction, privacy-boundary, or complete-capture guarantee"),
         "recording guidance does not disclaim the privacy guarantees: {content}"
+    );
+}
+
+// --- Maki 0.7.0 reporter behaviours -----------------------------------------
+//
+// The model-free `maki --trust prompt` path has no session of its own, so a
+// scenario that depends on live-session facts installs them as a Lua prelude
+// before the scripted events: the real generated reporter still runs in the
+// real binary, and every assertion reads the record its flush produced.
+
+const MAKI_TRANSCRIPT_CALL: &str = "maki-transcript-call";
+const MAKI_SUBAGENT_CALL: &str = "maki-subagent-call";
+const MAKI_SUBAGENT_NAME: &str = "Explore";
+const MAKI_SUBAGENT_TITLE: &str = "find callers";
+const MAKI_SUBAGENT_SESSION: &str = "maki-child-session";
+const MAKI_SUBAGENT_MS: u64 = 500;
+
+#[given("the project records in the full mode")]
+fn project_records_in_the_full_mode(world: &mut GivnWorld) {
+    super::development_record_steps::set_record_mode(maki_project(world), "full");
+}
+
+#[when("the Maki harness reports a completed tool call whose transcript holds the matching result")]
+fn maki_reports_a_completed_tool_call_with_transcript_result(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    let prelude = format!(
+        r#"maki.session.messages = function()
+  return {{
+    {{ role = "assistant", content = {{ {{ type = "tool_use", id = "{MAKI_TRANSCRIPT_CALL}", name = "Bash", input = {{ command = "printf probe" }} }} }} }},
+    {{ role = "user", content = {{ {{ type = "tool_result", tool_use_id = "{MAKI_TRANSCRIPT_CALL}", content = "COMPLETE TOOL OUTPUT" }} }} }},
+  }}
+end
+"#
+    );
+    support::run_maki_driver_with(
+        env,
+        &prelude,
+        &[
+            (
+                "ToolStart",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_TRANSCRIPT_CALL,
+                    "tool": "Bash",
+                }),
+            ),
+            (
+                "ToolDone",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_TRANSCRIPT_CALL,
+                    "tool": "Bash",
+                    "is_error": false,
+                    "bytes": 19,
+                    "duration_ms": 12,
+                    "input": { "command": "printf probe" },
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds that tool call's output text")]
+fn record_holds_the_tool_call_output(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let entry = entries
+        .iter()
+        .find(|entry| {
+            entry["kind"] == json!("tool")
+                && entry["data"]["tool_call_id"] == json!(MAKI_TRANSCRIPT_CALL)
+        })
+        .unwrap_or_else(|| panic!("the record holds no call {MAKI_TRANSCRIPT_CALL}: {entries:#?}"));
+    assert_eq!(
+        entry["data"]["content"]["tool_output"]["text"],
+        json!("COMPLETE TOOL OUTPUT"),
+        "the record did not keep the transcript's tool output: {entry}"
+    );
+}
+
+#[when(
+    "the Maki harness reports a subagent start, its completion, and the spawning tool completion"
+)]
+fn maki_reports_a_subagent_start_completion_and_tool_completion(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    support::run_maki_driver(
+        env,
+        &[
+            (
+                "ToolStart",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_SUBAGENT_CALL,
+                    "tool": "task",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "working",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "done",
+                }),
+            ),
+            (
+                "ToolDone",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_SUBAGENT_CALL,
+                    "tool": "task",
+                    "is_error": false,
+                    "bytes": 10,
+                    "duration_ms": MAKI_SUBAGENT_MS,
+                    "input": { "description": MAKI_SUBAGENT_TITLE },
+                }),
+            ),
+        ],
+    );
+}
+
+fn subagent_entries(world: &GivnWorld) -> Vec<Value> {
+    maki_entries(world)
+        .into_iter()
+        .filter(|entry| {
+            entry["kind"] == json!("subagent")
+                && entry["data"]["subagent"] == json!(MAKI_SUBAGENT_CALL)
+        })
+        .collect()
+}
+
+#[then("the record holds one subagent entry for that subagent")]
+fn record_holds_one_subagent_entry(world: &mut GivnWorld) {
+    let entries = subagent_entries(world);
+    assert_eq!(
+        entries.len(),
+        1,
+        "the subagent was recorded more than once: {entries:#?}"
+    );
+}
+
+#[then("that entry names the agent, its title, and the duration the harness reported")]
+fn subagent_entry_names_agent_title_and_duration(world: &mut GivnWorld) {
+    let entries = subagent_entries(world);
+    let entry = entries.first().expect("the subagent entry is missing");
+    assert_eq!(
+        entry["data"]["agent"],
+        json!(MAKI_SUBAGENT_NAME),
+        "the subagent does not name its agent definition: {entry}"
+    );
+    assert_eq!(
+        entry["data"]["title"],
+        json!(MAKI_SUBAGENT_TITLE),
+        "the subagent does not keep its title: {entry}"
+    );
+    assert_eq!(
+        entry["duration_ms"],
+        json!(MAKI_SUBAGENT_MS),
+        "the subagent does not keep the harness's duration: {entry}"
+    );
+}
+
+#[when("the Maki harness reports a subagent that becomes idle and then finishes")]
+fn maki_reports_a_paused_subagent(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    support::run_maki_driver(
+        env,
+        &[
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "working",
+                    "plugin": "probe",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "idle",
+                    "plugin": "probe",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "done",
+                    "plugin": "probe",
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds one completed entry for that subagent")]
+fn record_holds_one_completed_subagent_entry(world: &mut GivnWorld) {
+    let entries = subagent_entries(world);
+    assert_eq!(
+        entries.len(),
+        1,
+        "the paused subagent did not yield exactly one entry: {entries:#?}"
+    );
+    assert_eq!(
+        entries[0]["outcome"],
+        json!("ok"),
+        "a finished subagent is not recorded as completed: {:#?}",
+        entries[0]
+    );
+}
+
+#[when("the Maki harness reports a subagent that the user stops")]
+fn maki_reports_a_stopped_subagent(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    support::run_maki_driver(
+        env,
+        &[
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "working",
+                    "plugin": "probe",
+                }),
+            ),
+            (
+                "TaskStopped",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "plugin": "probe",
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds one skipped entry for that subagent")]
+fn record_holds_one_skipped_subagent_entry(world: &mut GivnWorld) {
+    let entries = subagent_entries(world);
+    assert_eq!(
+        entries.len(),
+        1,
+        "the stopped subagent did not yield exactly one entry: {entries:#?}"
+    );
+    assert_eq!(
+        entries[0]["outcome"],
+        json!("skipped"),
+        "a stopped subagent is not recorded as skipped: {:#?}",
+        entries[0]
+    );
+}
+
+#[when("the Maki harness ends its session while a subagent is still running")]
+fn maki_ends_its_session_with_a_running_subagent(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    support::run_maki_driver(
+        env,
+        &[
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "working",
+                }),
+            ),
+            (
+                "SessionEnd",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "reason": "quit",
+                }),
+            ),
+        ],
+    );
+}
+
+#[given("the Maki task list still lists the subagent after its tool completion")]
+fn maki_task_list_still_lists_the_subagent(world: &mut GivnWorld) {
+    let _ = maki_project(world);
+}
+
+#[when("the Maki harness reports the subagent's later completion")]
+fn maki_reports_the_backgrounded_subagent_completion(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    let prelude = format!(
+        r#"maki.task.list = function()
+  return {{ {{ id = "{MAKI_SUBAGENT_CALL}", session = "{MAKI_SUBAGENT_SESSION}", name = "{MAKI_SUBAGENT_NAME}", status = "working" }} }}
+end
+"#
+    );
+    support::run_maki_driver_with(
+        env,
+        &prelude,
+        &[
+            (
+                "ToolStart",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_SUBAGENT_CALL,
+                    "tool": "task",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "working",
+                }),
+            ),
+            (
+                "ToolDone",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_SUBAGENT_CALL,
+                    "tool": "task",
+                    "is_error": false,
+                    "bytes": 10,
+                    "duration_ms": MAKI_SUBAGENT_MS,
+                    "input": { "description": MAKI_SUBAGENT_TITLE },
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "done",
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("that entry keeps the title and duration its tool completion reported")]
+fn backgrounded_subagent_keeps_title_and_duration(world: &mut GivnWorld) {
+    let entries = subagent_entries(world);
+    let entry = entries
+        .first()
+        .expect("the backgrounded subagent entry is missing");
+    assert_eq!(
+        entry["data"]["title"],
+        json!(MAKI_SUBAGENT_TITLE),
+        "the backgrounded subagent lost its title: {entry}"
+    );
+    assert_eq!(
+        entry["duration_ms"],
+        json!(MAKI_SUBAGENT_MS),
+        "the backgrounded subagent lost the host duration: {entry}"
+    );
+}
+
+#[then("the record holds one unknown entry for that subagent")]
+fn record_holds_one_unknown_subagent_entry(world: &mut GivnWorld) {
+    let entries = subagent_entries(world);
+    assert_eq!(
+        entries.len(),
+        1,
+        "the open subagent did not yield exactly one entry: {entries:#?}"
+    );
+    assert_eq!(
+        entries[0]["outcome"],
+        json!("unknown"),
+        "an unfinished subagent is not recorded as unknown: {:#?}",
+        entries[0]
+    );
+}
+
+#[then("that entry carries the elapsed time observed for it")]
+fn subagent_entry_carries_elapsed_time(world: &mut GivnWorld) {
+    let entries = subagent_entries(world);
+    let duration = entries
+        .first()
+        .and_then(|entry| entry["duration_ms"].as_u64())
+        .unwrap_or_else(|| panic!("the unfinished subagent carries no elapsed time: {entries:#?}"));
+    assert!(
+        duration > 0,
+        "the unfinished subagent's elapsed time is zero: {entries:#?}"
+    );
+}
+
+#[given("the Maki session transcript names a moved tool call")]
+fn maki_transcript_names_a_moved_call(world: &mut GivnWorld) {
+    // The prelude is installed by the matching When, which must see this
+    // scenario's transcript; the Given only asserts the project is ready.
+    let _ = maki_project(world);
+}
+
+#[when("the Maki harness reports that tool call's completion")]
+fn maki_reports_a_moved_call_completion(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    let prelude = format!(
+        r#"maki.session.messages = function()
+  return {{
+    {{ role = "assistant", content = {{ {{ type = "text", text = "Working." }} }} }},
+    {{ role = "user", content = {{ {{ type = "tool_result", tool_use_id = "{MAKI_TRANSCRIPT_CALL}", content = "final" }} }}, receipts = {{ "{MAKI_TRANSCRIPT_CALL}" }} }},
+  }}
+end
+"#
+    );
+    support::run_maki_driver_with(
+        env,
+        &prelude,
+        &[
+            (
+                "ToolStart",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_TRANSCRIPT_CALL,
+                    "tool": "Bash",
+                }),
+            ),
+            (
+                "ToolDone",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_TRANSCRIPT_CALL,
+                    "tool": "Bash",
+                    "is_error": false,
+                    "bytes": 5,
+                    "duration_ms": 30,
+                    "input": { "command": "sleep 9" },
+                }),
+            ),
+            (
+                "TurnEnd",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "reason": "finished",
+                    "num_turns": 1,
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds that tool call with an unknown outcome")]
+fn record_holds_the_moved_call_with_unknown_outcome(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let entry = entries
+        .iter()
+        .find(|entry| {
+            entry["kind"] == json!("tool")
+                && entry["data"]["tool_call_id"] == json!(MAKI_TRANSCRIPT_CALL)
+        })
+        .unwrap_or_else(|| panic!("the moved call is not in the record: {entries:#?}"));
+    assert_eq!(
+        entry["outcome"],
+        json!("unknown"),
+        "a moved call is recorded as completed: {entry}"
+    );
+    assert_eq!(
+        entry["data"]["backgrounded"],
+        json!(true),
+        "the moved call carries no background marker: {entry}"
+    );
+}
+
+#[given("the Maki session transcript holds a question and its answer")]
+fn maki_transcript_holds_a_question_and_answer(world: &mut GivnWorld) {
+    let _ = maki_project(world);
+}
+
+#[when("the Maki harness reports that the question wait resumed")]
+fn maki_reports_the_question_wait_resumed(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    let prelude = r#"maki.session.messages = function()
+  return {
+    { role = "assistant", content = {
+      { type = "tool_use", id = "q1", name = "question", input = { questions = {
+        { question = "Which gate failed?", options = { { label = "archive" }, { label = "review" } } },
+      } } },
+    } },
+    { role = "user", content = { { type = "tool_result", tool_use_id = "q1", content = "Gate: archive" } } },
+  }
+end
+"#;
+    support::run_maki_driver_with(
+        env,
+        prelude,
+        &[
+            (
+                "SessionStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "status": "needs_input",
+                    "title": "Which gate failed?",
+                }),
+            ),
+            (
+                "SessionStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "status": "working",
+                    "title": "Which gate failed?",
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds the answer text, its source, and its time")]
+fn record_holds_the_question_answer(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let entry = entries
+        .iter()
+        .find(|entry| entry["kind"] == json!("question"))
+        .unwrap_or_else(|| panic!("the question wait is not in the record: {entries:#?}"));
+    assert_eq!(
+        entry["data"]["answer"]["text"],
+        json!("Gate: archive"),
+        "the record did not keep the answered text: {entry}"
+    );
+    assert_eq!(
+        entry["data"]["source"],
+        json!("user"),
+        "the record does not name who answered: {entry}"
+    );
+    assert!(
+        entry["data"]["answered_at"].is_string(),
+        "the record carries no answer time: {entry}"
+    );
+}
+
+#[when("the Maki harness reports that its session title changed")]
+fn maki_reports_a_session_title_change(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    support::run_maki_driver(
+        env,
+        &[(
+            "SessionTitleChanged",
+            json!({
+                "session_id": support::DRIVER_SESSION,
+                "title": "Maki probe session",
+            }),
+        )],
+    );
+}
+
+#[then("the record holds a session entry naming that title")]
+fn record_holds_a_session_entry_with_title(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let entry = entries
+        .iter()
+        .find(|entry| entry["kind"] == json!("session"))
+        .unwrap_or_else(|| panic!("the session title is not in the record: {entries:#?}"));
+    assert_eq!(
+        entry["data"]["title"],
+        json!("Maki probe session"),
+        "the session entry does not name the title: {entry}"
+    );
+}
+
+#[given("the Maki task list names the subagent's session")]
+fn maki_task_list_names_the_subagent_session(world: &mut GivnWorld) {
+    let _ = maki_project(world);
+}
+
+#[given("that subagent's transcript holds a completed tool call")]
+fn maki_subagent_transcript_holds_a_tool_call(world: &mut GivnWorld) {
+    let _ = maki_project(world);
+}
+
+#[when("the Maki harness reports the subagent's completion")]
+fn maki_reports_the_subagent_completion(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    let prelude = format!(
+        r#"maki.task.list = function()
+  return {{ {{ id = "{MAKI_SUBAGENT_CALL}", session = "{MAKI_SUBAGENT_SESSION}", name = "{MAKI_SUBAGENT_NAME}", status = "working" }} }}
+end
+maki.session.messages = function(opts)
+  if opts and opts.session == "{MAKI_SUBAGENT_SESSION}" then
+    return {{
+      {{ role = "assistant", content = {{ {{ type = "tool_use", id = "lane-1", name = "Read", input = {{ file_path = "src/lib.rs" }} }} }} }},
+      {{ role = "user", content = {{ {{ type = "tool_result", tool_use_id = "lane-1", content = "file body" }} }} }},
+    }}
+  end
+  return {{}}
+end
+"#
+    );
+    support::run_maki_driver_with(
+        env,
+        &prelude,
+        &[
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "working",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "done",
+                }),
+            ),
+            (
+                "ToolDone",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "tool_id": MAKI_SUBAGENT_CALL,
+                    "tool": "task",
+                    "is_error": false,
+                    "bytes": 9,
+                    "duration_ms": MAKI_SUBAGENT_MS,
+                    "input": { "description": MAKI_SUBAGENT_TITLE },
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds that tool call under the subagent's session")]
+fn record_holds_the_lane_tool_call(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let lane: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| {
+            entry["kind"] == json!("tool") && entry["session"] == json!(MAKI_SUBAGENT_SESSION)
+        })
+        .collect();
+    assert_eq!(
+        lane.len(),
+        1,
+        "the subagent's transcript did not yield exactly one lane tool: {entries:#?}"
+    );
+    assert_eq!(
+        lane[0]["name"],
+        json!("Read"),
+        "the lane tool does not name its tool: {:#?}",
+        lane[0]
+    );
+    assert_eq!(
+        lane[0]["session"],
+        json!(MAKI_SUBAGENT_SESSION),
+        "the lane tool does not belong to the subagent session: {:#?}",
+        lane[0]
+    );
+}
+
+#[given("the Maki task list reports the subagent's cost")]
+fn maki_task_list_reports_the_subagent_cost(world: &mut GivnWorld) {
+    let _ = maki_project(world);
+}
+
+#[when("the Maki harness reports the subagent's cost")]
+fn maki_reports_the_subagent_cost_completion(world: &mut GivnWorld) {
+    let env = maki_project(world);
+    let prelude = format!(
+        r#"maki.task.list = function()
+  return {{ {{ id = "{MAKI_SUBAGENT_CALL}", session = "{MAKI_SUBAGENT_SESSION}", name = "{MAKI_SUBAGENT_NAME}", status = "working", cost = 0.42 }} }}
+end
+"#
+    );
+    support::run_maki_driver_with(
+        env,
+        &prelude,
+        &[
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "working",
+                    "plugin": "probe",
+                }),
+            ),
+            (
+                "TaskStatusChanged",
+                json!({
+                    "session_id": support::DRIVER_SESSION,
+                    "id": MAKI_SUBAGENT_CALL,
+                    "name": MAKI_SUBAGENT_NAME,
+                    "status": "done",
+                    "plugin": "probe",
+                }),
+            ),
+        ],
+    );
+}
+
+#[then("the record holds that cost with the subagent")]
+fn record_holds_the_subagent_cost(world: &mut GivnWorld) {
+    let entries = maki_entries(world);
+    let usage = entries
+        .iter()
+        .find(|entry| entry["kind"] == json!("usage") && entry["data"]["cost"] == json!(0.42))
+        .unwrap_or_else(|| panic!("the reported subagent cost is not in the record: {entries:#?}"));
+    assert_eq!(
+        usage["data"]["cost"],
+        json!(0.42),
+        "the usage entry does not carry the reported cost: {usage}"
     );
 }

@@ -31,9 +31,11 @@ project whose marker is present but whose executable is missing is refused by
 name before any mutation. The repository acceptance suite needs both `git` and
 `fossil` installed. Its browser tier additionally needs Node.js (the current
 LTS) and the Chromium build bundled with the resolved Playwright version, both
-installed by the one-time `./setup-e2e-browser.sh`; that script is the only
-step in the suite that touches the network, and no scenario needs a server, a
-port, or a database.
+installed by the one-time `./setup-e2e-browser.sh`. The Maki tier needs the
+pinned Maki 0.7.0 binary, installed by the one-time
+`./setup-e2e-harness.sh`; it is a local test tool, never a project dependency.
+Together those setup scripts are the network-touching steps, and no scenario
+needs a server, a port, or a database.
 
 ## 7.4 Project Footprint
 
