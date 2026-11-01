@@ -723,6 +723,18 @@ differ only in where their input comes from:
 | Claude Code | one process per hook: each event's payload is piped to `givn history harness-hook --harness claude`, which maps it, consumes or writes the pending-state entry for its call id, reads the session record at `Stop`/`SubagentStop`/`SessionEnd` for token usage, and appends through the same intake path |
 | Maki | one in-process Lua plugin per session: `setup()` registers the autocmds, which fill a bounded buffer, and the flush writes the payload to a temporary file, runs `maki.fn.jobstart({ "sh", "-c", "cat <payload-file> | <givn> history ingest" }, { scope = "plugin" })` and awaits it with `maki.fn.jobwait(id, timeout)` inside the callback that triggered it (turn end, session end, or a session reset), because an unawaited task-scope job is lost and the explicit plugin scope covers a load-time `run()`. The harness's own `duration_ms` is used where `ToolDone` supplies it; a call that ran is labelled with the bounded subject of its input and a call that never ran (neither duration nor input) is recorded unmeasured under the tool name; `AutoCompacting`/`CompactionDone` become `phase` entries; and a subagent span carries `data.usage = "unavailable"` because `TurnEnd` fires only for the main session |
 
+On Maki 0.7.0 the reporter also reads the host's newer surfaces: `session_read`
+gates the live transcript, so the grant is named in the generated manifest;
+`ToolDone` for a `task` call uses `maki.task.list()` to tell a foreground close
+from a moved subagent that must stay open; `TaskStopped` and the task status
+vocabulary close one span per task (a stopped task is skipped, an open task at
+session end is unknown with its observed elapsed time); `SessionTitleChanged`
+yields a session point entry for lane naming; a question's `tool_result` block
+supplies the answer; the turn-boundary transcript read marks a moved call
+unknown; and a subagent's own transcript yields its tool calls under its own
+session. Every read is bounded, wrapped, and degrades to an absent value, never
+an invented one.
+
 The asymmetry is deliberate and documented per harness in the change design:
 omp and opencode stamp their own timestamps where their events do not carry
 them (omp tool events), while Claude Code has real `duration_ms` on its
