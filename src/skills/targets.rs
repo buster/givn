@@ -928,10 +928,12 @@ const MAKI_FENCE_LINES: [&str; 6] = [
     MAKI_FENCE_END,
 ];
 
-/// The permission keys the Maki reporter calls: `maki.fs.read`,
-/// `maki.fs.write`/`rm`, and `maki.fn.jobstart`/`jobwait`. maki adds nothing
-/// else to a file the user already owns.
-const MAKI_REPORTER_GRANTS: [&str; 3] = ["fs_read", "fs_write", "run"];
+/// The permission keys the Maki reporter calls: `maki.fs.read`/`write`/`rm`,
+/// the live session transcript (`session_read`), and
+/// `maki.fn.jobstart`/`jobwait`. Synchronization adds only these true grants to
+/// an existing manifest: a key the user wrote — including a revocation the
+/// reporter itself created — is never flipped or removed.
+const MAKI_REPORTER_GRANTS: [&str; 4] = ["fs_read", "fs_write", "run", "session_read"];
 
 /// The key a TOML line assigns, when the line is a key/value pair.
 fn toml_key(line: &str) -> Option<&str> {
