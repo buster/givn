@@ -1,5 +1,5 @@
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 67%](https://img.shields.io/badge/line%20coverage-67%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 85%](https://img.shields.io/badge/line%20coverage-85%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -114,7 +114,7 @@ As a special exception under section 7 of the GNU General Public License, versio
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 67% (17798/26671)
+Line coverage: 85% (18379/21666)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
