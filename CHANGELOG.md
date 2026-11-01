@@ -6,6 +6,12 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.17] - 2026-11-01
+
+### Features
+
+- **maki:** The Maki reporter now follows Maki 0.7.0, records full-mode tool output, question answers, subagent lanes, session titles, backgrounded calls, and subagent cost, and counts each subagent once
+
 ## [0.9.16] - 2026-10-30
 
 ### Features
@@ -850,3 +856,5 @@ for the complete 0.2.0 feature set.
 [0.9.15]: https://github.com/buster/givn/compare/v0.9.14...v0.9.15
 
 [0.9.16]: https://github.com/buster/givn/compare/v0.9.15...v0.9.16
+
+[0.9.17]: https://github.com/buster/givn/compare/v0.9.16...v0.9.17
