@@ -10,6 +10,11 @@
 | **Addon-aware generation** | Generation that includes only the template sections whose declared addon condition matches the current effective addon set; an addon that is off leaves no trace in the generated skill. |
 | **AGENTS.md ownership** | Givn owns only the content between its own named fenced markers. All other `AGENTS.md` content is user-owned and preserved. |
 | **Agent target** | One generated skill destination: `opencode`, `agents`, `claude`, `omp`, or `maki`, represented by `.opencode/`, `.agents/`, `.claude/`, `.omp/`, or `.maki/`. A target may also receive its harness's attribution/reporter files; no target receives generated commands. |
+| **Backgrounded call** | A harness call that moved to the background at the user's or model's request. It reports one completion at the move, so the record marks it unknown rather than completed and never records the later result. |
+| **Session point entry** | A durationless record entry naming a harness session's title, so the report can label that session's lane. Anti-term: session span. |
+| **Subagent lane** | The report lane grouping the entries a subagent's own session produced, named by the subagent span's agent or title when the record holds one. |
+| **Reported cost** | A usage value carrying the host's own dollar cost for a subagent, recorded only where the harness reports it and never inferred from token counts. |
+| **Session read grant** | The Maki `session_read` permission that gates conversation content: the live transcript, event content fields, and the chat input. The generated reporter manifest names it explicitly. |
 | **Attribution context** | The runtime facts available while one commit is created: LLM, reasoning mode, harness, and Givn version. Missing facts remain unknown rather than inferred. |
 | **Model identity** | The provider and model pair selected by the harness for the current attribution context. Anti-terms: model name, model label. |
 | **Commit attribution** | The best-effort LLM and harness identification visible through a revision's committer identity and message trailers; on Git through the hook, on Fossil through `givn commit`. |

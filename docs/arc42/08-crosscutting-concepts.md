@@ -1022,13 +1022,14 @@ Code runs one process per hook so its mapping, pending start timestamps, and
 session-record token read live in the binary while its generated asset stays a
 thin shim, and Maki runs the reporter as a Lua plugin whose autocmds fire
 without any timestamp, whose `TurnEnd` covers only the main session, and whose
-`TurnStart` is `maki-ui`-only — a reproduced headless run therefore reported
-measured tool calls and turn usage, no turn durations, and no subagent span (the
-record carried only the `task` tool entry while Maki's own log shows the
-subagent session opening and closing, and `maki.task.list()` cannot enumerate
-subagents without an interactive UI; whether the harness's subagent event fires
-outside the TUI is not established), while subagent spans come from omp,
-opencode, and Claude Code. Maki
+`TurnStart` is `maki-ui`-only. On Maki 0.7.0 `TaskStatusChanged` reports
+subagents, `TaskStopped` reports user stops, `SessionTitleChanged` reports
+titles, and `maki.task.list()` names each task's chat session and cost; the
+reporter records one span per task, keeps a moved subagent open, records a
+subagent's transcript tool calls under its own session, and reads question
+answers and full-mode tool output from `tool_result` blocks. The earlier 0.6.3
+headless observation (no subagent span, no task list without a UI) is a
+version-specific historical limit, not a current one. Maki
 additionally gates `.maki/` configuration on folder trust, so its reporter is
 active only in a project the developer has trusted for Maki. A signal a harness
 cannot deliver — token usage on a background subagent launch, a duration broken
