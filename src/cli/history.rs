@@ -136,6 +136,15 @@ pub struct IngestedEvent {
     /// The harness's own tool call id (`kind: "tool"`).
     #[serde(default)]
     pub tool_call_id: Option<String>,
+    /// The session this event's entries belong to, where it differs from the
+    /// payload's header: a subagent transcript reported from its parent's
+    /// flush. An absent value keeps the payload header.
+    #[serde(default)]
+    pub session: Option<String>,
+    /// Whether the harness moved this tool call to the background
+    /// (`kind: "tool"`): one completion at move time and no final outcome.
+    #[serde(default)]
+    pub backgrounded: Option<bool>,
     /// The failed call's error text (`kind: "tool"`): the intake keeps its
     /// first line within the error bound.
     #[serde(default)]
@@ -212,6 +221,10 @@ pub struct Usage {
     /// The subagent session the counts belong to, where the harness reports one.
     #[serde(default)]
     pub subagent: Option<String>,
+    /// The cost the harness reported for the counts, in dollars. A value that
+    /// is not a number rejects the event rather than being recorded unread.
+    #[serde(default)]
+    pub cost: Option<f64>,
 }
 
 impl Usage {
@@ -238,6 +251,9 @@ impl Usage {
         }
         if let Some(subagent) = subagent {
             data.insert("subagent".to_string(), Value::String(subagent.to_string()));
+        }
+        if let Some(cost) = self.cost {
+            data.insert("cost".to_string(), Value::from(cost));
         }
         Value::Object(data)
     }
@@ -273,6 +289,17 @@ impl IngestedEvent {
             // A turn's usage is optional: a turn the harness did not measure is
             // still a turn (its usage is recorded as unavailable, never zero).
             "turn" => Ok(()),
+            // A session point entry names the harness session's title so a
+            // report lane can show it; it has no duration and no outcome.
+            "session"
+                if self
+                    .title
+                    .as_deref()
+                    .is_some_and(|title| !title.trim().is_empty()) =>
+            {
+                Ok(())
+            }
+            "session" => Err("missing required field `title`".to_string()),
             kind => Err(format!("unknown kind `{kind}`")),
         }
     }
@@ -309,6 +336,19 @@ impl IngestedEvent {
                 }
             }
             "turn" => self.map_turn(scope, batch, mode),
+            // A session point entry names a harness session so the report can
+            // label that session's lane; it is an instant, never a span.
+            "session" => {
+                if let Some(title) = self.title.as_deref() {
+                    let mut entry =
+                        HistoryEntry::reported(scope.clone(), "session", "session", &self.at);
+                    entry.label = Some(reported_label("session", title));
+                    entry.data = Some(serde_json::json!({
+                        "title": bound_text_metadata(title),
+                    }));
+                    batch.push(entry, batch.turn);
+                }
+            }
             _ => {}
         }
     }
@@ -523,6 +563,9 @@ impl IngestedEvent {
                 Value::String(bound_text_metadata(title)),
             );
         }
+        if self.backgrounded == Some(true) {
+            data.insert("backgrounded".to_string(), Value::Bool(true));
+        }
         if !data.is_empty() {
             entry.data = Some(Value::Object(data));
         }
@@ -569,6 +612,7 @@ impl IngestedEvent {
                     at: self.at.clone(),
                     agent: self.agent.clone(),
                     parent: batch.turn,
+                    session: self.session.clone(),
                 },
             );
             return;
@@ -861,6 +905,8 @@ fn reported_event(kind: &str, at: &str) -> IngestedEvent {
         context_size: None,
         context_window: None,
         tool_call_id: None,
+        session: None,
+        backgrounded: None,
         error: None,
         output_bytes: None,
         result_meta: None,
@@ -1262,6 +1308,7 @@ impl SessionUsage {
             ),
             model: self.model,
             subagent: None,
+            cost: None,
         })
     }
 }
@@ -1357,11 +1404,19 @@ pub fn harness_hook(harness: &str) -> Result<()> {
     let session_id = payload.session_id.clone();
     let mut batch = IntakeBatch::default();
     for event in events {
+        let first = batch.entries.len();
         event.map(&scope, &mut batch, setting.mode);
+        if let Some(session) = event.session.as_deref() {
+            for entry in &mut batch.entries[first..] {
+                entry.session = Some(session.to_string());
+            }
+        }
     }
     batch.finish(&scope);
     for entry in &mut batch.entries {
-        entry.session = session_id.clone();
+        if entry.session.is_none() {
+            entry.session = session_id.clone();
+        }
     }
     crate::history::ensure_ignored(&root);
     let store = HistoryStore::at(store_path(&root));
@@ -1519,9 +1574,13 @@ pub fn ingest(with_full_content: bool) -> Result<IntakeOutcome> {
         parents,
         ..
     } = accepted_entries(&scope, payload.events, mode);
-    // The payload header is the session every entry of this flush belongs to.
+    // The payload header is the session every entry of this flush belongs to
+    // unless the event named its own — a subagent transcript reported from its
+    // parent's flush.
     for entry in &mut entries {
-        entry.session = session.clone();
+        if entry.session.is_none() {
+            entry.session = session.clone();
+        }
     }
     if entries.is_empty() {
         return Ok(IntakeOutcome::Read);
@@ -1610,7 +1669,13 @@ fn accept_event(
     let scope = scope.as_ref().map_err(Clone::clone)?;
     let event: IngestedEvent = serde_json::from_value(raw).map_err(|error| error.to_string())?;
     event.validate()?;
+    let first = batch.entries.len();
     event.map(scope, batch, mode);
+    if let Some(session) = event.session.as_deref() {
+        for entry in &mut batch.entries[first..] {
+            entry.session = Some(session.to_string());
+        }
+    }
     Ok(())
 }
 
@@ -1648,6 +1713,7 @@ impl IntakeBatch {
         for (identity, start) in self.spans.take_unclosed() {
             let mut entry = HistoryEntry::reported(scope.clone(), "subagent", &identity, &start.at);
             entry.data = Some(subagent_data(start.agent.as_deref(), &identity));
+            entry.session = start.session;
             self.push(entry, start.parent);
         }
     }
@@ -1687,6 +1753,9 @@ struct SpanStart {
     at: String,
     agent: Option<String>,
     parent: Option<usize>,
+    /// The session the start named, kept so an unclosed start's entry still
+    /// belongs to the session that reported it.
+    session: Option<String>,
 }
 
 /// The `data` a subagent entry carries: the subagent's own identity (the

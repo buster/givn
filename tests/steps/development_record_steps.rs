@@ -42,6 +42,10 @@ pub(crate) struct DevelopmentRecordState {
     pub(crate) question_title: Option<String>,
     /// The title of the residual wait whose transcript holds no question.
     pub(crate) residual_title: Option<String>,
+    /// The Maki session title a reported session entry must carry.
+    pub(crate) maki_session_title: Option<String>,
+    /// The session a reported event names for itself.
+    pub(crate) maki_event_session: Option<String>,
 }
 
 /// The verification command the bounded-label fixture declares: it really runs
@@ -1262,7 +1266,7 @@ fn repository_ignore_glob_covers_the_generated_reports(world: &mut GivnWorld) {
 
 /// Write the project-owned `record:` block into `givn/config.yaml`, replacing
 /// an existing block rather than duplicating a top-level key.
-fn set_record_mode(env: &common::TestEnv, mode: &str) {
+pub(crate) fn set_record_mode(env: &common::TestEnv, mode: &str) {
     let path = env.path("givn/config.yaml");
     let text = std::fs::read_to_string(&path)
         .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
@@ -2975,4 +2979,304 @@ fn usage_names_identity(world: &mut GivnWorld) {
     assert_eq!(usage["data"]["model"], "fixture-model");
     assert_eq!(usage["data"]["provider"], "fixture-provider");
     assert_eq!(usage["data"]["variant"], "fixture-variant");
+}
+
+// --- reported schema extensions ---------------------------------------------
+
+/// Hand one reporter payload to the real intake and require it to accept it.
+fn ingest_reported_payload(world: &GivnWorld, payload: Value) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = support::report_intake_raw(env, &payload.to_string());
+    assert!(
+        out.status.success(),
+        "the intake refused the reported payload (exit {:?}): {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr)
+    );
+}
+
+#[when(regex = r#"^the agent reports a session named "([^"]*)"$"#)]
+fn agent_reports_a_session(world: &mut GivnWorld, title: String) {
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .maki_session_title = Some(title.clone());
+    ingest_reported_payload(
+        world,
+        json!({
+            "schema": 1,
+            "reporter": "maki",
+            "session": "fixture-session",
+            "events": [{
+                "kind": "session",
+                "at": "2026-11-01T00:00:01Z",
+                "title": title,
+            }],
+        }),
+    );
+}
+
+#[then("the record holds one session entry with that title")]
+fn record_holds_one_session_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let expected = world
+        .development_record
+        .as_ref()
+        .and_then(|state| state.maki_session_title.clone())
+        .expect("the scenario did not name a session title");
+    let entries = support::record_entries(&env.root());
+    let sessions: Vec<&Value> = entries
+        .iter()
+        .filter(|entry| entry["kind"] == json!("session"))
+        .collect();
+    assert_eq!(
+        sessions.len(),
+        1,
+        "the record does not hold exactly one session entry: {entries:#?}"
+    );
+    assert_eq!(
+        sessions[0]["data"]["title"],
+        json!(expected),
+        "the session entry does not carry its title: {:#?}",
+        sessions[0]
+    );
+}
+
+#[when(
+    regex = r#"^the agent reports an event for the session "([^"]*)" in a payload for "([^"]*)"$"#
+)]
+fn agent_reports_a_session_scoped_event(world: &mut GivnWorld, child: String, parent: String) {
+    world
+        .development_record
+        .get_or_insert_with(DevelopmentRecordState::default)
+        .maki_event_session = Some(child.clone());
+    ingest_reported_payload(
+        world,
+        json!({
+            "schema": 1,
+            "reporter": "maki",
+            "session": parent,
+            "events": [{
+                "kind": "tool",
+                "at": "2026-11-01T00:00:02Z",
+                "tool": "Read",
+                "label": "src/lib.rs",
+                "outcome": "ok",
+                "session": child,
+            }],
+        }),
+    );
+}
+
+#[then(regex = r#"^the record holds that entry under the session "([^"]*)"$"#)]
+fn record_holds_the_entry_under_session(world: &mut GivnWorld, session: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let entry = entries
+        .iter()
+        .find(|entry| entry["kind"] == json!("tool") && entry["name"] == json!("Read"))
+        .unwrap_or_else(|| panic!("the reported tool entry is missing: {entries:#?}"));
+    assert_eq!(
+        entry["session"],
+        json!(session),
+        "the entry did not keep its own session: {entry}"
+    );
+}
+
+#[when("the agent reports a completed tool call marked as moved to the background")]
+fn agent_reports_a_backgrounded_tool(world: &mut GivnWorld) {
+    ingest_reported_payload(
+        world,
+        json!({
+            "schema": 1,
+            "reporter": "maki",
+            "session": "fixture-session",
+            "events": [{
+                "kind": "tool",
+                "at": "2026-11-01T00:00:03Z",
+                "tool": "Bash",
+                "label": "sleep 9",
+                "outcome": "unknown",
+                "backgrounded": true,
+            }],
+        }),
+    );
+}
+
+#[then("the record marks that tool call as backgrounded")]
+fn record_marks_the_tool_backgrounded(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let entry = entries
+        .iter()
+        .find(|entry| entry["kind"] == json!("tool") && entry["name"] == json!("Bash"))
+        .unwrap_or_else(|| panic!("the backgrounded tool entry is missing: {entries:#?}"));
+    assert_eq!(
+        entry["data"]["backgrounded"],
+        json!(true),
+        "the tool entry carries no background marker: {entry}"
+    );
+}
+
+#[when("the agent reports a subagent span with a usage cost")]
+fn agent_reports_a_subagent_with_cost(world: &mut GivnWorld) {
+    ingest_reported_payload(
+        world,
+        json!({
+            "schema": 1,
+            "reporter": "maki",
+            "session": "fixture-session",
+            "events": [{
+                "kind": "subagent",
+                "at": "2026-11-01T00:00:04Z",
+                "subagent": "call-1",
+                "agent": "Explore",
+                "status": "completed",
+                "usage": { "cost": 1.25 },
+            }],
+        }),
+    );
+}
+
+#[then("the record holds a usage entry carrying that cost")]
+fn record_holds_a_usage_entry_with_cost(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    let usage = entries
+        .iter()
+        .find(|entry| entry["kind"] == json!("usage") && entry["data"]["cost"].is_number())
+        .unwrap_or_else(|| panic!("the reported usage cost is missing: {entries:#?}"));
+    assert_eq!(
+        usage["data"]["cost"],
+        json!(1.25),
+        "the usage entry did not keep the reported cost: {usage}"
+    );
+}
+
+fn report_rejected_payload(world: &mut GivnWorld, payload: Value) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = support::report_intake_raw(env, &payload.to_string());
+    assert!(
+        out.status.success(),
+        "a rejected event must not fail the intake (exit {:?}): {}",
+        out.status.code(),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+#[when("the agent reports a session point entry with no title")]
+fn agent_reports_a_session_without_title(world: &mut GivnWorld) {
+    report_rejected_payload(
+        world,
+        json!({
+            "schema": 1,
+            "reporter": "maki",
+            "session": "fixture-session",
+            "events": [{
+                "kind": "session",
+                "at": "2026-11-01T00:00:05Z",
+            }],
+        }),
+    );
+}
+
+#[then("the intake names the rejected session event")]
+fn intake_names_the_rejected_session_event(world: &mut GivnWorld) {
+    let out = world
+        .last_output
+        .as_ref()
+        .expect("the intake has not run yet");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("rejected event 1 (kind `session`)"),
+        "the intake did not name the rejected session event: {stderr}"
+    );
+    assert!(
+        stderr.contains("title"),
+        "the rejection does not name the missing title: {stderr}"
+    );
+}
+
+#[then("the record holds no session entry")]
+fn record_holds_no_session_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    assert!(
+        !entries
+            .iter()
+            .any(|entry| entry["kind"] == json!("session")),
+        "the rejected session event reached the record: {entries:#?}"
+    );
+}
+
+#[when("the agent reports a subagent span with a non-numeric usage cost")]
+fn agent_reports_a_non_numeric_cost(world: &mut GivnWorld) {
+    report_rejected_payload(
+        world,
+        json!({
+            "schema": 1,
+            "reporter": "maki",
+            "session": "fixture-session",
+            "events": [{
+                "kind": "subagent",
+                "at": "2026-11-01T00:00:06Z",
+                "subagent": "call-2",
+                "agent": "Explore",
+                "status": "completed",
+                "usage": { "cost": "free" },
+            }],
+        }),
+    );
+}
+
+#[then("the intake names the rejected usage event")]
+fn intake_names_the_rejected_usage_event(world: &mut GivnWorld) {
+    let out = world
+        .last_output
+        .as_ref()
+        .expect("the intake has not run yet");
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("rejected event 1 (kind `subagent`)"),
+        "the intake did not name the rejected usage event: {stderr}"
+    );
+    assert!(
+        stderr.contains("cost") || stderr.contains("expected f64"),
+        "the rejection does not name the malformed cost: {stderr}"
+    );
+}
+
+#[then("the record holds no usage entry for that subagent")]
+fn record_holds_no_usage_entry(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let entries = support::record_entries(&env.root());
+    assert!(
+        !entries.iter().any(|entry| entry["kind"] == json!("usage")),
+        "the rejected usage event reached the record: {entries:#?}"
+    );
 }

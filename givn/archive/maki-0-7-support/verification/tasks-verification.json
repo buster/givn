@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "maki-0-7-support",
+  "status": "passed",
+  "head": "1ab601c0d8b605b4cc525171ef7f96580d8f1be4",
+  "features_path": "givn/changes/maki-0-7-support/specs",
+  "features_digest": "58faa4c04c135d9acd1a56e89558d40599dff54cc3d7eb0a67eadb3b016ee89a",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "00e451623b2cf62bcf8c30c53eeb668c5b069e4041d0c4ee61c934f0d36437b7",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 19,
+    "passed": 19,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793566747
+}

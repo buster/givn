@@ -2027,6 +2027,13 @@ fn lua_literal(value: &Value) -> String {
 /// sandbox has no `dofile`, so the fence is executed as part of the file rather
 /// than loaded from a copy.
 fn maki_driver_script(events: &[MakiEvent]) -> String {
+    maki_driver_script_with("", events)
+}
+
+/// The driver with a scenario-supplied Lua prelude: transcript and task-list
+/// overrides run before the scripted events, so a scenario can hand the
+/// reporter the live session facts Maki would expose with a model.
+fn maki_driver_script_with(prelude: &str, events: &[MakiEvent]) -> String {
     let mut scripts = String::new();
     for (event, data) in events {
         scripts.push_str(&format!("  {{ {event:?}, {} }},\n", lua_literal(data)));
@@ -2038,6 +2045,7 @@ local marker = maki.fs.write(".maki-driver-loaded", "loaded\n")
 if not marker then
   error("the driver's load marker could not be written")
 end
+{prelude}
 local events = {{
 {scripts}}}
 for _, event in ipairs(events) do
@@ -2069,6 +2077,18 @@ end
 pub fn run_maki_driver(env: &common::TestEnv, events: &[MakiEvent]) -> std::process::Output {
     assert_maki_reporter(env);
     run_maki_init(env, &maki_driver_script(events))
+}
+
+/// Run the generated reporter with a Lua prelude that installs the scenario's
+/// transcript and task list before the scripted events; the rest is the same
+/// real-binary path as [`run_maki_driver`].
+pub fn run_maki_driver_with(
+    env: &common::TestEnv,
+    prelude: &str,
+    events: &[MakiEvent],
+) -> std::process::Output {
+    assert_maki_reporter(env);
+    run_maki_init(env, &maki_driver_script_with(prelude, events))
 }
 
 /// The generated Maki reporter and fence must exist before any driver runs: a
