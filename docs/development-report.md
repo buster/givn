@@ -113,14 +113,14 @@ Givn's reporter records today: `✓` available/recorded, `◐` partial, `—`
 absent/not recorded. Sources: the four harness inventories and the current
 generated reporters.
 
-| Field | omp 18.11.3 | Claude Code 2.1.266 | opencode 2.0.26 | Maki 0.6.3 |
+| Field | omp 18.11.3 | Claude Code 2.1.266 | opencode 2.0.26 | Maki 0.7.0 |
 |---|---|---|---|---|
 | Turn index / count | ✓✓ | ◐— (`num_turns`/`prompt_id`; no hook index) | ◐— (derived from message seq) | —— (`num_turns` counts model round-trips, not turns) |
 | Stop reason | ✓✓ | ✓— (assistant transcript/headless, not recorded) | ✓✓ | ✓✓ |
 | Model | ✓✓ | ✓✓ (transcript) | ✓✓ | ◐◐ (TUI-only; headless may omit) |
 | Cost | ✓✓ | ◐✓ (transcript cost-state) | ✓✓ | ✓✓ |
 | Context size / window | ✓✓ | ◐— (statusline/transcript, not parsed) | ◐— (window only; used context derived) | ✓✓ |
-| Session title | ✓— (session API only, not recorded) | ✓— (`SessionStart` title not parsed) | ✓✓ | ◐— (wait label only) |
+| Session title | ✓— (session API only, not recorded) | ✓— (`SessionStart` title not parsed) | ✓✓ | ✓✓ (`SessionTitleChanged` names the lane) |
 | Transcript path | ✓— (session manager, not recorded) | ✓— (used for usage/cost, not recorded) | ◐— (export only) | —— |
 
 The table is the durable copy of the archived design's per-harness
@@ -130,7 +130,7 @@ Claude Code 2.1.266, opencode 2.0.26, Maki 0.6.3): Claude exposes its stop
 reason in the assistant transcript and headless result (not in a hook, and not
 recorded by Givn), and its cost is a transcript rollup; opencode derives its
 turn index and used context and exposes a transcript only through an export;
-Maki's `num_turns` counts model round-trips, not turns. Known capture gaps are
+Maki's `num_turns` counts model round-trips, not turns. The Maki column was re-verified against 0.7.0 on 2026-11-01: session titles are recorded from `SessionTitleChanged`, question answers and full-mode tool output are read from `tool_result` blocks, each subagent is recorded once, and a subagent's own transcript contributes its tool calls under its own session. Known capture gaps are
 visible in that second symbol: omp and Claude do not record the session title or
 transcript path their surfaces expose; Claude's partial context signal is not
 parsed; Maki's session title exists only as a wait label, and its headless turns
