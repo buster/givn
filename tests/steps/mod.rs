@@ -39,6 +39,7 @@ pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod grouped_merge_steps;
 pub mod init_agent_target_selection_steps;
 pub mod initialize_a_project_e2e_steps;
+pub mod initialize_a_project_steps;
 pub mod instruction_extension_e2e_steps;
 pub mod instruction_extension_steps;
 pub mod instruction_integrity_e2e_steps;

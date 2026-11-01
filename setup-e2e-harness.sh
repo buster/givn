@@ -1,6 +1,6 @@
 #!/bin/sh
 # One-time setup for the @e2e harness tier's Maki binary: download the pinned
-# maki v0.6.3 musl release, verify its checksum, and extract it into a local bin
+# maki v0.7.0 musl release, verify its checksum, and extract it into a local bin
 # directory the suite resolves (`$GIVN_E2E_BIN`, defaulting to
 # `~/.cache/givn-e2e/bin`; `tests/steps/development_timeline_support.rs`
 # resolves the same path, and `PATH` is the last fallback).
@@ -13,13 +13,13 @@ set -eu
 
 cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-MAKI_VERSION=v0.6.3
+MAKI_VERSION=v0.7.0
 MAKI_TARGET=x86_64-unknown-linux-musl
 MAKI_ARCHIVE="maki-${MAKI_VERSION}-${MAKI_TARGET}.tar.gz"
 MAKI_URL="https://github.com/tontinton/maki/releases/download/${MAKI_VERSION}/${MAKI_ARCHIVE}"
 # The release asset this repository pins. A changed upstream asset fails this
 # script instead of silently installing something else.
-MAKI_SHA256=55c81674e9671d03aacc984af26bb63b9c33721b26521d5c1fe44bcb09aab0e4
+MAKI_SHA256=3e0a1d1a4bc2bbaafdeb94f2a551bcc2d0f6ed81edfd9dd13272d9caa5add787
 
 BIN_DIR=${GIVN_E2E_BIN:-"$HOME/.cache/givn-e2e/bin"}
 CACHE_DIR=${GIVN_E2E_CACHE:-"$HOME/.cache/givn-e2e"}
