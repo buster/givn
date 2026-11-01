@@ -1,6 +1,8 @@
 Review kind: self-review
 Author: omp agent (maki-0-7-support author)
-Reviewer context: fresh grill subagent `GrillMakiDesign` (read-only), plus the author's hardening pass. The grill was given the proposal, delta specs, design, and served rules; it reproduced the host facts and inspected the in-flight implementation.
+Reviewer context: omp agent (maki-0-7-support author)
+
+A fresh read-only grill (`GrillMakiDesign`) was consulted for phase 1; the author applied and hardened the outcomes. The grill received the proposal, delta specs, design, and served rules.
 
 # Design review: maki-0-7-support
 
