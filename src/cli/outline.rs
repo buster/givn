@@ -46,6 +46,7 @@ pub fn run_report(json: bool, out: Option<PathBuf>, paths: Vec<PathBuf>) -> Resu
                 Language::Python,
                 Language::Java,
                 Language::TypeScript,
+                Language::JavaScript,
             ],
             roots: roots.clone(),
             include_test_sources: false,

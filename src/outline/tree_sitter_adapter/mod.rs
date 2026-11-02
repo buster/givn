@@ -17,6 +17,7 @@ use tree_sitter::{Node, Parser};
 
 pub struct JavaAnalyzer;
 pub struct TypeScriptAnalyzer;
+pub struct JavaScriptAnalyzer;
 
 impl SourceAnalyzer for JavaAnalyzer {
     fn capabilities(&self) -> AnalyzerCapabilities {
@@ -116,6 +117,49 @@ impl SourceAnalyzer for TypeScriptAnalyzer {
     }
 }
 
+impl SourceAnalyzer for JavaScriptAnalyzer {
+    fn capabilities(&self) -> AnalyzerCapabilities {
+        AnalyzerCapabilities {
+            languages: vec![Language::JavaScript],
+            supported_constructs: vec![
+                Construct::Class,
+                Construct::Function,
+                Construct::FileModule,
+            ],
+            limitations: vec![
+                Limitation::NonUtf8File,
+                Limitation::StructuralCallOrderNotRuntimeTrace,
+                Limitation::UncertainCallEdges,
+                Limitation::CrossLanguageNameResolution,
+            ],
+            resolution_labels: vec![
+                Resolution::SameFile,
+                Resolution::ProjectOtherFile,
+                Resolution::NameOnly,
+                Resolution::Ambiguous,
+                Resolution::External,
+            ],
+        }
+    }
+
+    fn analyze(&self, request: &AnalysisRequest) -> Result<Analysis> {
+        if !request.scope.languages.contains(&Language::JavaScript) {
+            return Ok(Analysis::default());
+        }
+        let sources = scan::discover(
+            &request.project_root,
+            &request.scope.roots,
+            &[Language::JavaScript],
+        )?;
+        let mut analysis = Analysis::default();
+        for source in sources {
+            analyze_javascript_file(source, &mut analysis)?;
+        }
+        sort_analysis(&mut analysis);
+        Ok(analysis)
+    }
+}
+
 fn sort_analysis(analysis: &mut Analysis) {
     analysis.units.sort_by(|left, right| left.id.cmp(&right.id));
     analysis.diagnostics.sort_by(|left, right| {
@@ -127,7 +171,7 @@ fn sort_analysis(analysis: &mut Analysis) {
     });
 }
 
-fn failed_file(source: &scan::ScannedSource, message: String) -> Analysis {
+fn failed_file(source: &scan::ScannedSource, language: Language, message: String) -> Analysis {
     let mut analysis = Analysis::default();
     analysis.diagnostics.push(AnalysisDiagnostic {
         kind: DiagnosticKind::ParseFailed,
@@ -137,7 +181,7 @@ fn failed_file(source: &scan::ScannedSource, message: String) -> Analysis {
     });
     analysis.files.push(AnalyzedFile {
         path: source.path.clone(),
-        language: source_language(source),
+        language,
         physical_lines: source.content.lines().count() as u32,
         lines: source.lines.clone(),
         status: FileStatus::Failed,
@@ -145,14 +189,6 @@ fn failed_file(source: &scan::ScannedSource, message: String) -> Analysis {
         excluded_spans: Vec::new(),
     });
     analysis
-}
-
-fn source_language(source: &scan::ScannedSource) -> Language {
-    if source.path.as_str().ends_with(".java") {
-        Language::Java
-    } else {
-        Language::TypeScript
-    }
 }
 
 fn span(file: &RepoPath, node: Node<'_>) -> SourceSpan {
@@ -204,7 +240,7 @@ fn java_visibility(node: Node<'_>, source: &str) -> Visibility {
     }
 }
 
-fn typescript_visibility(node: Node<'_>, source: &str, name: &str) -> Visibility {
+fn ecmascript_visibility(node: Node<'_>, source: &str, name: &str) -> Visibility {
     if name.starts_with('#') {
         return Visibility::Private;
     }
@@ -259,7 +295,7 @@ fn call_shape_java(node: Node<'_>, source: &str) -> Option<(String, CallShape)> 
     }
 }
 
-fn call_shape_typescript(node: Node<'_>, source: &str) -> Option<(String, CallShape)> {
+fn call_shape_ecmascript(node: Node<'_>, source: &str) -> Option<(String, CallShape)> {
     match node.kind() {
         "call_expression" => {
             let function = node.child_by_field_name("function")?;
@@ -348,8 +384,8 @@ fn field_from_java(node: Node<'_>, source: &str, file: &RepoPath) -> Option<Fiel
     })
 }
 
-fn field_from_typescript(node: Node<'_>, source: &str, file: &RepoPath) -> Option<Field> {
-    let name = name_text(node, source, "name")?;
+fn field_from_ecmascript(node: Node<'_>, source: &str, file: &RepoPath) -> Option<Field> {
+    let name = name_text(node, source, "name").or_else(|| name_text(node, source, "property"))?;
     let type_label = node
         .child_by_field_name("type")
         .map(|type_node| {
@@ -363,7 +399,7 @@ fn field_from_typescript(node: Node<'_>, source: &str, file: &RepoPath) -> Optio
     Some(Field {
         id: name.clone(),
         name: name.clone(),
-        visibility: typescript_visibility(node, source, &name),
+        visibility: ecmascript_visibility(node, source, &name),
         span: span(file, node),
         type_label,
         origin: UnitOrigin::Production,
@@ -436,6 +472,9 @@ impl FileBuilder {
                 .trim_end_matches(".java")
                 .trim_end_matches(".ts")
                 .trim_end_matches(".tsx")
+                .trim_end_matches(".js")
+                .trim_end_matches(".mjs")
+                .trim_end_matches(".cjs")
                 .to_string(),
             declaration_file: path.clone(),
             files: vec![path.clone()],
@@ -561,7 +600,7 @@ fn analyze_java_file(source: scan::ScannedSource, analysis: &mut Analysis) -> Re
             line: Some(1),
             message: "Tree-sitter reported error nodes in the Java source".to_string(),
         });
-        let failed = failed_file(&source, "parse failed".to_string());
+        let failed = failed_file(&source, Language::Java, "parse failed".to_string());
         analysis.files.extend(failed.files);
         return Ok(());
     }
@@ -727,18 +766,44 @@ fn analyze_typescript_file(source: scan::ScannedSource, analysis: &mut Analysis)
             line: Some(1),
             message: "Tree-sitter reported error nodes in the TypeScript source".to_string(),
         });
-        let failed = failed_file(&source, "parse failed".to_string());
+        let failed = failed_file(&source, Language::TypeScript, "parse failed".to_string());
         analysis.files.extend(failed.files);
         return Ok(());
     }
     let mut builder = FileBuilder::new(source.path.clone(), Language::TypeScript);
-    walk_typescript(tree.root_node(), &source.content, &mut builder, None);
+    walk_ecmascript(tree.root_node(), &source.content, &mut builder, None);
     let file_analysis = builder.finish(&source);
     merge(analysis, file_analysis);
     Ok(())
 }
 
-fn walk_typescript<'a>(
+fn analyze_javascript_file(source: scan::ScannedSource, analysis: &mut Analysis) -> Result<()> {
+    let mut parser = Parser::new();
+    parser
+        .set_language(&tree_sitter_javascript::LANGUAGE.into())
+        .context("load the JavaScript Tree-sitter grammar")?;
+    let tree = parser
+        .parse(&source.content, None)
+        .context("parse the JavaScript source with Tree-sitter")?;
+    if tree.root_node().has_error() {
+        analysis.diagnostics.push(AnalysisDiagnostic {
+            kind: DiagnosticKind::ParseFailed,
+            path: source.path.clone(),
+            line: Some(1),
+            message: "Tree-sitter reported error nodes in the JavaScript source".to_string(),
+        });
+        let failed = failed_file(&source, Language::JavaScript, "parse failed".to_string());
+        analysis.files.extend(failed.files);
+        return Ok(());
+    }
+    let mut builder = FileBuilder::new(source.path.clone(), Language::JavaScript);
+    walk_ecmascript(tree.root_node(), &source.content, &mut builder, None);
+    let file_analysis = builder.finish(&source);
+    merge(analysis, file_analysis);
+    Ok(())
+}
+
+fn walk_ecmascript<'a>(
     node: Node<'a>,
     source: &'a str,
     builder: &mut FileBuilder,
@@ -765,16 +830,16 @@ fn walk_typescript<'a>(
                 let mut cursor = body.walk();
                 for child in body.children(&mut cursor) {
                     match child.kind() {
-                        "public_field_definition" | "property_signature" => {
-                            if let Some(field) = field_from_typescript(child, source, &builder.path)
+                        "public_field_definition" | "property_signature" | "field_definition" => {
+                            if let Some(field) = field_from_ecmascript(child, source, &builder.path)
                             {
                                 fields.push(field);
                             }
                         }
                         "method_definition" | "method_signature" | "abstract_method_signature" => {
                             if let Some(method_name) = name_text(child, source, "name") {
-                                let calls = calls_in(child, source, call_shape_typescript);
-                                let visibility = typescript_visibility(child, source, &method_name);
+                                let calls = calls_in(child, source, call_shape_ecmascript);
+                                let visibility = ecmascript_visibility(child, source, &method_name);
                                 methods.push(method_from(
                                     child,
                                     source,
@@ -816,26 +881,26 @@ fn walk_typescript<'a>(
                 name.clone(),
                 qualified,
                 type_kind,
-                typescript_visibility(node, source, &name),
+                ecmascript_visibility(node, source, &name),
                 span(&builder.path, node),
                 fields,
                 methods,
                 parent.clone(),
             );
             for child in nested {
-                walk_typescript(child, source, builder, Some(id.clone()));
+                walk_ecmascript(child, source, builder, Some(id.clone()));
             }
         }
-        "function_declaration" => {
+        "function_declaration" | "generator_function_declaration" => {
             if let Some(name) = name_text(node, source, "name") {
-                let calls = calls_in(node, source, call_shape_typescript);
+                let calls = calls_in(node, source, call_shape_ecmascript);
                 let method = method_from(
                     node,
                     source,
                     &builder.path,
                     &builder.module_path,
                     name,
-                    typescript_visibility(node, source, ""),
+                    ecmascript_visibility(node, source, ""),
                     calls,
                     false,
                     span(&builder.path, node),
@@ -845,38 +910,80 @@ fn walk_typescript<'a>(
             }
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
-                walk_typescript(child, source, builder, parent.clone());
+                walk_ecmascript(child, source, builder, parent.clone());
             }
         }
         "lexical_declaration" => {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
-                if child.kind() == "variable_declarator"
-                    && let Some(name) = name_text(child, source, "name")
-                    && let Some(value) = child.child_by_field_name("value")
-                    && value.kind() == "arrow_function"
-                {
-                    let calls = calls_in(value, source, call_shape_typescript);
-                    let method = method_from(
-                        value,
-                        source,
-                        &builder.path,
-                        &builder.module_path,
-                        name,
-                        Visibility::Public,
-                        calls,
-                        false,
-                        span(&builder.path, value),
-                    );
-                    builder.module.outline.push(outline_method(&method, false));
-                    builder.module.methods.push(method);
+                if child.kind() != "variable_declarator" {
+                    continue;
                 }
+                let Some(name) = name_text(child, source, "name") else {
+                    continue;
+                };
+                let Some(value) = child.child_by_field_name("value") else {
+                    continue;
+                };
+                match value.kind() {
+                    "arrow_function" => {
+                        let calls = calls_in(value, source, call_shape_ecmascript);
+                        let method = method_from(
+                            value,
+                            source,
+                            &builder.path,
+                            &builder.module_path,
+                            name,
+                            Visibility::Public,
+                            calls,
+                            false,
+                            span(&builder.path, value),
+                        );
+                        builder.module.outline.push(outline_method(&method, false));
+                        builder.module.methods.push(method);
+                    }
+                    "class" if builder.language == Language::JavaScript => {
+                        builder.unsupported.push(super::model::UnsupportedNote {
+                            construct: Construct::Class,
+                            span: span(&builder.path, value),
+                            reason: "class expression is not a unit".to_string(),
+                        });
+                    }
+                    "function_expression" | "generator_function"
+                        if builder.language == Language::JavaScript =>
+                    {
+                        builder.unsupported.push(super::model::UnsupportedNote {
+                            construct: Construct::Function,
+                            span: span(&builder.path, value),
+                            reason: "function expression is not a unit".to_string(),
+                        });
+                    }
+                    _ => {}
+                }
+            }
+        }
+        "class" if builder.language == Language::JavaScript => {
+            builder.unsupported.push(super::model::UnsupportedNote {
+                construct: Construct::Class,
+                span: span(&builder.path, node),
+                reason: "class expression is not a unit".to_string(),
+            });
+        }
+        "function_expression" | "generator_function"
+            if builder.language == Language::JavaScript =>
+        {
+            if name_text(node, source, "name").is_none() {
+                builder.unsupported.push(super::model::UnsupportedNote {
+                    construct: Construct::Function,
+                    span: span(&builder.path, node),
+                    reason: "function expression is not a unit".to_string(),
+                });
             }
         }
         _ => {
             let mut cursor = node.walk();
             for child in node.children(&mut cursor) {
-                walk_typescript(child, source, builder, parent.clone());
+                walk_ecmascript(child, source, builder, parent.clone());
             }
         }
     }
@@ -996,6 +1103,102 @@ mod tests {
                 .iter()
                 .any(|unit| unit.kind == UnitKind::Module)
         );
+    }
+
+    #[test]
+    fn javascript_extracts_class_methods_fields_functions_and_arrows() {
+        let analysis = analyze(
+            &JavaScriptAnalyzer,
+            Language::JavaScript,
+            &[(
+                "src/widget.js",
+                "export class Widget {\n\
+                     count = 0;\n\
+                     area() { return this.count; }\n\
+                 }\n\
+                 export function makeWidget() { return new Widget(); }\n\
+                 export const clone = (value) => value;\n",
+            )],
+        );
+        let widget = analysis
+            .units
+            .iter()
+            .find(|unit| unit.name == "Widget")
+            .expect("Widget unit");
+        assert_eq!(widget.kind, UnitKind::Type(TypeKind::Class));
+        assert_eq!(widget.language, Language::JavaScript);
+        assert!(widget.fields.iter().any(|field| field.name == "count"));
+        assert!(widget.methods.iter().any(|method| method.name == "area"));
+        let module = analysis
+            .units
+            .iter()
+            .find(|unit| unit.kind == UnitKind::Module)
+            .expect("module unit");
+        assert!(module.outline.iter().any(|item| item.name == "makeWidget"));
+        assert!(module.outline.iter().any(|item| item.name == "clone"));
+        let make_widget = module
+            .methods
+            .iter()
+            .find(|method| method.name == "makeWidget")
+            .expect("makeWidget");
+        assert!(make_widget.calls.iter().any(|call| call.callee == "Widget"));
+    }
+
+    #[test]
+    fn javascript_module_extensions_trim_the_module_path() {
+        for path in ["src/queue.js", "src/queue.mjs", "src/queue.cjs"] {
+            let analysis = analyze(
+                &JavaScriptAnalyzer,
+                Language::JavaScript,
+                &[(path, "function drain() {}\n")],
+            );
+            let module = analysis
+                .units
+                .iter()
+                .find(|unit| unit.kind == UnitKind::Module)
+                .expect("module unit");
+            assert_eq!(module.name, path);
+            assert_eq!(module.module_path, "src/queue");
+            assert!(module.outline.iter().any(|item| item.name == "drain"));
+        }
+    }
+
+    #[test]
+    fn javascript_class_expression_is_unsupported_and_not_a_unit() {
+        let analysis = analyze(
+            &JavaScriptAnalyzer,
+            Language::JavaScript,
+            &[(
+                "src/widget.js",
+                "const Widget = class { area() { return 1; } };\n",
+            )],
+        );
+        let module = analysis
+            .units
+            .iter()
+            .find(|unit| unit.kind == UnitKind::Module)
+            .expect("module unit");
+        assert!(
+            module
+                .unsupported
+                .iter()
+                .any(|note| note.construct == Construct::Class)
+        );
+        assert!(!analysis.units.iter().any(|unit| unit.name == "Widget"));
+    }
+
+    #[test]
+    fn malformed_javascript_is_a_failed_file_without_units() {
+        let analysis = analyze(
+            &JavaScriptAnalyzer,
+            Language::JavaScript,
+            &[("src/Broken.js", "export function broken( {\n")],
+        );
+        assert_eq!(analysis.files.len(), 1);
+        assert_eq!(analysis.files[0].status, FileStatus::Failed);
+        assert_eq!(analysis.files[0].language, Language::JavaScript);
+        assert!(analysis.units.is_empty());
+        assert!(!analysis.diagnostics.is_empty());
     }
 
     #[test]

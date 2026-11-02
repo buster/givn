@@ -24,8 +24,8 @@ const PYTHON_EXCLUDED_DIRS: &[&str] = &[
 /// Java build, generated, and test roots.
 const JAVA_EXCLUDED_DIRS: &[&str] = &["build", "out", "generated", "test"];
 
-/// TypeScript build, dependency, and test roots.
-const TYPESCRIPT_EXCLUDED_DIRS: &[&str] = &[
+/// TypeScript and JavaScript build, dependency, and test roots.
+const ECMASCRIPT_EXCLUDED_DIRS: &[&str] = &[
     "node_modules",
     "dist",
     "build",
@@ -37,7 +37,7 @@ const TYPESCRIPT_EXCLUDED_DIRS: &[&str] = &[
 
 /// Source extensions that are production code but outside the supported
 /// supported analyzers.
-const UNSUPPORTED_SOURCE_EXTENSIONS: &[&str] = &["go", "js", "jsx"];
+const UNSUPPORTED_SOURCE_EXTENSIONS: &[&str] = &["go", "jsx"];
 
 #[derive(Clone, Debug)]
 pub struct ScannedSource {
@@ -229,7 +229,8 @@ fn excluded_dir(name: &str, language: Language) -> bool {
     EXCLUDED_DIRS.contains(&name)
         || (language == Language::Python && PYTHON_EXCLUDED_DIRS.contains(&name))
         || (language == Language::Java && JAVA_EXCLUDED_DIRS.contains(&name))
-        || (language == Language::TypeScript && TYPESCRIPT_EXCLUDED_DIRS.contains(&name))
+        || (matches!(language, Language::TypeScript | Language::JavaScript)
+            && ECMASCRIPT_EXCLUDED_DIRS.contains(&name))
 }
 
 fn language_for_path(path: &Path, languages: &[Language]) -> Option<Language> {
@@ -259,6 +260,15 @@ fn language_for_path(path: &Path, languages: &[Language]) -> Option<Language> {
                 return None;
             }
             Language::TypeScript
+        }
+        "js" | "mjs" | "cjs" if languages.contains(&Language::JavaScript) => {
+            if ["test", "spec"]
+                .iter()
+                .any(|kind| name.ends_with(&format!(".{kind}.{extension}")))
+            {
+                return None;
+            }
+            Language::JavaScript
         }
         _ => return None,
     };
@@ -291,7 +301,7 @@ fn classify_line(line: &str, language: Language) -> LineKind {
                 LineKind::Code
             }
         }
-        Language::Java | Language::TypeScript => {
+        Language::Java | Language::TypeScript | Language::JavaScript => {
             if trimmed.starts_with("//") || trimmed.starts_with("/*") || trimmed.starts_with('*') {
                 LineKind::Comment
             } else {
@@ -399,6 +409,31 @@ mod tests {
             language("src/helper.py", &[Language::Python]),
             Some(Language::Python)
         );
+        assert_eq!(
+            language("src/helper.js", &[Language::JavaScript]),
+            Some(Language::JavaScript)
+        );
+        assert_eq!(
+            language("src/helper.mjs", &[Language::JavaScript]),
+            Some(Language::JavaScript)
+        );
+        assert_eq!(
+            language("src/helper.cjs", &[Language::JavaScript]),
+            Some(Language::JavaScript)
+        );
+        assert_eq!(
+            language("src/helper.test.js", &[Language::JavaScript]),
+            None
+        );
+        assert_eq!(
+            language("src/helper.spec.mjs", &[Language::JavaScript]),
+            None
+        );
+        assert_eq!(
+            language("node_modules/helper.js", &[Language::JavaScript]),
+            None
+        );
+        assert_eq!(language("src/helper.js", &[Language::TypeScript]), None);
         assert_eq!(language("tests/helper.rs", &[Language::Rust]), None);
     }
 }

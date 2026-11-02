@@ -8,7 +8,7 @@ use super::model::{
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 
-pub const SCHEMA_VERSION: u32 = 4;
+pub const SCHEMA_VERSION: u32 = 5;
 pub const RULES_VERSION: u32 = 1;
 
 pub fn render_human(assessment: &Assessment) -> String {

@@ -38,6 +38,7 @@ pub enum Language {
     Python,
     Java,
     TypeScript,
+    JavaScript,
 }
 
 impl Language {
@@ -47,6 +48,7 @@ impl Language {
             Self::Python => "python",
             Self::Java => "java",
             Self::TypeScript => "typescript",
+            Self::JavaScript => "javascript",
         }
     }
 }

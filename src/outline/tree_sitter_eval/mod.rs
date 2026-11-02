@@ -255,6 +255,7 @@ fn language_label(language: Language) -> &'static str {
         Language::Python => "python",
         Language::Java => "java",
         Language::TypeScript => "typescript",
+        Language::JavaScript => "javascript",
     }
 }
 
@@ -554,6 +555,7 @@ mod tests {
             Language::Python,
             Language::Java,
             Language::TypeScript,
+            Language::JavaScript,
         ] {
             assert!(
                 capabilities.languages.contains(&language),
