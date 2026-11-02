@@ -134,9 +134,3 @@ Design constraints:
       `tests/steps/outline_report_steps.rs`.
 - [x] COMMIT: 55d76b44 -- Batch: javascript-documentation-closeout
 
-## Verification
-
-- [ ] `./run-tests.sh --non-e2e` exits 0.
-- [ ] `./run-tests.sh --e2e` exits 0.
-- [ ] `./measure-coverage.sh` and `./merge-coverages.sh` complete.
-- [ ] `givn check review --change add-javascript-outline` exits 0.
