@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "add-javascript-outline",
+  "status": "passed",
+  "head": "35861ea27365103200495e29dbcdb485ac973fcb",
+  "features_path": "givn/changes/add-javascript-outline/specs",
+  "features_digest": "2ce73dadb1d36843492e3ffaff7a366d34785ff155c2a3ae4db67322d2a04495",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "6bf9b8f843f38441986b2e13c539dcbc9acf87ef8288b6679457dab8a81e95ba",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 11,
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793618363
+}
