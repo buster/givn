@@ -126,13 +126,13 @@ Design constraints:
 
 ## Batch B — documentation closeout
 
-- [ ] Update `docs/outline.md`, `docs/reference.md`, `README.md`, and
+- [x] Update `docs/outline.md`, `docs/reference.md`, `README.md`, and
       `docs/INDEX.md` for JavaScript and schema 5.
-- [ ] Confirm the affected `docs/arc42/` chapters and `docs/glossary.md` match
+- [x] Confirm the affected `docs/arc42/` chapters and `docs/glossary.md` match
       the implemented adapter and schema.
-- [ ] Confirm every delta step phrase has a permanent binding in
+- [x] Confirm every delta step phrase has a permanent binding in
       `tests/steps/outline_report_steps.rs`.
-- [ ] COMMIT: pending -- Batch: javascript-documentation-closeout
+- [x] COMMIT: 55d76b44 -- Batch: javascript-documentation-closeout
 
 ## Verification
 
