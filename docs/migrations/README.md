@@ -10,6 +10,45 @@ This guide is a manual transition, not a promise that every 0.x project layout
 is supported. A project whose configuration uses an unknown format must keep its
 own copy of the old values and translate the settings it actually uses.
 
+## From 0.9.2 to 0.9.17
+
+`0.9.10` is the compatibility boundary. `0.9.3` and `0.9.4` are unmerged
+experiment branches; `0.9.5`-`0.9.8` are untagged mainline increments; the first
+tag after `0.9.2` is `0.9.9`. The path is `0.9.2 -> 0.9.9 -> 0.9.17`.
+
+User-visible additions (headline: 0.9.10's skills-only integration):
+
+- 0.9.9: every add-on is enabled by default; a missing key means enabled; one
+  review context by default (request independent review explicitly).
+- 0.9.10: skills-only integration; explicit-path commits; fresh verification
+  evidence; Gherkin preservation; `givn-challenge`.
+- 0.9.12: standalone `docs/glossary.md` and `docs/domain-model.md`.
+- 0.9.13: `givn-start` replaces `givn-explore`; direct work is a first-class
+  outcome.
+- 0.9.15: Java/TypeScript outline; JSON schema v4.
+- 0.9.16: add-on configuration is locked per change.
+- 0.9.17: Maki 0.7 recording; run `givn skills sync`.
+
+Compatibility breaks and required actions:
+
+| Break | Action |
+|---|---|
+| Retired add-on keys; no aliases | Rename to `communication_policy`/`challenge` |
+| Missing add-on keys now enable | Write explicit `false` for each opt-out |
+| Policy keys in `commands.yaml`, executable keys in `config.yaml` | Move each block to its owner |
+| Generated `/givn-*` commands removed | Run `givn skills sync`; port custom files |
+| `givn commit` without paths | Pass `-- <paths...>` |
+| Bare `givn check` executes nothing | Call `givn check <artifact> --change <id>` |
+| `givn-explore` removed | Use `givn-start` |
+| Outline `--path` and schema v4 | Update callers and JSON consumers (`java`, `typescript`, `interface`) |
+| `Rule:` blocks and non-English dialects refused | Rewrite before archive |
+| In-flight gates: design review, Persona, delta steps, final-line markers | Fix the artifacts before archive |
+| Stale verification results; line-only coverage | Rerun fresh; add branch instrumentation |
+| Spec owner ambiguous | Make the owner explicit |
+| README managed markers ambiguous | Repair the managed blocks |
+| Add-on lock blocks mutation | Use `--operator --reason` on a TTY |
+| arc42 glossary is no longer the vocabulary authority | Move entries to `docs/glossary.md`; create `docs/domain-model.md`; link chapter 12 |
+
 ## Before you start
 
 1. Use the target Givn binary. Do not run a mixed set of old and new binaries
@@ -47,9 +86,11 @@ addons:
 ```
 
 Remove the retired keys. Givn 1.0 refuses them by name and performs no automatic
-conversion. If the old project relied on the former addon's generated files,
-delete them after the transition; `givn skills sync` removes recognizable Givn
-commands and reports custom files for manual review.
+conversion. A missing add-on key now means enabled, so write `false` for every
+add-on you do not want; `outline` and `architecture_principles` are new and
+enabled by default. If the old project relied on the former addon's generated
+files, delete them after the transition; `givn skills sync` removes recognizable
+Givn commands and reports custom files for manual review.
 
 ## 2. Move executable settings into `givn/commands.yaml`
 
@@ -88,6 +129,9 @@ run:
 start command only for a project with no startable product yet; review and
 archive refuse an unconfigured declaration.
 
+Policy keys in `commands.yaml` are refused the same way; that file accepts only
+`verify`, `coverage`, and `run`.
+
 ## 3. Transition from generated commands to skills
 
 Givn 1.0 generates skills only. It does not generate `/givn-*` commands. The
@@ -119,6 +163,9 @@ whose content is not Givn-generated. Review that manual notice and either port
 the custom behavior into the project's own rules or delete the stale command
 yourself. Do not keep a project command that restates a retired policy.
 
+`givn-start` replaces `givn-explore`; sync removes a recognizable generated
+explore skill and preserves a custom same-named file with a manual notice.
+
 `absolute_mode` content becomes the `communication_policy` addon block. The
 retired `absolute-mode` block in `AGENTS.md` is removed during sync; the
 surrounding human content is preserved. Review the diff.
@@ -140,17 +187,20 @@ a raw Fossil check-in carries no attribution. `givn commit` works on both.
 
 ## 5. Run the managed refresh
 
-After the manual repairs:
+After the manual repairs, commit the changed configuration, skills, and
+reporters. `givn upgrade` requires a clean checkout:
 
 ```sh
 givn upgrade
 ```
 
-The command requires a clean checkout and captures a checkpoint revision. It
-refreshes the managed configuration scaffold, generated skills, managed
-`AGENTS.md` blocks, and ignore state, and creates one allowlist-only managed
-revision when files changed. It does not create a migration change: the shipped
-catalog has no pre-1.0 route.
+The command captures a checkpoint revision, refreshes the managed configuration
+scaffold, generated skills, managed `AGENTS.md` blocks, and ignore state, and
+creates one allowlist-only managed revision when files changed. It runs the same
+integration merge as `givn skills sync`, including the Maki `session_read`
+grant; merged Maki files (`.maki/plugin.toml`, `.maki/init.lua`) stay user-owned
+and are not part of the managed allowlist. It does not create a migration
+change: the shipped catalog has no pre-1.0 route.
 
 A project that still has retired keys, executable settings in `config.yaml`, or
 malformed YAML is refused before any file is written. Fix the named setting and
@@ -167,7 +217,10 @@ run it again.
    it.
 5. `givn check tasks --change <id>` runs the configured changed-scenario
    verification and writes a fresh receipt.
-6. `git diff` (or `fossil diff`) shows only intended managed changes plus your
+6. `givn check review --change <id>` passes the review gates without running
+   suites.
+7. `givn archive --change <id>` completes the gate sequence.
+8. `git diff` (or `fossil diff`) shows only intended managed changes plus your
    manual repairs.
 
 ## 7. Recovery and limitations
