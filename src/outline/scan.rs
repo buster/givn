@@ -186,7 +186,8 @@ fn walk(
         return Ok(());
     }
     if canonical.is_file() {
-        if let Some(language) = language_for_path(&canonical, languages) {
+        let relative = canonical.strip_prefix(project_root).unwrap_or(&canonical);
+        if let Some(language) = language_for_path(relative, languages) {
             out.push(ScannedSourcePath {
                 absolute: canonical,
                 language,
@@ -212,7 +213,12 @@ fn walk(
                 continue;
             }
             walk(project_root, &path, languages, out)?;
-        } else if language_for_path(&path, languages).is_some() {
+        } else if language_for_path(
+            path.strip_prefix(project_root).unwrap_or(path.as_path()),
+            languages,
+        )
+        .is_some()
+        {
             walk(project_root, &path, languages, out)?;
         }
     }
@@ -233,6 +239,11 @@ fn excluded_dir(name: &str, language: Language) -> bool {
             && ECMASCRIPT_EXCLUDED_DIRS.contains(&name))
 }
 
+/// Classify a source file that is relative to the project root.
+///
+/// Excluded directory names are matched against the path relative to the
+/// project root only, so an absolute checkout path such as `/build/...` never
+/// hides otherwise valid sources.
 fn language_for_path(path: &Path, languages: &[Language]) -> Option<Language> {
     let extension = path.extension()?.to_str()?;
     let name = path.file_name()?.to_str()?;
@@ -435,5 +446,31 @@ mod tests {
         );
         assert_eq!(language("src/helper.js", &[Language::TypeScript]), None);
         assert_eq!(language("tests/helper.rs", &[Language::Rust]), None);
+    }
+
+    #[test]
+    fn discovery_ignores_excluded_names_above_the_project_root() {
+        let sandbox = tempfile::tempdir().expect("temp dir");
+        let project_root = sandbox.path().join("build").join("project");
+        for (path, content) in [
+            ("src/widget.ts", "export function widget() {}\n"),
+            ("src/Widget.java", "public class Widget {}\n"),
+        ] {
+            let target = project_root.join(path);
+            std::fs::create_dir_all(target.parent().unwrap()).expect("source dir");
+            std::fs::write(target, content).expect("source file");
+        }
+        let discovered = discover(
+            &project_root,
+            &[PathBuf::from("src")],
+            &[Language::Java, Language::TypeScript],
+        )
+        .expect("discover");
+        let mut paths: Vec<_> = discovered
+            .iter()
+            .map(|source| source.path.as_str().to_string())
+            .collect();
+        paths.sort();
+        assert_eq!(paths, vec!["src/Widget.java", "src/widget.ts"]);
     }
 }
