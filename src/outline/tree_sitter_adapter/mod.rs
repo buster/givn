@@ -1188,6 +1188,27 @@ mod tests {
     }
 
     #[test]
+    fn javascript_function_expression_is_unsupported_and_not_a_unit() {
+        let analysis = analyze(
+            &JavaScriptAnalyzer,
+            Language::JavaScript,
+            &[("src/worker.js", "const work = function () { return 1; };\n")],
+        );
+        let module = analysis
+            .units
+            .iter()
+            .find(|unit| unit.kind == UnitKind::Module)
+            .expect("module unit");
+        assert!(
+            module
+                .unsupported
+                .iter()
+                .any(|note| note.construct == Construct::Function)
+        );
+        assert!(!analysis.units.iter().any(|unit| unit.name == "work"));
+    }
+
+    #[test]
     fn malformed_javascript_is_a_failed_file_without_units() {
         let analysis = analyze(
             &JavaScriptAnalyzer,
