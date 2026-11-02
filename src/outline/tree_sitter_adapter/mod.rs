@@ -928,7 +928,7 @@ fn walk_ecmascript<'a>(
                 match value.kind() {
                     "arrow_function" => {
                         let calls = calls_in(value, source, call_shape_ecmascript);
-                        let method = method_from(
+                        let mut method = method_from(
                             value,
                             source,
                             &builder.path,
@@ -939,6 +939,8 @@ fn walk_ecmascript<'a>(
                             false,
                             span(&builder.path, value),
                         );
+                        method.signature.text =
+                            format!("{} = {}", method.name, method.signature.text.trim());
                         builder.module.outline.push(outline_method(&method, false));
                         builder.module.methods.push(method);
                     }
