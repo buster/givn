@@ -1278,19 +1278,20 @@ review authority:
   (`src/cli/instructions.rs`). A project that disables the addon receives no
   outline obligation.
 
-Rust and Python keep their `syn` and standard-library `ast` adapters. Java and
-TypeScript/TSX use bundled Tree-sitter grammars through the same neutral
-`SourceAnalyzer` port. The TSX grammar is selected by extension; Java
+Rust and Python keep their `syn` and standard-library `ast` adapters. Java,
+TypeScript/TSX, and JavaScript use bundled Tree-sitter grammars through the
+same neutral `SourceAnalyzer` port. The TSX grammar is selected by extension;
+JavaScript uses its own grammar for `.js`, `.mjs`, and `.cjs`; Java
 package-private visibility is reported as crate scope, and Java records,
-anonymous classes, TypeScript declaration files, and namespaces carry explicit
-limitations. Tree-sitter supplies syntax facts only: calls remain name-only
-unless the shared resolver can prove a target, and calls never resolve across
-languages.
+anonymous classes, JavaScript class expressions, TypeScript declaration files,
+and namespaces carry explicit limitations. Tree-sitter supplies syntax facts
+only: calls remain name-only unless the shared resolver can prove a target, and
+calls never resolve across languages.
 
 A test-only Tree-sitter evaluation compared the Rust and Python facts with
 parallel grammars. Its 0.9.14 decision retained those adapters because the
 comparison found missing required units, methods, calls, and spans. That record
-is not a parity claim for Java or TypeScript. See
+is not a parity claim for Java, TypeScript, or JavaScript. See
 [the evaluation record](../outline-tree-sitter-evaluation.md).
 
 The historical blocking gate and its verdict vocabulary are retired. They are

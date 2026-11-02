@@ -28,7 +28,7 @@ Instead of letting agents jump straight from a prompt to unverified code, Givn s
 - **Built-in architecture & code health addons:**
   - `arc42`: Keeps architecture docs (`docs/arc42/`) and ADRs in sync with design changes.
   - `domain_modeling`: Maintains the standalone `docs/glossary.md` and `docs/domain-model.md`; independent of arc42.
-  - `outline`: Generates advisory call-tree and coupling/cohesion reports for Rust, Python, Java, and TypeScript that make changed units readable from their declarations, names, and call order, so REFACTOR and review judge comprehension rather than only metrics.
+  - `outline`: Generates advisory call-tree and coupling/cohesion reports for Rust, Python, Java, TypeScript, and JavaScript that make changed units readable from their declarations, names, and call order, so REFACTOR and review judge comprehension rather than only metrics.
   - `history` / `timeline`: Logs local agent activity (tool calls, turns, token usage) to `givn/history/` and exports self-contained HTML timelines.
 
 ## Install
@@ -93,7 +93,7 @@ fail if the project configuration drifts from the record. An operator can use
 - [`docs/INDEX.md`](docs/INDEX.md) — Full documentation index
 - [`docs/workflow.md`](docs/workflow.md) — Lifecycle phases and blocking gates
 - [`docs/reference.md`](docs/reference.md) — CLI commands, configuration, and runner contracts
-- [`docs/outline.md`](docs/outline.md) — Static code structure reports (Rust, Python, Java, TypeScript)
+- [`docs/outline.md`](docs/outline.md) — Static code structure reports (Rust, Python, Java, TypeScript, JavaScript)
 - [`docs/development-report.md`](docs/development-report.md) — Local activity recording and HTML timelines
 - [`docs/use-case-model.md`](docs/use-case-model.md) — Use-case scoping and review criteria
 - [`docs/arc42/README.md`](docs/arc42/README.md) — Givn's own architecture and ADR log

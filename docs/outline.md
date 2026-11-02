@@ -1,7 +1,7 @@
 # Outline addon
 
 **TL;DR:** The `outline` addon is enabled by default and produces an advisory
-report for production Rust, Python, Java, and TypeScript. Read a unit's outline — a per-component
+report for production Rust, Python, Java, TypeScript, and JavaScript. Read a unit's outline — a per-component
 call tree of method declarations, signatures, and calls, without bodies or data
 — to explain its responsibility and call order. Use it once per behavior batch
 during REFACTOR for changed supported components and relevant neighbors, and
@@ -15,7 +15,7 @@ classifications may change.
 - **Report.** `givn outline report` prints each unit's per-component call tree
   first — method declarations, signatures, and calls, with same-unit calls
   nested and other components as tagged leaves — then the metric hints. Human
-  text is the default; `--json` emits schema version 4; `--out` writes the
+  text is the default; `--json` emits schema version 5; `--out` writes the
   selected form to a path.
 - **No gate.** The report is advisory. It never changes review or archive
   behavior, never requires a per-unit verdict, and never asks for a metric
@@ -194,12 +194,16 @@ readable. The report itself supplies no verdict.
 
 The report analyzes production sources:
 
-- **Scope.** Only production `.rs` and `.py` files under `src/` (or explicit
-  `--path` roots). `tests/`, `benches/`, `examples/`, and `target/` are
-  excluded; `#[cfg(test)]` items are excluded; `src/bin/**` is included.
-  Python test modules (`test_*.py`, `*_test.py`), Java test/build roots, and TypeScript test/build/dependency roots. Python cache, virtualenv, build,
-  and dependency directories (`__pycache__`, `.venv`, `venv`, `.tox`,
-  `.mypy_cache`, `.pytest_cache`, `build`, `dist`, `node_modules`) are skipped.
+- **Scope.** Only production `.rs`, `.py`, `.java`, `.ts`, `.tsx`, `.js`,
+  `.mjs`, and `.cjs` files under `src/` (or explicit `--path` roots). `tests/`,
+  `benches/`, `examples/`, and `target/` are excluded; `#[cfg(test)]` items are
+  excluded; `src/bin/**` is included. Python test modules (`test_*.py`,
+  `*_test.py`), Java test/build roots, TypeScript test/spec/build/dependency
+  roots, and JavaScript test/spec/build/dependency roots (`*.test.js`,
+  `*.spec.js`, and the `.mjs`/`.cjs` forms) are skipped. Python cache,
+  virtualenv, build, and dependency directories (`__pycache__`, `.venv`,
+  `venv`, `.tox`, `.mypy_cache`, `.pytest_cache`, `build`, `dist`,
+  `node_modules`) are skipped.
 - **Units.** A unit is a type (struct, enum, trait, union, or type alias) or a
   module. Its methods are checked with it. A unit with no methods has an empty
   outline and no special obligation.
@@ -238,9 +242,9 @@ The report analyzes production sources:
 
 ## Language scope
 
-The addon analyzes production Rust, Python, Java, and TypeScript. This is the analyzer's
-present capability, not the guidance rule: guidance says supported and
-unsupported.
+The addon analyzes production Rust, Python, Java, TypeScript, and JavaScript.
+This is the analyzer's present capability, not the guidance rule: guidance says
+supported and unsupported.
 
 - **Rust** is parsed in-process by `syn`.
 - **Python** is parsed by a `python3` subprocess that runs a bundled
@@ -249,6 +253,10 @@ unsupported.
   `python3` and does not need Python installed. The extractor parses source
   text; it never imports or executes project code and needs no third-party
   package. Python 3.10 or newer is required for Python projects.
+- **Java, TypeScript, and JavaScript** are parsed in-process with bundled
+  Tree-sitter grammars. `.tsx` selects the TSX grammar; `.js`, `.mjs`, and
+  `.cjs` use the JavaScript grammar. Class expressions and unnamed function
+  expressions are reported as unsupported constructs, not units.
 
 | Input | Report |
 |---|---|
@@ -257,7 +265,7 @@ unsupported.
 | Python file when `python3` is unavailable | Named `analyzer-unavailable`; the report continues |
 | Non-source file under production roots | Ignored |
 | Python test module (`test_*.py`, `*_test.py`) | Excluded as test source |
-| Go, JavaScript, or JSX production source | Not analyzed; assessment is source-based, not a waiver |
+| Go or JSX production source | Not analyzed; assessment is source-based, not a waiver |
 
 Python's dynamic nature limits the outline: a call through a dynamic attribute
 or an inferred type is not resolved precisely, so it appears as `name_only`
