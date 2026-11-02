@@ -62,7 +62,7 @@ visible in `givn/config.yaml`, and an explicit `false` is the only opt-out.
 | FR-43 | Start the declared product with `givn run`: readiness probe, one greppable ready line, `--port`/`--print`, child exit-code forwarding, and unix signal forwarding. |
 | FR-44 | Never derive the product type or start command from repository content. |
 | FR-45 | Record development activity in an append-only, scope-tagged, best-effort local record and render one scope as a self-contained report. |
-| FR-46 | Offer an advisory outline report over production Rust, Python, Java, and TypeScript: per-component call tree first, then size, public surface, cohesion, coupling, and complexity hints; no action, recommendation, baseline, verdict, or gate. |
+| FR-46 | Offer an advisory outline report over production Rust, Python, Java, TypeScript, and JavaScript: per-component call tree first, then size, public surface, cohesion, coupling, and complexity hints; no action, recommendation, baseline, verdict, or gate. |
 | FR-47 | Use outline evidence once per behavior batch during REFACTOR and reuse it in review; assess unsupported languages from source without a waiver. |
 | FR-48 | Require explicit commit paths on Git and Fossil, preserve unrelated work, and keep commit attribution optional and non-blocking. |
 | FR-49 | Keep one mandatory dialog policy and an evidence-first challenge instruction without adding lifecycle gates. |
