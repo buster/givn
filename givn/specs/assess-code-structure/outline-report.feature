@@ -513,6 +513,13 @@ Feature: Outline report
     Then  the JSON report names the function "clone" with language "javascript"
 
   @outline-report
+  Scenario: A JavaScript arrow-function binding is named in the human report
+    Given  a Givn project with the outline experiment enabled
+    And  a JavaScript production arrow-function binding
+    When  the developer runs "givn outline report"
+    Then  stdout contains "clone = (value) =>"
+
+  @outline-report
   Scenario: A malformed JavaScript file does not hide a valid TypeScript file
     Given  a Givn project with the outline experiment enabled
     And  a malformed JavaScript production file beside a valid TypeScript production file
