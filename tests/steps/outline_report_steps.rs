@@ -1744,7 +1744,19 @@ fn measured_tight_class_cohesion(world: &mut GivnWorld) {
 }
 
 #[given("loose class cohesion is not independently measured")]
-fn loose_class_cohesion_unmeasured(_world: &mut GivnWorld) {}
+fn loose_class_cohesion_unmeasured(world: &mut GivnWorld) {
+    assert!(
+        world.env.is_some(),
+        "the outline project must exist before the LCC precondition"
+    );
+    assert!(
+        world
+            .scenario_title
+            .as_deref()
+            .is_some_and(|title| title.contains("Loose class cohesion")),
+        "the no-LCC precondition belongs to the loose-cohesion scenario"
+    );
+}
 
 #[then("neither report includes an LCC measurement")]
 fn neither_report_includes_lcc(world: &mut GivnWorld) {
