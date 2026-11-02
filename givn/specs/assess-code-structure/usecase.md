@@ -111,7 +111,8 @@ The developer receives a deterministic advisory outline for the supported produc
 
 - Outline-based review or archive enforcement; the outline is not a verdict.
 - A stored baseline or watchlist.
-- Go, JavaScript, JSX, and other languages outside the supported set.
+- Go, JSX, and other languages outside the supported set.
+- Type-aware JavaScript or TypeScript resolution and an import/export graph.
 - Automatic refactoring.
 - Automatic Cargo workspace discovery; the developer names members with
   `--path`.

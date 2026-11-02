@@ -109,7 +109,7 @@ Feature: Outline report
     Given  a Givn project with the outline experiment enabled
     And  a production source unit
     When  the developer runs "givn outline report --json"
-    Then  the JSON report has schema version 4
+    Then  the JSON report has schema version 5
     And  the JSON report has rules version 1
 
   @outline-report
@@ -443,7 +443,7 @@ Feature: Outline report
   @outline-report
   Scenario: A mixed-language report discloses every supported language
     Given  a Givn project with the outline experiment enabled
-    And  a mixed Rust Python Java and TypeScript production source set
+    And  a mixed Rust Python Java TypeScript and JavaScript production source set
     When  the developer runs "givn outline report --json"
     Then  the JSON report names all supported languages
     And  the JSON report names the unit "Widget" with language "java"

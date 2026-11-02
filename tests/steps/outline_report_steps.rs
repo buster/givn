@@ -1465,13 +1465,14 @@ fn outline_project() -> common::TestEnv {
 }
 
 #[given(
-    regex = r#"^the requested scope contains only production source files written in (Go|Java)$"#
+    regex = r#"^the requested scope contains only production source files written in (Go|Java|JSX)$"#
 )]
 fn only_unsupported_production_sources(world: &mut GivnWorld, language: String) {
     let env = outline_project();
     let (relative, source) = match language.as_str() {
         "Go" => ("src/main.go", "package main\n\nfunc main() {}\n"),
         "Java" => ("src/Main.java", "class Main {}\n"),
+        "JSX" => ("src/App.jsx", "export function App() { return <div />; }\n"),
         other => panic!("unsupported fixture language {other}"),
     };
     crate::steps::outline_report_support::write_source(&env, relative, source);
@@ -1827,6 +1828,19 @@ export function makeWidget(): Widget {
 
 const TYPESCRIPT_INTERFACE: &str = "export interface Drawable {\n  draw(): void;\n}\n";
 
+const JAVASCRIPT_WIDGET: &str = r#"export class Widget {
+  count = 0;
+
+  area() {
+    return this.count;
+  }
+}
+
+export function makeWidget() {
+  return new Widget();
+}
+"#;
+
 #[given("a Java production class")]
 fn java_production_class(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root");
@@ -1853,7 +1867,67 @@ fn typescript_production_interface(world: &mut GivnWorld) {
     );
 }
 
-#[given("a mixed Rust Python Java and TypeScript production source set")]
+#[given("a JavaScript production class and function")]
+fn javascript_production_class(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(env, "src/widget.js", JAVASCRIPT_WIDGET);
+}
+
+#[given("a JavaScript production class with a field")]
+fn javascript_production_class_with_field(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(env, "src/widget.js", JAVASCRIPT_WIDGET);
+}
+
+#[given(regex = r#"^a JavaScript production module with the extension "([^"]+)"$"#)]
+fn javascript_production_module(world: &mut GivnWorld, extension: String) {
+    let env = world.env.as_ref().expect("project root");
+    let path = format!("src/queue{extension}");
+    crate::steps::outline_report_support::write_source(env, &path, "function drain() {}\n");
+}
+
+#[given("a JavaScript production arrow-function binding")]
+fn javascript_production_arrow(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/clone.js",
+        "export const clone = (value) => value;\n",
+    );
+}
+
+#[given("a malformed JavaScript production file beside a valid TypeScript production file")]
+fn malformed_javascript_beside_typescript(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/Broken.js",
+        "export function broken( {\n",
+    );
+    crate::steps::outline_report_support::write_source(env, "src/widget.ts", TYPESCRIPT_WIDGET);
+}
+
+#[given("JavaScript test and dependency sources")]
+fn javascript_exclusions(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/kept.js",
+        "class KeptJavaScript {}\n",
+    );
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/widget.test.js",
+        "class IgnoredJavaScript {}\n",
+    );
+    crate::steps::outline_report_support::write_source(
+        env,
+        "src/node_modules/ignored/IgnoredJavaScriptDependency.js",
+        "class IgnoredJavaScriptDependency {}\n",
+    );
+}
+
+#[given("a mixed Rust Python Java TypeScript and JavaScript production source set")]
 fn mixed_production_sources(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root");
     crate::steps::outline_report_support::write_source(env, "src/small.rs", "pub struct Small;\n");
@@ -1868,6 +1942,7 @@ fn mixed_production_sources(world: &mut GivnWorld) {
         JAVA_WIDGET,
     );
     crate::steps::outline_report_support::write_source(env, "src/widget.ts", TYPESCRIPT_WIDGET);
+    crate::steps::outline_report_support::write_source(env, "src/widget.js", JAVASCRIPT_WIDGET);
 }
 
 #[given("a malformed Java production file beside a valid TypeScript production file")]
@@ -1912,6 +1987,15 @@ fn json_unit_with_language(world: &mut GivnWorld, name: String, language: String
     assert!(found, "unit {name} with language {language} not in {value}");
 }
 
+#[then(regex = r#"^the JSON report records (\d+) fields? on "([^"]+)"$"#)]
+fn json_records_field_count(world: &mut GivnWorld, count: u64, name: String) {
+    let value = json_output(world);
+    let found = value["units"].as_array().into_iter().flatten().any(|unit| {
+        unit["name"] == name.as_str() && unit["metrics"]["fields"].as_u64() == Some(count)
+    });
+    assert!(found, "unit {name} with {count} field(s) not in {value}");
+}
+
 #[then(regex = r#"^the JSON report names the function "([^"]+)" with language "([^"]+)"$"#)]
 fn json_function_with_language(world: &mut GivnWorld, name: String, language: String) {
     let value = json_output(world);
@@ -1946,7 +2030,7 @@ fn json_names_all_languages(world: &mut GivnWorld) {
     let languages = value["capabilities"]["languages"]
         .as_array()
         .expect("languages");
-    for language in ["rust", "python", "java", "typescript"] {
+    for language in ["rust", "python", "java", "typescript", "javascript"] {
         assert!(
             languages.iter().any(|value| value == language),
             "missing {language}: {value}"
@@ -1965,16 +2049,16 @@ fn json_records_parse_failure(world: &mut GivnWorld, path: String) {
     assert!(found, "no parse failure for {path}: {value}");
 }
 
-#[then("the JSON report has schema version 4")]
-fn json_schema_version_4(world: &mut GivnWorld) {
+#[then("the JSON report has schema version 5")]
+fn json_schema_version_5(world: &mut GivnWorld) {
     let value = json_output(world);
-    assert_eq!(value["schema_version"], 4, "unexpected schema version");
+    assert_eq!(value["schema_version"], 5, "unexpected schema version");
 }
 
 #[then("stderr names all supported source languages")]
 fn stderr_names_all_supported_languages(world: &mut GivnWorld) {
     let stderr = crate::steps::stderr(world).to_lowercase();
-    for language in ["rust", "python", "java", "typescript"] {
+    for language in ["rust", "python", "java", "typescript", "javascript"] {
         assert!(
             stderr.contains(language),
             "stderr misses {language}: {stderr}"
