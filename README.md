@@ -73,6 +73,12 @@ Invoke the start skill in your coding agent and describe the problem, question, 
 
 You don't need to write tests for every legacy feature up front. Run an initial change to wire up your test runner in `givn/commands.yaml`, migrate existing architecture notes into `docs/arc42/`, and set up one working E2E test boundary. See the [adoption guide](docs/workflow.md#initial-adoption-and-artifact-ownership) for details.
 
+## Projects using Givn
+
+- [`duty2cal`](https://github.com/duty2cal/duty2cal) — Converts a cabin-crew duty plan PDF into a calendar file.
+- [`passuff`](https://github.com/buster/passuff) — Multi-account GitHub PR inbox and desktop notifier for the terminal.
+- [`watn`](https://github.com/buster/watn) — Turns plain-language questions into shell commands or text.
+
 ## Configuration
 
 Add-on configuration is operator-owned. A new change records the effective add-ons in
