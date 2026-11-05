@@ -14,21 +14,21 @@ Release note for every batch commit: `Maki commits now carry the same best-effor
 
 Contract: `CommitAttribution` — `src/cli/attribution.rs` owns the managed trailer; the generated Maki Lua asset is the adapter that contributes model, reasoning, and harness facts. It does not format trailers.
 
-- [ ] **Maki prepares attribution for a revision command**
+- [x] **Maki prepares attribution for a revision command**
   - Design constraints: `assets/agent-integrations/maki/givn-attribution.lua` reads `maki.model.get()` once; identity is `spec`, then `provider/id`, then `id`; reasoning is `thinking_shown`, then `thinking`. The prefix is `export GIVN_ATTRIBUTION_ACTIVE=1 GIVN_ATTRIBUTION_LLM='<identity>' GIVN_ATTRIBUTION_REASONING='<reasoning>' GIVN_ATTRIBUTION_HARNESS='maki' GIT_COMMITTER_NAME='LLM: <identity> via maki'; <command>`, with single-quote escaping. Only a command matching `%f[%w]commit%f[%W]` is rewritten. The layer calls `prev` first, propagates stop/ask, shallow-copies before replacing `command`, and is idempotent in `setup()`. The driver runs the real `maki --trust prompt`, overrides `maki.model.get`, calls `prepare`, and fails unless `maki.api.get_slots()` lists the `project/init.lua` filler for `tool.bash.input`.
-  - [ ] COMMIT: pending -- Batch: maki-attribution
+  - [x] COMMIT: `a022d6bf` -- Batch: maki-attribution
 
-- [ ] **Maki leaves a command that creates no revision unchanged**
+- [x] **Maki leaves a command that creates no revision unchanged**
   - Design constraints: `M.prepare("git status")` returns the exact input string; the slot layer returns the value unchanged; no environment export, no copy, no committer.
-  - [ ] COMMIT: pending -- Batch: maki-attribution
+  - [x] COMMIT: `a022d6bf` -- Batch: maki-attribution
 
-- [ ] **Maki marks a partial attribution context as unavailable**
+- [x] **Maki marks a partial attribution context as unavailable**
   - Design constraints: with `maki.model.get()` returning `nil`, the prefix uses `LLM='unavailable'`, `REASONING='unavailable'`, `HARNESS='maki'`, and omits `GIT_COMMITTER_NAME`; the command is still rewritten and a commit is never blocked.
-  - [ ] COMMIT: pending -- Batch: maki-attribution
+  - [x] COMMIT: `a022d6bf` -- Batch: maki-attribution
 
-- [ ] **Maki marks a missing reasoning mode as unavailable**
+- [x] **Maki marks a missing reasoning mode as unavailable**
   - Design constraints: with a model `spec` and no `thinking_shown`/`thinking`, `LLM` is the identity, `REASONING='unavailable'`, and `GIT_COMMITTER_NAME` is present; this is distinct from the no-model boundary.
-  - [ ] COMMIT: pending -- Batch: maki-attribution
+  - [x] COMMIT: `a022d6bf` -- Batch: maki-attribution
 
 ## Batch: maki-install
 
