@@ -747,6 +747,7 @@ fn then_integrations_exist(world: &mut GivnWorld) {
         ".opencode/plugins/givn-attribution.js",
         ".claude/hooks/givn-attribution.sh",
         ".omp/hooks/pre/givn-attribution.js",
+        ".maki/lua/givn-attribution.lua",
     ] {
         assert!(env.path(path).exists(), "missing {path}");
     }
@@ -761,6 +762,7 @@ fn then_installation_report(world: &mut GivnWorld) {
         ".opencode/plugins/givn-attribution.js",
         ".claude/hooks/givn-attribution.sh",
         ".omp/hooks/pre/givn-attribution.js",
+        ".maki/lua/givn-attribution.lua",
     ] {
         assert!(stdout.contains(path), "missing {path}: {stdout}");
     }

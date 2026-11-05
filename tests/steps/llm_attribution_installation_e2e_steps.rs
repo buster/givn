@@ -50,7 +50,7 @@ fn given_upgrade_project(world: &mut GivnWorld) {
             .status
             .success()
     );
-    let init = common::run_givn(&env, &["init", "--agents", "opencode,claude,omp"]);
+    let init = common::run_givn(&env, &["init", "--agents", "opencode,claude,omp,maki"]);
     assert!(init.status.success());
     // The scenario exercises the versioned rules policy: the plumbing is
     // repository content that the managed upgrade refreshes.
@@ -76,6 +76,7 @@ fn given_upgrade_project(world: &mut GivnWorld) {
         ".claude/hooks/givn-attribution.sh",
         ".claude/settings.local.json",
         ".omp/hooks/pre/givn-attribution.js",
+        ".maki/lua/givn-attribution.lua",
     ] {
         let _ = std::fs::remove_file(root.join(path));
     }
@@ -114,6 +115,7 @@ fn then_managed_commit_contains_attribution(world: &mut GivnWorld) {
         ".claude/hooks/givn-attribution.sh",
         ".claude/settings.local.json",
         ".omp/hooks/pre/givn-attribution.js",
+        ".maki/lua/givn-attribution.lua",
     ] {
         assert!(changed.contains(path), "managed upgrade omitted {path}");
     }
@@ -147,7 +149,7 @@ fn given_upgrade_project_with_preserved_user_hook(world: &mut GivnWorld) {
         .expect("write user hook");
     make_executable(&user_hook);
 
-    let init = common::run_givn(&env, &["init", "--agents", "opencode,claude,omp"]);
+    let init = common::run_givn(&env, &["init", "--agents", "opencode,claude,omp,maki"]);
     assert!(
         init.status.success(),
         "fixture init failed: {}",
@@ -186,6 +188,7 @@ fn given_upgrade_project_with_preserved_user_hook(world: &mut GivnWorld) {
         ".claude/settings.local.json",
         ".omp/hooks/pre/givn-attribution.js",
         ".omp/hooks/pre/givn-timeline.js",
+        ".maki/lua/givn-attribution.lua",
     ] {
         let _ = std::fs::remove_file(root.join(path));
     }
