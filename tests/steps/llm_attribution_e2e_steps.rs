@@ -596,12 +596,7 @@ fn when_omp_prepares_command(world: &mut GivnWorld, command: String) {
 
 #[then(regex = r##"^the prepared command is "([^"]+)"$"##)]
 fn then_prepared_command_is(world: &mut GivnWorld, expected: String) {
-    let prepared = world
-        .omp_attribution
-        .as_ref()
-        .and_then(|state| state.prepared.as_ref())
-        .expect("prepared omp command");
-    assert_eq!(prepared, &expected);
+    assert_eq!(prepared_command(world), expected);
 }
 
 #[then(regex = r##"^the prepared command identifies LLM "([^"]+)"$"##)]
@@ -760,13 +755,230 @@ console.log(JSON.stringify({{ command: result?.input?.command ?? null }}));
 }
 
 fn assert_prepared_env(world: &GivnWorld, name: &str, expected: &str) {
-    let prepared = world
-        .omp_attribution
-        .as_ref()
-        .and_then(|state| state.prepared.as_ref())
-        .expect("prepared omp command");
+    let prepared = prepared_command(world);
     assert!(
         prepared.contains(&format!("{name}='{expected}'")),
         "prepared command does not identify {name} {expected}: {prepared}"
     );
+}
+
+/// The command the last harness prepared, whether the scenario drove omp or
+/// Maki. The two integrations share the environment protocol and the same
+/// assertions.
+fn prepared_command(world: &GivnWorld) -> &str {
+    if let Some(prepared) = world
+        .maki_attribution
+        .as_ref()
+        .and_then(|state| state.prepared.as_ref())
+    {
+        return prepared;
+    }
+    world
+        .omp_attribution
+        .as_ref()
+        .and_then(|state| state.prepared.as_ref())
+        .expect("prepared command")
+}
+
+/// State for the generated Maki attribution integration scenarios.
+#[derive(Debug)]
+pub(crate) struct MakiAttributionState {
+    model: Option<String>,
+    reasoning: Option<String>,
+    prepared: Option<String>,
+    output: Option<Output>,
+}
+
+#[given("a project with the generated Maki attribution integration")]
+fn given_generated_maki_integration(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let root = env.root();
+    assert!(git(&root, &["init"]).status.success());
+    assert!(
+        git(&root, &["config", "user.name", "Human Developer"])
+            .status
+            .success()
+    );
+    assert!(
+        git(&root, &["config", "user.email", "human@example.test"])
+            .status
+            .success()
+    );
+    let output = common::run_givn(&env, &["init", "--agents", "maki"]);
+    assert!(
+        output.status.success(),
+        "givn init failed: stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    assert_eq!(
+        include_str!("../../assets/agent-integrations/maki/givn-attribution.lua"),
+        std::fs::read_to_string(root.join(".maki/lua/givn-attribution.lua"))
+            .expect("read generated Maki attribution integration"),
+        "the generated Maki integration must match the embedded asset"
+    );
+    let manifest = std::fs::read_to_string(root.join(".maki/plugin.toml"))
+        .expect("read generated Maki manifest");
+    assert!(
+        manifest
+            .lines()
+            .any(|line| line.trim() == "session_write = true"),
+        "the generated Maki manifest does not grant session_write: {manifest}"
+    );
+    world.env = Some(env);
+    world.maki_attribution = Some(MakiAttributionState {
+        model: None,
+        reasoning: None,
+        prepared: None,
+        output: None,
+    });
+}
+
+#[given(regex = r##"^Maki's current model is "([^"]+)" at reasoning mode "([^"]+)"$"##)]
+fn given_maki_current_model(world: &mut GivnWorld, model: String, reasoning: String) {
+    let state = world
+        .maki_attribution
+        .as_mut()
+        .expect("Maki attribution state");
+    state.model = Some(model);
+    state.reasoning = Some(reasoning);
+}
+
+#[given(regex = r##"^Maki's current model is "([^"]+)" without a reasoning mode$"##)]
+fn given_maki_current_model_without_reasoning(world: &mut GivnWorld, model: String) {
+    let state = world
+        .maki_attribution
+        .as_mut()
+        .expect("Maki attribution state");
+    state.model = Some(model);
+    state.reasoning = None;
+}
+
+#[given("Maki has no current model")]
+fn given_maki_without_model(world: &mut GivnWorld) {
+    let state = world
+        .maki_attribution
+        .as_mut()
+        .expect("Maki attribution state");
+    state.model = None;
+    state.reasoning = None;
+}
+
+#[when(regex = r##"^Maki prepares the command "([^"]+)"$"##)]
+fn when_maki_prepares_command(world: &mut GivnWorld, command: String) {
+    let state = world
+        .maki_attribution
+        .as_ref()
+        .expect("Maki attribution state");
+    let prepared = super::development_timeline_support::run_maki_attribution(
+        world.env.as_ref().expect("project root"),
+        &command,
+        state.model.as_deref(),
+        state.reasoning.as_deref(),
+    );
+    world
+        .maki_attribution
+        .as_mut()
+        .expect("Maki attribution state")
+        .prepared = Some(prepared);
+}
+
+#[then(regex = r##"^the prepared command identifies reasoning mode "([^"]+)"$"##)]
+fn then_prepared_command_identifies_reasoning(world: &mut GivnWorld, expected: String) {
+    assert_prepared_env(world, "GIVN_ATTRIBUTION_REASONING", &expected);
+}
+
+#[then(regex = r##"^the prepared command identifies committer "([^"]+)"$"##)]
+fn then_prepared_command_identifies_committer(world: &mut GivnWorld, expected: String) {
+    assert_prepared_env(world, "GIT_COMMITTER_NAME", &expected);
+}
+
+#[then("the prepared command carries no committer identity")]
+fn then_prepared_command_has_no_committer(world: &mut GivnWorld) {
+    let prepared = prepared_command(world);
+    assert!(
+        !prepared.contains("GIT_COMMITTER_NAME="),
+        "prepared command carries a committer identity: {prepared}"
+    );
+}
+
+#[when(regex = r##"^Maki prepares and runs a revision command with message "([^"]+)"$"##)]
+fn when_maki_prepares_and_runs_commit(world: &mut GivnWorld, message: String) {
+    let root = world
+        .env
+        .as_ref()
+        .expect("project root")
+        .root()
+        .to_path_buf();
+    std::fs::write(root.join("fixture.txt"), &message).expect("write fixture");
+    assert!(git(&root, &["add", "fixture.txt"]).status.success());
+
+    let state = world
+        .maki_attribution
+        .as_ref()
+        .expect("Maki attribution state");
+    let prepared = super::development_timeline_support::run_maki_attribution(
+        world.env.as_ref().expect("project root"),
+        &format!("git commit -m '{message}'"),
+        state.model.as_deref(),
+        state.reasoning.as_deref(),
+    );
+    {
+        let state = world
+            .maki_attribution
+            .as_mut()
+            .expect("Maki attribution state");
+        state.prepared = Some(prepared.clone());
+    }
+    let output = Command::new("sh")
+        .arg("-c")
+        .arg(&prepared)
+        .current_dir(&root)
+        .env("PATH", givn_path())
+        .output()
+        .expect("run attributed Maki command");
+    world
+        .maki_attribution
+        .as_mut()
+        .expect("Maki attribution state")
+        .output = Some(output);
+}
+
+#[then("the attributed Maki commit succeeds")]
+fn then_maki_commit_succeeds(world: &mut GivnWorld) {
+    let output = world
+        .maki_attribution
+        .as_ref()
+        .and_then(|state| state.output.as_ref())
+        .expect("Maki commit output");
+    assert!(
+        output.status.success(),
+        "Maki commit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[then(regex = r##"^its Maki committer identifies "([^"]+)" and "([^"]+)"$"##)]
+fn then_maki_committer_identifies(world: &mut GivnWorld, llm: String, harness: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%cn", "HEAD"]);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains(&format!("LLM: {llm} via {harness}")));
+}
+
+#[then(regex = r##"^its Maki message identifies LLM "([^"]+)"$"##)]
+fn then_maki_message_identifies_llm(world: &mut GivnWorld, llm: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains(&format!("Co-Authored-By: {llm}/")));
+}
+
+#[then(regex = r##"^its Maki message identifies reasoning mode "([^"]+)"$"##)]
+fn then_maki_message_identifies_reasoning(world: &mut GivnWorld, reasoning: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains(&format!("/{reasoning}@maki with Givn ")));
 }

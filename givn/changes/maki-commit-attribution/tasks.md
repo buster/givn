@@ -34,25 +34,25 @@ Contract: `CommitAttribution` — `src/cli/attribution.rs` owns the managed trai
 
 Contract: `InitializeProject` — `src/skills/targets.rs` installs the generated assets and merges user-owned Maki configuration; `src/cli/init.rs` is the terminal adapter over it. `.maki/plugin.toml` and `.maki/init.lua` stay user-owned.
 
-- [ ] **The generated Maki permission manifest names the session read**
+- [x] **The generated Maki permission manifest names the session read**
   - Design constraints: `assets/agent-integrations/maki/plugin.toml` grants `fs_read`, `fs_write`, `run`, `session_read`, `session_write`, and revokes `net`, `env`, `agent`, `session_settings`, `input`. The file comment states that the attribution layer needs `session_write` and never writes session content. Update `assert_maki_merged_files` and the manifest assertions to the new grant.
-  - [ ] COMMIT: pending -- Batch: maki-install
+  - [x] COMMIT: `b44ef4ee` -- Batch: maki-install
 
-- [ ] **Initializing a Maki target installs the attribution integration**
+- [x] **Initializing a Maki target installs the attribution integration**
   - Design constraints: add `.maki/lua/givn-attribution.lua` to `MAKI_INTEGRATIONS`; copy the asset verbatim; add the `-- givn:begin:attribution` fence to `MAKI_FENCE_LINES`; merge both fences in memory and write `init.lua` once. `src/cli/init.rs` prints `attribution integration: .maki/lua/givn-attribution.lua` beside the reporter. Add the module to `ignore_entries()`, `is_rule_path()`, and the rule-shape test.
-  - [ ] COMMIT: pending -- Batch: maki-install
+  - [x] COMMIT: `b44ef4ee` -- Batch: maki-install
 
-- [ ] **Synchronizing an existing Maki manifest adds the reporter and attribution grants**
+- [x] **Synchronizing an existing Maki manifest adds the reporter and attribution grants**
   - Design constraints: `MAKI_REQUIRED_GRANTS` is `fs_read`, `fs_write`, `run`, `session_read`, `session_write`. For the legacy manifest, add missing grants inside `[permissions]` only; never remove or flip an existing key; add no new `= false` line. The retired `Synchronizing an existing Maki manifest adds only the session read grant` scenario is removed by the archive merge and replaced by this scenario.
-  - [ ] COMMIT: pending -- Batch: maki-install
+  - [x] COMMIT: `b44ef4ee` -- Batch: maki-install
 
-- [ ] **Synchronizing an unmodified generated Maki manifest grants attribution**
+- [x] **Synchronizing an unmodified generated Maki manifest grants attribution**
   - Design constraints: ship `assets/agent-integrations/maki/plugin-before-attribution.toml` as the exact prior asset; compare the existing file after CRLF normalization; on equality replace it with the current `plugin.toml` and reinstall the module. This is the only automatic `session_write = false` -> `true` path. The old asset's sha256 is `755cf4a1a22f1c878b10e3afdf8accd8aacef7b7edd9f1ee6b1601723e61681b`.
-  - [ ] COMMIT: pending -- Batch: maki-install
+  - [x] COMMIT: `b44ef4ee` -- Batch: maki-install
 
-- [ ] **Synchronizing an edited Maki manifest preserves its attribution revocation and names the needed grant**
+- [x] **Synchronizing an edited Maki manifest preserves its attribution revocation and names the needed grant**
   - Design constraints: a manifest that is not the exact prior asset keeps its explicit `session_write = false`; the merge still adds other missing grants; stderr prints `warning: .maki/plugin.toml sets session_write = false; Maki commit attribution requires session_write = true`; the file is never widened.
-  - [ ] COMMIT: pending -- Batch: maki-install
+  - [x] COMMIT: `b44ef4ee` -- Batch: maki-install
 
 ## Batch: maki-e2e
 

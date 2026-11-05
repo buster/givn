@@ -2091,6 +2091,71 @@ pub fn run_maki_driver_with(
     run_maki_init(env, &maki_driver_script_with(prelude, events))
 }
 
+/// Run the generated Maki attribution module through the real harness: the
+/// shipped fence registers the `tool.bash.input` layer, the driver overrides
+/// the focused model, and `prepare` returns the command the layer would hand
+/// to Maki. The driver also proves the layer is registered and owned by the
+/// project `init.lua`. Returns the prepared command without its trailing
+/// newline.
+pub fn run_maki_attribution(
+    env: &common::TestEnv,
+    command: &str,
+    model: Option<&str>,
+    reasoning: Option<&str>,
+) -> String {
+    let module = env.path(".maki/lua/givn-attribution.lua");
+    assert!(
+        module.is_file(),
+        "the generated Maki attribution module is missing: {}",
+        module.display()
+    );
+    let model_override = match (model, reasoning) {
+        (Some(spec), Some(level)) => format!(
+            "  return {{ spec = {}, thinking_shown = {} }}",
+            lua_literal(&Value::String(spec.to_string())),
+            lua_literal(&Value::String(level.to_string()))
+        ),
+        (Some(spec), None) => format!(
+            "  return {{ spec = {} }}",
+            lua_literal(&Value::String(spec.to_string()))
+        ),
+        (None, _) => "  return nil".to_string(),
+    };
+    let command = lua_literal(&Value::String(command.to_string()));
+    let driver = format!(
+        r#"-- Givn Maki attribution driver: the shipped fences above ran verbatim;
+-- the focused model is the scenario fixture and the module is the generated one.
+local marker = maki.fs.write(".maki-driver-loaded", "loaded\n")
+if not marker then
+  error("the driver's load marker could not be written")
+end
+local attribution = require("givn-attribution")
+maki.model.get = function()
+{model_override}
+end
+local slots = maki.api.get_slots()
+local entry = slots["tool.bash.input"]
+if type(entry) ~= "table" or type(entry.fillers) ~= "table" then
+  error("the attribution layer did not register tool.bash.input")
+end
+local registered = false
+for _, filler in ipairs(entry.fillers) do
+  if filler == "project/init.lua" then
+    registered = true
+  end
+end
+if not registered then
+  error("the attribution layer is not owned by project/init.lua")
+end
+maki.fs.write(".maki-attribution-prepared", attribution.prepare({command}) .. "\n")
+"#
+    );
+    run_maki_init(env, &driver);
+    let prepared = std::fs::read_to_string(env.path(".maki-attribution-prepared"))
+        .expect("read the prepared Maki command");
+    prepared.trim_end_matches('\n').to_string()
+}
+
 /// The generated Maki reporter and fence must exist before any driver runs: a
 /// driver against a hand-written file would not be the generated reporter.
 fn assert_maki_reporter(env: &common::TestEnv) {

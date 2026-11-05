@@ -107,6 +107,8 @@ pub struct GivnWorld {
     pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
     /// State for the generated omp attribution integration scenarios.
     pub(crate) omp_attribution: Option<llm_attribution_e2e_steps::OmpAttributionState>,
+    /// State for the generated Maki attribution integration scenarios.
+    pub(crate) maki_attribution: Option<llm_attribution_e2e_steps::MakiAttributionState>,
     /// Captured stdout/stderr/exit of the last `givn` invocation.
     last_output: Option<Output>,
     /// Output from the previous command in a parity scenario.
