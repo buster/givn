@@ -1,6 +1,7 @@
 use crate::config::overlay::load_effective;
 use crate::state::{ChangeState, list_archived, list_changes};
 use anyhow::{Result, bail};
+use std::path::Path;
 
 /// Instruction ids served outside the artifact manifest. They resolve through
 /// the same cascade and are named in the unknown-id diagnostic.
@@ -199,7 +200,13 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
     let readme_hint = readme_nudge(&project_root, &manifest);
 
     match changes.len() {
-        0 => report_no_active_changes(&archived, &unproven, json, readme_hint),
+        0 => report_no_active_changes(
+            &archived,
+            &unproven,
+            capability_state(&project_root),
+            json,
+            readme_hint,
+        ),
         1 => report_change(
             &changes[0],
             manifest.addons.domain_modeling,
@@ -254,9 +261,70 @@ fn report_not_initialised(json: bool) -> Result<()> {
     }
 }
 
+/// Count permanent use cases and feature files under `givn/specs`. The routing
+/// step needs this to tell a modelled capability area from a greenfield one
+/// without inspecting the tree itself.
+fn capability_state(project_root: &Path) -> (usize, usize) {
+    let specs_root = project_root.join("givn/specs");
+    let mut usecases = 0;
+    let mut features = 0;
+    let Ok(entries) = std::fs::read_dir(&specs_root) else {
+        return (0, 0);
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+        let narrative = if path.file_name().and_then(|name| name.to_str()) == Some("fragments") {
+            path.join("fragment.md")
+        } else {
+            path.join("usecase.md")
+        };
+        if narrative.exists() {
+            usecases += 1;
+        }
+        features += count_feature_files(&path);
+    }
+    (usecases, features)
+}
+
+fn count_feature_files(dir: &Path) -> usize {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return 0;
+    };
+    entries
+        .flatten()
+        .map(|entry| {
+            let path = entry.path();
+            if path.is_dir() {
+                count_feature_files(&path)
+            } else if path.extension().and_then(|ext| ext.to_str()) == Some("feature") {
+                1
+            } else {
+                0
+            }
+        })
+        .sum()
+}
+
+/// One sentence naming the capability model's state. The greenfield wording
+/// also names the routing consequence, because a bare count does not tell the
+/// reader what to do with it.
+fn capability_summary((usecases, features): (usize, usize)) -> String {
+    if usecases == 0 && features == 0 {
+        "Capabilities: none — `givn/specs` holds no use case, so no capability area is modelled; ideation is the default start for new work.".to_string()
+    } else {
+        format!(
+            "Capabilities: {usecases} use case(s), {features} feature file(s) under `givn/specs`."
+        )
+    }
+}
+
 fn report_no_active_changes(
     archived: &[String],
     unproven: &[String],
+    capabilities: (usize, usize),
     json: bool,
     readme_hint: Option<String>,
 ) -> Result<()> {
@@ -272,17 +340,19 @@ fn report_no_active_changes(
     };
     let summary = if !unproven.is_empty() {
         format!(
-            "No active changes. {} unproven archive candidate(s): {}.",
+            "No active changes. {} unproven archive candidate(s): {}. {}",
             unproven.len(),
-            unproven.join(", ")
+            unproven.join(", "),
+            capability_summary(capabilities)
         )
     } else if archived.is_empty() {
-        "No changes exist yet.".to_string()
+        format!("No changes exist yet. {}", capability_summary(capabilities))
     } else {
         format!(
-            "No active changes. {} archived change(s): {}.",
+            "No active changes. {} archived change(s): {}. {}",
             archived.len(),
-            archived.join(", ")
+            archived.join(", "),
+            capability_summary(capabilities)
         )
     };
 
@@ -624,6 +694,33 @@ mod tests {
         assert!(overview.contains("givn status"));
         assert!(overview.contains("use case"));
         assert!(overview.contains("Personas"));
+    }
+
+    #[test]
+    fn capability_summary_calls_a_tree_without_specs_greenfield() {
+        let dir = std::env::temp_dir().join("givn_instructions_test_greenfield");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        assert_eq!(capability_state(&dir), (0, 0));
+
+        let summary = capability_summary(capability_state(&dir));
+        assert!(summary.contains("ideation is the default start"));
+    }
+
+    #[test]
+    fn capability_summary_counts_use_cases_and_feature_files() {
+        let dir = std::env::temp_dir().join("givn_instructions_test_capability_counts");
+        let _ = std::fs::remove_dir_all(&dir);
+        let usecase = dir.join("givn/specs/author-change");
+        std::fs::create_dir_all(usecase.join("nested")).unwrap();
+        std::fs::write(usecase.join("usecase.md"), "# Author change").unwrap();
+        std::fs::write(usecase.join("behaviour.feature"), "Feature: x").unwrap();
+        std::fs::write(usecase.join("nested/deep.feature"), "Feature: y").unwrap();
+
+        assert_eq!(capability_state(&dir), (1, 2));
+        let summary = capability_summary((1, 2));
+        assert!(summary.contains("1 use case(s), 2 feature file(s)"));
+        assert!(!summary.contains("ideation is the default start"));
     }
 
     #[test]
