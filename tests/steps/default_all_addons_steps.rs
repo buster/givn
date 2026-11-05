@@ -142,6 +142,15 @@ fn project_with_challenge_enabled(world: &mut GivnWorld) {
     replace_addons(world, "addons:\n  challenge: true");
 }
 
+#[given("a project with challenge enabled and dev_principles and architecture_principles disabled")]
+fn project_with_principle_addons_disabled(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    replace_addons(
+        world,
+        "addons:\n  challenge: true\n  dev_principles: false\n  architecture_principles: false",
+    );
+}
+
 #[given("a project with challenge explicitly disabled")]
 fn project_with_challenge_disabled(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
@@ -530,8 +539,8 @@ fn challenge_skill_directs_to_instruction(world: &mut GivnWorld) {
 
 #[then("that instruction requires research and evidence before questions")]
 fn challenge_requires_research(world: &mut GivnWorld) {
-    let text = challenge_guidance(world);
-    assert!(text.contains("Investigate first"), "{text}");
+    let text = challenge_guidance(world).to_lowercase();
+    assert!(text.contains("investigate first"), "{text}");
     assert!(text.contains("evidence"), "{text}");
 }
 
@@ -539,7 +548,7 @@ fn challenge_requires_research(world: &mut GivnWorld) {
     "discoverable defects are reported as bounded actionable findings and hypotheses are labeled"
 )]
 fn challenge_reports_bounded_findings(world: &mut GivnWorld) {
-    let text = challenge_guidance(world);
+    let text = challenge_guidance(world).to_lowercase();
     assert!(text.contains("bounded"), "{text}");
     assert!(text.contains("hypotheses"), "{text}");
 }
@@ -547,7 +556,9 @@ fn challenge_reports_bounded_findings(world: &mut GivnWorld) {
 #[then("questions are reserved for unresolved human decisions")]
 fn challenge_questions_reserved(world: &mut GivnWorld) {
     assert!(
-        challenge_guidance(world).contains("unresolved human"),
+        challenge_guidance(world)
+            .to_lowercase()
+            .contains("unresolved human"),
         "the challenge instruction does not reserve questions for unresolved human decisions"
     );
 }
@@ -556,7 +567,7 @@ fn challenge_questions_reserved(world: &mut GivnWorld) {
     "evidence includes counterexamples, discriminating assertions, root causes, compatibility and failure recovery where relevant"
 )]
 fn challenge_evidence_includes(world: &mut GivnWorld) {
-    let text = challenge_guidance(world);
+    let text = challenge_guidance(world).to_lowercase();
     for needle in [
         "counterexample",
         "discriminating assertion",
@@ -583,16 +594,58 @@ fn challenge_performance_requires_measurement(world: &mut GivnWorld) {
     );
 }
 
-#[then(
-    "general engineering principles are referenced canonically rather than copied into a checklist"
-)]
-fn challenge_references_engineering_principles(world: &mut GivnWorld) {
+#[then("the challenge instruction names the canonical engineering principles")]
+fn challenge_names_canonical_principles(world: &mut GivnWorld) {
     let text = challenge_guidance(world);
     assert!(text.contains("givn instructions dev-principles"), "{text}");
     assert!(
-        !text.contains("## Engineering principles checklist"),
+        text.contains("givn instructions architecture-principles"),
         "{text}"
     );
+}
+
+#[then("the challenge instruction includes the condensed engineering principles")]
+fn challenge_includes_condensed_principles(world: &mut GivnWorld) {
+    let text = challenge_guidance(world);
+    for needle in [
+        "Correctness first; optimize for next maintainer.",
+        "Answer decisions at last responsible moment.",
+    ] {
+        assert!(
+            text.contains(needle),
+            "challenge guidance lacks {needle}: {text}"
+        );
+    }
+}
+
+#[then("the challenge instruction requires the quality lenses")]
+fn challenge_requires_quality_lenses(world: &mut GivnWorld) {
+    let text = challenge_guidance(world).to_lowercase();
+    for needle in [
+        "quality lenses",
+        "steelman",
+        "test quality",
+        "predicate domain",
+    ] {
+        assert!(
+            text.contains(needle),
+            "challenge guidance lacks {needle}: {text}"
+        );
+    }
+}
+
+#[then("the challenge instruction omits the disabled engineering principles")]
+fn challenge_omits_disabled_principles(world: &mut GivnWorld) {
+    let text = challenge_guidance(world);
+    for needle in [
+        "Correctness first; optimize for next maintainer.",
+        "Answer decisions at last responsible moment.",
+    ] {
+        assert!(
+            !text.contains(needle),
+            "challenge guidance unexpectedly contains {needle}: {text}"
+        );
+    }
 }
 
 #[then(
