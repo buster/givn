@@ -397,6 +397,7 @@ fn fossil(env: &crate::common::TestEnv, args: &[&str]) -> std::process::Output {
         .current_dir(env.root())
         .env("FOSSIL_USER", "fixture")
         .env("USER", "fixture")
+        .env("FOSSIL_HOME", env.fossil_home())
         .output()
         .expect("run fossil fixture command")
 }

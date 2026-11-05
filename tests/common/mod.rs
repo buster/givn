@@ -45,6 +45,18 @@ impl TestEnv {
     pub fn backend(&self) -> BackendKind {
         self.backend
     }
+
+    /// A private Fossil config home. Parallel scenarios otherwise share
+    /// `~/.fossil`, and its SQLite database locks under concurrent
+    /// `fossil init` calls.
+    pub fn fossil_home(&self) -> PathBuf {
+        let home = match &self.fossil_repo {
+            Some(repo) => repo.path().join("home"),
+            None => std::env::temp_dir().join(format!("givn-fossil-home-{}", std::process::id())),
+        };
+        std::fs::create_dir_all(&home).expect("create the Fossil config home");
+        home
+    }
 }
 
 /// A bare temp directory with no `givn/` subtree — for the uninitialised
@@ -312,7 +324,7 @@ pub fn run_givn_with_envs(env: &TestEnv, args: &[&str], environments: &[(&str, &
 /// Invoke the `givn` binary from a specific working directory inside the
 /// fixture (nested-project scenarios).
 pub fn run_givn_with_envs_in(
-    _env: &TestEnv,
+    env: &TestEnv,
     cwd: &std::path::Path,
     args: &[&str],
     environments: &[(&str, &str)],
@@ -327,6 +339,9 @@ pub fn run_givn_with_envs_in(
         .env_remove("GIVN_FEATURES")
         // Fossil refuses to commit without a user; Git fixtures ignore it.
         .env("FOSSIL_USER", "fixture");
+    if env.backend == BackendKind::Fossil {
+        command.env("FOSSIL_HOME", env.fossil_home());
+    }
     for (key, value) in environments {
         command.env(key, value);
     }
@@ -351,14 +366,19 @@ pub fn run_givn_with_stdin_and_envs(
     use std::process::Stdio;
 
     let bin = env!("CARGO_BIN_EXE_givn");
-    let mut child = Command::new(bin)
+    let mut child = Command::new(bin);
+    child
         .args(args)
         .current_dir(env.root())
         .env_remove("GIVN_FEATURES")
         .envs(environments.iter().copied())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
+        .stderr(Stdio::piped());
+    if env.backend == BackendKind::Fossil {
+        child.env("FOSSIL_HOME", env.fossil_home());
+    }
+    let mut child = child
         .spawn()
         .expect("spawn givn subprocess with piped stdin");
 
@@ -779,18 +799,20 @@ pub fn commit_fixture(env: &TestEnv) {
 
 /// Run a Fossil command in the fixture root with a deterministic user.
 pub fn fossil(env: &TestEnv, args: &[&str]) -> Output {
-    Command::new("fossil")
+    let mut command = Command::new("fossil");
+    command
         .args(args)
         .current_dir(env.root())
         .env("FOSSIL_USER", "fixture")
         .env("USER", "fixture")
-        .output()
-        .expect("spawn fossil subprocess")
+        .env("FOSSIL_HOME", env.fossil_home());
+    command.output().expect("spawn fossil subprocess")
 }
 
 /// Turn the fixture into a real Fossil checkout and commit its initial state.
 pub fn fossil_init(env: &TestEnv) {
     fossil_checkout(env);
+    ignore_history_store(env);
     fossil_commit_all(env, "fixture: initial state");
 }
 
@@ -844,7 +866,27 @@ pub fn make_fossil_root_uncommitted() -> TestEnv {
     env.backend = BackendKind::Fossil;
     env.fossil_repo = Some(TempDir::new().expect("create fossil repo temp dir"));
     fossil_checkout(&env);
+    ignore_history_store(&env);
     env
+}
+
+/// A fixture that ran `givn init` before the Fossil checkout existed already
+/// has the record store on disk. Ignore it before the first `addremove`, as a
+/// real project's `givn init` would have done in the checkout.
+fn ignore_history_store(env: &TestEnv) {
+    let ignore = fossil(
+        env,
+        &[
+            "settings",
+            "ignore-glob",
+            givn::history::FOSSIL_IGNORE_ENTRY,
+        ],
+    );
+    assert!(
+        ignore.status.success(),
+        "fossil settings ignore-glob failed: {}",
+        String::from_utf8_lossy(&ignore.stderr)
+    );
 }
 
 /// Record all pending fixture writes and commit them.

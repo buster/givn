@@ -688,17 +688,6 @@ fn assert_ignore_glob_names_record(env: &common::TestEnv) {
     }
 }
 
-#[given("a project root with givn/ initialised under Git")]
-fn project_root_initialised_under_git(world: &mut GivnWorld) {
-    let env = common::make_init_root();
-    assert!(
-        common::is_git_repo(&env),
-        "the fixture must be a real Git worktree: {}",
-        env.root().display()
-    );
-    world.env = Some(env);
-}
-
 #[given("a project root with givn/ initialised inside a Git repository")]
 fn project_root_initialised_inside_a_git_repository(world: &mut GivnWorld) {
     // Unlike `make_init_root`, the repository exists before init: the tracked
