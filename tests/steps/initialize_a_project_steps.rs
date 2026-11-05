@@ -36,6 +36,44 @@ fn project_with_legacy_maki_manifest(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a project with the previous generated Maki permission manifest")]
+fn project_with_previous_generated_maki_manifest(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let out = common::run_givn(&env, &["init", "--agents", "maki"]);
+    assert!(
+        out.status.success(),
+        "givn init --agents maki failed: {}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    std::fs::write(
+        env.path(".maki/plugin.toml"),
+        include_str!("../../assets/agent-integrations/maki/plugin-before-attribution.toml"),
+    )
+    .expect("write the previous generated Maki manifest");
+    std::fs::remove_file(env.path(".maki/lua/givn-attribution.lua"))
+        .expect("remove the generated attribution integration");
+    world.env = Some(env);
+}
+
+#[given("a project with an edited Maki permission manifest that revokes the attribution grant")]
+fn project_with_edited_maki_manifest(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let out = common::run_givn(&env, &["init", "--agents", "maki"]);
+    assert!(
+        out.status.success(),
+        "givn init --agents maki failed: {}{}",
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let edited = format!(
+        "{}\n# user note\n",
+        include_str!("../../assets/agent-integrations/maki/plugin-before-attribution.toml")
+    );
+    std::fs::write(env.path(".maki/plugin.toml"), edited).expect("write the edited Maki manifest");
+    world.env = Some(env);
+}
+
 fn maki_manifest(world: &GivnWorld) -> String {
     let env = world
         .env
@@ -95,6 +133,42 @@ fn manifest_grants(world: &mut GivnWorld, path: String, grant: String) {
         Some(format!("{grant} = true").as_str()),
         "the synchronized manifest does not grant `{grant}`: {manifest:?}"
     );
+}
+
+#[then(regex = r#"^the project's "([^"]+)" revokes "([^"]+)"$"#)]
+fn manifest_revokes(world: &mut GivnWorld, path: String, key: String) {
+    assert_eq!(
+        path, ".maki/plugin.toml",
+        "the scenario named an unexpected manifest: {path}"
+    );
+    let manifest = maki_manifest(world);
+    assert_eq!(
+        manifest_line(&manifest, &key).as_deref(),
+        Some(format!("{key} = false").as_str()),
+        "the project's manifest does not revoke `{key}`: {manifest:?}"
+    );
+}
+
+#[then("the file \".maki/init.lua\" contains the attribution fence")]
+fn maki_init_contains_attribution_fence(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let init = std::fs::read_to_string(env.path(".maki/init.lua")).expect("read .maki/init.lua");
+    for line in [
+        "-- givn:begin:attribution",
+        "local attribution_ok, attribution = pcall(require, \"givn-attribution\")",
+        "if attribution_ok and type(attribution) == \"table\" and attribution.setup then",
+        "  attribution.setup()",
+        "end",
+        "-- givn:end:attribution",
+    ] {
+        assert!(
+            init.contains(line),
+            "the generated .maki/init.lua lacks the attribution fence line {line:?}: {init:?}"
+        );
+    }
 }
 
 #[then("the project's \".maki/plugin.toml\" keeps the permission keys the user wrote")]

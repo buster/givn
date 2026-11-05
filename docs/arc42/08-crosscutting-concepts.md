@@ -576,7 +576,7 @@ There are two distinct mechanisms.
 
 ### 8.12a Commit attribution environment
 
-OpenCode, Claude Code, and omp integrations set the process-scoped Givn
+OpenCode, Claude Code, omp, and Maki integrations set the process-scoped Givn
 attribution variables for the shell commands they prepare. The values identify
 the active model, reasoning mode, and harness, using `unavailable` where a
 harness has no value. Claude exports these variables for the complete Bash
@@ -584,6 +584,14 @@ command so compound commands and shell wrappers such as RTK preserve them. The c
 `commit-msg` hook consumes the variables only when `GIVN_ATTRIBUTION_ACTIVE` is
 present, stamps only the managed co-author attribution, and never blocks a
 commit when context or the installed binary is absent.
+
+Maki exports the values from a `tool.bash.input` layer that runs before the
+Bash call is parsed. The layer reads `maki.model.get()` for the focused
+session's model and thinking level, rewrites only a command whose text names a
+revision verb, and leaves every other command untouched. Maki requires the
+plugin to hold `run`, `session_read`, and `session_write` for that layer; the
+generated manifest grants all three, and a manifest that explicitly revokes
+`session_write` is preserved with a warning rather than silently widened.
 
 ### Configurable post hooks
 
@@ -1006,16 +1014,18 @@ stale reporter degrades to rejected events with a warning instead of a corrupt
 store.
 
 **Reporters.** Four supported harnesses execute an agent and get a generated
-reporter — omp, opencode, Claude Code, and Maki — while the `agents` target is a
-skills mirror with no runtime and gets none. Each reporter is installed beside
-that harness's other integration and is discovered or registered by the
-harness's own convention (`pre` hook factory, plugin, registered command hook,
-or a managed fence in Maki's `init.lua`); those written in the harness's
-language import nothing from a type package, so no dependency pin can drift
-under the asset. Maki is also a full skills target: it receives
-`.maki/skills/<name>/SKILL.md` and its development reporter, but no generated
-commands. Its two configuration files (`.maki/init.lua`, `.maki/plugin.toml`)
-are merged, never replaced. Their observable asymmetries, all derived from what the
+reporter — omp, opencode, Claude Code, and Maki — and each also receives its
+commit-attribution integration where the harness prepares shell commands,
+while the `agents` target is a skills mirror with no runtime and gets none.
+Each reporter is installed beside that harness's other integration and is
+discovered or registered by the harness's own convention (`pre` hook factory,
+plugin, registered command hook, or a managed fence in Maki's `init.lua`);
+those written in the harness's language import nothing from a type package, so
+no dependency pin can drift under the asset. Maki is also a full skills
+target: it receives `.maki/skills/<name>/SKILL.md`, its development reporter,
+and its attribution integration, but no generated commands. Its two
+configuration files (`.maki/init.lua`, `.maki/plugin.toml`) are merged, never
+replaced. Their observable asymmetries, all derived from what the
 installed versions actually expose, are deliberate: omp and opencode report
 in-process and stamp their own timestamps where their events carry none, Claude
 Code runs one process per hook so its mapping, pending start timestamps, and
@@ -1030,8 +1040,9 @@ subagent's transcript tool calls under its own session, and reads question
 answers and full-mode tool output from `tool_result` blocks. The earlier 0.6.3
 headless observation (no subagent span, no task list without a UI) is a
 version-specific historical limit, not a current one. Maki
-additionally gates `.maki/` configuration on folder trust, so its reporter is
-active only in a project the developer has trusted for Maki. A signal a harness
+additionally gates `.maki/` configuration on folder trust, so its reporter and
+attribution integration are active only in a project the developer has trusted
+for Maki. A signal a harness
 cannot deliver — token usage on a background subagent launch, a duration broken
 out of permission waiting, per-subagent tokens Maki never reports — is recorded
 as missing, never as zero, and the summary states how many entries were

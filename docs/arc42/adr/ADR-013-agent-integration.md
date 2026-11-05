@@ -86,13 +86,21 @@ Claude Code and OpenCode skill slash, OMP `/skill:<name>`, the neutral `agents`
 target's skill discovery, and Maki's explicit/agent-selected skill. The
 ownership rule for surrounding content is unchanged.
 
+The `maki-commit-attribution` change amended this decision again: a selected
+`maki` target also receives the generated commit-attribution module under
+`.maki/lua/`, loaded by a second managed `-- givn:begin:attribution` fence in
+`.maki/init.lua`, and `.maki/plugin.toml` gains the harness-required
+`session_write` grant. The merge discipline is unchanged; an exact prior
+generated manifest is the only revision Givn rewrites, and an edited manifest
+keeps its explicit revocation.
+
 ### Consequences
 
 - Skills are written under selected `.opencode/`, `.agents/`, `.claude/`,
   `.omp/`, and `.maki/` locations. No target receives generated commands.
-- A selected `maki` target receives skills and the development reporter;
-  `.maki/init.lua` and `.maki/plugin.toml` are merged, never replaced, so a
-  hand-written Maki config keeps its content.
+- A selected `maki` target receives skills, the development reporter, and the
+  commit-attribution integration; `.maki/init.lua` and `.maki/plugin.toml` are
+  merged, never replaced, so a hand-written Maki config keeps its content.
 - The always-on `givn-project` block and the optional `communication-policy`
   block are separately managed when applicable; the retired `absolute-mode`
   block is removed during sync.

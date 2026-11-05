@@ -53,8 +53,8 @@ overwritten by addon scaffolding.
 
 The commit flow is:
 
-1. An OpenCode, Claude Code, or omp integration provides optional attribution
-   values to the shell process that invokes Git.
+1. An OpenCode, Claude Code, omp, or Maki integration provides optional
+   attribution values to the shell process that invokes Git.
 2. Git resolves the committer identity from that process environment and starts
    the commit operation.
 3. The local dispatcher runs an existing `commit-msg` hook first, preserving its
@@ -105,6 +105,19 @@ for any other call. omp re-validates and runs the revised command, so the
 exported environment reaches the Git process that invokes the shared hook. A
 missing model leaves the LLM value as `unavailable` and omits the committer
 override; the harness marker is still written.
+
+The Maki path is ordered as follows: Maki loads
+`.maki/lua/givn-attribution.lua` through the managed fence in
+`.maki/init.lua`; before a `bash` tool call is parsed, the `tool.bash.input`
+layer reads `maki.model.get()` for the focused session's model and thinking
+level; it returns the input with the same attribution exports when the command
+text names a revision verb, and leaves every other call untouched. Maki runs
+the revised command, so the exported environment reaches the Git process that
+invokes the shared hook. A missing model leaves the LLM and reasoning values
+as `unavailable` and omits the committer override. Maki gates the layer on
+`run`, `session_read`, and `session_write`; a generated manifest that
+explicitly revokes `session_write` is preserved and synchronization prints the
+repair instead of widening the file.
 
 ## 6.2 `givn new <change-id>`
 
@@ -711,10 +724,11 @@ stdin is not readable JSON at all.
 
 Four reporters feed that intake, one per supported harness, and each is
 installed in that harness's own generated locations (`src/skills/targets.rs`).
-Maki is the exception to "beside the commit-attribution integration that harness
-already gets": it has no attribution asset, so its three files (the module, the
-merged grants, and the merged `init.lua` fence) are its only integration. They
-differ only in where their input comes from:
+Each reporter is installed beside the commit-attribution integration the same
+harness receives. Maki's generated set is the attribution module, the reporter
+module, the merged grants, and the two managed fences in `init.lua`; the
+attribution layer runs before the Bash call and rewrites only revision
+commands. The reporters differ only in where their input comes from:
 
 | Harness | Capture order |
 |---|---|

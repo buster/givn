@@ -218,9 +218,12 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
                 "omp" => {
                     println!("  attribution integration: .omp/hooks/pre/givn-attribution.js")
                 }
-                "maki" => println!(
-                    "  development reporter: .maki/lua/givn-timeline.lua + .maki/plugin.toml + .maki/init.lua"
-                ),
+                "maki" => {
+                    println!("  attribution integration: .maki/lua/givn-attribution.lua");
+                    println!(
+                        "  development reporter: .maki/lua/givn-timeline.lua + .maki/plugin.toml + .maki/init.lua"
+                    );
+                }
                 _ => {}
             }
         }

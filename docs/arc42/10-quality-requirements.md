@@ -117,6 +117,7 @@ graph TD
 | Q-121 | Default capability | A project runs `givn init` without `--no-addons`, or writes a partial `addons:` block. | Every registered add-on is enabled, including outline and architecture_principles; a missing key resolves to enabled, and only an explicit `false` disables a flag. |
 | Q-122 | Commit publication | `givn commit` is run without paths or with a path outside the checkout. | It refuses before publication, names the requirement or unsafe path, and preserves unrelated staged/worktree changes. |
 | Q-123 | Archive verification reuse | A retry follows a failure after one scope succeeded. | The successful scope's evidence is reused only when its inputs/result still match; a shared source/spec/settings change invalidates both scopes; a single verify-command change invalidates only its own scope. |
+| Q-124 | Commit attribution | A Maki session with a focused model prepares and runs a Bash command that creates a revision. | The generated attribution layer returns the command with attribution exports for the model, reasoning mode, and Maki harness; a command creating no revision is unchanged, and a missing model yields `unavailable`. |
 
 ## 10.3 Verification Signals
 

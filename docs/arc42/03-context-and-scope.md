@@ -31,7 +31,7 @@ flowchart LR
 | Automation caller around givn | Reads the run declaration and drives `givn run` through its machine contract (ready line, exit codes, port hand-off); it never guesses start information. |
 | CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
 | Coding-agent harness reporter | Each supported harness (opencode, Claude Code, omp, and Maki) runs its generated reporter inside its own runtime; it buffers that harness's activity and hands it to `givn history ingest`, keeps working when an event is rejected, and never writes the development record itself. |
-| Maki runtime | Loads `.maki/` configuration only in a folder the developer has trusted; an untrusted project leaves the reporter inactive by the harness's own gate. |
+| Maki runtime | Loads `.maki/` configuration only in a folder the developer has trusted; an untrusted project leaves the reporter and attribution integration inactive by the harness's own gate. |
 
 `AGENTS.md` is user-owned except for named givn fenced blocks. Givn may create or
 replace the content between matching markers such as
@@ -65,7 +65,7 @@ sync; the current optional presentation block is `communication-policy`.
 | OpenCode plugin boundary | in | `.opencode/plugins/givn-attribution.js` contributes shell attribution variables; `.opencode/plugins/givn-timeline.js` reports development activity through `givn history ingest`. |
 | Claude hook boundary | in | `.claude/hooks/givn-attribution.sh` rewrites Bash commands with attribution variables and `.claude/hooks/givn-timeline.sh` is registered per event in `.claude/settings.local.json`, piping payloads to `givn history harness-hook --harness claude`. |
 | omp hook boundary | in | `.omp/hooks/pre/givn-attribution.js` rewrites revision-creating Bash commands with attribution exports; `.omp/hooks/pre/givn-timeline.js` reports activity through the intake. |
-| Maki plugin boundary | in | `.maki/lua/givn-timeline.lua` is loaded by the managed fence in `.maki/init.lua`; grants live in `.maki/plugin.toml`. It reports through the intake and receives no generated command files. |
+| Maki plugin boundary | in | `.maki/lua/givn-timeline.lua` and `.maki/lua/givn-attribution.lua` are loaded by the managed fences in `.maki/init.lua`; grants live in `.maki/plugin.toml`. The timeline module reports through the intake; the attribution module rewrites revision-creating Bash input with attribution exports. Neither receives generated command files. |
 | `givn outline report [--json] [--out <path>] [--path <dir>]` | out | Advisory human or schema-v5 JSON report over the requested production roots. Every unit's per-component call tree comes first, then metric hints. `--out` writes the selected form and prints nothing on stdout; hints exit `0`, a disabled addon or unwritable `--out` exits `1`, invalid usage exits `2`. No baseline or cache is written. |
 | `<change>/review.md` | out | Review record with `Review kind`, `Author`, `Reviewer context`, the coverage disposition, and (when applicable) the visual review markers. No outline verdict is required. |
 | Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |

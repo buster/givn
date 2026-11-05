@@ -411,6 +411,28 @@ fn assert_maki_merged_files(root: &std::path::Path) {
         init.contains(&fence.join("\n")),
         "the generated Maki init.lua fence is not the fail-soft body: {init:?}"
     );
+    let attribution_fence = [
+        "-- givn:begin:attribution",
+        "local attribution_ok, attribution = pcall(require, \"givn-attribution\")",
+        "if attribution_ok and type(attribution) == \"table\" and attribution.setup then",
+        "  attribution.setup()",
+        "end",
+        "-- givn:end:attribution",
+    ];
+    assert!(
+        init.contains(&attribution_fence.join("\n")),
+        "the generated Maki init.lua has no attribution fence: {init:?}"
+    );
+    let attribution = generated_file(
+        root,
+        ".maki/lua/givn-attribution.lua",
+        "Maki attribution integration",
+    );
+    assert_eq!(
+        attribution,
+        include_str!("../../assets/agent-integrations/maki/givn-attribution.lua"),
+        "the generated Maki attribution integration is not the shipped asset"
+    );
     let grants = generated_file(root, ".maki/plugin.toml", "Maki plugin.toml");
     for (key, value) in [
         ("fs_read", "true"),
@@ -420,7 +442,7 @@ fn assert_maki_merged_files(root: &std::path::Path) {
         ("net", "false"),
         ("env", "false"),
         ("agent", "false"),
-        ("session_write", "false"),
+        ("session_write", "true"),
         ("session_settings", "false"),
         ("input", "false"),
     ] {
