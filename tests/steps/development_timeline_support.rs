@@ -2097,6 +2097,9 @@ pub fn run_maki_driver_with(
 pub struct MakiModel<'a> {
     pub spec: Option<&'a str>,
     pub reasoning: Option<&'a str>,
+    /// The real harness has no UI, so `maki.model.get` fails and the layer has
+    /// to read the session snapshot instead.
+    pub headless: bool,
 }
 
 /// The Lua body a fake model lookup returns.
@@ -2109,6 +2112,23 @@ fn lua_model_return(model: MakiModel<'_>) -> String {
         ),
         (Some(spec), None) => format!(
             "  return {{ spec = {} }}",
+            lua_literal(&Value::String(spec.to_string()))
+        ),
+        (None, _) => "  return nil".to_string(),
+    }
+}
+
+/// The Lua body a fake session snapshot returns. `thinking` is omitted, as the
+/// headless drivers omit it.
+fn lua_session_return(model: MakiModel<'_>) -> String {
+    match (model.spec, model.reasoning) {
+        (Some(spec), Some(level)) => format!(
+            "  return {{ model = {}, thinking = {} }}",
+            lua_literal(&Value::String(spec.to_string())),
+            lua_literal(&Value::String(level.to_string()))
+        ),
+        (Some(spec), None) => format!(
+            "  return {{ model = {} }}",
             lua_literal(&Value::String(spec.to_string()))
         ),
         (None, _) => "  return nil".to_string(),
@@ -2132,7 +2152,12 @@ pub fn run_maki_attribution(
         "the generated Maki attribution module is missing: {}",
         module.display()
     );
-    let focused_lua = lua_model_return(focused);
+    let focused_lua = if focused.headless {
+        "  return nil, \"no interactive UI attached\"".to_string()
+    } else {
+        lua_model_return(focused)
+    };
+    let session_lua = lua_session_return(focused);
     let command = lua_literal(&Value::String(command.to_string()));
     let driver = format!(
         r#"-- Givn Maki attribution driver: the shipped fences above ran verbatim;
@@ -2144,6 +2169,9 @@ end
 local attribution = require("givn-attribution")
 maki.model.get = function()
 {focused_lua}
+end
+maki.session.read = function()
+{session_lua}
 end
 local slots = maki.api.get_slots()
 local entry = slots["tool.bash.input"]

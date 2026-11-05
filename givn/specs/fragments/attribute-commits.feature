@@ -254,6 +254,17 @@ Feature: Attribute commits
     And  the prepared command identifies harness "maki"
     And  the prepared command identifies committer "LLM: deepseek/deepseek-flash via maki"
 
+  @attribute-commits
+  Scenario: Maki resolves attribution from the session without an interactive UI
+    Given  a project with the generated Maki attribution integration
+    And  Maki runs without an interactive UI
+    And  Maki's current model is "deepseek/deepseek-flash" without a reasoning mode
+    When  Maki prepares the command "git commit -m 'headless attribution'"
+    Then  the prepared command identifies LLM "deepseek/deepseek-flash"
+    And  the prepared command identifies reasoning mode "unavailable"
+    And  the prepared command identifies harness "maki"
+    And  the prepared command identifies committer "LLM: deepseek/deepseek-flash via maki"
+
   @e2e @attribute-commits
   Scenario: Maki attributes a commit using its current model
     Given  a project with the generated Maki attribution integration

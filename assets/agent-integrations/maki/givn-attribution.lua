@@ -10,12 +10,16 @@
 --
 -- Maki 0.7.0 passes a plain table to this layer, not the `LuaCtx` handle that
 -- `maki.agent.resolve_model` requires, so a subagent command names the focused
--- session. The layer stays best effort: a missing model leaves `unavailable`
--- facts and no committer override; a non-revision command is untouched; a host
--- without the slot API loads this module inert. Maki requires `run`,
--- `session_read`, and `session_write` for a `tool.bash.input` layer; the
--- generated manifest grants them even though this module never writes session
--- content.
+-- session. `maki.model.get` answers through the UI event loop, so a headless
+-- driver (`maki acp`, `maki -p`) gets nil and no error pair; the layer then
+-- reads the focused session snapshot, whose `model` field is always present.
+-- Thinking is absent from that snapshot under headless drivers, so reasoning
+-- stays `unavailable` there. The layer stays best effort: a missing model
+-- leaves `unavailable` facts and no committer override; a non-revision command
+-- is untouched; a host without the slot API loads this module inert. Maki
+-- requires `run`, `session_read`, and `session_write` for a `tool.bash.input`
+-- layer; the generated manifest grants them even though this module never
+-- writes session content.
 
 local M = {}
 local registered = false
@@ -58,7 +62,7 @@ local function reasoning_of(model)
   return UNAVAILABLE
 end
 
-local function current_model()
+local function ui_model()
   if type(maki) ~= "table" or type(maki.model) ~= "table" or type(maki.model.get) ~= "function" then
     return nil
   end
@@ -67,6 +71,27 @@ local function current_model()
     return model
   end
   return nil
+end
+
+-- The snapshot a headless driver answers with. Its `model` is a spec string and
+-- `thinking` is absent, so only the identity survives.
+local function session_model()
+  if type(maki) ~= "table" or type(maki.session) ~= "table" or type(maki.session.read) ~= "function" then
+    return nil
+  end
+  local ok, session = pcall(maki.session.read)
+  if not ok or type(session) ~= "table" then
+    return nil
+  end
+  local spec = session.model
+  if type(spec) ~= "string" or spec == "" then
+    return nil
+  end
+  return { spec = spec, thinking = session.thinking }
+end
+
+local function current_model()
+  return ui_model() or session_model()
 end
 
 local function environment(identity, reasoning)
