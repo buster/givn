@@ -18,8 +18,8 @@ Recommend one of these outcomes. None is a failure to adopt Givn.
 |---|---|---|
 | Answer and stop | Investigation answers the question, or establishes that no worthwhile modification is justified. | Explain an existing configuration option; reject a proposed change whose complexity is not justified by its benefit. |
 | Direct work without a Givn change | The work is sufficiently understood and bounded that the formal lifecycle costs more than it contributes. | Correct a documentation typo; restore an existing specified behavior with a focused regression test. |
-| `givn-ideation` | Domain understanding needs durable, structured development before selecting changes. | Establish actors, rules, terminology, and boundaries for team approvals. |
-| `givn-propose` | A concrete improvement warrants the specification-driven lifecycle. | Introduce a new archive recovery behavior with observable guarantees. |
+| `givn-ideation` | No domain model covers the capability area: its actors, rules, vocabulary, and boundaries are unformed, so a change would invent them inline. A new project with no use cases yet is the standing case. | Establish actors, rules, terminology, and boundaries before a first change; explore team approvals in a new repository. |
+| `givn-propose` | The capability area is already modelled, and the request names behavior worth specifying against that existing contract. | Introduce a new archive recovery behavior with observable guarantees. |
 
 Answering without modifying anything and modifying the project without a formal
 change are distinct outcomes. Both are explicit.
@@ -36,12 +36,19 @@ review, and preserving useful implementation evidence.
 Costs: artifact production and maintenance, review effort, latency, and agent
 usage, time, and money.
 
-Vagueness alone does not require ideation. A vague request can become a clear,
-bounded correction after inspecting the code. Ideation is warranted by domain
-work that needs to persist, not by how polished the initial request is.
+Ideation is not a penalty for vagueness. A vague request can become a clear,
+bounded correction after inspecting the code. Ideation is triggered by a domain
+model that does not exist yet and that a change would otherwise invent inline,
+not by how polished the initial request is.
 
 Propose does not require every requirement or design decision to be settled
-beforehand; developing these is part of its responsibility.
+beforehand; developing these is part of its responsibility. It does require a
+capability area that is already modelled, because the model is what its
+specification develops against.
+
+When both outcomes look plausible, route on whether the domain model exists, not
+on which outcome is easier to start. Absent model: ideation. Present model with
+unspecified behavior: propose.
 
 A label is not an exemption. A one-line permissions fix may warrant
 substantially more scrutiny than a larger documentation correction. Do not route
@@ -102,10 +109,13 @@ guessing.
 
 ## Session behavior
 
-1. Read the project state from `givn instructions`.
+1. Read the project state from `givn instructions`, including the Capabilities
+   line: whether permanent use cases and feature files exist under `givn/specs`.
 2. Relate it to the request:
    - Explicit continuation of an existing change: follow that change's next step.
-   - New or unclassified work: use start.
+   - New or unclassified work: use start. When no use case covers the
+     capability area, treat ideation as the default destination and require
+     grounded evidence for modelling inline in a change instead.
    - Explicit, applicable ideation or proposal request: enter that skill directly.
    - Clearly authorized and sufficiently understood direct work: proceed without
      creating a Givn change; investigate or use start when the appropriate
