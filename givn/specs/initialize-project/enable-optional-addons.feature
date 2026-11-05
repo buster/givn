@@ -172,7 +172,9 @@ Feature: enable-optional-addons
     And  questions are reserved for unresolved human decisions
     And  evidence includes counterexamples, discriminating assertions, root causes, compatibility and failure recovery where relevant
     And  performance claims require measurements
-    And  general engineering principles are referenced canonically rather than copied into a checklist
+    And  the challenge instruction names the canonical engineering principles
+    And  the challenge instruction includes the condensed engineering principles
+    And  the challenge instruction requires the quality lenses
     And  accepted modularity and fix-forward choices are not overridden by blanket compatibility or rollback rules
     Examples:
       | subject |
@@ -182,6 +184,12 @@ Feature: enable-optional-addons
       | design |
       | code |
       | whole change |
+
+  @enable-optional-addons
+  Scenario: Challenge guidance omits disabled principle sections
+    Given  a project with challenge enabled and dev_principles and architecture_principles disabled
+    When  the author requests challenge guidance for "code"
+    Then  the challenge instruction omits the disabled engineering principles
 
   @enable-optional-addons
   Scenario Outline: Addon edits preserve unrelated configuration or refuse unsupported YAML
