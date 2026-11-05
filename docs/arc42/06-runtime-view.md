@@ -109,18 +109,17 @@ override; the harness marker is still written.
 The Maki path is ordered as follows: Maki loads
 `.maki/lua/givn-attribution.lua` through the managed fence in
 `.maki/init.lua`; before a `bash` tool call is parsed, the `tool.bash.input`
-layer resolves the issuing agent's model through
-`maki.agent.resolve_model(ctx, {})` and falls back to `maki.model.get()` for
-the focused session. It returns the input with the same attribution exports
-when the command text names a revision verb, and leaves every other call
-untouched. A subagent's own model wins; Maki documents no per-context thinking
-level, so reasoning falls back to the focused session. Maki runs the
-revised command, so the exported environment reaches the Git process that
-invokes the shared hook. A missing model leaves the LLM and reasoning values
-as `unavailable` and omits the committer override. Maki gates the layer on
-`run`, `session_read`, and `session_write`; a generated manifest that
-explicitly revokes `session_write` is preserved and synchronization prints the
-repair instead of widening the file.
+layer reads `maki.model.get()` for the focused session's model and thinking
+level. Maki 0.7.0 passes a plain table to the layer, not the `LuaCtx` that
+`maki.agent.resolve_model` requires, so a subagent command is attributed to
+the focused session. The layer returns the input with the same attribution
+exports when the command text names a revision verb, and leaves every other
+call untouched. Maki runs the revised command, so the exported environment
+reaches the Git process that invokes the shared hook. A missing model leaves
+the LLM and reasoning values as `unavailable` and omits the committer
+override. Maki gates the layer on `run`, `session_read`, and `session_write`;
+a generated manifest that explicitly revokes `session_write` is preserved and
+synchronization prints the repair instead of widening the file.
 
 ## 6.2 `givn new <change-id>`
 
