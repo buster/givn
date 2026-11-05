@@ -1,7 +1,7 @@
 @givn.delta @attribute-commits
 Feature: Attribute commits
 
-  @givn.modified @wip @e2e
+  @givn.modified @e2e
   Scenario: Consumer initializes a project and receives shared attribution plumbing
     Given  a new Git project with `core.hooksPath` set to `.githooks`
     And  an existing user commit-msg hook that writes a marker
@@ -11,7 +11,7 @@ Feature: Attribute commits
     And  a subsequent human Git commit succeeds and runs the user hook exactly once without recursive dispatch
     And  the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario: Maki prepares attribution for a revision command
     Given  a project with the generated Maki attribution integration
     And  Maki's current model is "deepseek/deepseek-flash" at reasoning mode "high"
@@ -21,13 +21,13 @@ Feature: Attribute commits
     And  the prepared command identifies harness "maki"
     And  the prepared command identifies committer "LLM: deepseek/deepseek-flash via maki"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Maki leaves a command that creates no revision unchanged
     Given  a project with the generated Maki attribution integration
     When  Maki prepares the command "git status"
     Then  the prepared command is "git status"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Maki marks a partial attribution context as unavailable
     Given  a project with the generated Maki attribution integration
     And  Maki has no current model
@@ -37,7 +37,7 @@ Feature: Attribute commits
     And  the prepared command identifies harness "maki"
     And  the prepared command carries no committer identity
 
-  @givn.added @wip
+  @givn.added
   Scenario: Maki marks a missing reasoning mode as unavailable
     Given  a project with the generated Maki attribution integration
     And  Maki's current model is "deepseek/deepseek-flash" without a reasoning mode
@@ -47,7 +47,7 @@ Feature: Attribute commits
     And  the prepared command identifies harness "maki"
     And  the prepared command identifies committer "LLM: deepseek/deepseek-flash via maki"
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Maki attributes a commit using its current model
     Given  a project with the generated Maki attribution integration
     And  Maki's current model is "deepseek/deepseek-flash" at reasoning mode "high"
