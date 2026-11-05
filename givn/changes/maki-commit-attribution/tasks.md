@@ -76,6 +76,6 @@ Contract: `CommitAttribution` and `InitializeProject` through the real interface
 
 ## Closeout
 
-- [ ] **Delta step phrases are bound in the permanent tree**
+- [x] **Delta step phrases are bound in the permanent tree**
   - Design constraints: the change adds no delta step copies; every phrase bound by `givn/changes/maki-commit-attribution/specs/` must resolve in `tests/steps/` before archive. Run `givn lint --change maki-commit-attribution`, `./run-tests.sh --non-e2e`, and `./run-tests.sh --e2e`; the archive gate is not a substitute for this check.
   - [x] COMMIT: `e5d7601b` -- Batch: maki-e2e
