@@ -786,6 +786,7 @@ fn prepared_command(world: &GivnWorld) -> &str {
 pub(crate) struct MakiAttributionState {
     model: Option<String>,
     reasoning: Option<String>,
+    headless: bool,
     prepared: Option<String>,
     output: Option<Output>,
 }
@@ -795,6 +796,7 @@ impl MakiAttributionState {
         MakiModel {
             spec: self.model.as_deref(),
             reasoning: self.reasoning.as_deref(),
+            headless: self.headless,
         }
     }
 }
@@ -839,6 +841,7 @@ fn given_generated_maki_integration(world: &mut GivnWorld) {
     world.maki_attribution = Some(MakiAttributionState {
         model: None,
         reasoning: None,
+        headless: false,
         prepared: None,
         output: None,
     });
@@ -862,6 +865,15 @@ fn given_maki_current_model_without_reasoning(world: &mut GivnWorld, model: Stri
         .expect("Maki attribution state");
     state.model = Some(model);
     state.reasoning = None;
+}
+
+#[given("Maki runs without an interactive UI")]
+fn given_maki_headless(world: &mut GivnWorld) {
+    world
+        .maki_attribution
+        .as_mut()
+        .expect("Maki attribution state")
+        .headless = true;
 }
 
 #[given("Maki has no current model")]
