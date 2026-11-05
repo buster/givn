@@ -212,14 +212,14 @@ external system and the version-control system remains the revision boundary.
 
 ## Step Definitions
 
-| Step definition file | Scenarios |
-|---|---|
-| `tests/steps/llm_attribution_e2e_steps.rs` | Maki prepare, non-revision, partial, and attributed-commit steps; prepared-environment assertions |
-| `tests/steps/development_timeline_support.rs` | `run_maki_attribution_driver`, the real-Maki driver that writes the prepared command |
-| `tests/steps/initialize_a_project_steps.rs` | Previous/edited Maki manifest fixtures; grant/revoke assertions; attribution-fence assertion |
-| `tests/steps/llm_attribution_steps.rs` | Installation integration path list |
-| `tests/steps/llm_attribution_installation_e2e_steps.rs` | Upgrade fixtures and managed-revision path list |
-| `tests/steps/agent_activity_reporting_steps.rs` | Generated Maki manifest, fence, and asset assertions |
+| Capability | Step definition file | Scenarios |
+|---|---|---|
+| Commit attribution | `tests/steps/llm_attribution_e2e_steps.rs` | Maki prepare, non-revision, partial, and attributed-commit steps; prepared-environment assertions |
+| Commit attribution | `tests/steps/development_timeline_support.rs` | `run_maki_attribution_driver`, the real-Maki driver that writes the prepared command |
+| Initialize project | `tests/steps/initialize_a_project_steps.rs` | Previous/edited Maki manifest fixtures; grant/revoke assertions; attribution-fence assertion |
+| Initialize project | `tests/steps/llm_attribution_steps.rs` | Installation integration path list |
+| Initialize project | `tests/steps/llm_attribution_installation_e2e_steps.rs` | Upgrade fixtures and managed-revision path list |
+| Initialize project | `tests/steps/agent_activity_reporting_steps.rs` | Generated Maki manifest, fence, and asset assertions |
 
 No delta step copies are added; the step bodies live in these permanent
 files from the start.
