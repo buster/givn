@@ -38,7 +38,7 @@ The generated Maki permission manifest grants the permission the integration req
 |---|---|---|---|
 | `attribute-commits` | `EXTEND initialize-a-project` | `EXTEND attribute-commits` | The attribution behavior is owned by the support fragment that `initialize-project` includes; the delta extends that capability's scenarios. |
 | `enable-commit-attribution` | `EXTEND initialize-a-project` | `EXTEND enable-commit-attribution` | Installation and retrofit behavior for the same support contract lives in this capability. |
-| `initialize-project` | `EXTEND initialize-a-project` | `EXTEND initialize-project` | The generated Maki integration and permission manifest are written during initialization and synchronization. |
+| `initialize-a-project` | `EXTEND initialize-a-project` | `EXTEND initialize-a-project` | The generated Maki integration and permission manifest are written during initialization and synchronization. |
 
 ## Out of Scope
 
