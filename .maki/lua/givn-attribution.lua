@@ -2,9 +2,10 @@
 --
 -- Maki loads this module through the managed `-- givn:begin:attribution`
 -- fence in `.maki/init.lua`. Maki fires `tool.bash.input` before a Bash call is
--- parsed or checked; the layer rewrites only a command whose text names a
--- revision verb, prefixing the same environment protocol the OpenCode, omp,
--- and Claude integrations use. The checked-in commit-msg hook consumes it.
+-- parsed or checked; the layer resolves the issuing agent's model, falls back
+-- to the focused session, and rewrites only a command whose text names a
+-- revision verb. The prefix is the same environment protocol the OpenCode,
+-- omp, and Claude integrations use; the checked-in commit-msg hook consumes it.
 --
 -- Best effort: a missing model leaves `unavailable` facts and no committer
 -- override; a non-revision command is untouched; a host without the slot API
@@ -64,6 +65,41 @@ local function current_model()
   return nil
 end
 
+-- The model of the agent that issued the command. A subagent's own context
+-- outranks the focused session; an unavailable lookup leaves the caller to
+-- fall back.
+local function issuing_model(ctx)
+  if ctx == nil then
+    return nil
+  end
+  if type(maki) ~= "table" or type(maki.agent) ~= "table"
+      or type(maki.agent.resolve_model) ~= "function" then
+    return nil
+  end
+  local ok, model = pcall(maki.agent.resolve_model, ctx, {})
+  if ok and type(model) == "table" then
+    return model
+  end
+  return nil
+end
+
+-- Identity comes from the issuing context first. Reasoning falls back too:
+-- Maki documents no per-context thinking level.
+local function attribution_for(ctx)
+  local issuing = issuing_model(ctx)
+  local identity = identity_of(issuing)
+  local reasoning = reasoning_of(issuing)
+  if identity ~= nil and reasoning ~= UNAVAILABLE then
+    return identity, reasoning
+  end
+  local focused = current_model()
+  identity = identity or identity_of(focused) or UNAVAILABLE
+  if reasoning == UNAVAILABLE then
+    reasoning = reasoning_of(focused)
+  end
+  return identity, reasoning
+end
+
 local function environment(identity, reasoning)
   local values = {
     "GIVN_ATTRIBUTION_ACTIVE=1",
@@ -77,13 +113,11 @@ local function environment(identity, reasoning)
   return table.concat(values, " ")
 end
 
-function M.prepare(command)
+function M.prepare(command, ctx)
   if type(command) ~= "string" or not command:find(REVISION_VERB) then
     return command
   end
-  local model = current_model()
-  local identity = identity_of(model) or UNAVAILABLE
-  local reasoning = reasoning_of(model)
+  local identity, reasoning = attribution_for(ctx)
   return "export " .. environment(identity, reasoning) .. "; " .. command
 end
 
@@ -113,7 +147,7 @@ function M.setup()
     if type(command) ~= "string" then
       return next_value, extra
     end
-    local prepared = M.prepare(command)
+    local prepared = M.prepare(command, ctx)
     if prepared == command then
       return next_value, extra
     end

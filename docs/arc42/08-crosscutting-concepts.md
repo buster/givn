@@ -586,12 +586,16 @@ present, stamps only the managed co-author attribution, and never blocks a
 commit when context or the installed binary is absent.
 
 Maki exports the values from a `tool.bash.input` layer that runs before the
-Bash call is parsed. The layer reads `maki.model.get()` for the focused
-session's model and thinking level, rewrites only a command whose text names a
-revision verb, and leaves every other command untouched. Maki requires the
-plugin to hold `run`, `session_read`, and `session_write` for that layer; the
-generated manifest grants all three, and a manifest that explicitly revokes
-`session_write` is preserved with a warning rather than silently widened.
+Bash call is parsed. The layer asks `maki.agent.resolve_model(ctx, {})` for the
+model of the agent that issued the command and rewrites only a command whose
+text names a revision verb. A subagent's own model wins; when the issuing
+context exposes none, the layer falls back to `maki.model.get()` for the
+focused session. Maki documents no per-context thinking level, so reasoning
+falls back to the focused session. Every other command is untouched.
+Maki requires the plugin to hold `run`, `session_read`, and `session_write` for
+that layer; the generated manifest grants all three, and a manifest that
+explicitly revokes `session_write` is preserved with a warning rather than
+silently widened.
 
 ### Configurable post hooks
 

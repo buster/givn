@@ -5,6 +5,7 @@ use std::process::{Command, Output};
 use cucumber::{given, then, when};
 
 use super::GivnWorld;
+use super::development_timeline_support::MakiModel;
 use super::llm_attribution_steps::{
     AttributionContext, GitAttributionState, git, git_with_givn_path,
 };
@@ -785,8 +786,31 @@ fn prepared_command(world: &GivnWorld) -> &str {
 pub(crate) struct MakiAttributionState {
     model: Option<String>,
     reasoning: Option<String>,
+    context: Option<MakiContextFixture>,
     prepared: Option<String>,
     output: Option<Output>,
+}
+
+#[derive(Debug, Clone)]
+struct MakiContextFixture {
+    model: Option<String>,
+    reasoning: Option<String>,
+}
+
+impl MakiAttributionState {
+    fn focused(&self) -> MakiModel<'_> {
+        MakiModel {
+            spec: self.model.as_deref(),
+            reasoning: self.reasoning.as_deref(),
+        }
+    }
+
+    fn context(&self) -> Option<MakiModel<'_>> {
+        self.context.as_ref().map(|context| MakiModel {
+            spec: context.model.as_deref(),
+            reasoning: context.reasoning.as_deref(),
+        })
+    }
 }
 
 #[given("a project with the generated Maki attribution integration")]
@@ -829,6 +853,7 @@ fn given_generated_maki_integration(world: &mut GivnWorld) {
     world.maki_attribution = Some(MakiAttributionState {
         model: None,
         reasoning: None,
+        context: None,
         prepared: None,
         output: None,
     });
@@ -864,18 +889,45 @@ fn given_maki_without_model(world: &mut GivnWorld) {
     state.reasoning = None;
 }
 
-#[when(regex = r##"^Maki prepares the command "([^"]+)"$"##)]
-fn when_maki_prepares_command(world: &mut GivnWorld, command: String) {
+#[given(regex = r##"^Maki's subagent context model is "([^"]+)" at reasoning mode "([^"]+)"$"##)]
+fn given_maki_subagent_model(world: &mut GivnWorld, model: String, reasoning: String) {
     let state = world
         .maki_attribution
-        .as_ref()
+        .as_mut()
         .expect("Maki attribution state");
-    let prepared = super::development_timeline_support::run_maki_attribution(
-        world.env.as_ref().expect("project root"),
-        &command,
-        state.model.as_deref(),
-        state.reasoning.as_deref(),
-    );
+    state.context = Some(MakiContextFixture {
+        model: Some(model),
+        reasoning: Some(reasoning),
+    });
+}
+
+#[given("Maki's subagent context has no model")]
+fn given_maki_subagent_without_model(world: &mut GivnWorld) {
+    let state = world
+        .maki_attribution
+        .as_mut()
+        .expect("Maki attribution state");
+    state.context = Some(MakiContextFixture {
+        model: None,
+        reasoning: None,
+    });
+}
+
+#[when(regex = r##"^Maki prepares the command "([^"]+)"$"##)]
+fn when_maki_prepares_command(world: &mut GivnWorld, command: String) {
+    let env = world.env.as_ref().expect("project root");
+    let prepared = {
+        let state = world
+            .maki_attribution
+            .as_ref()
+            .expect("Maki attribution state");
+        super::development_timeline_support::run_maki_attribution(
+            env,
+            &command,
+            state.focused(),
+            state.context(),
+        )
+    };
     world
         .maki_attribution
         .as_mut()
@@ -913,16 +965,18 @@ fn when_maki_prepares_and_runs_commit(world: &mut GivnWorld, message: String) {
     std::fs::write(root.join("fixture.txt"), &message).expect("write fixture");
     assert!(git(&root, &["add", "fixture.txt"]).status.success());
 
-    let state = world
-        .maki_attribution
-        .as_ref()
-        .expect("Maki attribution state");
-    let prepared = super::development_timeline_support::run_maki_attribution(
-        world.env.as_ref().expect("project root"),
-        &format!("git commit -m '{message}'"),
-        state.model.as_deref(),
-        state.reasoning.as_deref(),
-    );
+    let prepared = {
+        let state = world
+            .maki_attribution
+            .as_ref()
+            .expect("Maki attribution state");
+        super::development_timeline_support::run_maki_attribution(
+            world.env.as_ref().expect("project root"),
+            &format!("git commit -m '{message}'"),
+            state.focused(),
+            state.context(),
+        )
+    };
     {
         let state = world
             .maki_attribution

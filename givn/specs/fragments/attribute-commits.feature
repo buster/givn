@@ -263,3 +263,36 @@ Feature: Attribute commits
     And  its Maki committer identifies "deepseek/deepseek-flash" and "maki"
     And  its Maki message identifies LLM "deepseek/deepseek-flash"
     And  its Maki message identifies reasoning mode "high"
+
+  @attribute-commits
+  Scenario: Maki prepares attribution from the issuing subagent context
+    Given  a project with the generated Maki attribution integration
+    And  Maki's current model is "deepseek/deepseek-flash" at reasoning mode "high"
+    And  Maki's subagent context model is "openai/gpt-5.6-luna" at reasoning mode "medium"
+    When  Maki prepares the command "git commit -m 'subagent attribution'"
+    Then  the prepared command identifies LLM "openai/gpt-5.6-luna"
+    And  the prepared command identifies reasoning mode "medium"
+    And  the prepared command identifies harness "maki"
+    And  the prepared command identifies committer "LLM: openai/gpt-5.6-luna via maki"
+
+  @attribute-commits
+  Scenario: Maki falls back to the focused model when the subagent context is unavailable
+    Given  a project with the generated Maki attribution integration
+    And  Maki's current model is "deepseek/deepseek-flash" at reasoning mode "high"
+    And  Maki's subagent context has no model
+    When  Maki prepares the command "git commit -m 'fallback'"
+    Then  the prepared command identifies LLM "deepseek/deepseek-flash"
+    And  the prepared command identifies reasoning mode "high"
+    And  the prepared command identifies harness "maki"
+    And  the prepared command identifies committer "LLM: deepseek/deepseek-flash via maki"
+
+  @e2e @attribute-commits
+  Scenario: Maki attributes a subagent commit to the issuing model
+    Given  a project with the generated Maki attribution integration
+    And  Maki's current model is "deepseek/deepseek-flash" at reasoning mode "high"
+    And  Maki's subagent context model is "openai/gpt-5.6-luna" at reasoning mode "medium"
+    When  Maki prepares and runs a revision command with message "subagent attribution"
+    Then  the attributed Maki commit succeeds
+    And  its Maki committer identifies "openai/gpt-5.6-luna" and "maki"
+    And  its Maki message identifies LLM "openai/gpt-5.6-luna"
+    And  its Maki message identifies reasoning mode "medium"
