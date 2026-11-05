@@ -15,10 +15,12 @@
 | **Subagent lane** | The report lane grouping the entries a subagent's own session produced, named by the subagent span's agent or title when the record holds one. |
 | **Reported cost** | A usage value carrying the host's own dollar cost for a subagent, recorded only where the harness reports it and never inferred from token counts. |
 | **Session read grant** | The Maki `session_read` permission that gates conversation content: the live transcript, event content fields, and the chat input. The generated reporter manifest names it explicitly. |
+| **Maki attribution grant** | The Maki `session_write` permission that Maki's hook rule requires before a plugin may rewrite a Bash command's input. The generated manifest grants it for the commit-attribution integration, which never writes session content. Anti-term: session write access (it names the host gate, not conversation writes). |
+| **Focused session** | The Maki session whose chat is currently on screen; `maki.model.get()` reports its model and thinking level. For a top-level command the focused session is the issuing session; a subagent's own session may differ and is outside Maki attribution. Anti-term: current session (ambiguous between focused and issuing). |
 | **Attribution context** | The runtime facts available while one commit is created: LLM, reasoning mode, harness, and Givn version. Missing facts remain unknown rather than inferred. |
 | **Model identity** | The provider and model pair selected by the harness for the current attribution context. Anti-terms: model name, model label. |
 | **Commit attribution** | The best-effort LLM and harness identification visible through a revision's committer identity and message trailers; on Git through the hook, on Fossil through `givn commit`. |
-| **Harness** | The agent runtime that executes project commands, such as OpenCode, Claude Code, or omp. Anti-term: agent target. |
+| **Harness** | The agent runtime that executes project commands, such as OpenCode, Claude Code, omp, or Maki. Anti-term: agent target. |
 | **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
 | **Issuing session** | The agent-runtime session whose shell request created a command; the command is attributed to that session's remembered model, not to the last model observed anywhere in the run. |
 | **Attribution trailer** | The managed `Co-Authored-By` message trailer containing the commit-attribution context; on Git it is a commit message, on Fossil a check-in comment. |

@@ -674,15 +674,22 @@ const CLAUDE_INTEGRATIONS: &[AgentIntegration] = &[
     },
 ];
 
-/// The integrations the maki target receives: the reporter module, copied
-/// verbatim. Its two merged files (the `plugin.toml` grants and the fence in
-/// `init.lua`) are user-owned and never generated paths, so they are not rows
-/// here.
-const MAKI_INTEGRATIONS: &[AgentIntegration] = &[AgentIntegration {
-    relative: ".maki/lua/givn-timeline.lua",
-    asset: "agent-integrations/maki/givn-timeline.lua",
-    executable: false,
-}];
+/// The integrations the maki target receives: the attribution and reporter
+/// modules, copied verbatim. Its two merged files (the `plugin.toml` grants and
+/// the fences in `init.lua`) are user-owned and never generated paths, so they
+/// are not rows here.
+const MAKI_INTEGRATIONS: &[AgentIntegration] = &[
+    AgentIntegration {
+        relative: ".maki/lua/givn-attribution.lua",
+        asset: "agent-integrations/maki/givn-attribution.lua",
+        executable: false,
+    },
+    AgentIntegration {
+        relative: ".maki/lua/givn-timeline.lua",
+        asset: "agent-integrations/maki/givn-timeline.lua",
+        executable: false,
+    },
+];
 
 /// The integrations one target receives: the table is the target's install
 /// set, so no branch here decides what a target gets.
@@ -928,12 +935,37 @@ const MAKI_FENCE_LINES: [&str; 6] = [
     MAKI_FENCE_END,
 ];
 
-/// The permission keys the Maki reporter calls: `maki.fs.read`/`write`/`rm`,
-/// the live session transcript (`session_read`), and
-/// `maki.fn.jobstart`/`jobwait`. Synchronization adds only these true grants to
-/// an existing manifest: a key the user wrote — including a revocation the
-/// reporter itself created — is never flipped or removed.
-const MAKI_REPORTER_GRANTS: [&str; 4] = ["fs_read", "fs_write", "run", "session_read"];
+/// The attribution fence: a separate managed body so either integration can be
+/// removed without rewriting the other.
+const MAKI_ATTRIBUTION_FENCE_BEGIN: &str = "-- givn:begin:attribution";
+const MAKI_ATTRIBUTION_FENCE_END: &str = "-- givn:end:attribution";
+const MAKI_ATTRIBUTION_FENCE_LINES: [&str; 6] = [
+    MAKI_ATTRIBUTION_FENCE_BEGIN,
+    "local attribution_ok, attribution = pcall(require, \"givn-attribution\")",
+    "if attribution_ok and type(attribution) == \"table\" and attribution.setup then",
+    "  attribution.setup()",
+    "end",
+    MAKI_ATTRIBUTION_FENCE_END,
+];
+
+/// The permission keys the generated Maki integrations call: the reporter's
+/// reads and flush, plus the attribution layer's required `session_write`.
+/// Synchronization adds only these true grants to an existing manifest: a key
+/// the user wrote — including a revocation the generated asset itself created —
+/// is never flipped or removed.
+const MAKI_INTEGRATION_GRANTS: [&str; 5] = [
+    "fs_read",
+    "fs_write",
+    "run",
+    "session_read",
+    "session_write",
+];
+
+/// The exact generated manifest from before the attribution integration. It is
+/// the only revision whose explicit `session_write = false` Givn rewrites; any
+/// other edit is preserved and warned about.
+const MAKI_MANIFEST_BEFORE_ATTRIBUTION: &str =
+    include_str!("../../assets/agent-integrations/maki/plugin-before-attribution.toml");
 
 /// The key a TOML line assigns, when the line is a key/value pair.
 fn toml_key(line: &str) -> Option<&str> {
@@ -945,11 +977,19 @@ fn toml_key(line: &str) -> Option<&str> {
     Some(key.trim())
 }
 
-/// Merge the Maki reporter's permission grants into `.maki/plugin.toml`,
-/// idempotently per key and never clobbering the file: a key the user already
-/// wrote is never removed or flipped, and surrounding content is untouched.
-/// When the file is absent it is created from the asset, which names all six
-/// keys, so the created file states the whole grant.
+/// The value a TOML line assigns, when the line is a key/value pair.
+fn toml_value(line: &str) -> Option<&str> {
+    let (_, value) = line.split_once('=')?;
+    Some(value.trim())
+}
+
+/// Merge the generated Maki integrations' permission grants into
+/// `.maki/plugin.toml`. A project whose file is the exact prior generated
+/// manifest is upgraded to the current asset, which grants `session_write`.
+/// Any other file is merged per key: a missing required grant is appended as
+/// `true`, an existing key is never removed or flipped, and an explicit
+/// `session_write = false` is preserved with a warning instead of widening a
+/// user-edited file.
 fn merge_maki_plugin(project_root: &Path) -> Result<()> {
     let path = project_root.join(".maki/plugin.toml");
     if !path.exists() {
@@ -961,7 +1001,16 @@ fn merge_maki_plugin(project_root: &Path) -> Result<()> {
         );
     }
     let content = std::fs::read_to_string(&path)?;
+    if content.replace("\r\n", "\n") == MAKI_MANIFEST_BEFORE_ATTRIBUTION {
+        return write_embedded_file(
+            project_root,
+            ".maki/plugin.toml",
+            "agent-integrations/maki/plugin.toml",
+            false,
+        );
+    }
     let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+    let mut session_write_revoked = false;
     match lines.iter().position(|line| line.trim() == "[permissions]") {
         Some(start) => {
             // The table ends at the next header (or the end of the file); an
@@ -971,7 +1020,10 @@ fn merge_maki_plugin(project_root: &Path) -> Result<()> {
                 .position(|line| line.trim().starts_with('['))
                 .map(|offset| start + 1 + offset)
                 .unwrap_or(lines.len());
-            let missing: Vec<&str> = MAKI_REPORTER_GRANTS
+            session_write_revoked = lines[start + 1..end].iter().any(|line| {
+                toml_key(line) == Some("session_write") && toml_value(line) == Some("false")
+            });
+            let missing: Vec<&str> = MAKI_INTEGRATION_GRANTS
                 .into_iter()
                 .filter(|key| {
                     !lines[start + 1..end]
@@ -980,6 +1032,9 @@ fn merge_maki_plugin(project_root: &Path) -> Result<()> {
                 })
                 .collect();
             if missing.is_empty() {
+                if session_write_revoked {
+                    warn_maki_session_write();
+                }
                 return Ok(());
             }
             for (offset, key) in missing.into_iter().enumerate() {
@@ -991,31 +1046,65 @@ fn merge_maki_plugin(project_root: &Path) -> Result<()> {
                 lines.push(String::new());
             }
             lines.push("[permissions]".to_string());
-            for key in MAKI_REPORTER_GRANTS {
+            for key in MAKI_INTEGRATION_GRANTS {
                 lines.push(format!("{key} = true"));
             }
         }
     }
     std::fs::write(&path, lines.join("\n") + "\n")?;
+    if session_write_revoked {
+        warn_maki_session_write();
+    }
     Ok(())
 }
 
-/// Merge the managed fence into `.maki/init.lua`: created when the file is
-/// absent, re-applied when the fence is already there (so a stale body is
-/// replaced), appended otherwise — and the rest of the user's file is never
-/// touched.
+fn warn_maki_session_write() {
+    eprintln!(
+        "warning: .maki/plugin.toml sets session_write = false; Maki commit attribution requires session_write = true"
+    );
+}
+
+/// Merge both managed fences into `.maki/init.lua` in memory and write once:
+/// created when the file is absent, re-applied when a fence is already there
+/// (so a stale body is replaced), appended otherwise — and the rest of the
+/// user's file is never touched. A begin marker without its end marker refuses
+/// before any write.
 fn merge_maki_init(project_root: &Path) -> Result<()> {
     let path = project_root.join(".maki/init.lua");
-    let fence = MAKI_FENCE_LINES.join("\n");
-    if !path.exists() {
+    let content = if path.exists() {
+        std::fs::read_to_string(&path)?
+    } else {
+        String::new()
+    };
+    let merged = merge_fence(
+        content.clone(),
+        MAKI_FENCE_BEGIN,
+        MAKI_FENCE_END,
+        &MAKI_FENCE_LINES,
+    )?;
+    let merged = merge_fence(
+        merged,
+        MAKI_ATTRIBUTION_FENCE_BEGIN,
+        MAKI_ATTRIBUTION_FENCE_END,
+        &MAKI_ATTRIBUTION_FENCE_LINES,
+    )?;
+    if !path.exists() || merged != content {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        std::fs::write(&path, format!("{fence}\n"))?;
-        return Ok(());
+        std::fs::write(&path, merged)?;
     }
-    let content = std::fs::read_to_string(&path)?;
-    let Some(begin) = content.find(MAKI_FENCE_BEGIN) else {
+    Ok(())
+}
+
+fn merge_fence(
+    content: String,
+    begin_marker: &str,
+    end_marker: &str,
+    fence_lines: &[&str],
+) -> Result<String> {
+    let fence = fence_lines.join("\n");
+    let Some(begin) = content.find(begin_marker) else {
         let mut merged = content;
         if !merged.is_empty() && !merged.ends_with('\n') {
             merged.push('\n');
@@ -1025,19 +1114,17 @@ fn merge_maki_init(project_root: &Path) -> Result<()> {
         }
         merged.push_str(&fence);
         merged.push('\n');
-        std::fs::write(&path, merged)?;
-        return Ok(());
+        return Ok(merged);
     };
     let end = content[begin..]
-        .find(MAKI_FENCE_END)
-        .map(|offset| begin + offset + MAKI_FENCE_END.len())
+        .find(end_marker)
+        .map(|offset| begin + offset + end_marker.len())
         .ok_or_else(|| anyhow::anyhow!("the .maki/init.lua fence has no end marker"))?;
-    let merged = format!("{}{}", &content[..begin], fence);
-    let merged = format!("{}{}", merged, &content[end..]);
-    if merged != content {
-        std::fs::write(&path, merged)?;
-    }
-    Ok(())
+    let mut merged = String::with_capacity(content.len());
+    merged.push_str(&content[..begin]);
+    merged.push_str(&fence);
+    merged.push_str(&content[end..]);
+    Ok(merged)
 }
 
 fn merge_claude_settings(project_root: &Path) -> Result<()> {

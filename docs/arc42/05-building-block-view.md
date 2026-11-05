@@ -104,7 +104,7 @@ flowchart TD
 | `spec::routing_table` | Parse referenced and delta narratives once, collect routing errors, and group the report by document. |
 | `spec::route` | Rank advisory capability-routing candidates with ownership-weighted evidence and an explicit no-signal verdict. |
 | `spec::tree` | Walk the permanent corpus by group and capability. |
-| Embedded attribution assets | Provide `.githooks/commit-msg` and the generated OpenCode/Claude/omp integrations. |
+| Embedded attribution assets | Provide `.githooks/commit-msg` and the generated OpenCode/Claude/omp/Maki integrations. |
 | Embedded reporter assets | Provide one reporter per supported harness: omp, opencode, Claude Code, and Maki. |
 | Embedded workflow report asset | Provide the self-contained report document with inline CSS, JavaScript, and SVG; no third-party JavaScript, CDN, build step, or remote resource. |
 

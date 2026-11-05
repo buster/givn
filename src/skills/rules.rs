@@ -249,6 +249,7 @@ pub fn ignore_entries() -> Vec<String> {
         ".claude/settings.local.json".to_string(),
         ".omp/hooks/pre/givn-attribution.js".to_string(),
         ".omp/hooks/pre/givn-timeline.js".to_string(),
+        ".maki/lua/givn-attribution.lua".to_string(),
         ".maki/lua/givn-timeline.lua".to_string(),
         ".maki/skills/givn-*/".to_string(),
         ".githooks/commit-msg".to_string(),
@@ -267,6 +268,7 @@ pub fn is_rule_path(relative: &str) -> bool {
         || relative == ".claude/settings.local.json"
         || relative == ".omp/hooks/pre/givn-attribution.js"
         || relative == ".omp/hooks/pre/givn-timeline.js"
+        || relative == ".maki/lua/givn-attribution.lua"
         || relative == ".maki/lua/givn-timeline.lua"
     {
         return true;
@@ -581,6 +583,7 @@ mod tests {
             ".claude/hooks/givn-timeline.sh",
             ".claude/settings.local.json",
             ".omp/hooks/pre/givn-timeline.js",
+            ".maki/lua/givn-attribution.lua",
             ".maki/lua/givn-timeline.lua",
             ".maki/skills/givn-propose/SKILL.md",
             ".githooks/commit-msg",
