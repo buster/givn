@@ -257,4 +257,6 @@ addons:
 skills:
   targets: [opencode, agents, claude, omp, maki]
 rules: versioned
+record:
+  mode: full
 # ---
