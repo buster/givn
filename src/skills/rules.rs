@@ -208,18 +208,13 @@ fn fossil_executable() -> bool {
         .unwrap_or(false)
 }
 
-/// Write the tracked ignore file's managed blocks in one render pass: the
-/// rules block and the development record's block. The record entry is
-/// written by the owning commands (`givn init`, `givn skills sync`,
-/// `givn upgrade`) and never on a plain record write, because `.gitignore` is
-/// versioned and a write on every command would dirty the working tree
-/// before the command did anything (R-89). Fossil's tracked destination is
-/// `.fossil-settings/ignore-glob`, whose managed entry list already carries
-/// `givn/history/*` through `rules_writes`.
+/// Write the tracked ignore file's managed blocks in one pass: the rules
+/// block and the record's block. Only owning commands write the record entry;
+/// a plain record write must not dirty the versioned `.gitignore` (R-89).
+/// Fossil carries the record entry through `rules_writes` instead.
 ///
-/// The two blocks are rendered together because separate passes would each
-/// remove and re-append only their own fence, leaving the other block's
-/// separator behind and accumulating blank lines on every sync.
+/// One pass keeps a repeated sync stable: separate passes would leave the
+/// other block's separator behind and grow a blank line each time.
 fn write_tracked_ignores(project_root: &Path, rules_entries: &[String]) -> Result<()> {
     let history = vec![crate::history::GIT_IGNORE_ENTRY.to_string()];
     match root_backend(project_root) {
@@ -277,60 +272,49 @@ pub fn strict_rules(project_root: &Path) -> Result<Vec<String>> {
     Ok(entries)
 }
 
-/// The fenced ignore entries. They are prefix patterns, not per-file paths,
-/// so the tracked block never enumerates individual skill names.
+/// Every path the rules fence covers, in render order. Entries ending in
+/// `givn-*/` are skill prefixes; the rest are exact generated files.
+/// `is_rule_path` reads the same table, so a new integration cannot be ignored
+/// without also being discoverable as a stale rule.
+const RULE_ENTRIES: &[&str] = &[
+    ".opencode/skills/givn-*/",
+    ".agents/skills/givn-*/",
+    ".claude/skills/givn-*/",
+    ".omp/skills/givn-*/",
+    ".opencode/plugins/givn-attribution.js",
+    ".opencode/plugins/givn-timeline.js",
+    ".claude/hooks/givn-attribution.sh",
+    ".claude/hooks/givn-timeline.sh",
+    ".claude/settings.local.json",
+    ".omp/hooks/pre/givn-attribution.js",
+    ".omp/hooks/pre/givn-timeline.js",
+    ".maki/lua/givn-attribution.lua",
+    ".maki/lua/givn-timeline.lua",
+    ".maki/skills/givn-*/",
+    ".githooks/commit-msg",
+];
+
+/// The fenced ignore entries: skill prefixes plus exact generated files.
 pub fn ignore_entries() -> Vec<String> {
-    vec![
-        ".opencode/skills/givn-*/".to_string(),
-        ".agents/skills/givn-*/".to_string(),
-        ".claude/skills/givn-*/".to_string(),
-        ".omp/skills/givn-*/".to_string(),
-        ".opencode/plugins/givn-attribution.js".to_string(),
-        ".opencode/plugins/givn-timeline.js".to_string(),
-        ".claude/hooks/givn-attribution.sh".to_string(),
-        ".claude/hooks/givn-timeline.sh".to_string(),
-        ".claude/settings.local.json".to_string(),
-        ".omp/hooks/pre/givn-attribution.js".to_string(),
-        ".omp/hooks/pre/givn-timeline.js".to_string(),
-        ".maki/lua/givn-attribution.lua".to_string(),
-        ".maki/lua/givn-timeline.lua".to_string(),
-        ".maki/skills/givn-*/".to_string(),
-        ".githooks/commit-msg".to_string(),
-    ]
+    RULE_ENTRIES
+        .iter()
+        .map(|entry| (*entry).to_string())
+        .collect()
 }
 
-/// Whether a project-relative path is a Givn rule, independent of the
-/// current allowlist. Used to discover tracked rules that left the current
-/// configuration (a disabled addon, a removed target).
+/// Whether a project-relative path is a Givn rule, including a rule from a
+/// disabled addon or a removed target. The two merged Maki files
+/// (`.maki/plugin.toml`, `.maki/init.lua`) are user-owned and stay out.
 pub fn is_rule_path(relative: &str) -> bool {
-    if relative == ".githooks/commit-msg"
-        || relative == ".opencode/plugins/givn-attribution.js"
-        || relative == ".opencode/plugins/givn-timeline.js"
-        || relative == ".claude/hooks/givn-attribution.sh"
-        || relative == ".claude/hooks/givn-timeline.sh"
-        || relative == ".claude/settings.local.json"
-        || relative == ".omp/hooks/pre/givn-attribution.js"
-        || relative == ".omp/hooks/pre/givn-timeline.js"
-        || relative == ".maki/lua/givn-attribution.lua"
-        || relative == ".maki/lua/givn-timeline.lua"
-    {
-        return true;
-    }
-    // The two merged Maki files (`.maki/plugin.toml`, `.maki/init.lua`) are
-    // user-owned: they are deliberately absent here, so a merged file never
-    // becomes a strict rule.
-    for prefix in [
-        ".opencode/skills/",
-        ".agents/skills/",
-        ".claude/skills/",
-        ".omp/skills/",
-        ".maki/skills/",
-    ] {
-        if let Some(rest) = relative.strip_prefix(prefix) {
-            return rest.starts_with("givn-");
-        }
-    }
-    false
+    RULE_ENTRIES.iter().any(|entry| {
+        entry
+            .strip_suffix("givn-*/")
+            .map_or(relative == *entry, |prefix| {
+                relative
+                    .strip_prefix(prefix)
+                    .is_some_and(|rest| rest.starts_with("givn-"))
+            })
+    })
 }
 
 /// The rules tracked at the current revision, discovered by the path
@@ -482,16 +466,14 @@ fn upsert_block(path: &Path, fence: Fence, entries: &[String]) -> Result<()> {
     upsert_blocks(path, &[(fence, entries.to_vec())])
 }
 
-/// Replace every listed fenced block in one pass. Removing and appending all
-/// blocks together is what keeps a repeated render stable: a single-block
-/// pass would leave the other block's separator behind.
+/// Replace every listed fenced block in one pass.
 fn upsert_blocks(path: &Path, blocks: &[(Fence, Vec<String>)]) -> Result<()> {
     let content = if path.exists() {
         std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?
     } else {
         String::new()
     };
-    let updated = render_blocks(&content, blocks);
+    let updated = render_blocks(&content, blocks)?;
     if updated == content {
         return Ok(());
     }
@@ -505,8 +487,9 @@ fn upsert_blocks(path: &Path, blocks: &[(Fence, Vec<String>)]) -> Result<()> {
 /// Return `content` with every listed block removed and re-appended in the
 /// given order. An empty entry list removes that block; a non-empty list
 /// appends it at the end, separated from the previous block by one blank
-/// line.
-fn render_blocks(content: &str, blocks: &[(Fence, Vec<String>)]) -> String {
+/// line. A block without its end marker is an error, never a silent
+/// truncation of everything after it.
+fn render_blocks(content: &str, blocks: &[(Fence, Vec<String>)]) -> Result<String> {
     let mut result = String::new();
     let mut in_block: Option<Fence> = None;
     for line in content.lines() {
@@ -522,6 +505,13 @@ fn render_blocks(content: &str, blocks: &[(Fence, Vec<String>)]) -> String {
         }
         result.push_str(line);
         result.push('\n');
+    }
+    if let Some(fence) = in_block {
+        anyhow::bail!(
+            "the {} block has no end marker ({})",
+            fence.begin,
+            fence.end
+        );
     }
     for (fence, entries) in blocks {
         if entries.is_empty() {
@@ -542,7 +532,7 @@ fn render_blocks(content: &str, blocks: &[(Fence, Vec<String>)]) -> String {
         result.push_str(fence.end);
         result.push('\n');
     }
-    result
+    Ok(result)
 }
 
 /// Resolve a repository-local file through Git, so linked worktrees write the
@@ -627,30 +617,28 @@ mod tests {
     }
 
     #[test]
-    fn ignore_entries_cover_every_rule_shape() {
-        let rules = [
-            ".opencode/skills/givn-propose/SKILL.md",
-            ".agents/skills/givn-spec/SKILL.md",
-            ".claude/skills/givn-review/SKILL.md",
+    fn rule_paths_cover_generated_files_and_leave_merged_maki_files_user_owned() {
+        for path in [
             ".opencode/plugins/givn-attribution.js",
-            ".opencode/plugins/givn-timeline.js",
-            ".claude/hooks/givn-attribution.sh",
-            ".claude/hooks/givn-timeline.sh",
-            ".claude/settings.local.json",
-            ".omp/hooks/pre/givn-timeline.js",
-            ".maki/lua/givn-attribution.lua",
             ".maki/lua/givn-timeline.lua",
-            ".maki/skills/givn-propose/SKILL.md",
             ".githooks/commit-msg",
-        ];
-        for path in rules {
-            assert!(
-                ignore_entries()
-                    .iter()
-                    .any(|entry| matches_entry(path, entry)),
-                "no ignore entry covers {path}"
-            );
+            ".opencode/skills/givn-propose/SKILL.md",
+        ] {
+            assert!(is_rule_path(path), "{path} is not a rule path");
         }
+        for path in [".maki/plugin.toml", ".maki/init.lua", "AGENTS.md"] {
+            assert!(!is_rule_path(path), "{path} must stay user-owned");
+        }
+    }
+
+    #[test]
+    fn render_blocks_refuses_an_unterminated_block() {
+        let error = render_blocks(
+            "keep\n# givn:begin:rules\nlost\n",
+            &[(RULES_FENCE, vec!["ignored".to_string()])],
+        )
+        .expect_err("a block without an end marker must be refused");
+        assert!(error.to_string().contains("end marker"));
     }
 
     #[test]

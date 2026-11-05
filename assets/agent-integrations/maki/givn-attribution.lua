@@ -13,6 +13,7 @@
 -- them even though this module never writes session content.
 
 local M = {}
+local registered = false
 
 local HARNESS = "maki"
 local UNAVAILABLE = "unavailable"
@@ -90,7 +91,7 @@ function M.setup()
   if type(maki) ~= "table" or type(maki.api) ~= "table" or type(maki.api.set_slot) ~= "function" then
     return
   end
-  if M.registered then
+  if registered then
     return
   end
   local function rewrite(prev, value, ctx)
@@ -127,7 +128,7 @@ function M.setup()
     maki.api.set_slot("tool.bash.input", rewrite)
   end)
   if ok then
-    M.registered = true
+    registered = true
   end
 end
 

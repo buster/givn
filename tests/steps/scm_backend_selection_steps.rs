@@ -243,6 +243,7 @@ fn given_fossil_checkout_nested_in_git(world: &mut GivnWorld) {
             .current_dir(cwd)
             .env("FOSSIL_USER", "fixture")
             .env("USER", "fixture")
+            .env("FOSSIL_HOME", env.fossil_home())
             .output()
             .expect("run fossil fixture command")
     };

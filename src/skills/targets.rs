@@ -977,10 +977,11 @@ fn toml_key(line: &str) -> Option<&str> {
     Some(key.trim())
 }
 
-/// The value a TOML line assigns, when the line is a key/value pair.
+/// The value a TOML line assigns, without a trailing comment. Only booleans
+/// are read here, so splitting at `#` is safe.
 fn toml_value(line: &str) -> Option<&str> {
     let (_, value) = line.split_once('=')?;
-    Some(value.trim())
+    Some(value.split('#').next().unwrap_or("").trim())
 }
 
 /// Merge the generated Maki integrations' permission grants into
@@ -1230,6 +1231,12 @@ fn validate_frontmatter(content: &str, expected_name: &str) -> Result<()> {
 mod tests {
     use super::*;
     use crate::config::embedded::Assets;
+
+    #[test]
+    fn toml_value_ignores_a_trailing_comment() {
+        assert_eq!(toml_value("session_write = false # revoked"), Some("false"));
+        assert_eq!(toml_value("session_write = \"false\""), Some("\"false\""));
+    }
 
     #[test]
     fn validate_frontmatter_requires_name_match() {
