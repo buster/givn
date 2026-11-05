@@ -35,3 +35,7 @@ givn/.spec-nli-cache/
 
 # Local Maki permission state is machine-owned.
 .maki/permissions.toml
+
+# givn:begin:history
+givn/history/
+# givn:end:history

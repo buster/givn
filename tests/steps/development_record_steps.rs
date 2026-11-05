@@ -699,6 +699,22 @@ fn project_root_initialised_under_git(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a project root with givn/ initialised inside a Git repository")]
+fn project_root_initialised_inside_a_git_repository(world: &mut GivnWorld) {
+    // Unlike `make_init_root`, the repository exists before init: the tracked
+    // ignore block therefore comes from the owning command, not from the
+    // no-repository safety net.
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    let out = common::run_givn(&env, &["init", "--agents", "opencode"]);
+    assert!(
+        out.status.success(),
+        "givn init inside the Git checkout failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    world.env = Some(env);
+}
+
 #[given(regex = r#"^a change "([^"]+)" with a recorded history$"#)]
 fn change_with_a_recorded_history(world: &mut GivnWorld, id: String) {
     // When this is the scenario's first Given the scenario did not name a

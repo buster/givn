@@ -73,6 +73,12 @@ Feature: Development Record
     When  the user runs `givn timeline --change demo`
     Then  the repository reports no pending change under the record directory
 
+  Scenario: An initialized Git project names the record in its tracked ignore file
+    Given  a project root with givn/ initialised inside a Git repository
+    Then  the project's ".gitignore" names the development record
+    And  the local exclude contains "givn/history/"
+    And  the repository reports no pending change for the development record
+
   Scenario: A Fossil project ignores the record through its own ignore file
     Given  a project root with givn/ initialised in a Fossil checkout
     And  a change "demo" exists with artifact "proposal.md"

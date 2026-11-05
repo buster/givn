@@ -149,7 +149,9 @@ fn rules_writes(project_root: &Path, entries: &[String]) -> Vec<IgnoreWrite> {
 
 /// The writes the record makes, re-asserted on every record write: the
 /// record's own `# givn:begin:history` block in a destination no command can
-/// dirty. Never a versioned file while a repository exists.
+/// dirty. Never a versioned file while a repository exists; the tracked
+/// `.gitignore` block is written by the owning commands instead
+/// (`write_tracked_ignores`), so a plain record write cannot dirty it.
 pub(crate) fn record_writes(project_root: &Path) -> Vec<IgnoreWrite> {
     let git_entries = || vec![crate::history::GIT_IGNORE_ENTRY.to_string()];
     match root_backend(project_root) {
@@ -206,17 +208,58 @@ fn fossil_executable() -> bool {
         .unwrap_or(false)
 }
 
+/// Write the tracked ignore file's managed blocks in one render pass: the
+/// rules block and the development record's block. The record entry is
+/// written by the owning commands (`givn init`, `givn skills sync`,
+/// `givn upgrade`) and never on a plain record write, because `.gitignore` is
+/// versioned and a write on every command would dirty the working tree
+/// before the command did anything (R-89). Fossil's tracked destination is
+/// `.fossil-settings/ignore-glob`, whose managed entry list already carries
+/// `givn/history/*` through `rules_writes`.
+///
+/// The two blocks are rendered together because separate passes would each
+/// remove and re-append only their own fence, leaving the other block's
+/// separator behind and accumulating blank lines on every sync.
+fn write_tracked_ignores(project_root: &Path, rules_entries: &[String]) -> Result<()> {
+    let history = vec![crate::history::GIT_IGNORE_ENTRY.to_string()];
+    match root_backend(project_root) {
+        RootBackend::Git => upsert_blocks(
+            &project_root.join(".gitignore"),
+            &[
+                (RULES_FENCE, rules_entries.to_vec()),
+                (HISTORY_FENCE, history),
+            ],
+        ),
+        // No repository exists yet: the rules policy writes nothing, and the
+        // record block is the scaffold-time safety net.
+        RootBackend::Bare => upsert_blocks(
+            &project_root.join(".gitignore"),
+            &[(HISTORY_FENCE, history)],
+        ),
+        RootBackend::Fossil | RootBackend::Ambiguous => Ok(()),
+    }
+}
+
 /// Apply the ignore entries for `policy` to the active backend's
 /// destinations and return the entries written (empty under `versioned`).
+/// The development record's tracked block is written here too, so every
+/// owning command defaults a Git project's `.gitignore` to naming the store.
 pub fn write_ignores(project_root: &Path, policy: RulesPolicy) -> Result<Vec<String>> {
     let entries = if policy.is_local_only() {
         ignore_entries()
     } else {
         Vec::new()
     };
+    let tracked = project_root.join(".gitignore");
     for write in rules_writes(project_root, &entries) {
+        // The tracked Git destinations are rendered together with the record
+        // block below; applying the rules write first would add a second pass.
+        if matches!(&write.destination, IgnoreDestination::Fenced(path) if path == &tracked) {
+            continue;
+        }
         apply_write(project_root, &write)?;
     }
+    write_tracked_ignores(project_root, &entries)?;
     Ok(entries)
 }
 
@@ -436,12 +479,19 @@ pub fn print_report(prefix: &str, report: &Cleanliness) -> Result<()> {
 /// list removes the block. Surrounding user content — including the other
 /// writer's block — is preserved.
 fn upsert_block(path: &Path, fence: Fence, entries: &[String]) -> Result<()> {
+    upsert_blocks(path, &[(fence, entries.to_vec())])
+}
+
+/// Replace every listed fenced block in one pass. Removing and appending all
+/// blocks together is what keeps a repeated render stable: a single-block
+/// pass would leave the other block's separator behind.
+fn upsert_blocks(path: &Path, blocks: &[(Fence, Vec<String>)]) -> Result<()> {
     let content = if path.exists() {
         std::fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?
     } else {
         String::new()
     };
-    let updated = render_block(&content, fence, entries);
+    let updated = render_blocks(&content, blocks);
     if updated == content {
         return Ok(());
     }
@@ -452,26 +502,31 @@ fn upsert_block(path: &Path, fence: Fence, entries: &[String]) -> Result<()> {
     Ok(())
 }
 
-/// Return `content` with `fence`'s block replaced by `entries`. An empty
-/// entry list removes the block; absent markers append it at the end.
-fn render_block(content: &str, fence: Fence, entries: &[String]) -> String {
+/// Return `content` with every listed block removed and re-appended in the
+/// given order. An empty entry list removes that block; a non-empty list
+/// appends it at the end, separated from the previous block by one blank
+/// line.
+fn render_blocks(content: &str, blocks: &[(Fence, Vec<String>)]) -> String {
     let mut result = String::new();
-    let mut in_block = false;
+    let mut in_block: Option<Fence> = None;
     for line in content.lines() {
-        if line.trim() == fence.begin {
-            in_block = true;
+        if let Some(fence) = in_block {
+            if line.trim() == fence.end {
+                in_block = None;
+            }
             continue;
         }
-        if line.trim() == fence.end {
-            in_block = false;
+        if let Some((fence, _)) = blocks.iter().find(|(fence, _)| line.trim() == fence.begin) {
+            in_block = Some(*fence);
             continue;
         }
-        if !in_block {
-            result.push_str(line);
-            result.push('\n');
-        }
+        result.push_str(line);
+        result.push('\n');
     }
-    if !entries.is_empty() {
+    for (fence, entries) in blocks {
+        if entries.is_empty() {
+            continue;
+        }
         let trimmed = result.trim_end();
         result = if trimmed.is_empty() {
             String::new()
@@ -596,6 +651,23 @@ mod tests {
                 "no ignore entry covers {path}"
             );
         }
+    }
+
+    #[test]
+    fn write_ignores_names_the_record_in_the_tracked_git_ignore() {
+        let root = tempfile::tempdir().expect("create temp dir");
+        std::fs::create_dir(root.path().join(".git")).expect("create the Git marker");
+        write_ignores(root.path(), RulesPolicy::LocalOnly).expect("write ignore entries");
+        let content =
+            std::fs::read_to_string(root.path().join(".gitignore")).expect("read .gitignore");
+        assert!(
+            content.contains(crate::history::HISTORY_BLOCK_BEGIN)
+                && content.contains(crate::history::HISTORY_BLOCK_END)
+                && content
+                    .lines()
+                    .any(|line| line.trim() == crate::history::GIT_IGNORE_ENTRY),
+            ".gitignore does not carry the record block:\n{content}"
+        );
     }
 
     #[test]
