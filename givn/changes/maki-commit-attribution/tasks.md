@@ -58,24 +58,24 @@ Contract: `InitializeProject` — `src/skills/targets.rs` installs the generated
 
 Contract: `CommitAttribution` and `InitializeProject` through the real interfaces: `givn init`/`givn upgrade`, the real Maki 0.7.0 binary, a real shell, and Git's commit-msg hook. Assertions are on the CLI output and the commit metadata Git produced.
 
-- [ ] **Consumer initializes a project and receives shared attribution plumbing** (@e2e)
+- [x] **Consumer initializes a project and receives shared attribution plumbing** (@e2e)
   - Design constraints: add `maki` to `givn init --agents opencode,claude,omp,maki`; the shared integration-exists and report lists include `.maki/lua/givn-attribution.lua`; the human commit path and hook preservation are unchanged.
-  - [ ] COMMIT: pending -- Batch: maki-e2e
+  - [x] COMMIT: `e5d7601b` -- Batch: maki-e2e
 
-- [ ] **Consumer sees the commit attribution installation report** (@e2e)
+- [x] **Consumer sees the commit attribution installation report** (@e2e)
   - Design constraints: add `maki` to the agent list and `.maki/lua/givn-attribution.lua` to the stdout assertions; no new report code beyond the init summary and the existing integration row.
-  - [ ] COMMIT: pending -- Batch: maki-e2e
+  - [x] COMMIT: `e5d7601b` -- Batch: maki-e2e
 
-- [ ] **Consumer upgrades an existing project with attribution plumbing missing** (@e2e)
+- [x] **Consumer upgrades an existing project with attribution plumbing missing** (@e2e)
   - Design constraints: initialize the upgrade fixture with `opencode,claude,omp,maki`, remove `.maki/lua/givn-attribution.lua` before the upgrade, and add it to the managed-revision path assertions. The Maki manifest and fence refresh are merged files, not new rules.
-  - [ ] COMMIT: pending -- Batch: maki-e2e
+  - [x] COMMIT: `e5d7601b` -- Batch: maki-e2e
 
-- [ ] **Maki attributes a commit using its current model** (@e2e)
+- [x] **Maki attributes a commit using its current model** (@e2e)
   - Design constraints: the Maki driver prepares `git commit -m 'maki attribution'` with model `deepseek/deepseek-flash` and reasoning `high`; the step writes and stages `fixture.txt`, runs the prepared command through `sh -c` with the compiled `givn` shim on `PATH`, and asserts the Git committer `LLM: deepseek/deepseek-flash via maki` and `Co-Authored-By: deepseek/deepseek-flash/high@maki with Givn <version>`.
-  - [ ] COMMIT: pending -- Batch: maki-e2e
+  - [x] COMMIT: `e5d7601b` -- Batch: maki-e2e
 
 ## Closeout
 
 - [ ] **Delta step phrases are bound in the permanent tree**
   - Design constraints: the change adds no delta step copies; every phrase bound by `givn/changes/maki-commit-attribution/specs/` must resolve in `tests/steps/` before archive. Run `givn lint --change maki-commit-attribution`, `./run-tests.sh --non-e2e`, and `./run-tests.sh --e2e`; the archive gate is not a substitute for this check.
-  - [ ] COMMIT: pending -- Batch: maki-e2e
+  - [x] COMMIT: `e5d7601b` -- Batch: maki-e2e

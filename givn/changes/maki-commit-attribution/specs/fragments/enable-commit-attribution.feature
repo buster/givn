@@ -1,7 +1,7 @@
 @givn.delta @enable-commit-attribution
 Feature: Enable commit attribution
 
-  @givn.modified @wip @e2e
+  @givn.modified @e2e
   Scenario: Consumer sees the commit attribution installation report
     Given  a new Git project with `core.hooksPath` set to `.githooks` and a user commit-msg hook
     When  the consumer runs `givn init --agents opencode,claude,omp,maki`
@@ -11,7 +11,7 @@ Feature: Enable commit attribution
     And  the installed hook does not dispatch itself
     And  the terminal transcript is captured for this scenario
 
-  @givn.modified @wip @e2e
+  @givn.modified @e2e
   Scenario: Consumer upgrades an existing project with attribution plumbing missing
     Given  a clean initialized Git project using `.githooks` with attribution plumbing missing and a preserved user hook
     When  the consumer runs `givn upgrade`
