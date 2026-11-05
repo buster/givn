@@ -5,8 +5,12 @@ self-contained HTML report. This guide covers the record settings, the report
 screens, and analytics over the raw JSONL store.
 
 The record is **local runtime state**, written to `givn/history/events.jsonl`
-and ignored by both backends. It never enters repository history. It may contain
-sensitive content; it is not a privacy-filtered or redacted store. The report is
+and ignored by both backends. It never enters repository history. In a Git
+project the tracked `.gitignore` carries a managed `# givn:begin:history` block
+naming `givn/history/`, written by `givn init`, `givn skills sync`, and
+`givn upgrade`; the worktree-local `.git/info/exclude` is also kept current on
+every record write. It may contain sensitive content; it is not a
+privacy-filtered or redacted store. The report is
 one HTML file with no server, no network access, and no third-party JavaScript.
 
 ## Screens

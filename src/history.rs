@@ -1060,10 +1060,14 @@ fn engages(root: &Path) -> bool {
 /// re-asserts the record's block in the worktree-local exclude file, with a
 /// Fossil checkout it writes the repository-level `ignore-glob` setting only
 /// while no managed file overrides it, and it uses `.gitignore` only before a
-/// repository exists (the scaffold-time safety net). The destinations and the
-/// backend decision come from the ignore writer's one table. Best effort by
-/// construction: a destination that cannot be written leaves the store exactly
-/// as ignored as the project's own configuration made it.
+/// repository exists (the scaffold-time safety net). Owning commands
+/// (`givn init`, `givn skills sync`, `givn upgrade`) additionally carry the
+/// same block in the tracked `.gitignore` of a Git project, so a fresh clone
+/// inherits the ignore without depending on its local exclude. The
+/// destinations and the backend decision come from the ignore writer's one
+/// table. Best effort by construction: a destination that cannot be written
+/// leaves the store exactly as ignored as the project's own configuration
+/// made it.
 pub fn ensure_ignored(root: &Path) {
     for write in crate::skills::rules::record_writes(root) {
         let _ = crate::skills::rules::apply_write(root, &write);
