@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "maki-commit-attribution",
+  "status": "passed",
+  "head": "5bcb413c4a93ae53c4a28a31f2b9e1791de1d248",
+  "features_path": "givn/changes/maki-commit-attribution/specs",
+  "features_digest": "cae5d682c26bfcecb9312110bcab751fd51e1653b5a56a9aab33f563d2b28a6d",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "c35cd41a40afab45d3c39547122b862ba397e535eaa03ea93f041de99c294295",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793860122
+}

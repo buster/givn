@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "change": "maki-commit-attribution",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "fragments/attribute-commits.feature",
+    "fragments/enable-commit-attribution.feature",
+    "initialize-project/initialize-a-project.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "fragments/attribute-commits.feature",
+    "fragments/enable-commit-attribution.feature",
+    "initialize-project/initialize-a-project.feature"
+  ],
+  "merge_targets": {
+    "fragments/attribute-commits.feature": "givn/specs/fragments/attribute-commits.feature",
+    "fragments/enable-commit-attribution.feature": "givn/specs/fragments/enable-commit-attribution.feature",
+    "initialize-project/initialize-a-project.feature": "givn/specs/initialize-project/initialize-a-project.feature"
+  },
+  "started_at_unix": 1793860284,
+  "finished_at_unix": null
+}

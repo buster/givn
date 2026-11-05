@@ -3,7 +3,7 @@ Feature: Enable commit attribution
   @e2e @enable-commit-attribution
   Scenario: Consumer sees the commit attribution installation report
     Given  a new Git project with `core.hooksPath` set to `.githooks` and a user commit-msg hook
-    When  the consumer runs `givn init --agents opencode,claude,omp`
+    When  the consumer runs `givn init --agents opencode,claude,omp,maki`
     Then  the command exits 0
     And  stdout reports the shared Git hook and each selected harness attribution integration
     And  the report states that the existing user hook was preserved
