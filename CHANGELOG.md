@@ -6,6 +6,31 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.18] - 2026-11-05
+
+### Bug Fixes
+
+- **outline:** Name arrow-function bindings in the human report
+
+- **outline:** Match excluded directory names against the project-relative path
+
+- Harden attribution and test fixtures
+
+- **attribution:** Keep Maki on the focused session
+
+- **attribution:** Resolve the Maki model under headless drivers
+
+
+### Features
+
+- **history:** Ignore the development record in the tracked gitignore
+
+- **attribution:** Attribute a Maki subagent to its issuing context
+
+- **start:** Default unmodelled capability areas to ideation
+
+- **challenge:** Ship the condensed evidence-first prompt
+
 ## [0.9.17] - 2026-11-01
 
 ### Features
@@ -858,3 +883,5 @@ for the complete 0.2.0 feature set.
 [0.9.16]: https://github.com/buster/givn/compare/v0.9.15...v0.9.16
 
 [0.9.17]: https://github.com/buster/givn/compare/v0.9.16...v0.9.17
+
+[0.9.18]: https://github.com/buster/givn/compare/v0.9.17...v0.9.18
