@@ -187,6 +187,53 @@ mod tests {
     }
 
     #[test]
+    fn a_merged_entry_is_skipped_by_the_projection() {
+        let root = project(false);
+        let change = root.path().join("givn/changes/demo");
+        let specs = change.join("specs");
+        let plan = build_merge_plan(root.path(), &change, "demo", &specs, false).unwrap();
+        assert_eq!(plan.len(), 1);
+        let merged = vec![plan[0].relative.clone()];
+        let progress = MergeProgress {
+            merged: &merged,
+            in_progress: None,
+            retry_unrecorded: false,
+        };
+        let findings = interaction_findings_for_plan(root.path(), &specs, &plan, progress).unwrap();
+        assert!(findings.is_empty(), "{findings:?}");
+    }
+
+    #[test]
+    fn the_projection_writes_no_file() {
+        let root = project(true);
+        let before = snapshot_tree(root.path());
+        let findings = interaction_findings(root.path(), "demo").unwrap();
+        assert!(findings.is_empty(), "{findings:?}");
+        let after = snapshot_tree(root.path());
+        assert_eq!(before, after);
+    }
+
+    fn snapshot_tree(root: &Path) -> Vec<(PathBuf, Vec<u8>)> {
+        fn walk(root: &Path, dir: &Path, out: &mut Vec<(PathBuf, Vec<u8>)>) {
+            let Ok(entries) = std::fs::read_dir(dir) else {
+                return;
+            };
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    walk(root, &path, out);
+                } else if let Ok(bytes) = std::fs::read(&path) {
+                    out.push((path.strip_prefix(root).unwrap_or(&path).to_path_buf(), bytes));
+                }
+            }
+        }
+        let mut out = Vec::new();
+        walk(root, root, &mut out);
+        out.sort_by(|left, right| left.0.cmp(&right.0));
+        out
+    }
+
+    #[test]
     fn a_retired_capability_is_removed_from_the_projection() {
         let root = tempfile::TempDir::new().unwrap();
         let specs = root.path().join("givn/specs/orders");

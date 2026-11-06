@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "enforce-spec-interaction-integrity",
+  "status": "passed",
+  "head": "4d429d8426051f5fcc226fc65c68d6b1a041825b",
+  "features_path": "givn/changes/enforce-spec-interaction-integrity/specs",
+  "features_digest": "7137bb771c48dee86c3539f15cf8f0969815aa476372401d0a44acac18ce3ba9",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "813edf7f9215118073f1177bb06d18408b46b16b61f635e4af631ba3f1a69b87",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1793965592
+}

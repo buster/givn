@@ -2239,3 +2239,42 @@ the no-document rule, and the full fixture audit. The design is signable; the ne
 is `tasks.md`.
 
 DESIGN-REVIEW: PASS
+
+## Design re-review closure
+
+Review kind: independent
+Author: authoring-context
+Reviewer context: independent-review-1 (continuation of the reviewer context in the header; this section is the targeted closure of `review.md` F2-F5)
+
+Scope: the revised `design.md` sections (Data Model, Step Definitions, Interaction Coverage Matrix, E2E Infrastructure), the delta specs, and a regression check against the signed implementation (`3a33fb39` plus the working tree). No full re-review was performed.
+
+Commands run: `cargo test --lib projection::tests` (6 passed), `cargo test --lib receipt_target_outside_specs_is_refused` (1 passed), `cargo run -- lint --change enforce-spec-interaction-integrity` (`4 file(s) checked - clean`), `cargo run -- lint` (`62 file(s) checked, 11 finding(s)`, exit `1`), `sha256sum givn/specs/fragments/fragment.md` (`a219ed...78c22b`).
+
+### Finding resolution
+
+| Finding | Status | Evidence |
+|---|---|---|
+| F2 - matrix omits the 19 fragment interactions | Resolved | `design.md:212` now scopes the 19 repaired declarations as existing inventory mappings and `design.md:216` adds the summary row. The delta adds 19 rows across 10 distinct capabilities at `givn/changes/enforce-spec-interaction-integrity/specs/fragments/fragment.md:41-63`; the permanent table has 13 data rows at `givn/specs/fragments/fragment.md:32-44` (13 + 19 = 32). All 19 capability/title pairs are existing `@e2e` scenarios in the fragment capability files (for example `instruction-integrity.feature` and `measure-coverage-per-project.feature`); the change adds no fragment feature file (`specs/fragments/` contains only `fragment.md`). `givn lint --change` is clean, and default `givn lint` reports exactly 11 blocking findings naming the same 19 unlisted titles across the 10 fragment capabilities plus the init `missing @e2e scenario` at `givn/specs/initialize-project/usecase.md:103`. |
+| F4 - direct permanent test-spec edits unrecorded | Resolved | `design.md:76` names both edits, their files, and the ADR-075 reason. `git show 3a33fb39` contains the `@e2e` additions at `givn/specs/verify-change/review-disposition-gates.feature:61,85`, the runtime fixture at `:89`, and the 26-to-27 change at `givn/specs/fragments/adr-qualification-gate.feature:122`. The fixture path is written under the scenario's temporary project root by `tests/steps/mod.rs:358-372`; no `givn/specs/other` exists in the repository. ADR-075 is accepted at `docs/arc42/adr/ADR-075-projected-interaction-integrity.md:2`, and the register states 27 accepted records at `docs/arc42/adr/README.md:30`. `tasks.md:9` now matches the design's product-versus-test-spec distinction. |
+| F5 - init step-file map incomplete | Resolved | `design.md:165` and `design.md:234` name all binding files. The driving `the consumer runs` step is `tests/steps/init_agent_target_selection_steps.rs:193`; the scenario-specific Thens are `tests/steps/initialize_a_project_e2e_steps.rs:107,119,131,137`; the Given is `tests/steps/mod.rs:327` (the second Given is in the already-named initialize file at `:101`; the generic file-existence Thens are `tests/steps/mod.rs:1011`). All three modules are registered at `tests/steps/mod.rs:40-42`. No new step was introduced. |
+| F3 - promised unit tests absent | Resolved | `design.md:77` describes exactly the tests now present: `src/spec/projection.rs:190` (`a_merged_entry_is_skipped_by_the_projection`; the `project(false)` fixture would yield the unlisted finding if the merged entry were not skipped), `src/spec/projection.rs:207` (`the_projection_writes_no_file`; byte snapshot of the fixture tree before and after), and `src/cli/archive.rs:1921` (`receipt_target_outside_specs_is_refused`; asserts `plan_from_receipt` returns `outside givn/specs`). Both test commands pass. The relative-path half of `design.md:302` is pinned by the project-relative corpus keys at `src/spec/corpus.rs:167-195`; see observation 2. |
+
+New findings: none.
+
+### Regression check
+
+- The revisions do not contradict another design section: `design.md:104` still states the delta adds the 19 rows for the 10 fragment capabilities, `design.md:108` and `:132` still state the 11-finding repair, and the only permanent-edit statements are `design.md:75-76`. The matrix now has the 13 previously reviewed rows plus the summary row, preserving the "touched actions only" convention.
+- `design.md:74` is accurate: `sha256sum givn/specs/fragments/fragment.md` equals the delta's `a219ed...78c22b` base hash. The permanent file's own `f8524c9c` header is its predecessor hash, which is how the full-content hash at `src/cli/archive.rs:1598-1611` works.
+- The revisions match the signed implementation: `3a33fb39` contains the two test-spec repairs and ADR-075; the delta contains exactly the 19 rows and the init `@e2e` tag; default lint still reports the expected 11 findings until the delta is archived.
+- This closure covers design accuracy only. `review.md` remains `REVIEW: FAIL` and is not superseded here; F1's strict-mode evidence is recorded at `tasks.md:7`.
+
+### Non-blocking observations
+
+1. The three added tests are working-tree modifications at review time (`git status --short`: `M src/spec/projection.rs`, `M src/cli/archive.rs`). `tasks.md:11` lists them under the setup batch whose `COMMIT: 3a33fb39` marker is `tasks.md:12`, but that commit does not contain them. This is outside design accuracy, but the implementation review's F3 closure needs a commit before archive.
+2. `design.md:302` also promises "creates no temporary directory" and project-relative finding paths. The relative-path claim is pinned by `src/spec/corpus.rs:167-195`; the no-write test's tree snapshot catches a file or directory left under the fixture root but would not observe a transient directory under the system temp root. The revised Data Model claim at `design.md:77` is the narrower, accurate one; no design edit is required for the three revised claims.
+
+### Outcome
+
+The F2, F4, and F5 revisions match the delta, the tree, and the committed implementation; the F3 tests exist and assert the promised behavior. No design finding remains. This closure supersedes the design verdict for the revised sections while the earlier signature stands for the unchanged material.
+
+DESIGN-REVIEW: PASS
