@@ -1918,6 +1918,32 @@ Feature: Dead capability
     }
 
     #[test]
+    fn receipt_target_outside_specs_is_refused() {
+        let root = tempfile::TempDir::new().unwrap();
+        let archive = root.path().join("givn/archive/demo");
+        let specs = archive.join("specs/cap");
+        std::fs::create_dir_all(&specs).unwrap();
+        std::fs::write(
+            specs.join("cap.feature"),
+            "@givn.delta @cap\nFeature: Cap\n",
+        )
+        .unwrap();
+        let receipt: crate::proof::Receipt = serde_json::from_value(serde_json::json!({
+            "schema": 1,
+            "change": "demo",
+            "status": "pending",
+            "merge_plan": ["cap/cap.feature"],
+            "merge_targets": {"cap/cap.feature": "../outside/cap.feature"}
+        }))
+        .unwrap();
+        let error = plan_from_receipt(root.path(), &archive, "demo", &receipt).unwrap_err();
+        assert!(
+            error.to_string().contains("outside givn/specs"),
+            "{error}"
+        );
+    }
+
+    #[test]
     fn retirement_deletes_capability_and_writes_tombstone() {
         let (_root, project, _backup) = temp_project();
         let cap_dir = project.join("givn/specs/dead-cap");

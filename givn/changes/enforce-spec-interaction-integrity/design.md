@@ -72,7 +72,9 @@ No persistent schema changes. The change introduces no database, file format, or
   `interaction inventory mismatch: use case '<use case>' capability '<capability>' declares <N> interaction(s) and has <M> @e2e scenario(s); missing @e2e scenario '<title>'; unlisted @e2e scenario '<title>'`
   Multiple items repeat the singular label separated by `; `. Keeping the count preserves the existing `0 @e2e scenario(s)` assertion; the old `missing declared scenarios` phrase is replaced by the singular labels. The finding `files` remain the use-case narrative and the capability feature. The JSON `severity` stays `blocking`.
 - The delta narrative for `givn/specs/fragments/fragment.md` carries the current permanent base hash `a219ed7197dd6d8a424ca7f418d7ef956c89ec7fa116b2ce65ce14774878c22b`. Refreshing that header is part of the corpus repair; the archive's `validate_usecase_documents` compares it before merge.
-- The delta narrative supplies the repaired `fragments/fragment.md`; archive writes it to the permanent path. The permanent file is not edited directly during the change.
+- The delta narrative supplies the repaired `fragments/fragment.md`; archive writes it to the permanent path. The permanent product spec is not edited directly during the change.
+- Permanent test-spec repairs are direct and reviewed: `givn/specs/verify-change/review-disposition-gates.feature` gains the `@e2e` tags on `Solo delta` and `Receipt added`, and its scenario creates the permanent `other/other.feature` fixture at runtime; `givn/specs/fragments/adr-qualification-gate.feature` moves its ADR count from 26 to 27 because ADR-075 is accepted by this change. These are assertions about the repository and its test corpus, not product behavior declarations; the corpus narrative repairs still ship through the delta.
+- The projection is tested for its two promised negative properties: a merged entry is skipped, and a projection writes no file. `plan_from_receipt` is tested to refuse a receipt target outside `givn/specs`.
 - `docs/domain-model.md` is unchanged: the change adds no bounded context, aggregate, or relationship. The model explicitly excludes internal Rust components, and the new modules are internal.
 - `spec::merge_plan::merge_feature_text(permanent_text, entry, retry)` is the one merge entry point. It calls `gherkin::merge::apply_feature_deltas` / `apply_feature_deltas_retry`; the archive's `write_feature` reads, calls it, and writes. The projection calls it and stores the returned text. `SpecCorpus::overlay_narrative` and `SpecCorpus::remove_capability` own the operations; `spec::merge_plan` delegates to them.
 - `MergeEntry` carries `target_rel: PathBuf`, a forward-slash normalized project-relative path including the `givn/specs/` prefix: `givn/specs/<usecase>/<cap>.feature` for a merge, or `givn/specs/<usecase>` for a retirement. `build_merge_plan` computes it from the resolved target and refuses a target outside `givn/specs`; `plan_from_receipt` recomputes it from the receipt target with the same refusal; `receipt_plan` and the projection use it directly, with no absolute-path fallback. The retirement feature key is `target_rel/<cap>.feature`; the narrative key is `target_rel/usecase.md` or `givn/specs/fragments/fragment.md`.
@@ -160,7 +162,7 @@ The delta specs add no `specs/steps/` copy. The new step definitions are authore
 | `check-specification-health` | `tests/steps/spec_overlap_gates_steps.rs` | Authored in the permanent tree; no delta copy |
 | `givn-workflow-enforcement` | `tests/steps/workflow_enforcement_steps.rs` | Authored in the permanent tree; no delta copy |
 | `archive-proof` | `tests/steps/archive_proof_steps.rs` | Authored in the permanent tree; no delta copy |
-| `initialize-a-project` | `tests/steps/init_agent_target_selection_steps.rs` | Existing bindings; tag change only |
+| `initialize-a-project` | `tests/steps/init_agent_target_selection_steps.rs` (driving step), `tests/steps/initialize_a_project_e2e_steps.rs` (Then assertions), `tests/steps/mod.rs` (Given) | Existing bindings; tag change only |
 | Shared projection fixtures | `tests/steps/interaction_projection_steps.rs` (registered in `tests/steps/mod.rs`) | Authored in the permanent tree; no delta copy |
 | Shared fixture repair | `tests/steps/archive_proof_support.rs`, `tests/steps/enforce_post_merge_e2e_gate_steps.rs`, `tests/steps/review_disposition_gates_steps.rs`, `tests/steps/deduplicate_change_dir_detection_steps.rs`, `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`, `tests/steps/workflow_enforcement_steps.rs`, `tests/steps/extract_coverage_gate_steps.rs`, `tests/steps/readme_enforcement_steps.rs`, `tests/steps/grouped_merge_steps.rs`, `tests/steps/preserve_docstrings_on_archive_steps.rs`, `tests/steps/repository_ownership_fixtures_support.rs`, `tests/steps/mod.rs` (persona narrative fixture), and `tests/common/mod.rs::write_fixture_usecase` (called by `declare_fixture_routing`) | Authored in the permanent tree; every literal interaction row is generated from the actual `@e2e` titles, with `- none` when none; a no-document feature directory gains its document |
 
@@ -207,10 +209,11 @@ The generic `the user runs` step drives the real CLI.
 
 ## Interaction Coverage Matrix
 
-The change adds no new inventory entry. It repairs one existing entry and leaves the other touched capabilities' entries unchanged.
+The change adds no new user action or `@e2e` scenario. It repairs 19 missing declarations in `fragments/fragment.md` for existing fragment scenarios and moves the existing noninteractive init scenario to `@e2e`. The 19 repaired fragment entries are existing inventory mappings whose scenarios and step definitions are unchanged; their exact rows are in `specs/fragments/fragment.md` and their scenarios are the existing `@e2e` titles in the fragment capability files. The matrix below covers the change's own new or changed interactions; the repaired declarations are covered by the summary row.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
+| `fragments`: 19 repaired declarations across 10 fragment capabilities | Existing fragment `@e2e` titles (for example `An agent requests machine-readable artifact guidance`, `Archiving publishes line and branch badges from the merged report`) | CLI | Existing `givn …` subprocesses; no new step |
 | `check-specification-health`: lint the specification corpus | All clean .feature files report a clean summary on stdout | CLI | `givn lint` subprocess |
 | `givn-workflow-enforcement`: run migration coverage check | Consumer runs migration coverage check and sees passed evidence | CLI | `givn check migration --change <id>` subprocess |
 | `givn-workflow-enforcement`: run the change-scoped checks | Consumer runs check tasks and receives a change verification receipt | CLI | `givn check tasks --change <id>` subprocess |
@@ -228,7 +231,7 @@ The change adds no new inventory entry. It repairs one existing entry and leaves
 ## E2E Infrastructure
 
 - E2E runner command: `./run-tests.sh --e2e`; the script sets `GIVN_RESULT_SCOPE=e2e` and selects `@e2e and not @givn.removed`.
-- E2E step locations: the existing `tests/steps/init_agent_target_selection_steps.rs` for the repaired init scenario; the other matrix entries use their existing capability step files. No new E2E step is introduced.
+- E2E step locations: `tests/steps/init_agent_target_selection_steps.rs` drives the repaired init scenario, `tests/steps/initialize_a_project_e2e_steps.rs` owns its Then assertions, and `tests/steps/mod.rs` provides the Given; the other matrix entries use their existing capability step files. No new E2E step is introduced.
 - Local infrastructure: no browser, server, database, or container. The product is a CLI; the E2E scenarios run the built binary as a subprocess, and the interactive init scenario uses the real terminal prompt through a PTY (`script` on Unix, as the repository acceptance suite already requires).
 - Framework: `cucumber-rs` with the custom nextest harness. Strict mode is `.fail_on_skipped()`; undefined or skipped E2E steps fail.
 - Real-interface fidelity: every E2E row invokes the real binary or the real PTY. No HTTP client substitutes for a CLI.
