@@ -15,6 +15,49 @@ fn write_command_overrides(env: &common::TestEnv) {
     crate::steps::archive_proof_support::disable_coverage(env);
 }
 
+fn delta_narrative(usecase: &str, cap: &str, delta: &str, permanent: Option<&str>) -> String {
+    let mut titles: Vec<String> = Vec::new();
+    for text in [permanent, Some(delta)].into_iter().flatten() {
+        if let Ok(feature) = gherkin::Feature::parse(text, gherkin::GherkinEnv::default()) {
+            let inherited_e2e = feature.tags.iter().any(|tag| tag == "e2e");
+            titles.extend(
+                feature
+                    .scenarios
+                    .iter()
+                    .filter(|scenario| {
+                        inherited_e2e || scenario.tags.iter().any(|tag| tag == "e2e")
+                    })
+                    .map(|scenario| scenario.name.clone()),
+            );
+        }
+    }
+    titles.sort();
+    titles.dedup();
+    let first = titles
+        .first()
+        .map(String::as_str)
+        .unwrap_or("No E2E interaction");
+    let mut document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", usecase)
+        .replace("<capability-id>", cap)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", first);
+    let header = "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n";
+    let first_row = format!("| {cap} | exercise the capability | {first} |\n");
+    if titles.is_empty() {
+        document = document.replace(&format!("{header}{first_row}"), "- none\n");
+    } else {
+        let rows = titles
+            .iter()
+            .map(|title| format!("| {cap} | exercise the capability | {title} |\n"))
+            .collect::<String>();
+        document = document.replace(&first_row, &rows);
+    }
+    document
+}
+
 /// Create a change whose every archive-gate artifact is complete and whose
 /// delta spec is written by `delta_content`.
 fn complete_change_with_delta(
@@ -73,6 +116,33 @@ fn complete_change_with_delta(
     std::fs::write(delta_dir.join(format!("delta-{id}.feature")), delta_content)
         .expect("write delta feature");
     common::declare_fixture_routing(env, id);
+    let usecase = if delta_dir == specs_dir {
+        capability.clone()
+    } else {
+        delta_dir
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(&capability)
+            .to_string()
+    };
+    let narrative_dir = if delta_dir == specs_dir {
+        specs_dir.join(&usecase)
+    } else {
+        delta_dir
+    };
+    std::fs::create_dir_all(&narrative_dir).expect("create narrative dir");
+    let permanent_feature = env.path(&format!("givn/specs/{usecase}/{capability}.feature"));
+    let permanent_text = std::fs::read_to_string(&permanent_feature).ok();
+    std::fs::write(
+        narrative_dir.join("usecase.md"),
+        delta_narrative(
+            &usecase,
+            &capability,
+            delta_content,
+            permanent_text.as_deref(),
+        ),
+    )
+    .expect("write delta usecase");
     change_dir
 }
 
@@ -272,16 +342,11 @@ fn write_archive_artifacts(
     let delta_dir = change_dir.join("specs").join(usecase);
     std::fs::create_dir_all(&delta_dir).expect("create delta specs dir");
     std::fs::write(delta_dir.join(format!("{cap}.feature")), delta).expect("write delta");
-    if permanent.is_none() {
-        let document = givn::gherkin::usecase_md::usecase_md_template()
-            .replace("<usecase-id>", usecase)
-            .replace("<capability-id>", cap)
-            .replace("<actor role>", "Fixture operator")
-            .replace("<the domain goal>", "Exercise the fixture behavior.")
-            .replace("<consumer action>", "exercise the capability")
-            .replace("<scenario title>", "fixture scenario");
-        std::fs::write(delta_dir.join("usecase.md"), document).expect("write change usecase");
-    }
+    std::fs::write(
+        delta_dir.join("usecase.md"),
+        delta_narrative(usecase, cap, delta, permanent),
+    )
+    .expect("write change usecase");
     write_command_overrides(env);
 }
 

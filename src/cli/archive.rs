@@ -1,7 +1,15 @@
 use crate::config::overlay::load_effective;
-use crate::gherkin::merge::{merge_file, merge_file_retry, validate_feature_merge};
 use crate::gherkin::parse::{collect_feature_files, has_e2e_scenarios};
 use crate::proof::{ArchiveProof, SCOPE_E2E, SCOPE_REGULAR};
+#[cfg(test)]
+use crate::spec::merge_plan::resolve_permanent_dir;
+use crate::spec::merge_plan::{
+    MergeEntry, build_merge_plan, collect_narrative_documents, delta_capability, narrative_target,
+    write_feature, write_feature_retry,
+};
+use crate::spec::projection::{
+    MergeProgress, interaction_findings_for_plan, permanent_interaction_findings,
+};
 use crate::state::{ArtifactStatus, ChangeState};
 use anyhow::{Context, Result, bail};
 use gherkin::GherkinEnv;
@@ -172,6 +180,17 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         validate_usecase_documents(&project_root, &source_specs)?;
         let plan = build_merge_plan(&project_root, &change_dir, change, &source_specs, true)?;
 
+        // 5b. The projected interaction inventory is a merge precondition:
+        //     a delta that leaves the merged corpus inconsistent is refused
+        //     before any mutation.
+        let projected = interaction_findings_for_plan(
+            &project_root,
+            &source_specs,
+            &plan,
+            MergeProgress::empty(),
+        )?;
+        ensure_interaction_inventory(projected)?;
+
         // 6. E2E runner configuration is a configuration gap, not a
         //    verification result: block before any mutation.
         let merged_has_e2e = has_e2e_scenarios(&source_specs)
@@ -182,7 +201,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         //    whole directory with one rename. The merge runs against the
         //    archived candidate.
         let started_at_unix = crate::proof::unix_now();
-        let (merge_plan, merge_targets) = receipt_plan(&project_root, &plan);
+        let (merge_plan, merge_targets) = receipt_plan(&plan);
         crate::proof::Receipt::write_pending_progress(
             &change_dir,
             change,
@@ -253,6 +272,25 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         let mut merge_applied = false;
         if merge_needed {
             let plan = plan_from_receipt(&project_root, &archive_target, change, &receipt)?;
+            // Project the remaining merge before touching the corpus. A
+            // pending receipt written before merge progress existed cannot
+            // say which files were applied, so mirror the writer's legacy
+            // retry mode.
+            let legacy_unrecorded_merge = receipt.merge_plan.is_empty()
+                && receipt.merged_deltas.is_empty()
+                && receipt.merge_in_progress.is_none();
+            let progress = MergeProgress {
+                merged: &receipt.merged_deltas,
+                in_progress: receipt.merge_in_progress.as_deref(),
+                retry_unrecorded: legacy_unrecorded_merge,
+            };
+            let projected = interaction_findings_for_plan(
+                &project_root,
+                &archive_target.join("specs"),
+                &plan,
+                progress,
+            )?;
+            ensure_interaction_inventory(projected)?;
             cleanup_stale_temporaries(&project_root, &change_dir, &archive_target)?;
             merge_applied =
                 apply_merge_plan(&project_root, &archive_target, change, &plan, &receipt)?;
@@ -271,6 +309,10 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
             );
         }
     }
+
+    // 7b. The merged permanent corpus must satisfy the same interaction gate
+    //     before any verification scope runs.
+    ensure_interaction_inventory(permanent_interaction_findings(&project_root)?)?;
 
     // 8. Verification scopes run once against the committed candidate.
     let tested_revision = backend.revision()?;
@@ -359,28 +401,12 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     Ok(())
 }
 
-struct MergeEntry {
-    relative: String,
-    feature: gherkin::Feature,
-    target: PathBuf,
-    retire: bool,
-    cap: String,
-}
-
-fn receipt_plan(
-    project_root: &Path,
-    plan: &[MergeEntry],
-) -> (Vec<String>, BTreeMap<String, String>) {
+fn receipt_plan(plan: &[MergeEntry]) -> (Vec<String>, BTreeMap<String, String>) {
     let mut order = Vec::new();
     let mut targets = BTreeMap::new();
     for entry in plan {
         order.push(entry.relative.clone());
-        let relative = entry
-            .target
-            .strip_prefix(project_root)
-            .unwrap_or(&entry.target)
-            .to_string_lossy()
-            .replace('\\', "/");
+        let relative = entry.target_rel.to_string_lossy().replace('\\', "/");
         targets.insert(entry.relative.clone(), relative);
     }
     (order, targets)
@@ -846,107 +872,6 @@ fn validate_delta_publication(specs: &Path) -> Result<()> {
     Ok(())
 }
 
-fn build_merge_plan(
-    project_root: &Path,
-    change_root: &Path,
-    change_id: &str,
-    source_specs: &Path,
-    validate: bool,
-) -> Result<Vec<MergeEntry>> {
-    let specs_root = project_root.join("givn/specs");
-    let mut plan = Vec::new();
-    let mut seen = BTreeSet::new();
-    if !source_specs.exists() {
-        return Ok(plan);
-    }
-    for delta_path in collect_feature_files(source_specs) {
-        let env = GherkinEnv::default();
-        let feature = gherkin::Feature::parse_path(&delta_path, env).map_err(|e| {
-            anyhow::anyhow!(
-                "failed to parse delta feature '{}': {}",
-                delta_path.display(),
-                e
-            )
-        })?;
-        if validate && let Some(wip_msg) = crate::gherkin::delta::find_wip_in_feature(&feature) {
-            bail!(
-                "archive blocked: {} in '{}' — remove @wip from completed scenarios",
-                wip_msg,
-                delta_path.display(),
-            );
-        }
-        let rel = delta_path
-            .strip_prefix(source_specs)
-            .unwrap_or(&delta_path)
-            .to_string_lossy()
-            .replace('\\', "/");
-        let cap = delta_capability(&delta_path, &feature)?;
-        if !seen.insert(cap.clone()) {
-            bail!(
-                "archive blocked: capability '{cap}' appears in more than one delta file; \
-                 a change may merge each capability once"
-            );
-        }
-        let retire = crate::gherkin::delta::is_retired_feature(&feature);
-        if retire {
-            if !feature.scenarios.is_empty() {
-                bail!(
-                    "archive blocked: '{}' is tagged @givn.retired but contains {} \
-                     scenario(s) — a retirement delta must have zero scenarios",
-                    delta_path.display(),
-                    feature.scenarios.len()
-                );
-            }
-            let Some(usecase_dir) =
-                crate::spec::owner::resolve_capability_owner(&specs_root, &cap)?
-            else {
-                if validate {
-                    bail!(
-                        "archive blocked: '{}' retires capability '{cap}' but no such \
-                         capability exists in the active use-case tree",
-                        delta_path.display()
-                    );
-                }
-                bail!(
-                    "archive blocked: the retirement target for '{cap}' is no longer \
-                     present; rebuild the plan from the receipt"
-                );
-            };
-            if validate && !usecase_dir.join(format!("{cap}.feature")).exists() {
-                bail!(
-                    "archive blocked: '{}' retires capability '{cap}' but '{}' does not exist",
-                    delta_path.display(),
-                    usecase_dir.join(format!("{cap}.feature")).display()
-                );
-            }
-            plan.push(MergeEntry {
-                relative: rel,
-                feature,
-                target: usecase_dir,
-                retire: true,
-                cap,
-            });
-            continue;
-        }
-
-        let permanent_dir = resolve_permanent_dir(project_root, change_root, change_id, &cap)?;
-        let target = permanent_dir.join(format!("{cap}.feature"));
-        if validate {
-            let permanent_text = std::fs::read_to_string(&target).ok();
-            validate_feature_merge(permanent_text.as_deref(), &feature)
-                .map_err(|error| anyhow::anyhow!("{}: {error}", delta_path.display()))?;
-        }
-        plan.push(MergeEntry {
-            relative: rel,
-            feature,
-            target,
-            retire: false,
-            cap,
-        });
-    }
-    Ok(plan)
-}
-
 fn plan_from_receipt(
     project_root: &Path,
     archive_target: &Path,
@@ -955,7 +880,13 @@ fn plan_from_receipt(
 ) -> Result<Vec<MergeEntry>> {
     let source_specs = archive_target.join("specs");
     if receipt.merge_plan.is_empty() {
-        return build_merge_plan(project_root, archive_target, change, &source_specs, false);
+        return Ok(build_merge_plan(
+            project_root,
+            archive_target,
+            change,
+            &source_specs,
+            false,
+        )?);
     }
     let mut plan = Vec::new();
     for rel in &receipt.merge_plan {
@@ -969,20 +900,20 @@ fn plan_from_receipt(
                 )
             })?;
         let cap = delta_capability(&delta_path, &feature)?;
-        let target = receipt
-            .merge_targets
-            .get(rel)
-            .map(|value| project_root.join(value))
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "archive blocked: the pending receipt has no merge target for '{rel}'"
-                )
-            })?;
+        let value = receipt.merge_targets.get(rel).ok_or_else(|| {
+            anyhow::anyhow!("archive blocked: the pending receipt has no merge target for '{rel}'")
+        })?;
+        let target_rel = PathBuf::from(value);
+        if !target_rel.starts_with("givn/specs") {
+            bail!("archive blocked: pending merge target '{value}' is outside givn/specs");
+        }
+        let target = project_root.join(&target_rel);
         plan.push(MergeEntry {
             relative: rel.clone(),
             retire: crate::gherkin::delta::is_retired_feature(&feature),
             feature,
             target,
+            target_rel,
             cap,
         });
     }
@@ -1021,9 +952,9 @@ fn apply_merge_plan(
         if entry.retire {
             retire_capability(project_root, change, &entry.cap, &entry.target)?;
         } else if retry {
-            merge_file_retry(&entry.target, &entry.feature)?;
+            write_feature_retry(&entry.target, &entry.feature)?;
         } else {
-            merge_file(&entry.target, &entry.feature)?;
+            write_feature(&entry.target, &entry.feature)?;
         }
         crate::proof::Receipt::mark_merge_file_done(archive_target, &entry.relative)?;
         applied = true;
@@ -1464,6 +1395,21 @@ fn ensure_change_receipt(
 }
 
 /// Block unless the dirty worktree contains only evidence paths.
+/// Refuse a projected or merged interaction-inventory mismatch.
+fn ensure_interaction_inventory(findings: Vec<crate::overlap::analysis::Finding>) -> Result<()> {
+    if findings.is_empty() {
+        return Ok(());
+    }
+    let mut message = String::from("archive blocked: interaction inventory mismatch");
+    for finding in findings {
+        for title in finding.titles {
+            message.push_str("\n  - ");
+            message.push_str(&title);
+        }
+    }
+    bail!("{message}")
+}
+
 fn ensure_clean(
     backend: &crate::scm::Backend,
     project_root: &Path,
@@ -1649,28 +1595,6 @@ fn run_scope(
     Ok((result, seconds))
 }
 
-fn collect_narrative_documents(
-    dir: &std::path::Path,
-    out: &mut Vec<std::path::PathBuf>,
-) -> Result<()> {
-    if !dir.exists() {
-        return Ok(());
-    }
-    for entry in std::fs::read_dir(dir)? {
-        let path = entry?.path();
-        if path.is_dir() {
-            collect_narrative_documents(&path, out)?;
-        } else if path.file_name().is_some_and(|name| name == "usecase.md")
-            || (path.file_name().is_some_and(|name| name == "fragment.md")
-                && path.parent().and_then(|parent| parent.file_name())
-                    == Some(std::ffi::OsStr::new("fragments")))
-        {
-            out.push(path);
-        }
-    }
-    Ok(())
-}
-
 fn content_hash(content: &str) -> String {
     Sha256::digest(content.as_bytes())
         .iter()
@@ -1685,28 +1609,6 @@ fn base_hash(content: &str) -> Option<&str> {
             .and_then(|value| value.strip_suffix("-->"))
             .map(str::trim)
     })
-}
-
-fn narrative_target(
-    specs_root: &std::path::Path,
-    relative: &std::path::Path,
-) -> Result<std::path::PathBuf> {
-    if relative == std::path::Path::new("fragments/fragment.md") {
-        return Ok(specs_root.join(relative));
-    }
-    if relative
-        .file_name()
-        .is_some_and(|name| name == "usecase.md")
-    {
-        let Some(usecase) = relative.parent().and_then(|parent| parent.file_name()) else {
-            bail!("usecase.md must be under specs/<usecase-id>/");
-        };
-        return Ok(specs_root.join(usecase).join("usecase.md"));
-    }
-    bail!(
-        "unsupported narrative path '{}'; expected usecase.md or fragments/fragment.md",
-        relative.display()
-    )
 }
 
 fn validate_usecase_documents(project_root: &std::path::Path, change_specs: &Path) -> Result<()> {
@@ -1806,48 +1708,6 @@ fn holds_feature_files(dir: &std::path::Path) -> Result<bool> {
 /// delta into the permanent spec. Extracted from `run`'s merge loop so the
 /// retirement path is testable without driving the full archive gate
 /// pipeline (which needs a manifest, hooks, and a verify command).
-fn delta_capability(
-    delta_path: &std::path::Path,
-    delta_feature: &gherkin::Feature,
-) -> Result<String> {
-    let cap = crate::gherkin::delta::capability_tag(delta_feature)
-        .map(|t| t.to_string())
-        .unwrap_or_else(|| {
-            delta_path
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("unknown")
-                .to_string()
-        });
-
-    crate::gherkin::delta::validate_capability_tag(&cap)
-        .map_err(|e| anyhow::anyhow!("archive blocked: {e} (from '{}')", delta_path.display()))?;
-    Ok(cap)
-}
-
-/// Resolve the permanent directory a capability's spec lives in: the use-case
-/// directory it already exists in, or — for a brand-new capability — the use
-/// case its proposal's `NEW in <usecase-id>` routing decision declares.
-fn resolve_permanent_dir(
-    project_root: &std::path::Path,
-    change_root: &Path,
-    change_id: &str,
-    cap: &str,
-) -> Result<std::path::PathBuf> {
-    let specs_root = project_root.join("givn/specs");
-    if let Some(dir) = crate::spec::owner::resolve_capability_owner(&specs_root, cap)? {
-        return Ok(dir);
-    }
-    let usecase = routing_usecase_for_new_capability(change_root, cap).ok_or_else(|| {
-        anyhow::anyhow!(
-            "archive blocked: capability '{cap}' exists nowhere in the \
-             permanent corpus and its proposal records no 'NEW in <usecase-id>' \
-             routing decision (change '{change_id}')"
-        )
-    })?;
-    Ok(specs_root.join(usecase))
-}
-
 #[cfg(test)]
 fn process_delta_file(
     project_root: &std::path::Path,
@@ -1895,7 +1755,7 @@ fn process_delta_file(
         )?,
     };
     let permanent_path = permanent_dir.join(format!("{cap}.feature"));
-    merge_file(&permanent_path, delta_feature)?;
+    write_feature(&permanent_path, delta_feature)?;
     println!(
         "[{}]   merged → {}",
         crate::subprocess::local_timestamp(),
@@ -1908,17 +1768,6 @@ fn process_delta_file(
 /// recorded routing decision. Returns `None` when the proposal is absent,
 /// unparseable, has no row for the capability, or does not declare
 /// `NEW in <usecase-id>` — the archive blocks in those cases.
-fn routing_usecase_for_new_capability(change_root: &Path, cap: &str) -> Option<String> {
-    let proposal = std::fs::read_to_string(change_root.join("proposal.md")).ok()?;
-    crate::spec::routing_table::parse_routing_table(&proposal)
-        .into_iter()
-        .find(|row| row.capability == cap)
-        .and_then(|row| match row.decision {
-            crate::spec::routing_table::Decision::NewIn(usecase) => Some(usecase),
-            _ => None,
-        })
-}
-
 /// Re-export the checker's finding labels for the archive gate report.
 use crate::cli::readme::finding_label;
 

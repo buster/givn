@@ -369,6 +369,123 @@ fn write_fixture_change_receipt(world: &GivnWorld, id: &str) {
     .expect("write fixture change receipt");
 }
 
+fn ensure_demo_cap_baseline(env: &common::TestEnv) {
+    let dir = env.path("givn/specs/demo-cap");
+    std::fs::create_dir_all(&dir).expect("create permanent demo-cap dir");
+    let usecase = dir.join("usecase.md");
+    if !usecase.exists() {
+        let document = givn::gherkin::usecase_md::usecase_md_template()
+            .replace("<usecase-id>", "demo-cap")
+            .replace("<capability-id>", "demo-cap")
+            .replace("<actor role>", "Fixture operator")
+            .replace("<the domain goal>", "Exercise the fixture behavior.")
+            .replace("<consumer action>", "submit an order")
+            .replace("<scenario title>", "Consumer submits an order");
+        std::fs::write(&usecase, document).expect("write permanent usecase");
+    }
+    let feature = dir.join("demo-cap.feature");
+    if !feature.exists() {
+        std::fs::write(
+            &feature,
+            "Feature: Demo Capability\n\n  @e2e\n  Scenario: Consumer submits an order\n    Given a thing\n    Then it works\n",
+        )
+        .expect("write permanent feature");
+    }
+}
+
+fn e2e_titles(path: &std::path::Path) -> Vec<String> {
+    gherkin::Feature::parse_path(path, gherkin::GherkinEnv::default())
+        .map(|feature| {
+            feature
+                .scenarios
+                .iter()
+                .filter(|scenario| scenario.tags.iter().any(|tag| tag == "e2e"))
+                .map(|scenario| scenario.name.clone())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Add an E2E scenario to the active change's `demo-cap` delta. The fixture
+/// starts from the review or archive baseline and leaves a committed, fresh
+/// change receipt.
+fn add_delta_e2e(world: &GivnWorld, title: &str, with_row: bool) {
+    let env = world.env.as_ref().expect("a fixture project");
+    let id = change_id(world);
+    let change = env.path(&format!("givn/changes/{id}"));
+    let specs = change.join("specs/demo-cap");
+    std::fs::create_dir_all(&specs).expect("create delta specs dir");
+    ensure_demo_cap_baseline(env);
+
+    let scenario =
+        format!("  @givn.added @e2e\n  Scenario: {title}\n    Given a thing\n    Then it works\n");
+    let feature_path = specs.join("demo-cap.feature");
+    if feature_path.exists() {
+        let mut content = std::fs::read_to_string(&feature_path).expect("read delta feature");
+        if !content.ends_with('\n') {
+            content.push('\n');
+        }
+        content.push_str(&scenario);
+        std::fs::write(&feature_path, content).expect("append delta scenario");
+    } else {
+        std::fs::write(
+            &feature_path,
+            format!("@givn.delta @demo-cap\nFeature: Demo Capability\n\n{scenario}"),
+        )
+        .expect("write delta feature");
+    }
+
+    if with_row {
+        let mut titles = e2e_titles(&env.path("givn/specs/demo-cap/demo-cap.feature"));
+        titles.extend(e2e_titles(&feature_path));
+        titles.sort();
+        titles.dedup();
+        let rows = titles
+            .iter()
+            .map(|title| format!("| demo-cap | exercise the capability | {title} |"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let mut document = givn::gherkin::usecase_md::usecase_md_template()
+            .replace("<usecase-id>", "demo-cap")
+            .replace("<capability-id>", "demo-cap")
+            .replace("<actor role>", "Fixture operator")
+            .replace("<the domain goal>", "Exercise the fixture behavior.")
+            .replace("<consumer action>", "exercise the capability");
+        document = document.replace(
+            "| demo-cap | exercise the capability | <scenario title> |",
+            &rows,
+        );
+        if let Ok(permanent) = std::fs::read_to_string(env.path("givn/specs/demo-cap/usecase.md")) {
+            let hash: String = {
+                use sha2::Digest;
+                sha2::Sha256::digest(permanent.as_bytes())
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect()
+            };
+            document.push_str(&format!("\n<!-- givn:base-sha256: {hash} -->\n"));
+        }
+        std::fs::write(specs.join("usecase.md"), document).expect("write delta usecase");
+    }
+
+    common::clear_no_behavior_fixture(env, &id);
+    common::declare_fixture_routing(env, &id);
+    common::commit_fixture(env);
+    crate::steps::archive_proof_support::refresh_change_receipt(world, &id);
+}
+
+#[given(
+    regex = r#"^the change's delta adds an E2E scenario "([^"]+)" without an interaction row$"#
+)]
+fn delta_adds_e2e_without_row(world: &mut GivnWorld, title: String) {
+    add_delta_e2e(world, &title, false);
+}
+
+#[given(regex = r#"^the change's delta adds an E2E scenario "([^"]+)" with its interaction row$"#)]
+fn delta_adds_e2e_with_row(world: &mut GivnWorld, title: String) {
+    add_delta_e2e(world, &title, true);
+}
+
 #[given("a givn project with a change that has passed design-review")]
 fn change_passed_design_review(world: &mut GivnWorld) {
     scaffold_init_root_change(world, "test-change");
@@ -873,6 +990,23 @@ fn no_corresponding_arc42_file(_world: &mut GivnWorld) {
     // Verified by the scenario setup (we never create 99-bogus-chapter.md).
 }
 
+fn write_permanent_test_cap_narrative(root: &std::path::Path) {
+    let dir = root.join("givn/specs/test-cap");
+    std::fs::create_dir_all(&dir).expect("create permanent usecase dir");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "test-cap")
+        .replace("<capability-id>", "test-cap")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "No E2E interaction")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| test-cap | exercise the capability | No E2E interaction |\n",
+            "- none\n",
+        );
+    std::fs::write(dir.join("usecase.md"), document).expect("write permanent usecase");
+}
+
 #[given("a givn project with a completed change configured for archive")]
 fn change_complete_for_archive(world: &mut GivnWorld) {
     scaffold_init_root_change(world, "integrity-hook-and-archive-gate");
@@ -914,6 +1048,7 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
         "Feature: Test Capability\n",
     )
     .unwrap();
+    write_permanent_test_cap_narrative(&root);
     let env = world.env.as_ref().expect("a fixture project is required");
     common::declare_fixture_routing(env, "integrity-hook-and-archive-gate");
 }
@@ -1015,6 +1150,7 @@ fn archive_ready_change_with_wip(world: &mut GivnWorld) {
         "Feature: Test Capability\n",
     )
     .unwrap();
+    write_permanent_test_cap_narrative(&root);
     let env = world.env.as_ref().expect("a fixture project is required");
     common::declare_fixture_routing(env, "wip-change");
 }
@@ -1062,6 +1198,7 @@ fn archive_ready_change_wip_only_on_removed(world: &mut GivnWorld) {
         "Feature: Test Capability\n\n  Scenario: Old\n    Given x\n",
     )
     .unwrap();
+    write_permanent_test_cap_narrative(&root);
     let env = world.env.as_ref().expect("a fixture project is required");
     common::declare_fixture_routing(env, "wip-removed-change");
 }
@@ -1189,7 +1326,7 @@ fn change_new_capability(world: &mut GivnWorld) {
     std::fs::create_dir_all(&specs_dir).unwrap();
     std::fs::write(
         specs_dir.join("new-cap.feature"),
-        "@givn.delta @new-cap\nFeature: New Capability\n\n  @givn.added\n  Scenario: New scenario\n    Given x\n    Then y\n",
+        "@givn.delta @new-cap\nFeature: New Capability\n\n  @givn.added @e2e\n  Scenario: New scenario\n    Given x\n    Then y\n",
     ).unwrap();
 
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
@@ -1207,6 +1344,7 @@ fn change_new_capability(world: &mut GivnWorld) {
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
 
     // Set verify to fail after merge (pass during gate hooks, fail post-merge).
+    set_verify_true(world);
     set_verify_fails_post_merge(world);
 }
 
@@ -1275,7 +1413,11 @@ fn clean_project_with_passing_change(world: &mut GivnWorld) {
     let document = givn::gherkin::usecase_md::usecase_md_template()
         .replace("<usecase-id>", "demo-cap")
         .replace("<capability-id>", "demo-cap")
-        .replace("<scenario title>", "Existing scenario");
+        .replace("<scenario title>", "Existing scenario")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| demo-cap | <consumer action> | Existing scenario |",
+            "- none",
+        );
     std::fs::write(usecase.join("usecase.md"), document).expect("write fixture usecase");
     std::fs::write(
         usecase.join("demo-cap.feature"),
@@ -1594,7 +1736,7 @@ fn write_review_fixture_with_options(
     std::fs::write(specs.join("usecase.md"), contract).unwrap();
     for capability in capabilities {
         let feature = format!(
-            "@givn.delta @{capability}\nFeature: {capability}\n\n  @givn.added\n  Scenario: Fixture {capability}\n    Given x\n    Then y\n"
+            "@givn.delta @{capability}\nFeature: {capability}\n\n  @givn.added @e2e\n  Scenario: Consumer runs {capability}\n    Given x\n    Then y\n"
         );
         std::fs::write(specs.join(format!("{capability}.feature")), feature).unwrap();
     }

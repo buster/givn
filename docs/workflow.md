@@ -128,8 +128,8 @@ guidance or advisory reporting.
 |---|---|---|
 | Change verification | `givn check tasks --change <id>` | non-removed `@wip`, missing or unreachable scenario commits, a dirty tree, a failing delta suite; writes the change verification receipt |
 | Review | `givn check review --change <id>` | integrity failures, an unconfigured run declaration, change-scoped lint failures, undisclosed retirement, invalid capability placement, unresolved overlap dispositions, a missing or stale receipt, missing scenario commits |
-| Archive | `givn archive --change <id>` | incomplete tasks/review/arc42-docs, an unsigned design-review, unbound delta step definitions, failed archive hooks, an unconfigured run declaration, incomplete README, invalid use-case or delta documents, a missing E2E runner when `@e2e` is in scope, merge conflicts and stale narrative bases, red regular or E2E scopes, a failing coverage gate, a tested tree that moved |
-| Lint | `givn lint` | parse errors, duplicate titles, empty features, invalid use-case documents, interaction mismatches; review runs the change-scoped form |
+| Archive | `givn archive --change <id>` | incomplete tasks/review/arc42-docs, an unsigned design-review, unbound delta step definitions, failed archive hooks, an unconfigured run declaration, incomplete README, invalid use-case or delta documents, a projected or merged interaction-inventory mismatch, a missing E2E runner when `@e2e` is in scope, merge conflicts and stale narrative bases, red regular or E2E scopes, a failing coverage gate, a tested tree that moved |
+| Lint | `givn lint` | parse errors, duplicate titles, empty features, invalid use-case documents, interaction mismatches, undeclared capabilities, unplaceable delta capabilities; review runs the change-scoped form |
 | Commit path | `givn commit` | an empty path selection or a path outside the checkout |
 
 `givn readme check` reports open placeholders and damaged managed blocks; the

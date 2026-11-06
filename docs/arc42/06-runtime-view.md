@@ -22,8 +22,8 @@ The sequence is:
    as `skills.targets`.
 5. Write `givn/commands.yaml` from the embedded project command template unless
    it already exists and `--force` is absent. The shipped template contains the
-   `givn missing-testrunner`, `givn missing-e2e-runner`, and
-   `givn missing-run-command` sentinels plus coverage paths; it does not invent
+   `givn missing-testrunner` and `givn missing-run-command` sentinel commands,
+   the `givn missing-e2e-runner` comparison value, plus coverage paths; it does not invent
    project scripts.
 6. Unless `--no-addons` is set, enable every registered addon. In the current
    registry this scaffolds Arc42, creates the missing standalone `docs/glossary.md`
@@ -177,13 +177,22 @@ For each parsed file it reports `@wip` and `PENDING`. Removed placeholders are
 excluded from the WIP result. The default whole-tree scope additionally runs
 the deterministic overlap scan:
 
-- duplicate active scenario titles are errors and produce exit code `3`;
+- duplicate active scenario titles and empty features are errors and produce exit code `3`;
 - shape matches, assertion subsets, and scenarios over 14 steps are warnings;
-- parse errors produce exit code `1`;
+- parse errors, invalid use-case documents, interaction mismatches, undeclared capabilities, and unplaceable delta capabilities produce exit code `1`;
 - WIP/PENDING produces exit code `2`.
 
-Precedence is parse error `1`, duplicate title `3`, WIP `2`, then clean `0`.
-JSON output is a findings array; it is not test-runner output.
+Precedence is parse/use-case/interaction `1`, duplicate/empty `3`, WIP `2`,
+then clean `0`. JSON output is a findings array; it is not test-runner output.
+
+The `--change` scope additionally projects the corpus the change would produce
+and reports an interaction mismatch as a blocking finding. The projection
+reads `givn/specs` into an in-memory `SpecCorpus`, applies the change's merge
+plan and narratives, and runs the same inventory gate; the finding names the
+use case, capability, and the missing or unlisted scenario. The gate also
+reports a feature file absent from the capability list and a delta capability
+that cannot be placed in the projected corpus; both are blocking findings, not
+silent skips.
 
 Every finding is classified as `advisory`, `finding`, or `blocking` from one
 mapping table; the prose output appends the severity after the existing short
@@ -385,6 +394,9 @@ Stages:
    candidate repeats the step-definition comparison and re-checks the e2e
    configuration before its verification scopes run. An `@e2e` merge with an
    unconfigured `verify.e2e_command` blocks here, leaving the change active.
+   The same pre-mutation stage projects the accepted interaction inventory from
+   an in-memory `SpecCorpus` and refuses a mismatch before the pending receipt
+   is written or the change moves.
 4. Fresh only — move and publish the candidate: write the pending receipt into
    the active change, then move the directory to `givn/archive/<id>/` with one
    rename. Both paths are under the project root; a failed rename leaves the
@@ -395,6 +407,9 @@ Stages:
    candidate revision. A rejected publication is reported as an unproven,
    repairable state; on resume the merged on-disk state is published again
    instead of assuming the merge is committed.
+   After the merge, the actual permanent interaction inventory is checked before
+   the verification scopes; a mismatch leaves the candidate unproven and
+   repairable in place.
 5. Verification against the published candidate revision: the regular scope
    (`verify.command`) and the E2E scope (`verify.e2e_command`, only when merged
    permanent specs contain `@e2e`; otherwise `not_applicable`) each run once
@@ -421,6 +436,14 @@ prints the forward-repair instruction (`givn archive --change <id>` after
 repairing the committed state). Archive's checks are hard-coded in
 `src/cli/archive.rs`; they are not configurable artifact `post` hooks, and
 archive does not call the explicit `check review` mandatory branch.
+
+The fresh and resumed-before-merge paths project the corpus from an in-memory
+`SpecCorpus` using `spec::merge_plan` and `spec::projection`. A finding refuses before
+the pending receipt or the merge. After a candidate is merged, the same
+inventory gate runs on the actual `givn/specs` before the verification scopes;
+a finding leaves the candidate unproven. The post-merge check catches a
+committed edit between the projection and publication and validates the actual
+merged bytes.
 
 ## 6.7.1 Change-scoped verification receipt
 

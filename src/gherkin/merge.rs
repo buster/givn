@@ -159,18 +159,6 @@ fn scenario_matches(existing_text: &str, delta: &Scenario) -> bool {
     render_scenario_stripped(existing).trim_end() == render_scenario_stripped(delta).trim_end()
 }
 
-/// Merge a delta feature file into a permanent spec file on disk.
-/// All-or-nothing: validates before writing. The write is atomic (temp file
-/// in the same directory, then rename).
-pub fn merge_file(permanent_path: &std::path::Path, delta_feature: &Feature) -> Result<()> {
-    merge_file_mode(permanent_path, delta_feature, MergeMode::Strict)
-}
-
-/// Merge a delta file that was already in progress on a previous attempt.
-pub fn merge_file_retry(permanent_path: &std::path::Path, delta_feature: &Feature) -> Result<()> {
-    merge_file_mode(permanent_path, delta_feature, MergeMode::Retry)
-}
-
 pub fn validate_feature_merge(permanent_text: Option<&str>, delta_feature: &Feature) -> Result<()> {
     apply_feature_mode(permanent_text, delta_feature, MergeMode::Strict).map(|_| ())
 }
@@ -180,6 +168,13 @@ pub fn apply_feature_deltas(
     delta_feature: &Feature,
 ) -> Result<String> {
     apply_feature_mode(permanent_text, delta_feature, MergeMode::Strict)
+}
+
+pub fn apply_feature_deltas_retry(
+    permanent_text: Option<&str>,
+    delta_feature: &Feature,
+) -> Result<String> {
+    apply_feature_mode(permanent_text, delta_feature, MergeMode::Retry)
 }
 
 fn apply_feature_mode(
@@ -251,45 +246,6 @@ fn apply_feature_mode(
         &delta_feature.name,
         mode,
     )
-}
-
-fn merge_file_mode(
-    permanent_path: &std::path::Path,
-    delta_feature: &Feature,
-    mode: MergeMode,
-) -> Result<()> {
-    use crate::gherkin::delta::is_delta_feature;
-
-    if !is_delta_feature(delta_feature) {
-        return Err(GivnError::MergeError(format!(
-            "feature '{}' is not tagged @givn.delta — cannot merge",
-            delta_feature.name
-        ))
-        .into());
-    }
-
-    let permanent_text = if permanent_path.exists() {
-        Some(std::fs::read_to_string(permanent_path)?)
-    } else {
-        None
-    };
-
-    let new_text = apply_feature_mode(permanent_text.as_deref(), delta_feature, mode)
-        .map_err(|error| anyhow::anyhow!("{}: {error}", permanent_path.display()))?;
-
-    // Ensure parent directory exists.
-    if let Some(parent) = permanent_path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-
-    let file_name = permanent_path
-        .file_name()
-        .map(|name| name.to_string_lossy().into_owned())
-        .unwrap_or_else(|| "permanent.feature".to_string());
-    let temporary = permanent_path.with_file_name(format!("{file_name}.givn-tmp"));
-    std::fs::write(&temporary, new_text)?;
-    std::fs::rename(&temporary, permanent_path)?;
-    Ok(())
 }
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
@@ -460,10 +416,7 @@ mod tests {
     #[test]
     fn supported_new_feature_keeps_setup_and_inherited_tags() {
         let feature = parse_str("@givn.delta @catalog @e2e\nFeature: Catalog\n  Background: Session\n    Given signed in\n      \"\"\"json\n      {\"ok\": true}\n      \"\"\"\n  @givn.added @api\n  Scenario: Read\n    Then visible\n").unwrap();
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("catalog.feature");
-        merge_file(&path, &feature).unwrap();
-        let merged = parse_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let merged = parse_str(&apply_feature_deltas(None, &feature).unwrap()).unwrap();
         assert!(merged.background.is_some(), "new feature lost Background");
         assert!(merged.tags.contains(&"e2e".into()));
         assert!(merged.scenarios[0].tags.contains(&"api".into()));
@@ -496,14 +449,10 @@ mod tests {
 
     #[test]
     fn conflicting_background_refuses_without_writing() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("catalog.feature");
         let permanent = "Feature: Catalog\n  Background: Session\n    Given original session\n  Scenario: Read\n    Then visible\n  Scenario: Keep\n    Then unchanged\n";
-        std::fs::write(&path, permanent).unwrap();
         let feature = parse_str("@givn.delta @catalog\nFeature: Catalog\n  Background: Session\n    Given different session\n  @givn.modified\n  Scenario: Read\n    Then updated\n").unwrap();
-        let result = merge_file(&path, &feature);
+        let result = apply_feature_deltas(Some(permanent), &feature);
         assert!(result.is_err(), "conflicting Background accepted");
-        assert_eq!(std::fs::read_to_string(path).unwrap(), permanent);
     }
 
     #[test]
@@ -513,13 +462,10 @@ mod tests {
             "# language: fr\n@givn.delta @catalog\nFonctionnalité: Catalogue\n  Scénario: Lire\n    Alors visible\n",
         ] {
             let feature = parse_str(source).unwrap();
-            let dir = tempfile::tempdir().unwrap();
-            let path = dir.path().join("new/catalog.feature");
             assert!(
-                merge_file(&path, &feature).is_err(),
+                apply_feature_deltas(None, &feature).is_err(),
                 "unsupported feature accepted: {source}"
             );
-            assert!(!path.parent().unwrap().exists());
         }
     }
 

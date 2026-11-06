@@ -161,6 +161,32 @@ This lookup boundary is recorded here because it is not a qualified ADR
 candidate: reversal is a single-function change with no migration or consumer
 interface break beyond the documented shape.
 
+### 8.3c Projected Interaction Integrity
+
+The interaction inventory is the capability-aware table in a use case or
+fragment. `gherkin::interaction` compares it with the `@e2e` scenario titles in
+the capability feature. It also checks the reverse direction: every `.feature`
+file directly under a use-case or fragment directory must be named in that
+document's `## Capabilities` list, and `- none` is an empty list. A feature file
+outside the list is an `undeclared_capability` blocking finding. A directory
+with feature files but no use-case or fragment document is also reported as
+undeclared rather than silently skipped. A declared capability whose feature is
+absent is a blocking `usecase_interaction_invalid` finding. A delta capability
+that cannot be placed in the projected corpus is a blocking
+`interaction_mismatch` finding rather than a silent skip. A change is accepted
+only if the corpus it would leave declares exactly the E2E scenarios its
+features provide. `spec::projection`
+reads `givn/specs` into an in-memory `SpecCorpus`, applies the change's merge
+plan and narrative documents, and runs the gate on the projected corpus.
+Review and change-scoped lint report the projected findings; archive runs the
+same check before the pending receipt, the rename, or a resumed merge, and
+rechecks the actual permanent inventory on a merged candidate before
+verification.
+
+The findings use project-relative paths directly; no temporary path exists. A project with pre-existing drift is blocked until it repairs the
+inventory; the projection deliberately does not subtract pre-existing findings,
+because a red corpus is not a valid baseline. `givn lint` names every finding.
+
 ## 8.4 Project Directory Layout
 
 ```text
@@ -396,8 +422,8 @@ Library-specific errors use typed errors and application paths add context.
 `givn lint` returns:
 
 - `0` for clean;
-- `1` for a parse error;
-- `3` for an active duplicate scenario title;
+- `1` for a parse error, an invalid use-case document, an interaction mismatch, an undeclared capability, or an unplaceable delta capability;
+- `3` for an active duplicate scenario title or an empty feature;
 - `2` for `@wip` or PENDING.
 
 Precedence is `1 > 3 > 2 > 0`. Shape, subset, and long-scenario findings are
@@ -979,9 +1005,10 @@ ledger are authoring contracts, not runtime checks.
 
 Every lint finding kind is classified in one data-driven table as `advisory`,
 `finding`, or `blocking`. Blocking covers parse errors, duplicate titles,
-empty features, use-case document errors, and the use-case graph findings;
-finding covers WIP and e2e-intent; advisory covers shape matches, subsets,
-long scenarios, seed status, and persona references. The classification is
+empty features, use-case document errors, the use-case graph findings,
+interaction mismatches, and undeclared capabilities; finding covers WIP and
+e2e-intent; advisory covers shape matches, subsets, long scenarios, seed
+status, and persona references. The classification is
 descriptive: the existing exit-code flags still drive the exit code, so
 advisory-only runs exit 0, and the prose output appends the severity after
 the existing short label while the JSON output carries a `severity` field.

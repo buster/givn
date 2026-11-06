@@ -151,16 +151,23 @@ coverage:
     std::fs::write(&commands_path, yaml).expect("write commands.yaml");
     configure_retirement_policy(env);
 
-    // The permanent use case: a narrative plus its only capability.
+    // The permanent use case: a valid narrative plus its only capability.
     let usecase_dir = env.path(&format!("givn/specs/{usecase}"));
     std::fs::create_dir_all(&usecase_dir).expect("create use-case dir");
-    std::fs::write(
-        usecase_dir.join("usecase.md"),
-        format!(
-            "# Use case: {usecase}\n\n## Narrative\n\nA use case whose only capability is `{cap}`.\n"
-        ),
-    )
-    .expect("write use-case narrative");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", &usecase)
+        .replace("<capability-id>", &cap)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", &format!("{cap} works"))
+        .replace(
+            &format!(
+                "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| {cap} | exercise the capability | {cap} works |\n"
+            ),
+            "- none\n",
+        );
+    std::fs::write(usecase_dir.join("usecase.md"), document).expect("write use-case narrative");
     std::fs::write(
         usecase_dir.join(format!("{cap}.feature")),
         format!("Feature: {cap}\n\n  Scenario: {cap} works\n    Given a placeholder step\n"),
@@ -196,7 +203,6 @@ fn retiring_change(world: &mut GivnWorld, id: String, cap: String) {
         format!("@givn.delta @givn.retired @{cap}\nFeature: Retire {cap}\n"),
     )
     .expect("write retirement delta");
-    write_change_usecase(&change_dir, &cap, &cap);
     world.last_change_id = Some(id);
 }
 
@@ -497,6 +503,32 @@ fn owner_change_delta(world: &mut GivnWorld) {
     world.last_change_id = Some("owner-demo".to_string());
 }
 
+fn write_owner_narrative(root: &std::path::Path, usecase: &str, cap: &str) {
+    let dir = root.join("givn/specs").join(usecase);
+    std::fs::create_dir_all(&dir).expect("create owner narrative dir");
+    if usecase == "fragments" {
+        let document = givn::gherkin::usecase_md::fragment_md_template()
+            .replace("<fragment-id>", usecase)
+            .replace("<capability-id>", cap);
+        std::fs::write(dir.join("fragment.md"), document).expect("write fragment narrative");
+        return;
+    }
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", usecase)
+        .replace("<capability-id>", cap)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "No E2E interaction")
+        .replace(
+            &format!(
+                "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| {cap} | exercise the capability | No E2E interaction |\n"
+            ),
+            "- none\n",
+        );
+    std::fs::write(dir.join("usecase.md"), document).expect("write owner narrative");
+}
+
 #[given(regex = r#"^"shared-capability" has (.+)$"#)]
 fn shared_capability_owners(world: &mut GivnWorld, owners: String) {
     let root = support::root(world);
@@ -525,6 +557,11 @@ fn shared_capability_owners(world: &mut GivnWorld, owners: String) {
                 format!("Feature: Shared capability\n\n  Scenario: {title}\n    Then original\n"),
             )
             .expect("write owner feature");
+            write_owner_narrative(
+                &root,
+                dir.file_name().and_then(|name| name.to_str()).unwrap(),
+                "shared-capability",
+            );
         }
         std::fs::write(
             &delta,
@@ -539,6 +576,7 @@ fn shared_capability_owners(world: &mut GivnWorld, owners: String) {
             "Feature: Shared capability\n\n  Scenario: Shared capability works in usecase\n    Then original\n",
         )
         .expect("write usecase owner feature");
+        write_owner_narrative(&root, "usecase-owner", "shared-capability");
         std::fs::write(
             &delta,
             "@givn.delta @shared-capability\nFeature: Shared capability\n\n  @givn.modified\n  Scenario: Shared capability works in usecase\n    Then updated\n",
@@ -552,6 +590,7 @@ fn shared_capability_owners(world: &mut GivnWorld, owners: String) {
             "Feature: Shared capability\n\n  Scenario: Shared capability works in fragment\n    Then original\n",
         )
         .expect("write fragment owner feature");
+        write_owner_narrative(&root, "fragments", "shared-capability");
         let target = change_dir.join("specs/fragments/shared-capability.feature");
         std::fs::create_dir_all(target.parent().unwrap()).expect("create fragment delta dir");
         std::fs::rename(&delta, &target).expect("move delta to fragment owner");
@@ -581,12 +620,6 @@ fn declares_routing(world: &mut GivnWorld, routing: String) {
         let target = change_dir.join("specs/new-group/shared-capability.feature");
         std::fs::create_dir_all(target.parent().unwrap()).expect("create new-group delta dir");
         std::fs::rename(source, target).expect("move delta to new group");
-        write_usecase_document(
-            &change_dir.join("specs/new-group"),
-            "new-group",
-            "shared-capability",
-            "Shared capability works",
-        );
     }
 }
 

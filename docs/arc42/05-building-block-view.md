@@ -48,11 +48,11 @@ flowchart TD
 | `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable every registered addon unless `--no-addons`, prompt/parse agent targets, scaffold addon files, sync, and report `givn-start` as the entry point. A sync failure exits non-zero with the failed destination and leaves the scaffold for retry. |
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
 | `cli::instructions` | Resolve artifact instructions and non-artifact policy/step instructions through the project-overrides-first cascade; render addon conditionals; append project extensions; return text or JSON; provide context-aware state and request-routing guidance without an id. The no-active path recommends `givn-start` and names `givn new` as the direct alternative. Domain-skill routing depends only on the `domain_modeling` addon. |
-| `cli::lint` | Parse features, report WIP/PENDING, run the default overlap scan with exit precedence 1, 3, 2, 0, report advisory seed and persona findings, and classify every finding as `advisory`, `finding`, or `blocking`. Runs no tests. |
+| `cli::lint` | Parse features, report WIP/PENDING, run the default overlap scan with exit precedence 1, 3, 2, 0, project the accepted corpus for `--change` and report interaction-inventory findings, report advisory seed and persona findings, and classify every finding as `advisory`, `finding`, or `blocking`. Runs no tests. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks. Review runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks; it executes no suite. Tasks runs change verification and writes the receipt. Also serves `check migration` and `check rules`. |
 | `cli::test_result` | Write the four-count runner result to `GIVN_RESULT_FILE` for simple runners. |
 | `proof` (with the check/archive adapters) | Capture stable verification inputs, validate fresh runner results, persist change and archive receipts, and classify archive provenance. |
-| `cli::archive` | Check preconditions and receipt freshness; run structural gates; publish the merged candidate; move the change with one rename; run regular/E2E scopes and the optional coverage gate; refresh managed README blocks; guard finalization; publish the proven receipt. Persists successful scope evidence for reuse. |
+| `cli::archive` | Check preconditions and receipt freshness; run structural gates; project and check the interaction inventory before mutation; publish the merged candidate; move the change with one rename; recheck the merged permanent inventory before verification; run regular/E2E scopes and the optional coverage gate; refresh managed README blocks; guard finalization; publish the proven receipt. Persists successful scope evidence for reuse. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, hooks, and unproven archive candidates with the resume command. |
 | `cli::history` | Read one scope's record; serve `history settings` as a non-recorded query; own the intake contract and its bounds/mode enforcement; map Claude's process-per-hook payloads into record events. |
 | `cli::timeline` | Build the report model for one change/topic/project and render one self-contained HTML file; omit the recorder's own command entries; enforce the 8 MiB content budget. |
@@ -84,7 +84,7 @@ flowchart TD
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
 | `gherkin::content` | Encode executable feature content for preservation and duplicate comparisons. |
 | `gherkin::usecase_md` | Parse strict `usecase.md` and `fragment.md` documents, identities, goals, interactions, Personas, and typed relationships; collect schema diagnostics in one pass. |
-| `gherkin::interaction` | Validate interaction inventories against capabilities. |
+| `gherkin::interaction` | Validate interaction inventories against capabilities and feature files against the declared capability list on a `SpecCorpus`, including a projected in-memory corpus. |
 | `gherkin::delta` | Interpret delta tags, operation defaults, and capability identity. |
 | `gherkin::merge` | Validate delta preconditions and merge scenario blocks into permanent specs. |
 | `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
@@ -100,6 +100,9 @@ flowchart TD
 | `history` / `cli::history` | Own the record entry schema, the append-only local store, scope resolution, capture modes and bounds, the recorder, ignore entries, and the intake. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance. |
 | `spec::coverage` | Emit behavior-hash specification inventories and compare migration baselines. |
+| `spec::merge_plan` | Build the ordered delta-to-permanent plan, produce merged feature text through one shared merge function, write it through the thin file writer, and delegate narrative overlay and retirement to `SpecCorpus`. Shared by publication and projection. |
+| `spec::corpus` | Read the direct use-case/fragments documents and feature files into an in-memory `SpecCorpus` with project-relative paths; own narrative overlay and capability removal. |
+| `spec::projection` | Read the permanent specifications into a `SpecCorpus`, overlay a change's accepted deltas and narratives, run the interaction-inventory and undeclared-capability gates, and return findings with project-relative paths. No temporary directory. |
 | `spec::owner` | Resolve capability ownership across use cases and fragments. |
 | `spec::routing_table` | Parse referenced and delta narratives once, collect routing errors, and group the report by document. |
 | `spec::route` | Rank advisory capability-routing candidates with ownership-weighted evidence and an explicit no-signal verdict. |

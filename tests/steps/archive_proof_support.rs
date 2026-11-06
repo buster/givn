@@ -187,7 +187,10 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
     fs::create_dir_all(&change).expect("create change dir");
     fs::write(
         change.join("proposal.md"),
-        crate::steps::fixture_routing_proposal("demo-cap"),
+        "# Proposal: fixture\n\n## Capability Routing\n\n\
+         | Proposed capability | Route's recommendation | Decision | Rationale |\n\
+         |---|---|---|---|\n\
+         | demo-cap | EXTEND demo-cap | `EXTEND demo-cap` | fixture |\n",
     )
     .expect("write proposal");
     let specs = change.join("specs/demo-cap");
@@ -204,16 +207,31 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
         ),
     )
     .expect("write delta feature");
-    let usecase = givn::gherkin::usecase_md::usecase_md_template()
+    let mut usecase = givn::gherkin::usecase_md::usecase_md_template()
         .replace("<usecase-id>", "demo-cap")
         .replace("<capability-id>", "demo-cap")
         .replace("<actor role>", "Fixture operator")
         .replace("<the domain goal>", "Exercise the fixture behavior.")
         .replace("<consumer action>", "exercise the capability")
         .replace("<scenario title>", "Demo scenario");
+    let table = "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n";
+    let original_row = "| demo-cap | exercise the capability | Demo scenario |\n";
+    if with_e2e {
+        usecase = usecase.replace(
+            &format!("{table}{original_row}"),
+            &format!("{table}| demo-cap | exercise the capability | Demo e2e scenario |\n"),
+        );
+    } else {
+        usecase = usecase.replace(&format!("{table}{original_row}"), "- none\n");
+    }
     let permanent = base.join("givn/specs/demo-cap");
     fs::create_dir_all(&permanent).expect("create permanent fixture usecase dir");
     fs::write(permanent.join("usecase.md"), usecase).expect("write fixture usecase.md");
+    fs::write(
+        permanent.join("demo-cap.feature"),
+        "Feature: Demo Capability\n\n  Scenario: Existing scenario\n    Given an existing thing\n    Then it already works\n",
+    )
+    .expect("write fixture permanent feature");
     fs::write(
         change.join("design.md"),
         "# Design\n\n## Step Definitions\n\n| Step | File |\n|---|---|\n| archive scenarios | tests/steps/archive_proof_steps.rs |\n",

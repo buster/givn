@@ -44,6 +44,7 @@ pub mod instruction_extension_e2e_steps;
 pub mod instruction_extension_steps;
 pub mod instruction_integrity_e2e_steps;
 pub mod instruction_integrity_steps;
+pub mod interaction_projection_steps;
 pub mod llm_attribution_e2e_steps;
 pub mod llm_attribution_installation_e2e_steps;
 pub mod llm_attribution_installation_steps;
@@ -396,52 +397,73 @@ fn ensure_fixture_usecase(env: &common::TestEnv, feature_path: &str, content: &s
     else {
         return;
     };
-    let path = env.path(&format!("givn/specs/{usecase}/usecase.md"));
+    let is_fragment = usecase == "fragments";
+    let path = env.path(&format!(
+        "givn/specs/{usecase}/{}",
+        if is_fragment {
+            "fragment.md"
+        } else {
+            "usecase.md"
+        }
+    ));
     if path.exists() {
         return;
     }
-    let mut e2e_titles = Vec::new();
-    let mut e2e = false;
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with('@') {
-            e2e = trimmed.split_whitespace().any(|tag| tag == "@e2e");
-        } else if e2e && trimmed.starts_with("Scenario:") {
-            e2e_titles.push(trimmed.trim_start_matches("Scenario:").trim().to_string());
-            e2e = false;
-        } else if !trimmed.is_empty() && !trimmed.starts_with("Scenario:") {
-            e2e = false;
-        }
-    }
-    let mut document = givn::gherkin::usecase_md::usecase_md_template()
-        .replace("<usecase-id>", usecase)
-        .replace("<capability-id>", capability)
-        .replace("<actor role>", "Fixture operator")
-        .replace("<the domain goal>", "Exercise the fixture behavior.")
-        .replace("<consumer action>", "exercise the capability")
-        .replace(
-            "<scenario title>",
-            e2e_titles
-                .first()
-                .map(String::as_str)
-                .unwrap_or("No E2E interaction"),
-        );
+    let e2e_titles: Vec<String> =
+        match gherkin::Feature::parse(content, gherkin::GherkinEnv::default()) {
+            Ok(feature) => {
+                let inherited = feature.tags.iter().any(|tag| tag == "e2e");
+                feature
+                    .scenarios
+                    .iter()
+                    .filter(|scenario| inherited || scenario.tags.iter().any(|tag| tag == "e2e"))
+                    .map(|scenario| scenario.name.clone())
+                    .collect()
+            }
+            Err(_) => Vec::new(),
+        };
     let table = "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n";
     let rows = e2e_titles
         .iter()
         .map(|title| format!("| {capability} | exercise the capability | {title} |\n"))
         .collect::<String>();
-    let original_row = format!(
-        "| {capability} | exercise the capability | {} |\n",
-        e2e_titles
-            .first()
-            .map(String::as_str)
-            .unwrap_or("No E2E interaction")
-    );
-    if e2e_titles.is_empty() {
-        document = document.replace(&format!("{table}{original_row}"), "- none\n");
+    let mut document = if is_fragment {
+        givn::gherkin::usecase_md::fragment_md_template()
+            .replace("<fragment-id>", usecase)
+            .replace("<capability-id>", capability)
     } else {
-        document = document.replace(&format!("{table}{original_row}"), &format!("{table}{rows}"));
+        givn::gherkin::usecase_md::usecase_md_template()
+            .replace("<usecase-id>", usecase)
+            .replace("<capability-id>", capability)
+            .replace("<actor role>", "Fixture operator")
+            .replace("<the domain goal>", "Exercise the fixture behavior.")
+            .replace("<consumer action>", "exercise the capability")
+            .replace(
+                "<scenario title>",
+                e2e_titles
+                    .first()
+                    .map(String::as_str)
+                    .unwrap_or("No E2E interaction"),
+            )
+    };
+    if is_fragment {
+        if !e2e_titles.is_empty() {
+            document = document.replace("- none\n", &format!("{table}{rows}"));
+        }
+    } else {
+        let original_row = format!(
+            "| {capability} | exercise the capability | {} |\n",
+            e2e_titles
+                .first()
+                .map(String::as_str)
+                .unwrap_or("No E2E interaction")
+        );
+        if e2e_titles.is_empty() {
+            document = document.replace(&format!("{table}{original_row}"), "- none\n");
+        } else {
+            document =
+                document.replace(&format!("{table}{original_row}"), &format!("{table}{rows}"));
+        }
     }
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).expect("create fixture use-case directory");
@@ -1442,6 +1464,27 @@ fn change_usecase_document_records_persona(world: &mut GivnWorld, path: String, 
             "## Personas\n\n- none\n",
             &format!("## Personas\n\n- {persona}\n"),
         );
+    let table = "## Interactions\n\n| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| persona-change | <consumer action> | S |\n";
+    let document = document.replace(table, "## Interactions\n\n- none\n");
+    let permanent = env.path("givn/specs/persona-change");
+    std::fs::create_dir_all(&permanent).expect("create persona fixture directory");
+    std::fs::write(
+        permanent.join("persona-change.feature"),
+        "Feature: Persona change\n  Scenario: Internal\n    Given x\n",
+    )
+    .expect("write persona fixture feature");
+    let permanent_doc = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "persona-change")
+        .replace("<capability-id>", "persona-change")
+        .replace("<scenario title>", "No E2E interaction")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| persona-change | <consumer action> | No E2E interaction |",
+            "- none",
+        );
+    std::fs::write(permanent.join("usecase.md"), permanent_doc)
+        .expect("write persona fixture usecase");
     let file_path = env.path(&path);
     if let Some(parent) = file_path.parent() {
         std::fs::create_dir_all(parent).expect("create parent dirs for use-case document");

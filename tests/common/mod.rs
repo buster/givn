@@ -576,17 +576,64 @@ pub fn declare_fixture_routing(env: &TestEnv, change: &str) {
 }
 
 fn write_fixture_usecase(specs: &std::path::Path, usecase: &str, capability: &str) {
-    let path = specs.join(usecase).join("usecase.md");
+    let is_fragment = usecase == "fragments";
+    let path = specs.join(usecase).join(if is_fragment {
+        "fragment.md"
+    } else {
+        "usecase.md"
+    });
     if path.exists() {
         return;
     }
-    let document = givn::gherkin::usecase_md::usecase_md_template()
-        .replace("<usecase-id>", usecase)
-        .replace("<capability-id>", capability)
-        .replace("<actor role>", "Fixture operator")
-        .replace("<the domain goal>", "Exercise the fixture behavior.")
-        .replace("<consumer action>", capability)
-        .replace("<scenario title>", "No E2E interaction");
+    let feature_path = specs.join(usecase).join(format!("{capability}.feature"));
+    let e2e_titles: Vec<String> =
+        gherkin::Feature::parse_path(&feature_path, gherkin::GherkinEnv::default())
+            .ok()
+            .map(|feature| {
+                let inherited = feature.tags.iter().any(|tag| tag == "e2e");
+                feature
+                    .scenarios
+                    .iter()
+                    .filter(|scenario| inherited || scenario.tags.iter().any(|tag| tag == "e2e"))
+                    .map(|scenario| scenario.name.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
+    let first = e2e_titles
+        .first()
+        .map(String::as_str)
+        .unwrap_or("No E2E interaction");
+    let table = "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n";
+    let rows = e2e_titles
+        .iter()
+        .map(|title| format!("| {capability} | {capability} | {title} |\n"))
+        .collect::<String>();
+    let mut document = if is_fragment {
+        givn::gherkin::usecase_md::fragment_md_template()
+            .replace("<fragment-id>", usecase)
+            .replace("<capability-id>", capability)
+    } else {
+        givn::gherkin::usecase_md::usecase_md_template()
+            .replace("<usecase-id>", usecase)
+            .replace("<capability-id>", capability)
+            .replace("<actor role>", "Fixture operator")
+            .replace("<the domain goal>", "Exercise the fixture behavior.")
+            .replace("<consumer action>", capability)
+            .replace("<scenario title>", first)
+    };
+    if is_fragment {
+        if !e2e_titles.is_empty() {
+            document = document.replace("- none\n", &format!("{table}{rows}"));
+        }
+    } else {
+        let original_row = format!("| {capability} | {capability} | {first} |\n");
+        if e2e_titles.is_empty() {
+            document = document.replace(&format!("{table}{original_row}"), "- none\n");
+        } else {
+            document =
+                document.replace(&format!("{table}{original_row}"), &format!("{table}{rows}"));
+        }
+    }
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).expect("create fixture usecase dir");
     }
@@ -680,8 +727,37 @@ pub fn ensure_review_evidence(env: &TestEnv, change: &str, readme_addon: bool) {
 }
 
 /// Write a change delta with one added scenario and its routing decision.
+///
+/// A fixture delta must leave the merged corpus consistent. When the
+/// capability has no permanent owner, the fixture first creates one so the
+/// change is an `EXTEND` (a `NEW in` capability without an `@e2e` scenario
+/// has no consistent interaction row). The permanent narrative always
+/// declares the permanent feature's actual `@e2e` titles, or `- none`.
 pub fn write_fixture_delta(env: &TestEnv, change: &str, capability: &str, scenario: &str) {
-    let dir = env.path(&format!("givn/changes/{change}/specs/{capability}"));
+    let permanent = env.path("givn/specs");
+    let owner = givn::spec::owner::resolve_capability_owner(&permanent, capability)
+        .expect("resolve fixture capability owner");
+    let usecase = match owner {
+        Some(dir) => dir
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or(capability)
+            .to_string(),
+        None => {
+            let dir = permanent.join(capability);
+            fs::create_dir_all(&dir).expect("create fixture permanent dir");
+            fs::write(
+                dir.join(format!("{capability}.feature")),
+                format!(
+                    "Feature: {capability}\n\n  Scenario: Existing {capability} behavior\n    Given a fixture precondition\n"
+                ),
+            )
+            .expect("write fixture permanent feature");
+            capability.to_string()
+        }
+    };
+    write_fixture_usecase(&permanent, &usecase, capability);
+    let dir = env.path(&format!("givn/changes/{change}/specs/{usecase}"));
     fs::create_dir_all(&dir).expect("create fixture delta dir");
     let feature = format!(
         "@givn.delta @{capability}\nFeature: {capability}\n\n  @givn.added\n  Scenario: {scenario}\n    Given a fixture precondition\n    When the fixture action runs\n    Then the fixture result is observed\n"

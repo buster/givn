@@ -58,6 +58,7 @@ Feature: review-disposition-gates
     And a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
       """
       Feature: Cap
+        @e2e
         Scenario: Solo delta
           Given x
           When y
@@ -81,7 +82,16 @@ Feature: review-disposition-gates
     And a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
       """
       Feature: Cap
+        @e2e
         Scenario: Receipt added
+          Given x
+      """
+    And a .feature file at "givn/specs/other/other.feature" with:
+      """
+      Feature: Other
+        Scenario: Receipt modified
+          Given x
+        Scenario: Receipt removed
           Given x
       """
     And a .feature file at "givn/changes/test-change/specs/other/other.feature" with:

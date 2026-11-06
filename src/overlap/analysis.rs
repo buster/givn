@@ -115,7 +115,18 @@ pub fn scan_tree(root: &Path) -> Vec<Finding> {
     findings.extend(singleton_usecases(root));
     findings.extend(use_case_graph_findings(root));
     findings.extend(delta_usecase_findings(root));
-    findings.extend(crate::gherkin::interaction::interaction_gate_findings(root));
+    let interaction_findings = match crate::spec::corpus::SpecCorpus::read(&root.join("givn/specs"))
+    {
+        Ok(corpus) => crate::gherkin::interaction::interaction_gate_findings(&corpus),
+        Err(error) => vec![Finding {
+            kind: "usecase_invalid".to_string(),
+            level: "error".to_string(),
+            files: vec!["givn/specs".to_string()],
+            titles: vec![error.to_string()],
+            contradiction: false,
+        }],
+    };
+    findings.extend(interaction_findings);
     findings.sort_by(|a, b| {
         kind_order(a).cmp(&kind_order(b)).then_with(|| {
             a.files
@@ -139,7 +150,8 @@ fn kind_order(f: &Finding) -> u8 {
         | "ambiguous_relationship_target"
         | "dangling_use_case_ref"
         | "use_case_cycle"
-        | "extend_fragment" => 4,
+        | "extend_fragment"
+        | "undeclared_capability" => 4,
         _ => 5,
     }
 }
