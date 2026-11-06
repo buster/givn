@@ -80,15 +80,22 @@ fn run_with_root(
             Some(id) => format!("givn/changes/{id}/specs/"),
             None => "givn/".to_string(),
         };
-        if json {
-            println!("{}", findings_json(&findings)?);
-        } else {
-            for finding in &findings {
-                render_prose(finding);
+        if change.is_none() {
+            if json {
+                println!("{}", findings_json(&findings)?);
+            } else {
+                for finding in &findings {
+                    render_prose(finding);
+                }
+                println!("givn lint: no .feature files found under {scope}");
             }
+            return Ok(0);
+        }
+        // A change with a narrative-only delta still projects. Keep going so
+        // the interaction inventory is checked before the empty-feature shortcut.
+        if !json {
             println!("givn lint: no .feature files found under {scope}");
         }
-        return Ok(0);
     }
 
     let mut has_parse_error = false;
@@ -236,11 +243,25 @@ fn run_with_root(
                     | "extend_fragment"
                     | "interaction_mismatch"
                     | "usecase_interaction_invalid"
+                    | "undeclared_capability"
             ) {
                 total_errors += 1;
                 has_use_case_error = true;
             }
             findings.push(finding);
+        }
+
+        // Reuse the same in-memory projection for --change. It reports only
+        // the projected corpus; the delta scan above owns syntax and schema
+        // findings, so skip the projection when one is already blocking.
+        if let Some(id) = change
+            && !has_use_case_error
+        {
+            for finding in crate::spec::projection::interaction_findings(project_root, id)? {
+                total_errors += 1;
+                has_use_case_error = true;
+                findings.push(finding);
+            }
         }
     }
 
@@ -544,7 +565,8 @@ fn severity_for(kind: &str) -> Severity {
         | "use_case_cycle"
         | "extend_fragment"
         | "interaction_mismatch"
-        | "usecase_interaction_invalid" => Severity::Blocking,
+        | "usecase_interaction_invalid"
+        | "undeclared_capability" => Severity::Blocking,
         "wip" | "e2e_intent" => Severity::Finding,
         _ => Severity::Advisory,
     }

@@ -728,7 +728,7 @@ fn missing_e2e_evidence(world: &mut GivnWorld, capability: String, scenario: Str
         text.contains(&format!("capability '{capability}'")),
         "{text}"
     );
-    assert!(text.contains("missing declared scenarios"), "{text}");
+    assert!(text.contains("missing @e2e scenario"), "{text}");
     assert!(text.contains(&scenario), "{text}");
 }
 
@@ -741,14 +741,15 @@ fn wrong_capability_scenario(world: &mut GivnWorld, other: String) {
         .find(|line| line.contains("capability 'place-order'"))
         .expect("place-order finding");
     assert!(place_order.contains("0 @e2e scenario(s)"), "{text}");
-    assert!(place_order.contains("missing declared scenarios"), "{text}");
+    assert!(place_order.contains("missing @e2e scenario"), "{text}");
 }
 
 #[then(regex = r#"^no missing or unlisted interaction finding is reported for "([^"]+)"$"#)]
 fn no_interaction_finding(world: &mut GivnWorld, scenario: String) {
     let text = combined_output(world);
-    assert!(!text.contains("missing declared scenarios"), "{text}");
-    assert!(!text.contains("unlisted @e2e scenarios"), "{text}");
+    assert!(!text.contains("interaction inventory mismatch"), "{text}");
+    assert!(!text.contains("unlisted @e2e scenario"), "{text}");
+    assert!(!text.contains("undeclared capability"), "{text}");
     assert!(!text.contains("interaction"), "{text}");
     let _ = scenario;
 }

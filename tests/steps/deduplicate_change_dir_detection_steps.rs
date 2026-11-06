@@ -232,6 +232,10 @@ fn write_permanent_example(env: &crate::common::TestEnv) {
         .replace("<actor role>", "Fixture operator")
         .replace("<the domain goal>", "Exercise the fixture behavior.")
         .replace("<consumer action>", "exercise the capability")
-        .replace("<scenario title>", "No E2E interaction");
+        .replace("<scenario title>", "No E2E interaction")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| example | exercise the capability | No E2E interaction |\n",
+            "- none\n",
+        );
     std::fs::write(dir.join("usecase.md"), document).expect("write permanent usecase");
 }

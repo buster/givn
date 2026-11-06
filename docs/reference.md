@@ -13,9 +13,9 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml` and `givn/commands.yaml`, install selected addons, and generate skills. Every addon is enabled by default; `--no-addons` writes explicit `false` for all. `--agents` accepts `opencode`, `agents`, `claude`, `omp`, `maki`, or `all`. |
 | `givn new <id> [--skip a,b]` | Create a change directory and record the effective add-on configuration in `config-lock.yaml`. `--skip` writes `.givn-skip` and marks artifacts as intentionally not produced. |
 | `givn instructions [<id>] [--change <id>] [--json]` | No id: project state and request routing; no-active text recommends `givn-start` and names `givn new` as the direct alternative, and JSON carries `next_command`, `next_skill`, and `overview`. With an artifact id: its rendered instruction. With a policy or step id (`start`, `dialog`, `dialog-examples`, `challenge`, `dev-principles`, `domain-modeling`, `architecture-principles`, `review-reverse`, `specs-reverse`, `tasks-reverse`): the same cascade without a lifecycle stage. Artifact JSON carries `id`, `generates`, `requires`, `instruction`, and, while domain modeling applies, `skill_to_load`. `explore` is retired and refused. |
-| `givn lint [--change <id>] [paths...] [--json]` | Static feature and use-case analysis; runs no project tests. Exit codes: `0` clean, `1` parse error, `2` `@wip`/`PENDING`, `3` duplicate title, empty feature, invalid use-case document, or interaction mismatch. Precedence is `1 > 3 > 2 > 0`. |
+| `givn lint [--change <id>] [paths...] [--json]` | Static feature and use-case analysis, including the projected interaction inventory for `--change`; runs no project tests. It reports missing or unlisted E2E interactions, undeclared capabilities, and unplaceable delta capabilities. Exit codes: `0` clean, `1` parse error, invalid use-case document, interaction mismatch, undeclared capability, or unplaceable delta capability, `2` `@wip`/`PENDING`, `3` duplicate title or empty feature. Precedence is `1 > 3 > 2 > 0`. |
 | `givn check` | Prints guidance and executes nothing. |
-| `givn check <artifact> [--change <id>]` | Runs the artifact's mandatory checks and then its configured `post` hooks. `tasks` runs WIP protection and change verification; `review` runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks. `givn check migration --change <id>` runs the preservation comparison; `givn check rules` reports rule cleanliness. |
+| `givn check <artifact> [--change <id>]` | Runs the artifact's mandatory checks and then its configured `post` hooks. `tasks` runs WIP protection and change verification; `review` runs integrity, the run declaration, change-scoped lint (including the projected interaction inventory), overlap, retirement, routing, receipt, and scenario-commit checks. `givn check migration --change <id>` runs the preservation comparison; `givn check rules` reports rule cleanliness. |
 | `givn status [--change <id>] [--json]` | Filesystem-derived state: `SCM: git` / `fossil` / `none`, stage, artifact checklist, task progress, pending task lines, next required/optional steps, and unproven archive candidates. Computes no tests. |
 | `givn graph [--change <id>] [--json]` | Show the effective artifact graph, dependencies, optional/gates-archive flags, and hooks, optionally overlaid with live state. |
 | `givn readme check` | Report open `givn:todo` placeholders, legacy scaffold remnants, damaged or ambiguous development/run managed markers, unmanaged README, or a missing README. Exits non-zero while findings remain; never rewrites the README. |
@@ -41,10 +41,12 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn completions <bash\|zsh\|fish>` | Print a shell completion script. |
 | `givn test-result --total <n> --passed <n> --failed <n> --skipped <n>` | Write the four-count runner result to `GIVN_RESULT_FILE`; a helper for simple runners. |
 
-Hidden sentinels: `givn missing-testrunner` (default `verify.command`),
-`givn missing-e2e-runner` (default `verify.e2e_command` comparison value), and
-`givn missing-run-command` (default `run.command`). Each prints setup guidance
-and exits non-zero. They are commands, not generated scripts.
+Hidden sentinels: `givn missing-testrunner` (default `verify.command`) and
+`givn missing-run-command` (default `run.command`) are executable hidden
+commands that print setup guidance and exit non-zero. `givn missing-e2e-runner`
+is the default `verify.e2e_command` comparison value: the E2E hook treats it as
+unconfigured and never executes it as a command. They are commands or
+comparison values, not generated scripts.
 
 ## Agent skills and targets
 

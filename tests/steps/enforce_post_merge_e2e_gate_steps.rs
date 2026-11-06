@@ -56,6 +56,7 @@ fn e2e_given_permanent_specs_no_e2e(world: &mut GivnWorld) {
         "Feature: existing\n  Scenario: existing\n    Given a placeholder step\n",
     )
     .unwrap();
+    write_permanent_existing(env);
 }
 
 #[given("the givn/commands.yaml has e2e_command unconfigured")]
@@ -140,7 +141,7 @@ fn completed_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
             writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
-    write_permanent_usecase(env, "example");
+    write_permanent_usecase(env, "example", true);
     // Create specs dir with an @e2e-tagged scenario.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
@@ -192,7 +193,12 @@ fn completed_change_no_e2e_delta(world: &mut GivnWorld, id: String) {
             writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
-    write_permanent_usecase(env, "example");
+    write_permanent_usecase(env, "example", false);
+    std::fs::write(
+        env.path("givn/specs/example/example.feature"),
+        "Feature: example\n  Scenario: Existing behavior\n    Given a placeholder step\n",
+    )
+    .expect("write permanent feature");
     // Create specs dir with no @e2e scenario.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
@@ -201,6 +207,7 @@ fn completed_change_no_e2e_delta(world: &mut GivnWorld, id: String) {
         "@givn.delta\nFeature: example\n\n  Scenario: unit test\n    Given a placeholder step\n",
     )
     .unwrap();
+    common::declare_fixture_routing(env, &id);
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     world.last_change_id = Some(id);
 }
@@ -218,6 +225,7 @@ fn permanent_specs_no_e2e(world: &mut GivnWorld) {
         "Feature: existing\n  Scenario: existing\n    Given a placeholder step\n",
     )
     .unwrap();
+    write_permanent_existing(env);
 }
 
 #[given("the change directory still exists under givn/changes/")]
@@ -339,7 +347,7 @@ fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
             writeln!(f, "- [x] COMMIT: a1b2c3d4 -- all done").ok();
         }
     }
-    write_permanent_usecase(env, "example");
+    write_permanent_usecase(env, "example", true);
     let specs_dir = change_dir.join("specs/example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
     std::fs::write(
@@ -351,17 +359,42 @@ fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
     world.last_change_id = Some(id);
 }
 
-fn write_permanent_usecase(env: &crate::common::TestEnv, usecase: &str) {
+fn write_permanent_usecase(env: &crate::common::TestEnv, usecase: &str, e2e: bool) {
     let path = env.path(&format!("givn/specs/{usecase}/usecase.md"));
     std::fs::create_dir_all(path.parent().expect("usecase parent"))
         .expect("create permanent usecase dir");
-    let document = givn::gherkin::usecase_md::usecase_md_template()
+    let mut document = givn::gherkin::usecase_md::usecase_md_template()
         .replace("<usecase-id>", usecase)
         .replace("<capability-id>", usecase)
         .replace("<actor role>", "Fixture operator")
         .replace("<the domain goal>", "Exercise the fixture behavior.")
         .replace("<consumer action>", "exercise the capability")
         .replace("<scenario title>", "e2e test");
+    if !e2e {
+        let table = format!(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| {usecase} | exercise the capability | e2e test |\n"
+        );
+        document = document.replace(&table, "- none\n");
+    }
+    std::fs::write(path, document).expect("write permanent usecase");
+}
+
+/// Write the permanent `existing` use case without interactions.
+fn write_permanent_existing(env: &crate::common::TestEnv) {
+    let path = env.path("givn/specs/existing/usecase.md");
+    std::fs::create_dir_all(path.parent().expect("usecase parent"))
+        .expect("create permanent usecase dir");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "existing")
+        .replace("<capability-id>", "existing")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "existing")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| existing | exercise the capability | existing |\n",
+            "- none\n",
+        );
     std::fs::write(path, document).expect("write permanent usecase");
 }
 

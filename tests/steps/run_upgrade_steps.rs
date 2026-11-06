@@ -521,6 +521,19 @@ fn seed_user_files(env: &common::TestEnv) {
         "Feature: fixture\n\n  Scenario: fixture stays\n    Given a fixture\n",
     )
     .expect("write fixture feature");
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", "example")
+        .replace("<capability-id>", "example")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "fixture stays")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| example | exercise the capability | fixture stays |\n",
+            "- none\n",
+        );
+    std::fs::write(env.path("givn/specs/example/usecase.md"), document)
+        .expect("write fixture usecase");
     common::write_override(env, "proposal", "proposal.md", "# Custom proposal\n");
 }
 

@@ -103,13 +103,22 @@ fn change_all_complete_with_tasks_content(
     // Create specs dir with a valid @givn.delta-tagged feature file.
     let permanent = env.path("givn/specs/example");
     std::fs::create_dir_all(&permanent).expect("create permanent usecase dir");
+    std::fs::write(
+        permanent.join("example.feature"),
+        "Feature: example\n  Scenario: Existing behavior\n    Given a placeholder step\n",
+    )
+    .expect("write permanent feature");
     let document = givn::gherkin::usecase_md::usecase_md_template()
         .replace("<usecase-id>", "example")
         .replace("<capability-id>", "example")
         .replace("<actor role>", "Fixture operator")
         .replace("<the domain goal>", "Exercise the fixture behavior.")
         .replace("<consumer action>", "exercise the capability")
-        .replace("<scenario title>", "No E2E interaction");
+        .replace("<scenario title>", "No E2E interaction")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| example | exercise the capability | No E2E interaction |\n",
+            "- none\n",
+        );
     std::fs::write(permanent.join("usecase.md"), document).expect("write permanent usecase");
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
@@ -118,6 +127,7 @@ fn change_all_complete_with_tasks_content(
         "@givn.delta\nFeature: example\n",
     )
     .unwrap();
+    crate::common::declare_fixture_routing(env, &id);
     // Write STATUS: DONE marker for arc42-docs gate.
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     // Override commands.yaml so verify and coverage gates pass in test environment.

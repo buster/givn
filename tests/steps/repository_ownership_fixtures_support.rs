@@ -25,6 +25,8 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
         &root.join("givn/specs/fixture-retained/fixture-retained.feature"),
         "Feature: Retained fixture\n\n  Scenario: Existing unrelated behavior\n    Given a different fixture behavior\n    When unrelated behavior runs\n    Then unrelated result appears\n",
     );
+    write_usecase(&root, "fixture-existing");
+    write_usecase(&root, "fixture-retained");
 
     let change = root.join("givn/changes/fixture-consolidation");
     write_feature(
@@ -70,6 +72,29 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
 fn write_feature(path: &Path, content: &str) {
     fs::create_dir_all(path.parent().expect("feature parent")).expect("create feature directory");
     fs::write(path, content).expect("write feature");
+}
+
+/// Write a permanent narrative with no E2E interactions for the fixture use
+/// case.
+fn write_usecase(root: &Path, usecase: &str) {
+    let document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", usecase)
+        .replace("<capability-id>", usecase)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "No E2E interaction")
+        .replace(
+            &format!(
+                "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| {usecase} | exercise the capability | No E2E interaction |\n"
+            ),
+            "- none\n",
+        );
+    fs::write(
+        root.join(format!("givn/specs/{usecase}/usecase.md")),
+        document,
+    )
+    .expect("write fixture usecase");
 }
 
 pub(crate) fn invoke_givn(world: &mut GivnWorld, args: &[&str]) {

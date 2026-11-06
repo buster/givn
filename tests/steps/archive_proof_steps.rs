@@ -1387,6 +1387,67 @@ fn archive_becomes_proven(world: &mut GivnWorld) {
     assert_eq!(support::receipt_status(world, &id), "proven");
 }
 
+#[given(
+    regex = r#"^an unproven archive candidate "([^"]+)" with a merged corpus and no verification scopes$"#
+)]
+fn merged_unproven_candidate(world: &mut GivnWorld, id: String) {
+    support::ready_change(world, &id, false, "pass");
+    let env = support::env(world);
+    let change = env.path(&format!("givn/changes/{id}"));
+    let permanent = env.path("givn/specs/demo-cap/demo-cap.feature");
+    let delta = change.join("specs/demo-cap/demo-cap.feature");
+    let feature = gherkin::Feature::parse_path(&delta, gherkin::GherkinEnv::default())
+        .expect("parse fixture delta feature");
+    givn::spec::merge_plan::write_feature(&permanent, &feature).expect("merge fixture delta");
+    let archive = env.path(&format!("givn/archive/{id}"));
+    std::fs::create_dir_all(archive.parent().expect("archive parent")).expect("create archive dir");
+    std::fs::rename(&change, &archive).expect("move fixture change to archive");
+    support::write_pending_receipt(
+        &archive,
+        &id,
+        true,
+        &["demo-cap/demo-cap.feature"],
+        None,
+        &["demo-cap/demo-cap.feature"],
+        &[(
+            "demo-cap/demo-cap.feature",
+            "givn/specs/demo-cap/demo-cap.feature",
+        )],
+    );
+    common::commit_fixture(env);
+    world.last_change_id = Some(id);
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
+}
+
+#[given(
+    "the permanent interaction inventory does not declare an E2E scenario that the merged corpus contains"
+)]
+fn permanent_inventory_misses_merged_scenario(world: &mut GivnWorld) {
+    let env = support::env(world);
+    let permanent = env.path("givn/specs/demo-cap/demo-cap.feature");
+    let mut content = fs::read_to_string(&permanent).expect("read merged permanent feature");
+    if !content.ends_with('\n') {
+        content.push('\n');
+    }
+    content.push_str(
+        "\n  @e2e\n  Scenario: Consumer cancels an order\n    Given a thing\n    Then it works\n",
+    );
+    fs::write(&permanent, content).expect("append unlisted permanent scenario");
+    common::commit_fixture(env);
+}
+
+#[then("no verification scope ran for the candidate")]
+fn no_verification_scope_ran(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("change id");
+    let results = support::archive_dir(world, &id).join("results");
+    assert!(
+        !results.exists(),
+        "a verification scope ran and wrote {}",
+        results.display()
+    );
+}
+
 #[then("the candidate remains unproven and repairable in place")]
 fn candidate_unproven_repairable(world: &mut GivnWorld) {
     let id = world.last_change_id.clone().expect("change id");

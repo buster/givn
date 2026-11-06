@@ -3,15 +3,18 @@
 //! Each interaction belongs to one capability and names exactly one `@e2e`
 //! scenario. Summary use cases do not duplicate child inventories; fragments
 //! retain their own behavior and are not copied into including use cases.
+//! The gate reads a `SpecCorpus`, so the same check runs on the permanent
+//! corpus and on a change's projected corpus.
 
-use std::collections::BTreeSet;
-use std::path::Path;
+use std::collections::{BTreeMap, BTreeSet};
+use std::path::{Path, PathBuf};
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use gherkin::GherkinEnv;
 use serde::Serialize;
 
 use crate::overlap::analysis::Finding;
+use crate::spec::corpus::SpecCorpus;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct UsecaseCoverage {
@@ -21,6 +24,12 @@ pub struct UsecaseCoverage {
     pub e2e_scenarios: usize,
     pub declared_e2e_scenarios: Vec<String>,
     pub actual_e2e_scenarios: Vec<String>,
+}
+
+struct UsecaseDeclaration {
+    narrative: PathBuf,
+    capabilities: Vec<String>,
+    interactions: Vec<crate::gherkin::usecase_md::Interaction>,
 }
 
 fn is_e2e(scenario: &gherkin::Scenario) -> bool {
@@ -36,51 +45,62 @@ pub fn count_e2e(feature: &gherkin::Feature) -> usize {
         .count()
 }
 
-/// Build coverage rows for every capability declared by a leaf or summary use
-/// case. A missing use-case document is reported by the relationship/lint
-/// layer, not treated as a zero-interaction document here.
-pub fn usecase_coverages(root: &Path) -> Result<Vec<UsecaseCoverage>> {
-    let specs_root = root.join("givn/specs");
-    let mut out = Vec::new();
-    let entries = match std::fs::read_dir(&specs_root) {
-        Ok(entries) => entries,
-        Err(_) => return Ok(out),
-    };
-
-    for entry in entries {
-        let usecase_dir = entry?.path();
-        if !usecase_dir.is_dir() {
-            continue;
-        }
-        let usecase = usecase_dir
-            .file_name()
+/// Parse every narrative in the corpus into its declared capabilities and
+/// interactions. Parse errors are returned so the gate can report one
+/// `usecase_interaction_invalid` finding.
+fn usecase_declarations(corpus: &SpecCorpus) -> Result<BTreeMap<String, UsecaseDeclaration>> {
+    let mut declarations = BTreeMap::new();
+    for (key, content) in &corpus.narratives {
+        let Some(usecase) = key
+            .parent()
+            .and_then(|parent| parent.file_name())
             .and_then(|name| name.to_str())
-            .unwrap_or_default()
-            .to_string();
-        let usecase_path = usecase_dir.join(if usecase == "fragments" {
-            "fragment.md"
-        } else {
-            "usecase.md"
-        });
-        if !usecase_path.exists() {
+        else {
             continue;
-        }
-        let content = std::fs::read_to_string(&usecase_path)?;
-        let (capabilities, interactions) = if usecase == "fragments" {
-            let doc = crate::gherkin::usecase_md::parse_fragment_md(&content)?;
+        };
+        let is_fragment = key.file_name().is_some_and(|name| name == "fragment.md");
+        let (capabilities, interactions) = if is_fragment {
+            let doc = crate::gherkin::usecase_md::parse_fragment_md(content)
+                .map_err(|error| anyhow!("invalid fragment '{}': {error}", key.display()))?;
             (doc.capabilities, doc.interactions)
         } else {
-            let doc = crate::gherkin::usecase_md::parse_usecase_md(&content)?;
+            let doc = crate::gherkin::usecase_md::parse_usecase_md(content)
+                .map_err(|error| anyhow!("invalid use case '{}': {error}", key.display()))?;
             (doc.capabilities, doc.interactions)
         };
+        declarations.insert(
+            usecase.to_string(),
+            UsecaseDeclaration {
+                narrative: key.clone(),
+                capabilities,
+                interactions,
+            },
+        );
+    }
+    Ok(declarations)
+}
 
-        for capability in capabilities {
-            let feature_path = usecase_dir.join(format!("{capability}.feature"));
-            let feature = gherkin::Feature::parse_path(&feature_path, GherkinEnv::default())
-                .map_err(|error| {
-                    anyhow::anyhow!("failed to parse {}: {error}", feature_path.display())
-                })?;
-            let declared: Vec<String> = interactions
+/// Build coverage rows for every capability declared by a leaf or summary use
+/// case. A declared capability whose feature is absent is an error; the gate
+/// maps it to a blocking `usecase_interaction_invalid` finding.
+pub fn usecase_coverages(corpus: &SpecCorpus) -> Result<Vec<UsecaseCoverage>> {
+    let declarations = usecase_declarations(corpus)?;
+    let mut out = Vec::new();
+    for (usecase, declaration) in declarations {
+        for capability in declaration.capabilities {
+            let feature_key = PathBuf::from("givn/specs")
+                .join(&usecase)
+                .join(format!("{capability}.feature"));
+            let Some(text) = corpus.features.get(&feature_key) else {
+                return Err(anyhow!(
+                    "declared capability '{capability}' has no feature at '{}'",
+                    feature_key.display()
+                ));
+            };
+            let feature = gherkin::Feature::parse(text, GherkinEnv::default())
+                .map_err(|error| anyhow!("failed to parse {}: {error}", feature_key.display()))?;
+            let declared: Vec<String> = declaration
+                .interactions
                 .iter()
                 .filter(|interaction| interaction.capability == capability)
                 .map(|interaction| interaction.e2e_scenario.clone())
@@ -109,20 +129,18 @@ pub fn usecase_coverages(root: &Path) -> Result<Vec<UsecaseCoverage>> {
     Ok(out)
 }
 
-/// Compatibility-free active API. The old group coverage function is gone;
-/// callers must use the use-case vocabulary.
-pub fn interaction_gate_findings(root: &Path) -> Vec<Finding> {
-    let coverages = match usecase_coverages(root) {
+/// The one interaction-inventory gate. It reports missing/unlisted E2E
+/// interactions and features outside the declared capability list. The gate is
+/// infallible after `SpecCorpus::read`; document/feature parse errors become
+/// blocking `usecase_interaction_invalid` findings.
+pub fn interaction_gate_findings(corpus: &SpecCorpus) -> Vec<Finding> {
+    let declarations = match usecase_declarations(corpus) {
+        Ok(declarations) => declarations,
+        Err(error) => return vec![usecase_invalid(error.to_string())],
+    };
+    let coverages = match usecase_coverages(corpus) {
         Ok(coverages) => coverages,
-        Err(error) => {
-            return vec![Finding {
-                kind: "usecase_interaction_invalid".to_string(),
-                level: "error".to_string(),
-                files: vec![root.join("givn/specs").display().to_string()],
-                titles: vec![error.to_string()],
-                contradiction: false,
-            }];
-        }
+        Err(error) => return vec![usecase_invalid(error.to_string())],
     };
 
     let mut findings = Vec::new();
@@ -142,37 +160,136 @@ pub fn interaction_gate_findings(root: &Path) -> Vec<Finding> {
         }
         let missing: Vec<&str> = declared.difference(&actual).copied().collect();
         let extra: Vec<&str> = actual.difference(&declared).copied().collect();
-        let detail = format!(
-            "missing declared scenarios [{}]; unlisted @e2e scenarios [{}]",
-            missing.join(", "),
-            extra.join(", ")
+        let mut title = format!(
+            "interaction inventory mismatch: use case '{}' capability '{}' declares {} interaction(s) and has {} @e2e scenario(s)",
+            coverage.usecase,
+            coverage.capability,
+            coverage.declared_interactions,
+            coverage.e2e_scenarios
         );
+        for scenario in missing {
+            title.push_str(&format!("; missing @e2e scenario '{scenario}'"));
+        }
+        for scenario in extra {
+            title.push_str(&format!("; unlisted @e2e scenario '{scenario}'"));
+        }
         findings.push(Finding {
             kind: "interaction_mismatch".to_string(),
             level: "error".to_string(),
             files: vec![
-                root.join("givn/specs")
-                    .join(&coverage.usecase)
-                    .join(if coverage.usecase == "fragments" { "fragment.md" } else { "usecase.md" })
-                    .display()
-                    .to_string(),
-                root.join("givn/specs")
-                    .join(&coverage.usecase)
-                    .join(format!("{}.feature", coverage.capability))
+                narrative_key(&coverage.usecase).display().to_string(),
+                feature_key(&coverage.usecase, &coverage.capability)
                     .display()
                     .to_string(),
             ],
-            titles: vec![format!(
-                "use case '{}' capability '{}' declares {} interaction(s) and has {} @e2e scenario(s) — {detail}",
-                coverage.usecase,
-                coverage.capability,
-                coverage.declared_interactions,
-                coverage.e2e_scenarios,
-            )],
+            titles: vec![title],
+            contradiction: false,
+        });
+    }
+
+    findings.extend(undeclared_findings(corpus, &declarations));
+    findings
+}
+
+/// Report every direct feature file whose capability is absent from the owning
+/// document's `## Capabilities` list, including a feature directory with no
+/// document at all.
+fn undeclared_findings(
+    corpus: &SpecCorpus,
+    declarations: &BTreeMap<String, UsecaseDeclaration>,
+) -> Vec<Finding> {
+    let mut findings = Vec::new();
+    for feature in corpus.features.keys() {
+        let Some((usecase, capability)) = direct_capability(feature) else {
+            continue;
+        };
+        let declared = declarations
+            .get(&usecase)
+            .is_some_and(|declaration| declaration.capabilities.contains(&capability));
+        if declared {
+            continue;
+        }
+        let Some(text) = corpus.features.get(feature) else {
+            continue;
+        };
+        let e2e_titles = match gherkin::Feature::parse(text, GherkinEnv::default()) {
+            Ok(parsed) => parsed
+                .scenarios
+                .iter()
+                .filter(|scenario| is_e2e(scenario))
+                .map(|scenario| scenario.name.clone())
+                .collect::<Vec<_>>(),
+            Err(error) => {
+                return vec![usecase_invalid(format!(
+                    "failed to parse {}: {error}",
+                    feature.display()
+                ))];
+            }
+        };
+        let mut title = format!(
+            "interaction inventory mismatch: use case '{usecase}' has undeclared capability '{capability}'"
+        );
+        if !e2e_titles.is_empty() {
+            title.push_str(&format!(
+                " with @e2e scenario(s) {}",
+                e2e_titles
+                    .iter()
+                    .map(|title| format!("'{title}'"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        let mut files = vec![feature.display().to_string()];
+        if let Some(declaration) = declarations.get(&usecase) {
+            files.insert(0, declaration.narrative.display().to_string());
+        }
+        findings.push(Finding {
+            kind: "undeclared_capability".to_string(),
+            level: "error".to_string(),
+            files,
+            titles: vec![title],
             contradiction: false,
         });
     }
     findings
+}
+
+fn direct_capability(feature: &Path) -> Option<(String, String)> {
+    let relative = feature.strip_prefix("givn/specs").ok()?;
+    let mut components = relative.components();
+    let usecase = components.next()?.as_os_str().to_str()?.to_string();
+    let file = components.next()?.as_os_str().to_str()?;
+    if components.next().is_some() {
+        return None;
+    }
+    let capability = file.strip_suffix(".feature")?.to_string();
+    Some((usecase, capability))
+}
+
+fn narrative_key(usecase: &str) -> PathBuf {
+    PathBuf::from("givn/specs")
+        .join(usecase)
+        .join(if usecase == "fragments" {
+            "fragment.md"
+        } else {
+            "usecase.md"
+        })
+}
+
+fn feature_key(usecase: &str, capability: &str) -> PathBuf {
+    PathBuf::from("givn/specs")
+        .join(usecase)
+        .join(format!("{capability}.feature"))
+}
+
+fn usecase_invalid(message: String) -> Finding {
+    Finding {
+        kind: "usecase_interaction_invalid".to_string(),
+        level: "error".to_string(),
+        files: vec!["givn/specs".to_string()],
+        titles: vec![message],
+        contradiction: false,
+    }
 }
 
 #[cfg(test)]
@@ -186,6 +303,10 @@ mod tests {
         std::fs::write(usecase.join("usecase.md"), interactions).unwrap();
         std::fs::write(usecase.join("project-run.feature"), feature_text).unwrap();
         root
+    }
+
+    fn corpus(root: &Path) -> SpecCorpus {
+        SpecCorpus::read(&root.join("givn/specs")).unwrap()
     }
 
     #[test]
@@ -204,7 +325,7 @@ mod tests {
             "Feature: Cancel\n  @e2e\n  Scenario: Consumer submits an order\n    Given x\n",
         )
         .unwrap();
-        let findings = interaction_gate_findings(root.path());
+        let findings = interaction_gate_findings(&corpus(root.path()));
         assert_eq!(findings.len(), 2, "{findings:?}");
         assert!(
             findings
@@ -221,7 +342,7 @@ mod tests {
             "Feature: Cancel\n  Scenario: Internal\n    Given x\n",
         )
         .unwrap();
-        assert!(interaction_gate_findings(root.path()).is_empty());
+        assert!(interaction_gate_findings(&corpus(root.path())).is_empty());
     }
 
     const USECASE: &str = r#"# Use case: project-run
@@ -310,8 +431,8 @@ flowchart LR
             "Feature: Run\n\n  @e2e\n  Scenario: Consumer starts a project\n    Given x\n    Then y\n",
             USECASE,
         );
-        assert!(interaction_gate_findings(root.path()).is_empty());
-        let rows = usecase_coverages(root.path()).unwrap();
+        assert!(interaction_gate_findings(&corpus(root.path())).is_empty());
+        let rows = usecase_coverages(&corpus(root.path())).unwrap();
         assert_eq!(rows[0].usecase, "project-run");
         assert_eq!(rows[0].capability, "project-run");
     }
@@ -322,9 +443,16 @@ flowchart LR
             "Feature: Run\n\n  @e2e\n  Scenario: Other\n    Given x\n    Then y\n",
             USECASE,
         );
-        let findings = interaction_gate_findings(root.path());
+        let findings = interaction_gate_findings(&corpus(root.path()));
         assert_eq!(findings.len(), 1);
-        assert!(findings[0].titles[0].contains("missing declared scenarios"));
+        assert!(
+            findings[0].titles[0].contains("missing @e2e scenario 'Consumer starts a project'"),
+            "{findings:?}"
+        );
+        assert!(
+            findings[0].titles[0].contains("unlisted @e2e scenario 'Other'"),
+            "{findings:?}"
+        );
     }
 
     #[test]
@@ -333,7 +461,61 @@ flowchart LR
             "Feature: Run\n\n  @e2e\n  Scenario Outline: Consumer starts a project\n    Given <kind>\n    Then y\n\n    Examples:\n      | kind |\n      | clean |\n      | dirty |\n",
             USECASE,
         );
-        let rows = usecase_coverages(root.path()).unwrap();
+        let rows = usecase_coverages(&corpus(root.path())).unwrap();
         assert_eq!(rows[0].e2e_scenarios, 1);
+    }
+
+    #[test]
+    fn undeclared_feature_is_reported() {
+        let root = temp_usecase(
+            "Feature: Run\n  @e2e\n  Scenario: Consumer starts a project\n    Given x\n",
+            USECASE,
+        );
+        let dir = root.path().join("givn/specs/project-run");
+        std::fs::write(
+            dir.join("cancellations.feature"),
+            "Feature: Cancel\n  @e2e\n  Scenario: Consumer cancels an order\n    Given x\n",
+        )
+        .unwrap();
+        let findings = interaction_gate_findings(&corpus(root.path()));
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        assert_eq!(findings[0].kind, "undeclared_capability");
+        assert!(
+            findings[0].titles[0].contains("undeclared capability 'cancellations'"),
+            "{findings:?}"
+        );
+        assert!(
+            findings[0].titles[0].contains("Consumer cancels an order"),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn feature_directory_without_document_is_reported() {
+        let root = tempfile::TempDir::new().unwrap();
+        let dir = root.path().join("givn/specs/orphan");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("orphan.feature"),
+            "Feature: Orphan\n  @e2e\n  Scenario: Hidden\n    Given x\n",
+        )
+        .unwrap();
+        let findings = interaction_gate_findings(&corpus(root.path()));
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        assert_eq!(findings[0].kind, "undeclared_capability");
+        assert!(
+            findings[0].titles[0].contains("use case 'orphan'"),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn declared_capability_without_feature_is_a_gate_error() {
+        let root = temp_usecase("Feature: Run\n  Scenario: Internal\n    Given x\n", USECASE);
+        let dir = root.path().join("givn/specs/project-run");
+        std::fs::remove_file(dir.join("project-run.feature")).unwrap();
+        let findings = interaction_gate_findings(&corpus(root.path()));
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        assert_eq!(findings[0].kind, "usecase_interaction_invalid");
     }
 }

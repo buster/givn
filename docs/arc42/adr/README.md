@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-26 accepted records and no proposed records. The fifteen semantic-engine
+27 accepted records and no proposed records. The fifteen semantic-engine
 records were superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and
 moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -59,6 +59,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-072](ADR-072-witness-bounded-publication.md) | accepted | Publish revisions through the SCM seam with witness-bounded commits | publication contract and candidate-exactness invariant |
 | [ADR-073](ADR-073-development-record-ownership.md) | accepted | Own the development record and report harness activity through one intake interface | record-ownership and intake-contract boundary |
 | [ADR-074](ADR-074-neutral-source-analyzer-port.md) | accepted | Analyze source code behind a neutral `SourceAnalyzer` port with a `syn` adapter | dependency-direction and engine-replacement boundary |
+| [ADR-075](ADR-075-projected-interaction-integrity.md) | accepted | Enforce the projected interaction inventory before accepting a change | pre-mutation gate boundary; component split and dependency direction |
 
 ## Relationships
 
@@ -74,6 +75,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | ADR-023 (amended by prepare-0-9-10) | The upgrade runs on Git and Fossil through the seam, captures a checkpoint, stages only the allowlist, and reports publication/recovery honestly. The 1.0 baseline ships no pre-1.0 route; retired keys require manual repair. |
 | ADR-028 (amended by prepare-0-9-10) | Mandatory review checks remain non-deactivatable. The later conditional readability/outline review member is retired; the outline addon is advisory and no `OUTLINE`/`READABILITY` verdict or waiver is required. |
 | ADR-073 (related to ADR-014, ADR-013, ADR-028) | The development record is a durable journal deliberately outside ADR-014's filesystem-derived state, delivered as one generated agent integration under ADR-013's ownership rule, and explicitly outside ADR-028's gate boundary — the record is never a gate input. |
+| ADR-011, ADR-028, ADR-070, ADR-072 -> ADR-075 | ADR-075 binds the feature-is-spec and mandatory-check contracts to a projected pre-acceptance gate; ADR-070 and ADR-072 keep proof and publication ownership. |
 
 ## Evidence
 
@@ -87,6 +89,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/README.md`](../../migrations/README.md), and migration feature scenarios |
 | Development record and report | [`src/history.rs`](../../../src/history.rs), [`src/cli/history.rs`](../../../src/cli/history.rs), [`src/cli/timeline.rs`](../../../src/cli/timeline.rs), [`assets/timeline/report.html`](../../../assets/timeline/report.html), [`assets/agent-integrations/omp/givn-timeline.js`](../../../assets/agent-integrations/omp/givn-timeline.js), and the `inspect-development-history` scenarios |
 | Outline analysis | [`src/outline/`](../../../src/outline/), [`src/cli/outline.rs`](../../../src/cli/outline.rs), [`givn/specs/assess-code-structure/outline-report.feature`](../../../givn/specs/assess-code-structure/outline-report.feature) |
+| Projected interaction inventory | [`src/spec/projection.rs`](../../../src/spec/projection.rs), [`src/spec/merge_plan.rs`](../../../src/spec/merge_plan.rs), and the `check-specification-health`, `givn-workflow-enforcement`, and `archive-proof` scenarios |
 | PR #27 measurements | [`semantic-duplicates-real-model-analysis.md`](../../archive/analysis/semantic-duplicates-real-model-analysis.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
 
 ## Archived ADRs

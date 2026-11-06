@@ -55,6 +55,17 @@ hooks can be configured and may be allowed to fail. A no-argument `givn check`
 executes nothing. Archive has its own hard-coded candidate, verification,
 coverage, and finalization stages in addition to configured archive hooks.
 
+Before a fresh archive moves the change, and before an unproven candidate
+completes its merge, the archive projects the accepted specification corpus
+from an in-memory `SpecCorpus` and refuses an interaction-inventory mismatch,
+an undeclared feature, or an unplaceable delta capability. Review and
+change-scoped lint run the same projection, so the failure reaches the
+developer while the change is still active. A merged candidate rechecks the
+actual permanent inventory before its verification scopes. The projection and
+the archive share one merge-text implementation (`spec::merge_plan`);
+`spec::projection` owns the projected corpus and `spec::corpus` owns the
+in-memory representation.
+
 ## 4.3 Quality Goals
 
 ### Configurability without forking

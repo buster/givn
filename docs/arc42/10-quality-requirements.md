@@ -47,7 +47,7 @@ graph TD
 | Q-5 | Agent ergonomics | A project selects agent targets during initialization. | The prompt opens with `opencode` marked and re-asks until something is marked; a non-terminal empty selection is refused before the first write; sync writes skills only to selected `.opencode`, `.agents`, `.claude`, `.omp`, and `.maki` targets. No command files are generated. |
 | Q-6 | Correctness | Archive receives a modified scenario with no permanent title match. | Merge aborts before writing the permanent file. |
 | Q-7 | Correctness | Archive applies several delta operations. | Added/modified/removed scenarios are merged and all `@givn.*` tags are stripped. |
-| Q-8 | Correctness | Lint sees parse errors, duplicate titles, an empty feature, an invalid use-case document, and WIP. | Exit precedence is parse `1`, duplicate/empty/use-case `3`, WIP `2`, clean `0`; lint runs no tests. |
+| Q-8 | Correctness | Lint sees parse errors, duplicate titles, an empty feature, an invalid use-case document, and WIP. | Exit precedence is parse/use-case/interaction `1`, duplicate/empty `3`, WIP `2`, clean `0`; lint runs no tests. |
 | Q-9 | Correctness | Status sees incomplete tasks or a missing sign-off marker. | The artifact is `Partial`; no automatic repair occurs. |
 | Q-10 | Gate safety | `givn check tasks` or `givn check review` is run. | Binary mandatory checks execute regardless of the artifact's configurable post-hook list. |
 | Q-11 | Gate safety | A built-in hook is marked `allow_failure: true`. | Built-in `verify`, `verify-e2e`, `lint`, and `integrity` remain required; only custom shell hooks may be allowed to fail. |
@@ -118,6 +118,7 @@ graph TD
 | Q-122 | Commit publication | `givn commit` is run without paths or with a path outside the checkout. | It refuses before publication, names the requirement or unsafe path, and preserves unrelated staged/worktree changes. |
 | Q-123 | Archive verification reuse | A retry follows a failure after one scope succeeded. | The successful scope's evidence is reused only when its inputs/result still match; a shared source/spec/settings change invalidates both scopes; a single verify-command change invalidates only its own scope. |
 | Q-124 | Commit attribution | A Maki session with a focused model prepares and runs a Bash command that creates a revision. | The generated attribution layer returns the command with attribution exports for the model, reasoning mode, and Maki harness; a command creating no revision is unchanged, and a missing model yields `unavailable`. |
+| Q-125 | Specification integrity | A change's accepted delta would leave the permanent corpus with an unlisted `@e2e` scenario, a declared interaction whose scenario is missing, an undeclared feature, a feature directory with no document, or an unplaceable delta capability. | Review and change-scoped lint fail with a blocking finding naming the use case, capability, and scenario; archive refuses before mutation, and a merged candidate stays unproven and repairable. |
 
 ## 10.3 Verification Signals
 
