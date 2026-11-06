@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:f8524c9ccf8cf30aef23e946ff6fb20022944d466831e9551f72fde143e7a002 -->
+<!-- givn:base-sha256:a219ed7197dd6d8a424ca7f418d7ef956c89ec7fa116b2ce65fe14774878c22b -->
 # Fragment: support
 
 ## Capabilities
@@ -38,10 +38,29 @@
 | review-architecture-documentation | synchronize the generated review skill | Generated review guidance stays aligned after skill sync |
 | attribute-commits | initialize shared attribution plumbing | Consumer initializes a project and receives shared attribution plumbing |
 | attribute-commits | commit explicit selected paths with attribution | An attributed commit exposes the current LLM and harness |
+| attribute-commits | prepare attribution with OpenCode's selected model | OpenCode prepares attribution using its selected model |
+| attribute-commits | attribute a commit with Claude's current model | Claude attributes a commit using its current model |
+| attribute-commits | attribute a commit with omp's current model | omp attributes a commit using its current model |
+| attribute-commits | attribute a commit with Maki's current model | Maki attributes a commit using its current model |
 | enable-commit-attribution | inspect attribution installation | Consumer sees the commit attribution installation report |
 | enable-commit-attribution | upgrade missing attribution plumbing | Consumer upgrades an existing project with attribution plumbing missing |
 | enable-commit-attribution | initialize Fossil attribution | Consumer initializes a Fossil project and receives the givn commit path without a hook |
 | measure-coverage-per-project | inspect initialized test and coverage scripts | An initialized project documents reusable test and coverage scripts |
+| measure-coverage-per-project | publish line and branch badges when archiving | Archiving publishes line and branch badges from the merged report |
+| coverage-readme-example | receive a complete README coverage example | Coverage-enabled project receives a complete README coverage example |
+| detect-the-project-repository | detect the repository from a Git worktree at the project root | A Git worktree at the project root selects the Git backend |
+| find-existing-scenarios | find a permanent scenario by a step text token | Lexical search locates a permanent scenario by a step text token |
+| find-existing-scenarios | inspect per-use-case counts in the spec tree | The spec tree reports per-use-case counts and the use-case narrative |
+| guide-domain-modeling | receive domain guidance for the next step | An agent requests next-step guidance and is routed to the domain skill |
+| guide-domain-modeling | receive domain guidance for design | An agent requests the design guidance and is routed to the domain skill |
+| guide-domain-modeling | receive domain guidance for specs | An agent requests the specs guidance and is routed to the domain skill |
+| guide-domain-modeling | receive the domain skill after synchronizing skills | An agent synchronizes skills and the domain skill is routed |
+| match-guidance-to-enabled-addons | enable the addons a generated section needs | A consumer enables the addons a generated section needs and the guidance gains it |
+| match-guidance-to-enabled-addons | synchronize skills with disabled-addon sections omitted | A consumer synchronizes skills and the generated guidance omits disabled-addon sections |
+| route-a-change | route a proposal and inspect ranked candidates | Routing a proposal prints ranked candidates with evidence |
+| show-coverage-in-the-readme | place the coverage badge after the README title | Coverage-enabled project is guided to place the coverage badge directly after the README title |
+| verify-repository-ownership | archive and publish consolidated permanent specifications | Archive publishes consolidated permanent specifications |
+| verify-repository-ownership | accept explicit overlap dispositions in repository-wide review | Repository-wide review accepts explicit overlap dispositions |
 
 ## Diagram
 

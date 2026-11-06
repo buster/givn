@@ -109,7 +109,7 @@ Feature: initialize-a-project
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
     And  the directory ".agents/skills/givn-propose" does not exist
 
-  @initialize-a-project
+  @initialize-a-project @e2e
   Scenario: Consumer runs init non-interactively and gets opencode skills
     Given  a project root without a givn/ directory
     And  human-authored agent instructions outside the managed block
