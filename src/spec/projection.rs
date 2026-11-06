@@ -223,7 +223,10 @@ mod tests {
                 if path.is_dir() {
                     walk(root, &path, out);
                 } else if let Ok(bytes) = std::fs::read(&path) {
-                    out.push((path.strip_prefix(root).unwrap_or(&path).to_path_buf(), bytes));
+                    out.push((
+                        path.strip_prefix(root).unwrap_or(&path).to_path_buf(),
+                        bytes,
+                    ));
                 }
             }
         }

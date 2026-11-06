@@ -1937,10 +1937,7 @@ Feature: Dead capability
         }))
         .unwrap();
         let error = plan_from_receipt(root.path(), &archive, "demo", &receipt).unwrap_err();
-        assert!(
-            error.to_string().contains("outside givn/specs"),
-            "{error}"
-        );
+        assert!(error.to_string().contains("outside givn/specs"), "{error}");
     }
 
     #[test]
