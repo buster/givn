@@ -9,17 +9,31 @@ Reviewer context: independent-review-1
 - Implementation commit: `3a33fb39` (`feat(spec): enforce projected interaction integrity`).
   `4d429d84` and `6b82844e` touch only `tasks.md`; verified with
   `git show --stat`.
+- Review-fix commit: `424682fa` (`fix(spec): close the independent review findings`).
+  It carries the F1 record (`tasks.md:8`), the F2 and F5 design edits, the F4
+  record, the F3 unit tests, the design re-review closure, and the change
+  verification receipt files. It changes no production behavior.
+- Closure commands run for this revision: `cargo test --lib projection::tests`
+  (6 passed), `cargo test --lib receipt_target_outside_specs_is_refused`
+  (1 passed), `cargo nextest list` for the change features (13 units),
+  `cargo nextest run --locked --test features_runner` with the change non-E2E
+  tags (12/12 passed), `cargo fmt --all -- --check` (exit 1), `cargo clippy
+  --locked --all-targets -- -D warnings` (exit 0), and `cargo run -- check
+  review --change enforce-spec-interaction-integrity` (exit 1: stale receipt,
+  review-context mismatch, FAIL verdict). The full suite was not run.
 - Change verification receipt: `verification/tasks-verification.json` records
   `./run-tests.sh --non-e2e`, scope `change`, 12 total, 12 passed, 0 failed,
-  0 skipped, at head `4d429d8426051f5fcc226fc65c68d6b1a041825b`.
+  0 skipped, at head `4d429d8426051f5fcc226fc65c68d6b1a041825b`. The receipt
+  predates `424682fa`; `check review` rejects it as stale (R2).
 - No archive receipt and no Cobertura report exist yet. The archive will carry
-  the per-scope execution and coverage evidence. This review did not re-run the
-  suite.
-- `cargo run -- check review --change enforce-spec-interaction-integrity`
-  passed the run declaration, change-scoped lint, overlap dispositions,
-  scenario commits, and the change verification receipt before this file
-  existed. The only remaining mechanical error was the missing verdict in
-  `review.md`.
+  the per-scope execution and coverage evidence. This review re-ran only the
+  closure commands above; the full suite was not run.
+- At the implementation revision, `cargo run -- check review --change
+  enforce-spec-interaction-integrity` passed the run declaration, change-scoped
+  lint, overlap dispositions, scenario commits, and the then-current change
+  verification receipt; the only remaining mechanical error was the missing
+  verdict in `review.md`. At `424682fa` the same command exits 1 with the stale
+  receipt (R2), the review-context mismatch (R3), and the FAIL verdict.
 - `cargo run -- lint --change enforce-spec-interaction-integrity` exits 0 with
   `givn lint: 4 file(s) checked — clean`. Default `givn lint` exits 1 with the
   11 pre-repair findings (10 fragment capabilities plus
@@ -52,9 +66,10 @@ code they exercise. `check review` independently reports
 | Archive publishes a consistent projected interaction inventory | 3a33fb39 | archive-projection | Same batch |
 | Archive refuses a merged candidate whose interaction inventory is inconsistent | 3a33fb39 | archive-projection | Same batch plus `src/cli/archive.rs:315` |
 
-The setup batch (`projection-substrate`) and closeout batch (`docs-closeout`)
-also record `COMMIT: 3a33fb39`. No scenario records only a comment, tag, or
-task edit. No scenario uses `CHARACTERIZATION`.
+The setup batch (`projection-substrate`) also records `COMMIT: 424682fa`
+(review fix, `tasks.md:12`) and `COMMIT: 3a33fb39`; the closeout batch
+(`docs-closeout`) records `COMMIT: 3a33fb39`. No scenario records only a
+comment, tag, or task edit. No scenario uses `CHARACTERIZATION`.
 
 ### Empty or trivial step bodies
 
@@ -115,7 +130,7 @@ The visual review block is therefore not applicable.
 | `tests/steps/spec_overlap_gates_steps.rs` | Present | Existing e2e bindings. |
 | `tests/steps/workflow_enforcement_steps.rs` | Present; review fixtures at `:372-490` | Required bindings present. |
 | `tests/steps/archive_proof_steps.rs` | Present; merged-candidate fixtures at `:1387-1448` | Required bindings present. |
-| `tests/steps/init_agent_target_selection_steps.rs` | Present; the driving `the consumer runs` step at `:193` | The scenario's Then assertions are also bound in `tests/steps/initialize_a_project_e2e_steps.rs:107-145` and its Given in `tests/steps/mod.rs:327`; see F5. |
+| `tests/steps/init_agent_target_selection_steps.rs` | Present; the driving `the consumer runs` step at `:193` | The scenario's Then assertions are also bound in `tests/steps/initialize_a_project_e2e_steps.rs:107-145` and its Given in `tests/steps/mod.rs:327`; F5 resolved, `design.md:165,234` names all three files. |
 | `tests/steps/interaction_projection_steps.rs` | Present; registered at `tests/steps/mod.rs:47` | All nine projection fixture phrases bound. |
 
 No consumer imports a component's implementation module to reach around its
@@ -133,7 +148,7 @@ fragment document. The design matrix is `design.md:212-226`.
 | `verify-change` / `givn-workflow-enforcement` | 5 | 5 | `Consumer runs migration coverage check and sees passed evidence`; `Consumer runs check tasks and receives a change verification receipt`; `Consumer invokes bare check and receives explicit non-executing guidance`; `The result helper writes four counts without a scope`; `Consumer runs review and receives every use-case schema problem in one pass` (all `@e2e`) | CLI subprocess: `the user runs` / `the consumer runs` -> `common::run_givn` | Match |
 | `archive-change` / `archive-proof` | 4 | 4 | `Consumer archives a completed change and receives a proven archive`; `Consumer repairs a blocked archive and the rerun proves it`; `Consumer inspects an unproven archive candidate`; `Consumer archives a change after documentation-only review edits and the proof is reused` (all `@e2e`) | CLI subprocess: `the user invokes givn archive` -> `common::run_givn` | Match |
 | `initialize-project` / `initialize-a-project` | 3 | 3 | `Consumer selects agent targets during interactive init` (`@e2e`, PTY); `Consumer runs init non-interactively and gets opencode skills` (`@e2e` added by the delta); `Consumer re-syncs skills after init and the selection is honoured` (`@e2e`) | CLI subprocess / real PTY: `tests/steps/init_agent_target_selection_steps.rs:193`, `tests/steps/initialize_a_project_e2e_steps.rs:107-145` | Match after the delta merges the tag |
-| `fragments` (all 15 capabilities) | 32, of which 19 rows are added by this change | 0 | Existing `@e2e` scenarios exist for every row | CLI subprocess on the existing rows | **Unmapped**: see F2 |
+| `fragments` (all 15 capabilities) | 32, of which 19 rows are added by this change | 1 summary row | Existing `@e2e` scenarios exist for every row | CLI subprocess on the existing rows | Resolved: `design.md:212` scopes the 19 repaired declarations and `:216` adds the summary row; see F2 Resolution |
 
 The three use-case documents' touched actions are fully mapped. The fragment
 document is a different case: this change adds 19 interaction rows to it, and
@@ -144,6 +159,11 @@ says the delta adds the 19 missing rows. The design review's §6 recorded a
 does not cover rows the change itself introduces, which the review instruction
 requires to be mapped.
 
+Closure (`424682fa`): the false "adds no new inventory entry" sentence is gone;
+`design.md:212` scopes the 19 repaired declarations and `design.md:216` adds
+their summary row. The 19 rows, their 10 capabilities, and all 19 `@e2e` titles
+were re-verified against the corpus. See F2 Resolution.
+
 ### Strict-mode proof
 
 `tasks.md:7` promises an executed strict-mode probe: one `@wip` scenario under
@@ -153,6 +173,9 @@ or output is recorded in `tasks.md`, `design-review.md`, the verification
 receipt, or anywhere else in the change. The runner still calls
 `.fail_on_skipped()` (`tests/features_runner.rs`), but the performed proof is
 missing; see F1.
+
+Closure (`424682fa`): `tasks.md:8` records the executed probe, its non-zero
+output, and the probe's removal; see F1 Resolution.
 
 ## Arc42 implementation conformance
 
@@ -173,8 +196,9 @@ the implementation, then checked against the durable chapters.
 ARC42 CONFORMANCE: CLEAN
 
 The marker covers the chapter table above. The review-level findings F1-F5
-are recorded under Findings and do not change any Arc42 chapter claim; they
-do block the overall verdict.
+are closed under Review closure and do not change any Arc42 chapter claim.
+R1-R3 are process and receipt regressions, not chapter claims, but they block
+the overall verdict.
 
 ## Ubiquitous language conformance
 
@@ -224,11 +248,11 @@ inspection of the implementation and the receipted change scenarios.
 | Region | Classification |
 |---|---|
 | `src/spec/corpus.rs` | Covered: 7 unit tests plus the projection scenarios. |
-| `src/spec/merge_plan.rs` | Covered except the receipt-target refusal at `src/cli/archive.rs:905-908`: see F3. |
-| `src/spec/projection.rs` | Covered except the skip-merged branch at `:59-63` and the promised no-temporary-directory test: see F3. |
+| `src/spec/merge_plan.rs` | Covered; the receipt-target refusal at `src/cli/archive.rs:905-908` is tested by `src/cli/archive.rs:1921` (F3 resolved). |
+| `src/spec/projection.rs` | Covered; the skip-merged branch at `:59-63` and the no-write property are tested at `src/spec/projection.rs:190,207` (F3 resolved). |
 | `src/gherkin/interaction.rs` | Covered: 7 unit tests plus the lint scenarios. |
 | `src/cli/lint.rs` | Covered: 7 lint scenarios, including the default-scope and narrative-only paths. |
-| `src/cli/archive.rs` | Covered: 3 archive scenarios plus the existing interrupted-merge, in-flight, and merged-candidate scenarios; the receipt-target refusal is the gap in F3. |
+| `src/cli/archive.rs` | Covered: 3 archive scenarios plus the existing interrupted-merge, in-flight, and merged-candidate scenarios, and the receipt-target refusal test at `src/cli/archive.rs:1921`. |
 | `src/overlap/analysis.rs` | Covered by the default lint and overlap scan; the changed call site is exercised by `givn lint`. |
 | Shared fixture repairs | Exercised by the change scenarios; the full-suite result is the archive's scope. |
 | Dead code | None found: the new public functions are called by the declared consumers; the receipted `./run-tests.sh --non-e2e` includes clippy with `-D warnings`. |
@@ -249,6 +273,18 @@ Fix: run one `@wip` probe scenario under
 the command and the non-zero undefined-step output in `tasks.md` (setup batch),
 then remove the probe. Do not change `verify.command`.
 
+Resolution (`424682fa`): resolved for the recorded proof. `tasks.md:8` records
+the temporary `probe/strictness.feature` with an undefined `Given`, the exact
+`GIVN_FEATURES`/`GIVN_CUCUMBER_TAGS` command, the failing unit
+`probe/strictness.feature::Undefined step probe`, `12/14 tests run: 11 passed,
+1 failed, 0 skipped`, and nextest exit `100`. The numbers reconcile with the
+tree: the change delta lists 13 scenario units under `not @givn.removed`
+(verified with `cargo nextest list`), 13 + 1 probe = 14, and nextest's default
+fail-fast leaves 2 units unstarted after the failure. No `probe/` file remains.
+The 12 non-E2E scenarios pass 12/12 when the feature runner is invoked
+directly. Caveat: the declared `./run-tests.sh --non-e2e` does not reach them
+because the format gate fails first (R1).
+
 ### F2 - The interaction matrix omits the 19 fragment interactions this change adds
 
 `design.md:210` says "The change adds no new inventory entry. It repairs one
@@ -264,6 +300,22 @@ Fix: add the 19 fragment rows to the Interaction Coverage Matrix, each with its
 existing `@e2e` title and the CLI driver, or record the explicit scope decision
 and correct `design.md:210`. A `design.md` edit requires re-running
 design-review.
+
+Resolution (`424682fa`): resolved by the explicit scope decision.
+`design.md:212` replaces the false "adds no new inventory entry" claim with the
+19 repaired declarations, states that their scenarios and steps are unchanged,
+and points at the delta corpus. `design.md:216` is the summary row the finding
+required. Verified: the delta adds exactly 19 interaction rows and removes none
+(`givn/changes/enforce-spec-interaction-integrity/specs/fragments/fragment.md:32-63`);
+the permanent table has 13 data rows
+(`givn/specs/fragments/fragment.md:32-44`), so 13 + 19 = 32; the 19 added rows
+span 10 capabilities; and all 19 scenario titles are existing `@e2e` scenarios
+in the permanent fragment capability files (0 missing). The summary-row
+examples are real `@e2e` scenarios
+(`givn/specs/fragments/instruction-integrity.feature:50-51` and
+`givn/specs/fragments/measure-coverage-per-project.feature`).
+`givn lint --change enforce-spec-interaction-integrity` is clean. The design
+re-review closure is signed at `design-review.md:2280`.
 
 ### F3 - Promised unit tests for the receipt target and the skip-merged branch are absent
 
@@ -288,6 +340,19 @@ Fix: add unit tests for the outside-target refusal, a non-empty `merged_deltas`
 projection, and the no-write/no-temp property; record the batch commit in
 `tasks.md`.
 
+Resolution (`424682fa`): resolved. `src/spec/projection.rs:190`
+`a_merged_entry_is_skipped_by_the_projection` passes a non-empty `merged_deltas`
+and would report the unlisted delta scenario if the skip were absent;
+`src/spec/projection.rs:207` `the_projection_writes_no_file` byte-snapshots the
+fixture tree before and after; `src/cli/archive.rs:1921`
+`receipt_target_outside_specs_is_refused` asserts `plan_from_receipt` rejects a
+`../outside` target with `outside givn/specs`. Commands run: `cargo test --lib
+projection::tests` -> 6 passed, 488 filtered out; `cargo test --lib
+receipt_target_outside_specs_is_refused` -> 1 passed. `design.md:77` and
+`tasks.md:11` now describe exactly these tests; the finding `files` relative
+path is already pinned by `src/gherkin/interaction.rs:333`. The fix's own test
+code is unformatted (R1).
+
 ### F4 - The implementation edits two permanent specs directly, contradicting tasks.md:9 and design.md:75
 
 `tasks.md:9` says "No permanent spec is edited directly." `design.md:70,75`
@@ -309,6 +374,19 @@ capabilities (with the base hash and `@givn.modified`), or record them as
 reviewed permanent repairs in `design.md` and `tasks.md` and re-run
 design-review. Make `tasks.md:9` true.
 
+Resolution (`424682fa`): resolved by the second option, and re-reviewed.
+`design.md:76` and `tasks.md:10` record both edits as reviewed direct test-spec
+repairs and distinguish product specs (delta-only) from test specs. Verified:
+the `@e2e` additions at
+`givn/specs/verify-change/review-disposition-gates.feature:61,85` are inside
+fixture docstrings, not tags on the permanent feature's own scenarios, and
+`:89` declares the `givn/specs/other/other.feature` fixture that the scenario
+writes under its temporary project root at runtime; no `givn/specs/other/`
+exists. `givn/specs/fragments/adr-qualification-gate.feature:122` says 27
+accepted decisions; ADR-075 is accepted and 27 `ADR-*.md` files exist. Because
+the fixture tags do not tag permanent scenarios, default `givn lint` still
+reports the expected 11 findings.
+
 ### F5 - The design's init step-file map is incomplete
 
 `design.md:163` and `design.md:231` name only
@@ -321,6 +399,18 @@ step, but the reviewed file map does not match the tree.
 
 Fix: name the actual binding files in `design.md`'s Step Definitions table and
 E2E Infrastructure section, then re-run design-review.
+
+Resolution (`424682fa`): resolved. `design.md:165` names
+`tests/steps/init_agent_target_selection_steps.rs` (driving step),
+`tests/steps/initialize_a_project_e2e_steps.rs` (Then assertions), and
+`tests/steps/mod.rs` (Given); `design.md:234` repeats the map in E2E
+Infrastructure. Verified: `the consumer runs` at
+`tests/steps/init_agent_target_selection_steps.rs:192-193`; the scenario Thens
+at `tests/steps/initialize_a_project_e2e_steps.rs:105,119,131,137`; the Givens
+at `tests/steps/mod.rs:327` and
+`tests/steps/initialize_a_project_e2e_steps.rs:101`; the generic file Thens at
+`tests/steps/mod.rs:1010-1011`. All three modules are declared at
+`tests/steps/mod.rs:40-42`. No new step was introduced.
 
 ## Overlap dispositions
 
@@ -395,22 +485,91 @@ The change updates `docs/reference.md`, `docs/workflow.md`, the glossary, and
 the arc42 chapters. The README documents neither `givn lint` nor its exit
 contract, so no README section is affected.
 
+## Review closure
+
+Targeted closure of F1-F5 against `424682fa` and the current tree. No full
+re-review was performed; the earlier review stands except where a Resolution
+line or this table says otherwise.
+
+| Finding | Status | Closure evidence |
+|---|---|---|
+| F1 - strict-mode proof | Resolved | `tasks.md:8` records the executed probe; 13 change units + 1 probe = the recorded 14; no probe file remains; 12/12 non-E2E scenarios pass directly. |
+| F2 - fragment matrix scope | Resolved | `design.md:212,216`; 19 added rows, 10 capabilities, 0 missing `@e2e` titles. |
+| F3 - promised tests | Resolved | `src/spec/projection.rs:190,207`; `src/cli/archive.rs:1921`; 6 + 1 tests pass. |
+| F4 - permanent test-spec repairs | Resolved | `design.md:76`, `tasks.md:10`; fixture tags/runtime fixture verified; ADR count 27 matches 27 ADR files. |
+| F5 - init step map | Resolved | `design.md:165,234`; three binding files verified. |
+
+The five recorded findings are closed. Three material regressions introduced by
+the fix commit block the verdict.
+
+### Remaining findings
+
+#### R1 - `424682fa` fails the declared format gate
+
+`cargo fmt --all -- --check` exits 1 on code added by the fix commit:
+`src/spec/projection.rs:226` (the one-line `out.push` tuple) and
+`src/cli/archive.rs:1940-1943` (the receipt-target assertion). `./run-tests.sh`
+runs this gate first, so `./run-tests.sh --non-e2e`, the declared
+`verify.command`, fails before clippy or the scenarios. The 12 scenarios pass
+only when `cargo nextest run --test features_runner` is invoked directly. Fix:
+run `cargo fmt` and commit the result.
+
+#### R2 - The change verification receipt is stale
+
+`verification/tasks-verification.json:5` records head `4d429d84` and `:10`
+records `tested_content_digest 813edf7f...`; the current tree hashes to
+`aad1b601...`. `cargo run -- check review --change
+enforce-spec-interaction-integrity` exits 1 with `change verification receipt
+is stale ... tested content changed`. The fix commit added the receipt but
+generated it before its own source changes. Fix: after R1, re-run `givn check
+tasks --change enforce-spec-interaction-integrity` (or the receipted
+`./run-tests.sh --non-e2e`) and commit the regenerated receipt.
+
+#### R3 - The design re-review closure breaks the single-context gate
+
+`design-review.md:2247` records `Reviewer context: independent-review-1
+(continuation of the reviewer context in the header; ...)`; `review.md:5`
+records `independent-review-1`. `cargo run -- check review` fails with
+`design-review.md and review.md must record one review context for an
+independent review: '<long value>' vs 'independent-review-1'`. Fix: normalize
+`design-review.md:2247` to `independent-review-1`.
+
+### Non-blocking observations
+
+1. `tasks.md:12` (`COMMIT: 424682fa -- Review fix: ...`) is uncommitted;
+   `git status --short` shows `M tasks.md`, and `424682fa` does not contain the
+   line. Commit it with the next batch.
+2. `design-review.md:2269` cites the F1 evidence as `tasks.md:7`; the executed
+   proof is `tasks.md:8` (line 7 is the promise). Citation drift only.
+3. The F3 no-write test snapshots the fixture tree; it does not observe a
+   transient system-temp directory. Static inspection shows no tempdir call in
+   `src/spec/projection.rs`, and `design.md:77` states the narrower no-write
+   claim; `design.md:302` still says "creates no temporary directory". Not a
+   blocker for the three tests the finding named.
+
 ## Sign-off checklist
 
-- Fabrication audit: F1-F5 recorded; not clean until they are fixed.
+- Fabrication audit: F1-F5 resolved in Review closure; not clean until R1-R3
+  are fixed.
 - Every checked task has a verified commit touching production code: yes,
   `3a33fb39`; `check review` reports `✓ scenario commits passed (12 scenarios)`.
 - Every promised component exists: yes.
 - Every consumer uses only its declared contract: yes; no implementation import
   reaches around a declared boundary.
-- Strict-mode proof present and passing: no (F1).
-- Scenario execution evidence per scope: change receipt 12/12, 0 failed,
-  0 skipped; the archive receipt will carry the full regular and E2E scopes.
+- Strict-mode proof present and passing: yes; the executed probe and its
+  non-zero output are recorded at `tasks.md:8` (F1 resolved). The declared suite
+  is separately blocked by R1.
+- Scenario execution evidence per scope: the receipted 12/12 predates
+  `424682fa` and is stale (R2); the 12 non-E2E scenarios still pass 12/12 under
+  the direct runner, but the declared `./run-tests.sh --non-e2e` fails at the
+  format gate (R1).
 - Coverage classification uses the available evidence; no measured Cobertura
   report exists yet; the archive will carry the merged result.
-- Every coverage gap classified and resolved: no (F3).
-- Dead code deleted; missing tests added; hard-to-test gaps justified: no
-  missing tests remain unclassified (F3).
+- Every coverage gap classified and resolved: yes; the receipt-target,
+  skip-merged, and no-write tests exist and pass (F3 resolved).
+- Dead code deleted; missing tests added; hard-to-test gaps justified: yes;
+  the three promised tests were added (F3 resolved); no missing tests remain
+  unclassified.
 - Redundant unit tests removed: none identified.
 - No `@wip` tags remain: 0 in the delta.
 - Canonical E2E policy read from the resolved specs instruction: every
@@ -427,8 +586,11 @@ contract, so no README section is affected.
   argument and exports `GIVN_RESULT_SCOPE` for the result contract; the change
   receipt records its own `change` scope.
 - Implementation matches the design's commands, file layout, and framework:
-  F5 records the init file-map mismatch.
-- Interaction coverage verified: F2 records the unmapped fragment rows.
+  yes; `design.md:165,234` name every init binding file (F5 resolved).
+- Interaction coverage verified: yes; the 19 repaired fragment declarations
+  are explicitly scoped and summarized at `design.md:212,216` (F2 resolved).
+- Review-fix regressions: R1 (format gate), R2 (stale receipt), and R3
+  (design-review context mismatch) block the verdict.
 - No finding was classified outside the three buckets.
 
 REVIEW: FAIL

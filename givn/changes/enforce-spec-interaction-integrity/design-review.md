@@ -2244,7 +2244,7 @@ DESIGN-REVIEW: PASS
 
 Review kind: independent
 Author: authoring-context
-Reviewer context: independent-review-1 (continuation of the reviewer context in the header; this section is the targeted closure of `review.md` F2-F5)
+Reviewer context: independent-review-1
 
 Scope: the revised `design.md` sections (Data Model, Step Definitions, Interaction Coverage Matrix, E2E Infrastructure), the delta specs, and a regression check against the signed implementation (`3a33fb39` plus the working tree). No full re-review was performed.
 
