@@ -499,10 +499,11 @@ line or this table says otherwise.
 | F4 - permanent test-spec repairs | Resolved | `design.md:76`, `tasks.md:10`; fixture tags/runtime fixture verified; ADR count 27 matches 27 ADR files. |
 | F5 - init step map | Resolved | `design.md:165,234`; three binding files verified. |
 
-The five recorded findings are closed. Three material regressions introduced by
-the fix commit block the verdict.
+The five recorded findings are closed. The three material regressions they
+exposed were repaired by `b37dc5e9` and verified against head `b37dc5e9`; none
+remains open.
 
-### Remaining findings
+### Resolved regressions
 
 #### R1 - `424682fa` fails the declared format gate
 
@@ -513,6 +514,12 @@ runs this gate first, so `./run-tests.sh --non-e2e`, the declared
 `verify.command`, fails before clippy or the scenarios. The 12 scenarios pass
 only when `cargo nextest run --test features_runner` is invoked directly. Fix:
 run `cargo fmt` and commit the result.
+
+Resolution (`b37dc5e9`): resolved. `cargo fmt --all -- --check` exits 0 on the
+current tree (verified this revision, exit status 0). `b37dc5e9` formats
+`src/spec/projection.rs` (the `out.push` tuple is now a multi-line tuple) and
+`src/cli/archive.rs` (the receipt-target assertion). `cargo clippy --locked
+--all-targets -- -D warnings` also exits 0.
 
 #### R2 - The change verification receipt is stale
 
@@ -525,6 +532,16 @@ generated it before its own source changes. Fix: after R1, re-run `givn check
 tasks --change enforce-spec-interaction-integrity` (or the receipted
 `./run-tests.sh --non-e2e`) and commit the regenerated receipt.
 
+Resolution (`b37dc5e9`): resolved. `verification/tasks-verification.json` now
+records `head` `b37dc5e970907d9a2ff21c80a8112acb48d30e5b` and
+`tested_content_digest` `4e629b5152f54b133266ff5ec5b9816b50965d3317c3aa67ebe6edebc281653b`,
+regenerated with `givn check tasks --change enforce-spec-interaction-integrity`
+at that head, with `runner_exit: 0` and 12/12 passed, 0 failed, 0 skipped.
+`cargo run --quiet -- check review --change
+enforce-spec-interaction-integrity` reports `✓ change verification receipt
+passed (12 scenario(s) at b37dc5e970907d9a2ff21c80a8112acb48d30e5b)` and no
+stale-reason diagnostic.
+
 #### R3 - The design re-review closure breaks the single-context gate
 
 `design-review.md:2247` records `Reviewer context: independent-review-1
@@ -534,11 +551,21 @@ records `independent-review-1`. `cargo run -- check review` fails with
 independent review: '<long value>' vs 'independent-review-1'`. Fix: normalize
 `design-review.md:2247` to `independent-review-1`.
 
+Resolution (`b37dc5e9`): resolved. `design-review.md:5,2247` and `review.md:5`
+each record exactly `Reviewer context: independent-review-1`; `design-review.md:4,2246`
+and `review.md:4` record `Author: authoring-context`; `design-review.md:3,2245`
+and `review.md:3` record `Review kind: independent`. `b37dc5e9` drops the
+appended continuation clause from `design-review.md:2247`. The gate's
+single-context check passes for the two artifacts.
+
 ### Non-blocking observations
 
-1. `tasks.md:12` (`COMMIT: 424682fa -- Review fix: ...`) is uncommitted;
-   `git status --short` shows `M tasks.md`, and `424682fa` does not contain the
-   line. Commit it with the next batch.
+1. `tasks.md:12` (`COMMIT: 424682fa -- Review fix: ...`) was uncommitted at the
+   time of the closure pass; `b37dc5e9` now contains the line, so the
+   observation is closed. The refreshed
+   `verification/tasks-verification.json` is a working-tree change relative to
+   `b37dc5e9`; the gate reads it there and accepts it. Commit it with the
+   archive batch.
 2. `design-review.md:2269` cites the F1 evidence as `tasks.md:7`; the executed
    proof is `tasks.md:8` (line 7 is the promise). Citation drift only.
 3. The F3 no-write test snapshots the fixture tree; it does not observe a
@@ -549,20 +576,18 @@ independent review: '<long value>' vs 'independent-review-1'`. Fix: normalize
 
 ## Sign-off checklist
 
-- Fabrication audit: F1-F5 resolved in Review closure; not clean until R1-R3
-  are fixed.
+- Fabrication audit: clean. F1-F5 and R1-R3 are all resolved; every recorded
+  evidence citation was re-checked against head `b37dc5e9`.
 - Every checked task has a verified commit touching production code: yes,
   `3a33fb39`; `check review` reports `✓ scenario commits passed (12 scenarios)`.
 - Every promised component exists: yes.
 - Every consumer uses only its declared contract: yes; no implementation import
   reaches around a declared boundary.
 - Strict-mode proof present and passing: yes; the executed probe and its
-  non-zero output are recorded at `tasks.md:8` (F1 resolved). The declared suite
-  is separately blocked by R1.
-- Scenario execution evidence per scope: the receipted 12/12 predates
-  `424682fa` and is stale (R2); the 12 non-E2E scenarios still pass 12/12 under
-  the direct runner, but the declared `./run-tests.sh --non-e2e` fails at the
-  format gate (R1).
+  non-zero output are recorded at `tasks.md:8` (F1 resolved).
+- Scenario execution evidence per scope: the change receipt is current at head
+  `b37dc5e9` (R2 resolved) and records `./run-tests.sh --non-e2e` with
+  `runner_exit: 0`, 12/12 passed, 0 failed, 0 skipped; `check review` accepts it.
 - Coverage classification uses the available evidence; no measured Cobertura
   report exists yet; the archive will carry the merged result.
 - Every coverage gap classified and resolved: yes; the receipt-target,
@@ -590,7 +615,20 @@ independent review: '<long value>' vs 'independent-review-1'`. Fix: normalize
 - Interaction coverage verified: yes; the 19 repaired fragment declarations
   are explicitly scoped and summarized at `design.md:212,216` (F2 resolved).
 - Review-fix regressions: R1 (format gate), R2 (stale receipt), and R3
-  (design-review context mismatch) block the verdict.
+  (design-review context mismatch) are resolved by `b37dc5e9`; `cargo fmt --all
+  -- --check` and `cargo clippy --locked --all-targets -- -D warnings` both exit
+  0, the receipt is current, and both review artifacts record one independent
+  context.
 - No finding was classified outside the three buckets.
 
-REVIEW: FAIL
+### Gate evidence
+
+`cargo run --quiet -- check review --change enforce-spec-interaction-integrity`
+at head `b37dc5e9` (with the refreshed receipt in the tree) exits 0. The run
+reports the run declaration passed, overlap dispositions passed, `✓ scenario
+commits passed (12 scenario(s))`, and `✓ change verification receipt passed
+(12 scenario(s) at b37dc5e970907d9a2ff21c80a8112acb48d30e5b)`, with no
+`review checks failed` block. Format gate `cargo fmt --all -- --check` exits 0;
+`cargo clippy --locked --all-targets -- -D warnings` exits 0.
+
+REVIEW: PASS
