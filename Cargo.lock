@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "givn"
-version = "0.9.18"
+version = "0.9.19"
 dependencies = [
  "anyhow",
  "clap",
