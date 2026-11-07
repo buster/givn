@@ -6,6 +6,19 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.19] - 2026-11-07
+
+### Bug Fixes
+
+- **spec:** Close the independent review findings
+
+- **spec:** Format review-fix tests and normalize the review context
+
+
+### Features
+
+- **spec:** Enforce projected interaction integrity
+
 ## [0.9.18] - 2026-11-05
 
 ### Bug Fixes
@@ -885,3 +898,5 @@ for the complete 0.2.0 feature set.
 [0.9.17]: https://github.com/buster/givn/compare/v0.9.16...v0.9.17
 
 [0.9.18]: https://github.com/buster/givn/compare/v0.9.17...v0.9.18
+
+[0.9.19]: https://github.com/buster/givn/compare/v0.9.18...v0.9.19
