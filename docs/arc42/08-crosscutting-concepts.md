@@ -389,7 +389,7 @@ does not rewrite surrounding user content. The project block carries the
 direction to `givn instructions`, the mandatory dialog-policy obligation, and
 its resident task-checkoff and commit obligations rendered from the canonical
 `instructions/tasks.md` asset. The communication-policy addon controls only
-presentation; it does not gate or own question content. Givn never stages
+presentation and documentation; it does not gate or own question content. Givn never stages
 `AGENTS.md` under either rules policy; committing it is the developer's explicit
 act.
 
