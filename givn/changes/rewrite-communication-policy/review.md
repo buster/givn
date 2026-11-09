@@ -178,13 +178,11 @@ unproven candidate — no receipt yet
 
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
-| | | |
 
 ## Split-or-keep
 
 | Scenario | Decision |
 |---|---|
-| | |
 
 ## Sign-off
 
