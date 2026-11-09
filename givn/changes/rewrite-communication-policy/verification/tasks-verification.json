@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "rewrite-communication-policy",
+  "status": "passed",
+  "head": "4ec6dccc8ea195689aa0556ec12721909523b331",
+  "features_path": "givn/changes/rewrite-communication-policy/specs",
+  "features_digest": "10a563040214b88fbc840e290426f258afeba2450a57910bb097d067fa692ea5",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "666e036ccd1908a78ea3244b28bf223a27f342c185798336d995030fd88cc570",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1794259893
+}
