@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:fc36293f83b16812f39171dbd321008205c1de279c3e68f49e7a137f4df47259 -->
+<!-- givn:base-sha256:a2fd76a333e9eed4cecd86ba54e63121abef219a6f9b044f539c6b0e5d12f667 -->
 # Use case: initialize-project
 
 ## Level
@@ -56,7 +56,7 @@ integrations.
 - Resynchronization refreshes the block once without changing persisted targets or unrelated configuration.
 - All current optional addons default enabled. An absent or partial addons block uses the same effective defaults for artifacts, skills, listing, and execution; explicit choices, including opt-outs, survive init reentry and force initialization.
 - `--no-addons` explicitly disables every optional addon but never disables mandatory dialog correctness.
-- communication_policy replaces absolute_mode; challenge replaces grill_me and grill_with_docs. Retired names have no automatic aliases; refusal explains manual transition. Communication rules govern concrete presentation, not cognitive-rebuilding rhetoric.
+- communication_policy replaces absolute_mode; challenge replaces grill_me and grill_with_docs. Retired names have no automatic aliases; refusal explains manual transition. Communication rules govern concrete presentation and documentation formats, never cognitive-rebuilding rhetoric or repository layout.
 - Optional challenge installs one thin givn-challenge skill and adds no lifecycle gate. Its subject variants include proposals, tests, specs, design, code, and whole changes; its rules are obtained through the existing instruction-request action.
 - Workflow and addon policy belong in config.yaml; command and runtime settings belong in commands.yaml. Misplaced fields fail clearly naming their owner instead of being ignored or silently applied.
 - Addon and target edits change only intended values or refuse before writing, preserving unrelated YAML and guidance and introducing no duplicate sections.
