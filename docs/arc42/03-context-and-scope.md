@@ -37,7 +37,8 @@ flowchart LR
 replace the content between matching markers such as
 `<!-- givn:begin:givn-project -->` and `<!-- givn:end:givn-project -->`; it does
 not alter other content. The retired `absolute-mode` block is removed during
-sync; the current optional presentation block is `communication-policy`.
+sync; the current optional presentation and documentation block is
+`communication-policy`.
 
 ## 3.2 Technical Context — Interfaces
 

@@ -88,7 +88,8 @@ Every registered addon is enabled by default. The `arc42` addon:
 - leaves existing Arc42 files when disabled.
 
 The `outline` addon is advisory and adds no gate. The `communication_policy`
-addon controls only a presentation block; the dialog obligation is independent.
+addon controls only a presentation and documentation block; the dialog
+obligation is independent.
 The `challenge` addon supplies a skill and instruction, not a lifecycle gate.
 
 ## 2.5 Acceptance Boundary

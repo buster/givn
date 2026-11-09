@@ -37,7 +37,8 @@ The sequence is:
    givn-owned fenced blocks in `AGENTS.md`, removes the retired `absolute-mode`
    block while preserving surrounding content, and leaves all other content
    unchanged. The unconditional `givn-project` block carries the dialog-policy
-   obligation; the communication-policy addon controls only presentation.
+   obligation; the communication-policy addon controls only presentation and
+   documentation.
 8. Materialize the checked-in commit-attribution hook and, when a Git worktree
    exists, install or refresh the local dispatcher without replacing an
    existing `commit-msg` hook.

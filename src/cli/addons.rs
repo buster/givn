@@ -21,7 +21,7 @@ pub const KNOWN_ADDONS: &[AddonSpec] = &[
     },
     AddonSpec {
         id: "communication_policy",
-        description: "Communication policy — manages a fenced presentation block in AGENTS.md; the dialog obligation is independent of this addon",
+        description: "Communication policy — manages a fenced presentation and documentation block in AGENTS.md; the dialog obligation is independent of this addon",
         default_enabled: true,
     },
     AddonSpec {

@@ -808,11 +808,76 @@ fn report_text(world: &GivnWorld) -> String {
 )]
 fn communication_block_rules(world: &mut GivnWorld) {
     let agents = std::fs::read_to_string(env(world).path("AGENTS.md")).expect("read AGENTS.md");
-    assert!(agents.contains("Communication Policy"), "{agents}");
+    assert!(
+        agents.contains("Communication & Documentation Policy"),
+        "{agents}"
+    );
     assert!(agents.contains("Eliminate emojis"), "{agents}");
     assert!(
         !agents.to_lowercase().contains("cognitive rebuild"),
         "{agents}"
+    );
+}
+
+fn communication_block(world: &GivnWorld) -> String {
+    let agents = std::fs::read_to_string(env(world).path("AGENTS.md")).expect("read AGENTS.md");
+    let start = agents
+        .find("<!-- givn:begin:communication-policy -->")
+        .expect("communication block start marker");
+    let end = agents
+        .find("<!-- givn:end:communication-policy -->")
+        .expect("communication block end marker");
+    agents[start..end].to_string()
+}
+
+#[then("the managed communication block requires tables for command, flag, and key mappings")]
+fn communication_block_tables(world: &mut GivnWorld) {
+    let block = communication_block(world);
+    assert!(block.contains("**Tabulate mappings.**"), "{block}");
+    assert!(block.contains("go into tables"), "{block}");
+    assert!(block.contains("never narrate key sequences"), "{block}");
+}
+
+#[then("the managed communication block sends fallback and error-string rules to specs and help")]
+fn communication_block_specs_boundary(world: &mut GivnWorld) {
+    let block = communication_block(world);
+    assert!(block.contains("**No Gherkin in docs.**"), "{block}");
+    assert!(block.contains("fallback chains"), "{block}");
+    assert!(
+        block.contains("belong in spec files and `--help`"),
+        "{block}"
+    );
+}
+
+#[then("the managed communication block keeps quick start free of validation rules and exit codes")]
+fn communication_block_quick_start(world: &mut GivnWorld) {
+    let block = communication_block(world);
+    assert!(block.contains("**Setup stays runnable.**"), "{block}");
+    assert!(block.contains("exit codes"), "{block}");
+    assert!(
+        block.contains("edge-case flags belong in reference material"),
+        "{block}"
+    );
+}
+
+#[then("the managed communication block names no documentation file or README line budget")]
+fn communication_block_no_layout_policy(world: &mut GivnWorld) {
+    let block = communication_block(world);
+    for needle in ["README.md", "docs/", "lines max", "150 lines"] {
+        assert!(
+            !block.contains(needle),
+            "block must not name {needle}: {block}"
+        );
+    }
+}
+
+#[then("the managed communication block is at most 300 words")]
+fn communication_block_word_budget(world: &mut GivnWorld) {
+    let block = communication_block(world);
+    let words = block.split_whitespace().count();
+    assert!(
+        words <= 300,
+        "communication block is {words} words; budget is 300"
     );
 }
 
