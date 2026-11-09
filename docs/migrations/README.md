@@ -211,8 +211,8 @@ run it again.
 1. `givn status` reports the expected change, stage, and SCM backend.
 2. `givn instructions` reports the next required action and names the skill.
 3. `givn instructions dialog` loads the mandatory dialog policy; the
-   communication policy addon only controls presentation, not the obligation to
-   ask answerable questions.
+   communication policy addon only controls presentation and documentation, not
+   the obligation to ask answerable questions.
 4. `givn instructions challenge` loads the challenge policy if the project uses
    it.
 5. `givn check tasks --change <id>` runs the configured changed-scenario
