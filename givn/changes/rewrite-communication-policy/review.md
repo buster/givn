@@ -2,7 +2,7 @@
 
 Review kind: self-review
 Author: givn-agent
-Reviewer context: givn-agent (self)
+Reviewer context: givn-agent
 
 ## Implementation Evidence Check (do this first)
 
