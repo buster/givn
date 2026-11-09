@@ -187,6 +187,15 @@ fn probe_before_deadline(port: u16, ready_path: &str, deadline: Instant) -> bool
 }
 
 pub fn probe_until_ready(port: u16, ready_path: &str, timeout: Duration) -> ProbeOutcome {
+    probe_until_ready_with_interval(port, ready_path, timeout, Duration::from_millis(100))
+}
+
+pub fn probe_until_ready_with_interval(
+    port: u16,
+    ready_path: &str,
+    timeout: Duration,
+    retry_interval: Duration,
+) -> ProbeOutcome {
     let deadline = Instant::now() + timeout;
     let mut attempts = 0;
     while Instant::now() < deadline {
@@ -194,9 +203,7 @@ pub fn probe_until_ready(port: u16, ready_path: &str, timeout: Duration) -> Prob
         if probe_before_deadline(port, ready_path, deadline) {
             return ProbeOutcome::Ready { attempts };
         }
-        std::thread::sleep(
-            Duration::from_millis(100).min(deadline.saturating_duration_since(Instant::now())),
-        );
+        std::thread::sleep(retry_interval.min(deadline.saturating_duration_since(Instant::now())));
     }
     ProbeOutcome::TimedOut
 }
@@ -445,9 +452,15 @@ mod tests {
         drop(listener);
         let started = Instant::now();
         assert_eq!(
-            probe_until_ready(port, "/healthz", Duration::from_millis(20)),
+            probe_until_ready_with_interval(
+                port,
+                "/healthz",
+                Duration::from_millis(20),
+                Duration::from_millis(500),
+            ),
             ProbeOutcome::TimedOut
         );
-        assert!(started.elapsed() < Duration::from_millis(80));
+        let elapsed = started.elapsed();
+        assert!(elapsed < Duration::from_millis(350), "elapsed: {elapsed:?}");
     }
 }
