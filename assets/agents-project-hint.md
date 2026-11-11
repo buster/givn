@@ -7,6 +7,11 @@ auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
   `--change <CHANGE>` for active changes. A reported step applies when
   continuing that change; it does not authorize unrelated work or require every
   task to become a Givn change.
+- Apply the Zen of Python as language-agnostic design rules: explicit over
+  implicit, simple over complex, flat over nested, sparse over dense, readable
+  over clever, and errors never pass silently. `givn instructions
+  dev-principles` serves the full text and this project's concrete
+  applications.
 - For new or unclassified work, load `givn-start` to choose answer only, direct
   work without a Givn change, ideation, or a formal change. For a change whose
   goal and scope are already clear, run `givn new <change-id>` directly. Honor
