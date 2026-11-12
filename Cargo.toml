@@ -3,12 +3,46 @@ name = "givn"
 version = "0.9.19"
 edition = "2024"
 description = "A single-binary, Gherkin-first spec-driven workflow tool"
+publish = ["crates-io"]
+readme = "README.md"
+homepage = "https://github.com/buster/givn"
+documentation = "https://docs.rs/givn"
+keywords = ["gherkin", "bdd", "spec-driven", "cli", "workflow"]
+categories = ["command-line-utilities", "development-tools"]
 
 # Text givn generates carries an additional permission;
 # see README.md § License and the note at the end of LICENSE.
 license = "GPL-3.0-or-later"
 repository = "https://github.com/buster/givn"
-exclude = ["harness/**", "reports/**", "test-corpus/**"]
+exclude = [
+    "harness/**",
+    "reports/**",
+    "test-corpus/**",
+    "givn/**",
+    "docs/**",
+    "tests/**",
+    "tools/**",
+    "coverage/**",
+    ".agents/**",
+    ".claude/**",
+    ".maki/**",
+    ".omp/**",
+    ".opencode/**",
+    ".github/**",
+    ".githooks/**",
+    "scripts/**",
+    "AGENTS.md",
+    "cliff.toml",
+    "deny.toml",
+    "flake.lock",
+    "flake.nix",
+    "paseo.json",
+    "merge-coverages.sh",
+    "measure-coverage.sh",
+    "run-tests.sh",
+    "setup-e2e-browser.sh",
+    "setup-e2e-harness.sh",
+]
 
 
 [lib]

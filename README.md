@@ -3,6 +3,8 @@
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
+[![Crates.io Version](https://img.shields.io/crates/v/givn)](https://crates.io/crates/givn)
+
 ```
   ________  .__
  /  _____/  |__|__  __ ____
@@ -34,6 +36,12 @@ Instead of letting agents jump straight from a prompt to unverified code, Givn s
 ## Install
 
 Requires a stable Rust toolchain (installs to `~/.cargo/bin`):
+
+```sh
+cargo install givn
+```
+
+To install the current checkout:
 
 ```sh
 git clone https://github.com/buster/givn.git
