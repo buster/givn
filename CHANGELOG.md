@@ -6,6 +6,22 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+## [0.9.20] - 2026-11-12
+
+### Bug Fixes
+
+- **run:** Parameterize probe retry interval to prevent scheduler jitter flake
+
+
+### Features
+
+- **rewrite-communication-policy:** The communication policy addon states documentation rules with named formats and a bounded block, and stops prescribing repository-specific documentation layout.
+
+
+### Reverts
+
+- **principles:** Remove the Zen of Python reference
+
 ## [0.9.19] - 2026-11-07
 
 ### Bug Fixes
@@ -900,3 +916,5 @@ for the complete 0.2.0 feature set.
 [0.9.18]: https://github.com/buster/givn/compare/v0.9.17...v0.9.18
 
 [0.9.19]: https://github.com/buster/givn/compare/v0.9.18...v0.9.19
+
+[0.9.20]: https://github.com/buster/givn/compare/v0.9.19...v0.9.20
