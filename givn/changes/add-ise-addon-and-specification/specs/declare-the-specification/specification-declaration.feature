@@ -2,7 +2,7 @@
 
 Feature: specification-declaration
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The declared roles are read by the project-health pass
     Given an ise-enabled project selecting opencode with a declaration naming the five roles and two source roots
     When the consumer runs `givn lint`

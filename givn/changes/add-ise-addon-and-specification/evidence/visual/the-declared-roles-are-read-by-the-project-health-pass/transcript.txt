@@ -1,0 +1,11 @@
+Scenario: The declared roles are read by the project-health pass
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpZSPUUs
+exit code: 0
+--- stdout ---
+givn lint: no .feature files found under givn/
+
+--- stderr ---
+[SPEC ] advisory  givn/specification.yaml & docs/reference.md  the 'contracts' role declares 'docs/reference.md', which matches no path in the project
+[SPEC ] advisory  givn/specification.yaml & tests/e2e  the 'e2e' role entry 'tests/e2e' matches no path in the project
+
