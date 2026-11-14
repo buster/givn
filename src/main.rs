@@ -1,4 +1,4 @@
-use givn::{cli, history};
+use givn::{cli, history, ise};
 
 use std::path::PathBuf;
 
@@ -200,6 +200,11 @@ enum Commands {
         #[arg(long)]
         print: bool,
     },
+    /// Materialize and re-check a clean-room Ise Test trial.
+    Ise {
+        #[command(subcommand)]
+        command: IseCommands,
+    },
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
@@ -253,6 +258,40 @@ enum AttributionCommands {
     },
     /// Convert a Claude Code Bash hook payload into an optional command update.
     ClaudePreToolUse,
+}
+
+#[derive(Subcommand)]
+enum IseCommands {
+    /// Write a clean-room trial from one recorded revision.
+    Replace {
+        /// Revision to read (defaults to HEAD).
+        #[arg(long)]
+        at: Option<String>,
+        /// Replace every tracked file under the declared source roots.
+        #[arg(long)]
+        full: bool,
+        /// Replace a tracked file or a directory's tracked files (repeatable).
+        #[arg(long = "path")]
+        path: Vec<String>,
+        /// Trial directory; must lie outside the checkout and not exist.
+        #[arg(long)]
+        into: PathBuf,
+        /// Write the trial record to this path instead of stdout.
+        #[arg(long)]
+        receipt: Option<PathBuf>,
+        /// Perform every read and refusal without writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Re-check a prepared trial's frozen retained and e2e inputs.
+    Verify {
+        /// Trial record to read.
+        #[arg(long)]
+        trial: PathBuf,
+        /// Trial directory the record must belong to.
+        #[arg(long)]
+        at: PathBuf,
+    },
 }
 
 /// The `history` command's subcommands: the read view is the command itself.
@@ -584,6 +623,34 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             }
         },
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),
+        Commands::Ise { command } => {
+            let project_root = std::env::current_dir()?;
+            let exit_code = match command {
+                IseCommands::Replace {
+                    at,
+                    full,
+                    path,
+                    into,
+                    receipt,
+                    dry_run,
+                } => cli::ise::replace(
+                    &project_root,
+                    &ise::ReplaceRequest {
+                        at,
+                        full,
+                        paths: path,
+                        into,
+                        receipt,
+                        dry_run,
+                    },
+                ),
+                IseCommands::Verify { trial, at } => cli::ise::verify(&project_root, &trial, &at),
+            };
+            if exit_code != 0 {
+                std::process::exit(exit_code);
+            }
+            Ok(())
+        }
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::TestResult {
             total,

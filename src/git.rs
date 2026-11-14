@@ -421,13 +421,18 @@ impl Worktree {
         ))
     }
 
-    /// Regular files under `root` in `revision`, with their entry kind.
+    /// Tracked files under `root` in `revision`, with their entry kind.
     pub fn revision_files(
         &self,
         revision: &str,
         root: &str,
-    ) -> Result<Vec<(String, crate::scm::EntryKind)>> {
-        let output = run_git(&self.root, &["ls-tree", "-r", "-z", revision, "--", root])?;
+    ) -> Result<Vec<crate::scm::RevisionEntry>> {
+        let mut args = vec!["ls-tree", "-r", "-z", revision];
+        if !root.is_empty() {
+            args.push("--");
+            args.push(root);
+        }
+        let output = run_git(&self.root, &args)?;
         if !output.status.success() {
             bail!(
                 "`git ls-tree` failed in '{}': {}",
@@ -455,7 +460,11 @@ impl Worktree {
             } else {
                 crate::scm::EntryKind::Regular
             };
-            files.push((path, entry_kind));
+            files.push(crate::scm::RevisionEntry {
+                path,
+                kind: entry_kind,
+                executable: entry_kind == crate::scm::EntryKind::Regular && mode == "100755",
+            });
         }
         Ok(files)
     }

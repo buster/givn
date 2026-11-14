@@ -16,21 +16,21 @@ Feature: Clean-room preparation
     And the trial omits "src/keys/parser.rs" and "notes.md"
     And the receipt records the replacement revision, the backend, the replaced paths, the counts, the replaced digest, the written path, and the Givn version
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses when the declaration is missing
     Given a Git project with ise enabled and no declaration
     When the developer prepares a trial from "HEAD" with a full replacement
     Then preparation fails and names "givn/specification.yaml"
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a malformed declaration
     Given a Git project with ise enabled and a malformed declaration
     When the developer prepares a trial from "HEAD" with a full replacement
     Then preparation fails and names "givn/specification.yaml" and the loader's reason
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses while the ise addon is off
     Given a Git project with a declaration and ise off
     When the developer prepares a trial from "HEAD" with a full replacement
@@ -38,35 +38,35 @@ Feature: Clean-room preparation
     And the declaration is not read
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses while architecture principles are off
     Given a Git project with ise on, architecture principles off, and a declaration
     When the developer prepares a trial from "HEAD" with a full replacement
     Then preparation fails and names "architecture_principles"
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a dirty checkout and names every dirty path
     Given a Git project with ise enabled, a declaration, and one modified tracked file and one untracked file
     When the developer prepares a trial from "HEAD" with a full replacement
     Then preparation fails and names the modified tracked file and the untracked file
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a project with no version-control backend
     Given a directory with ise enabled, a declaration, and no version-control backend
     When the developer prepares a trial from "HEAD" with a full replacement
     Then preparation fails and names the missing backend
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a project root nested inside a Git worktree
     Given a Git worktree whose project root is nested inside the worktree top level
     When the developer prepares a trial from "HEAD" with a full replacement
     Then preparation fails and names the nested project root
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a checkout carrying both Git and Fossil markers
     Given a project root with both a Git worktree marker and a Fossil checkout marker
     When the developer prepares a trial from "HEAD" with a full replacement
@@ -305,7 +305,7 @@ Feature: Clean-room preparation
     And the trial holds "src/kept.rs"
     And the trial does not hold "src/later.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an absent revision
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial from "0000000000000000000000000000000000000000" with a full replacement

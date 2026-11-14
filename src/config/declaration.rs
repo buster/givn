@@ -269,7 +269,7 @@ fn normalize_role_paths(paths: &mut [String]) -> Result<(), DeclarationError> {
 /// separators disappear, an inner `..` cancels the segment before it, and a
 /// value that is empty, absolute (POSIX or Windows drive), or escapes the
 /// project root is refused.
-fn normalize_project_path(value: &str) -> Option<String> {
+pub(crate) fn normalize_project_path(value: &str) -> Option<String> {
     if value.is_empty() || value.starts_with('/') || has_windows_prefix(value) {
         return None;
     }

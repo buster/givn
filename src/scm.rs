@@ -17,6 +17,14 @@ pub enum EntryKind {
     Submodule,
 }
 
+/// One tracked path at a revision, with the facts a clean-room write needs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevisionEntry {
+    pub path: String,
+    pub kind: EntryKind,
+    pub executable: bool,
+}
+
 /// One content path plus its backend-specific identity. `gitlink` carries a
 /// submodule's recorded object id; other paths leave it empty.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -179,8 +187,8 @@ impl Backend {
         }
     }
 
-    /// Regular files under `root` in `revision`, with their entry kind.
-    pub fn revision_files(&self, revision: &str, root: &str) -> Result<Vec<(String, EntryKind)>> {
+    /// Tracked files under `root` in `revision`, with their entry kind.
+    pub fn revision_files(&self, revision: &str, root: &str) -> Result<Vec<RevisionEntry>> {
         match self {
             Self::Git(worktree) => worktree.revision_files(revision, root),
             Self::Fossil(checkout) => checkout.revision_files(revision, root),
