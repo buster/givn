@@ -1241,7 +1241,7 @@ Realizes decision D2. **Files created:** `assets/instructions/ise.md`.
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed), 4 steps (4 passed); 923 passed,
         106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
+  - [x] COMMIT: `a389115c61e5622121a02e9b84d617da66ebecdd` -- Batch: `ise-instruction-serving`
 
 - [x] Scenario: `An ise instruction request with the addon off is refused by name`
   - Design constraints:
@@ -1259,7 +1259,7 @@ Realizes decision D2. **Files created:** `assets/instructions/ise.md`.
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed), 5 steps (5 passed); 923 passed,
         106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
+  - [x] COMMIT: `a389115c61e5622121a02e9b84d617da66ebecdd` -- Batch: `ise-instruction-serving`
 
 - [x] Scenario: `The machine-readable ise path carries the same content as the text path`
   - Design constraints:
@@ -1276,7 +1276,7 @@ Realizes decision D2. **Files created:** `assets/instructions/ise.md`.
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed), 4 steps (4 passed); 923 passed,
         106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
+  - [x] COMMIT: `a389115c61e5622121a02e9b84d617da66ebecdd` -- Batch: `ise-instruction-serving`
 
 - [x] Scenario: `The ise instruction carries the five rebuild obligations`
   - Design constraints:
@@ -1293,7 +1293,7 @@ Realizes decision D2. **Files created:** `assets/instructions/ise.md`.
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed), 5 steps (5 passed); 923 passed,
         106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
+  - [x] COMMIT: `a389115c61e5622121a02e9b84d617da66ebecdd` -- Batch: `ise-instruction-serving`
 
 ---
 
