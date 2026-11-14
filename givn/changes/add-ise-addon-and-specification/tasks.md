@@ -669,7 +669,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 7 steps (7 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
+  - [x] COMMIT: `c883c8ee7d197eb517ff49b5a6e7ba905b7cf77f` -- Batch: `declaration-scaffold-enable`
 
 - [x] Scenario: `Enabling ise preserves an edited declaration`
   - Design constraints:
@@ -689,7 +689,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 6 steps (6 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
+  - [x] COMMIT: `c883c8ee7d197eb517ff49b5a6e7ba905b7cf77f` -- Batch: `declaration-scaffold-enable`
 
 - [x] Scenario: `Repeating the enable changes nothing`
   - Design constraints:
@@ -709,7 +709,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 4 steps (4 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
+  - [x] COMMIT: `c883c8ee7d197eb517ff49b5a6e7ba905b7cf77f` -- Batch: `declaration-scaffold-enable`
 
 - [x] Scenario: `A forced re-initialization preserves an effective ise and its declaration`
   - Design constraints:
@@ -731,7 +731,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 5 steps (5 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
+  - [x] COMMIT: `c883c8ee7d197eb517ff49b5a6e7ba905b7cf77f` -- Batch: `declaration-scaffold-enable`
 
 - [x] Scenario: `Disabling ise preserves the declaration and reports it project-owned`
   - Design constraints:
@@ -750,7 +750,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 6 steps (6 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
+  - [x] COMMIT: `c883c8ee7d197eb517ff49b5a6e7ba905b7cf77f` -- Batch: `declaration-scaffold-enable`
 
 - [x] Scenario: `A declaration scaffold failure names the path and the applied setting`
   - Design constraints:
@@ -777,7 +777,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 6 steps (6 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
+  - [x] COMMIT: `c883c8ee7d197eb517ff49b5a6e7ba905b7cf77f` -- Batch: `declaration-scaffold-enable`
 
 ---
 
