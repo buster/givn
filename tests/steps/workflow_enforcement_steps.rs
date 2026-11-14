@@ -3903,3 +3903,48 @@ fn receipt_without_e2e_keys(world: &mut GivnWorld) {
         "the ise-off receipt shape changed beyond the previous schema-2 keys: {receipt}"
     );
 }
+
+// --- change verification receipt freshness scenarios ----------------------
+
+#[given("an ise-effective change with a current change verification receipt")]
+fn ise_change_with_current_receipt(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_current_receipt(world);
+}
+
+#[given(regex = r#"^the receipt's E2E identity no longer matches the project because (.+)$"#)]
+fn receipt_identity_no_longer_matches(world: &mut GivnWorld, input: String) {
+    match input.as_str() {
+        "the e2e package changed" => e2e_boundary_support::change_e2e_package(world),
+        "the E2E runner command changed" => e2e_boundary_support::change_e2e_command(world),
+        "the Givn version changed" => e2e_boundary_support::change_recorded_givn_version(world),
+        "the receipt lacks the identity" => e2e_boundary_support::remove_recorded_identity(world),
+        "the declaration cannot be read" => e2e_boundary_support::corrupt_declaration(world),
+        other => panic!("unknown E2E identity mutation '{other}'"),
+    }
+}
+
+#[given(
+    regex = r#"^an ise-effective change with a current change verification receipt whose delta "([^"]+)"$"#
+)]
+fn ise_change_with_current_receipt_delta(world: &mut GivnWorld, delta: String) {
+    e2e_boundary_support::ise_change_with_current_receipt(world);
+    match delta.as_str() {
+        "has an E2E scenario" => e2e_boundary_support::add_delta_e2e_scenario(world),
+        "has no E2E scenario" => {}
+        other => panic!("unknown delta state '{other}'"),
+    }
+}
+
+#[given(regex = r#"^the receipt's E2E scope records "([^"]+)"$"#)]
+fn receipt_e2e_scope(world: &mut GivnWorld, scope: String) {
+    e2e_boundary_support::record_e2e_scope(world, &scope);
+}
+
+#[then("stderr says the change verification receipt is stale")]
+fn stderr_says_change_receipt_stale(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    assert!(
+        observed.contains("change verification receipt is stale"),
+        "stderr does not say the change verification receipt is stale: {observed}"
+    );
+}

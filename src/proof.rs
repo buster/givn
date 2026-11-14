@@ -411,6 +411,16 @@ impl ScopeOutcome {
             ..Self::default()
         }
     }
+
+    /// Whether the scope records a green run with at least one scenario.
+    pub fn is_green(&self) -> bool {
+        self.status == "passed"
+            && self.failed == 0
+            && self.skipped == 0
+            && self.total > 0
+            && self.passed == self.total
+            && self.passed + self.failed + self.skipped == self.total
+    }
 }
 
 impl Default for ScopeOutcome {
@@ -588,13 +598,49 @@ pub enum ProofStatus {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StaleReason {
     NotGreen,
-    FeaturesChanged { receipt: String, current: String },
-    CommandChanged { receipt: String, current: String },
-    TestedContentChanged { receipt: String, current: String },
-    TestedRevisionUnavailable { tested_revision: String },
-    LegacyReceiptWithoutContentBinding { tested_revision: String },
-    UnsupportedContentScope { scope: String },
-    UnsupportedReceiptSchema { schema: u32 },
+    FeaturesChanged {
+        receipt: String,
+        current: String,
+    },
+    CommandChanged {
+        receipt: String,
+        current: String,
+    },
+    TestedContentChanged {
+        receipt: String,
+        current: String,
+    },
+    TestedRevisionUnavailable {
+        tested_revision: String,
+    },
+    LegacyReceiptWithoutContentBinding {
+        tested_revision: String,
+    },
+    UnsupportedContentScope {
+        scope: String,
+    },
+    UnsupportedReceiptSchema {
+        schema: u32,
+    },
+    MissingE2eIdentity,
+    E2eIdentityUnavailable {
+        reason: String,
+    },
+    E2ePackageChanged {
+        package: String,
+        receipt: String,
+        current: String,
+    },
+    E2eRunnerCommandChanged {
+        receipt: String,
+        current: String,
+    },
+    GivnVersionChanged {
+        receipt: String,
+        current: String,
+    },
+    E2eScopeMissing,
+    E2eScopeUnexpected,
 }
 
 impl StaleReason {
@@ -624,6 +670,32 @@ impl StaleReason {
             Self::UnsupportedReceiptSchema { schema } => {
                 format!("unsupported change verification receipt schema {schema}")
             }
+            Self::MissingE2eIdentity => {
+                "the receipt lacks the E2E identity; run `givn check tasks` once".to_string()
+            }
+            Self::E2eIdentityUnavailable { reason } => {
+                format!("the E2E identity cannot be read: {reason}")
+            }
+            Self::E2ePackageChanged {
+                package,
+                receipt,
+                current,
+            } => format!(
+                "the e2e package digest for '{package}' changed: receipt {receipt}, current {current}"
+            ),
+            Self::E2eRunnerCommandChanged { receipt, current } => {
+                format!("E2E runner command changed: receipt {receipt}, current {current}")
+            }
+            Self::GivnVersionChanged { receipt, current } => {
+                format!("Givn version changed: receipt {receipt}, current {current}")
+            }
+            Self::E2eScopeMissing => "the E2E scope is missing: the delta has an @e2e scenario \
+                 but the receipt records no green E2E scope; run `givn check tasks` once"
+                .to_string(),
+            Self::E2eScopeUnexpected => "the E2E scope is not applicable to this delta: the \
+                 receipt records a passed E2E scope but the delta has no @e2e scenario; run \
+                 `givn check tasks` once"
+                .to_string(),
         }
     }
 }
@@ -880,6 +952,10 @@ impl ChangeReceipt {
             _ => unreachable!("schema was checked above"),
         }
 
+        if crate::config::lock::ise_effective_for_change(change_dir)? {
+            reasons.extend(self.e2e_stale_reasons(change_dir, project_root, manifest)?);
+        }
+
         if !reasons.is_empty() {
             Ok(ProofStatus::Stale(reasons))
         } else if documentation_only {
@@ -890,6 +966,98 @@ impl ChangeReceipt {
         } else {
             Ok(ProofStatus::Current)
         }
+    }
+
+    /// The E2E identity and delta-aware scope reasons an `ise`-effective
+    /// change adds to the shared freshness rule. Every independent reason is
+    /// collected; only a receipt without the identity stops the comparison.
+    fn e2e_stale_reasons(
+        &self,
+        change_dir: &Path,
+        project_root: &Path,
+        manifest: &crate::config::manifest::Manifest,
+    ) -> Result<Vec<StaleReason>> {
+        let mut reasons = Vec::new();
+
+        let delta_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&change_dir.join("specs"));
+        match self.e2e_scope.as_ref() {
+            Some(scope) if delta_has_e2e && !scope.is_green() => {
+                reasons.push(StaleReason::E2eScopeMissing);
+            }
+            None if delta_has_e2e => reasons.push(StaleReason::E2eScopeMissing),
+            Some(scope) if !delta_has_e2e && scope.status == "passed" => {
+                reasons.push(StaleReason::E2eScopeUnexpected);
+            }
+            _ => {}
+        }
+
+        let Some(identity) = self.e2e_identity.as_ref() else {
+            reasons.push(StaleReason::MissingE2eIdentity);
+            return Ok(reasons);
+        };
+
+        let current_runner = digest_text(&manifest.verify.e2e_command);
+        if identity.runner_command_digest != current_runner {
+            reasons.push(StaleReason::E2eRunnerCommandChanged {
+                receipt: identity.runner_command_digest.clone(),
+                current: current_runner,
+            });
+        }
+        let current_version = env!("CARGO_PKG_VERSION");
+        if identity.givn_version != current_version {
+            reasons.push(StaleReason::GivnVersionChanged {
+                receipt: identity.givn_version.clone(),
+                current: current_version.to_string(),
+            });
+        }
+
+        let declaration =
+            match crate::config::declaration::SpecificationDeclaration::load(project_root) {
+                Ok(Some(declaration)) => declaration,
+                Ok(None) => {
+                    reasons.push(StaleReason::E2eIdentityUnavailable {
+                        reason: format!(
+                            "'{}' is absent",
+                            crate::config::declaration::DECLARATION_PATH
+                        ),
+                    });
+                    return Ok(reasons);
+                }
+                Err(error) => {
+                    reasons.push(StaleReason::E2eIdentityUnavailable {
+                        reason: error.to_string(),
+                    });
+                    return Ok(reasons);
+                }
+            };
+        let current = crate::e2e_boundary::E2eBoundary::resolve(project_root, &declaration)
+            .identity(project_root)?;
+        for (package, recorded) in &identity.package_digests {
+            match current.get(package) {
+                Some(digest) if digest == recorded => {}
+                Some(digest) => reasons.push(StaleReason::E2ePackageChanged {
+                    package: package.clone(),
+                    receipt: recorded.clone(),
+                    current: digest.clone(),
+                }),
+                None => reasons.push(StaleReason::E2ePackageChanged {
+                    package: package.clone(),
+                    receipt: recorded.clone(),
+                    current: "(absent)".to_string(),
+                }),
+            }
+        }
+        for (package, digest) in &current {
+            if !identity.package_digests.contains_key(package) {
+                reasons.push(StaleReason::E2ePackageChanged {
+                    package: package.clone(),
+                    receipt: "(absent)".to_string(),
+                    current: digest.clone(),
+                });
+            }
+        }
+
+        Ok(reasons)
     }
 
     /// Strict revision equality used by older callers and tests.

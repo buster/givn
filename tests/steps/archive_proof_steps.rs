@@ -742,9 +742,24 @@ fn coverage_writes_undeclared(world: &mut GivnWorld) {
 #[then(regex = r#"^stderr names "([^"]+)"$"#)]
 fn stderr_names(world: &mut GivnWorld, needle: String) {
     let stderr = crate::steps::stderr(world);
+    // The needle's words must appear in order on one line, case-insensitive.
+    // A reason may name its subject between two of its words (a package path in
+    // "e2e package digest changed"), and a contiguous substring would reject
+    // that refusal while still rejecting a different reason.
+    let words: Vec<String> = needle.split_whitespace().map(str::to_lowercase).collect();
+    let named = stderr.lines().any(|line| {
+        let mut rest = line.to_lowercase();
+        words.iter().all(|word| match rest.find(word.as_str()) {
+            Some(index) => {
+                rest = rest[index + word.len()..].to_string();
+                true
+            }
+            None => false,
+        })
+    });
     assert!(
-        stderr.contains(&needle),
-        "stderr missing {needle:?}: {stderr}"
+        named,
+        "stderr has no line naming {needle:?} in order: {stderr}"
     );
 }
 

@@ -200,3 +200,139 @@ pub(crate) fn change_ready_for_verification_without_ise(world: &mut GivnWorld) {
     write_scoped_runners(world);
     commit(world);
 }
+
+/// The receipt the fixture's change check wrote.
+pub(crate) fn receipt_path(world: &GivnWorld) -> std::path::PathBuf {
+    change_path(world).join("verification/tasks-verification.json")
+}
+
+fn write_receipt_json(world: &GivnWorld, receipt: &serde_json::Value) {
+    std::fs::write(
+        receipt_path(world),
+        format!(
+            "{}\n",
+            serde_json::to_string_pretty(receipt).expect("serialize the receipt")
+        ),
+    )
+    .expect("write the fixture receipt");
+    commit(world);
+}
+
+fn read_receipt_json(world: &GivnWorld) -> serde_json::Value {
+    serde_json::from_str(
+        &std::fs::read_to_string(receipt_path(world)).expect("read the fixture receipt"),
+    )
+    .expect("parse the fixture receipt")
+}
+
+/// Run the change check once, so the fixture starts from a receipt written by
+/// the real check flow rather than one assembled by the test.
+pub(crate) fn write_current_receipt(world: &mut GivnWorld) {
+    let out = common::run_givn(env(world), &["check", "tasks", "--change", CHANGE_ID]);
+    assert!(
+        out.status.success(),
+        "the fixture change check failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_change_id = Some(CHANGE_ID.to_string());
+    commit(world);
+}
+
+/// Record `ise: true` in the project configuration, so the change lock matches
+/// the effective add-on set the review gate compares against.
+fn enable_ise_addon(world: &GivnWorld) {
+    let path = env(world).path("givn/config.yaml");
+    let content = std::fs::read_to_string(&path).expect("read the fixture config");
+    let updated = content.replacen("\naddons:\n", "\naddons:\n  ise: true\n", 1);
+    assert_ne!(
+        updated, content,
+        "the fixture config carries no addons block to enable ise in"
+    );
+    std::fs::write(&path, updated).expect("write the fixture config");
+}
+
+/// An `ise`-effective change holding a receipt written by a real change check:
+/// the identity is current and the scope is `not_applicable`.
+pub(crate) fn ise_change_with_current_receipt(world: &mut GivnWorld) {
+    ise_change_ready_for_verification(world);
+    enable_ise_addon(world);
+    commit(world);
+    write_current_receipt(world);
+}
+
+/// Add a tracked file under the resolved `e2e` package and commit it.
+pub(crate) fn change_e2e_package(world: &mut GivnWorld) {
+    write_file(world, "tests/e2e/harness.txt", "fixture suite change\n");
+    commit(world);
+}
+
+/// Change the recorded E2E runner command and commit it, keeping the resolved
+/// root named.
+pub(crate) fn change_e2e_command(world: &mut GivnWorld) {
+    let path = env(world).path("givn/commands.yaml");
+    let content = std::fs::read_to_string(&path).expect("read the fixture commands");
+    let updated = content.replace(
+        "e2e_command: \"./emit-change-result.sh tests/e2e\"",
+        "e2e_command: \"./emit-change-result.sh tests/e2e --recorded\"",
+    );
+    assert_ne!(
+        updated, content,
+        "the fixture E2E runner command was not rewritten"
+    );
+    std::fs::write(&path, updated).expect("write the fixture commands");
+    commit(world);
+}
+
+/// Rewrite the recorded Givn version and commit the receipt.
+pub(crate) fn change_recorded_givn_version(world: &mut GivnWorld) {
+    let mut receipt = read_receipt_json(world);
+    receipt["e2e_identity"]["givn_version"] = serde_json::json!("0.0.0-fixture");
+    write_receipt_json(world, &receipt);
+}
+
+/// Delete the recorded E2E identity and commit the receipt.
+pub(crate) fn remove_recorded_identity(world: &mut GivnWorld) {
+    let mut receipt = read_receipt_json(world);
+    let object = receipt.as_object_mut().expect("a receipt object");
+    assert!(
+        object.remove("e2e_identity").is_some(),
+        "the fixture receipt carries no e2e identity to remove"
+    );
+    write_receipt_json(world, &receipt);
+}
+
+/// Make the declaration unreadable and commit it.
+pub(crate) fn corrupt_declaration(world: &mut GivnWorld) {
+    write_file(world, "givn/specification.yaml", "e2e: [\"tests/e2e\"\n");
+    commit(world);
+}
+
+/// Append one `@e2e` scenario to the delta feature and commit it.
+pub(crate) fn add_delta_e2e_scenario(world: &mut GivnWorld) {
+    let feature = change_path(world).join("specs/verify-change/givn-workflow-enforcement.feature");
+    let mut content = std::fs::read_to_string(&feature).expect("read the fixture delta feature");
+    content.push_str(
+        "\n  @givn.added @e2e\n  Scenario: Fixture E2E scenario\n    \
+         Given a fixture precondition\n    Then a fixture result\n",
+    );
+    std::fs::write(&feature, content).expect("write the fixture delta feature");
+    commit(world);
+}
+
+/// Record the given E2E scope status in the receipt and commit it.
+pub(crate) fn record_e2e_scope(world: &mut GivnWorld, scope: &str) {
+    let mut receipt = read_receipt_json(world);
+    receipt["e2e_scope"] = match scope {
+        "not_applicable" => serde_json::json!({ "status": "not_applicable" }),
+        "passed" => serde_json::json!({
+            "status": "passed",
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "seconds": 0.0,
+        }),
+        other => panic!("unknown fixture E2E scope '{other}'"),
+    };
+    write_receipt_json(world, &receipt);
+}
