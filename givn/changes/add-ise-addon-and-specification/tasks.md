@@ -1483,7 +1483,7 @@ batch 1; this batch proves the two remaining declared requirements.)
 **Batch verification:** the two single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: no-addons-and-lock'`.
 
-- [ ] Scenario: `givn init --no-addons writes an explicit false for every addon including ise`
+- [x] Scenario: `givn init --no-addons writes an explicit false for every addon including ise`
   - Design constraints:
     - Fixture: temp root without `givn/`; run
       `givn init --no-addons --agents opencode`.
@@ -1516,9 +1516,9 @@ batch 1; this batch proves the two remaining declared requirements.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `no-addons-and-lock`
+  - [x] COMMIT: `8584dc3af0dff9b8618b3311b095ec0c9bb747c6` -- Batch: `no-addons-and-lock`
 
-- [ ] Scenario: `A change locked before ise existed accepts the enabled addon`
+- [x] Scenario: `A change locked before ise existed accepts the enabled addon`
   - Design constraints:
     - Fixture: `ise`-enabled project; active change
       `add-declaration-check` (`common::write_fixture_delta`) whose
@@ -1555,7 +1555,7 @@ batch 1; this batch proves the two remaining declared requirements.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `no-addons-and-lock`
+  - [x] COMMIT: `8584dc3af0dff9b8618b3311b095ec0c9bb747c6` -- Batch: `no-addons-and-lock`
 
 ---
 
