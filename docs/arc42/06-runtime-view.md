@@ -217,6 +217,17 @@ advisory and never changes the exit code. Forward references during an active
 ideation topic stay quiet, and the persona scan runs in both the default and
 `--change` scopes.
 
+When `ise` is effective, the default whole-tree scope also reads
+`givn/specification.yaml` through the one strict declaration loader and reports
+four advisory placement findings: a declared path that matches nothing, one
+path declared in two roles, a `.feature` file outside the `behavior` globs, and
+a declared `e2e` package that is missing or carries a dependency edge into
+`source`. The `e2e` edge is computed from Cargo manifests, statically; a project
+with no Cargo manifest receives no such finding. The four findings never change
+the exit code. A malformed declaration is a blocking error (exit `1`) and no
+advisory finding is computed from it. The change scope and explicit paths never
+read the declaration, so no declaration finding becomes a review blocker.
+
 ## 6.5 `givn status` and `givn graph`
 
 Both commands load the effective manifest and derive state from the change
@@ -534,10 +545,15 @@ add-on set. Review and archive compare the current effective values with the
 lock and refuse on drift.
 
 `givn addons list` reads enabled flags from `givn/config.yaml` and lists every
-registered addon with its effective default. All registered addons are enabled
-by default; a missing key resolves to enabled, and only an explicit `false`
-disables a flag. `enable arc42` sets the flag, scaffolds missing fixed-path
-chapter files and `docs/glossary.md`, and expands the effective graph;
+registered addon with its effective default. Every addon except an opt-in addon
+is enabled by default; a missing key resolves to that addon's declared default,
+and only an explicit `false` disables a default-on addon. `ise` is the one
+opt-in addon: enabling it requires `architecture_principles`, disabling
+`architecture_principles` is refused while `ise` is on, and the first effective
+enable writes `givn/specification.yaml` when the file is absent. A second enable,
+or an enable on a project that edited the declaration, reports the existing file
+and leaves it byte-for-byte. `enable arc42` sets the flag, scaffolds missing
+fixed-path chapter files and `docs/glossary.md`, and expands the effective graph;
 `disable arc42` leaves existing docs in place. `enable domain_modeling` sets the
 flag and creates missing `docs/glossary.md` and `docs/domain-model.md`;
 `disable domain_modeling` removes the generated skill but leaves the documents.
@@ -573,9 +589,12 @@ The command records the checkpoint revision, refreshes `givn/config.yaml`,
 backfills the `run:` scaffold into `givn/commands.yaml` when the file exists and
 has no top-level `run:` key (idempotent; a project that already declares `run:`
 produces no diff), and synchronizes generated skills and Givn-owned `AGENTS.md`
-blocks. It stages an explicit allowlist — including `givn/commands.yaml` for the
-backfill — never a complete directory or worktree, and creates one managed
-commit when files changed.
+blocks. When `ise` is effective and `givn/specification.yaml` is absent, it also
+writes the declaration scaffold and stages it in the same allowlist revision;
+an existing declaration is left byte-for-byte, reported as project-owned, and
+staged by neither path. It stages an explicit allowlist — including
+`givn/commands.yaml` for the backfill — never a complete directory or worktree,
+and creates one managed commit when files changed.
 
 The shipped catalog is `migrations: []` at the 1.0 baseline. No pre-1.0 route is
 resolved, so no aggregate maintenance change is created; a project must have a

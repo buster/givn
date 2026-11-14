@@ -21,7 +21,7 @@ register](adr/README.md).
 | TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint.rs` |
 | TC-12 | `givn/commands.yaml` is parsed with a dedicated schema for `verify`, `coverage`, and `run`; policy keys there and executable keys in `givn/config.yaml` are refused by name. | `src/config/overlay.rs` |
 | TC-13 | The dependency-age policy checks locked registry crates through `scripts/check-dep-age.sh`. | Script and project policy |
-| TC-14 | All registered addons are enabled by default; a missing key in a partial `addons:` block resolves to enabled, and only an explicit `false` disables a flag. | `src/config/manifest.rs`, `src/cli/addons.rs` |
+| TC-14 | Every registered addon except an Opt-in addon is enabled by default; a missing key in a partial `addons:` block resolves that addon's declared default, and only an explicit `false` disables a default-on addon. | `src/config/manifest.rs`, `src/cli/addons.rs` |
 | TC-15 | Generated guidance is skills-only. No command files are generated; recognizable old command files are removed, custom files preserved with a notice. | `src/skills/targets.rs` |
 | TC-16 | The selected agent targets are `opencode`, `agents`, `claude`, `omp`, and `maki`; each receives `<dir>/skills/<name>/SKILL.md`. Invocation is harness-owned. | `src/skills/targets.rs` |
 | TC-17 | `givn commit` requires explicit paths and uses selected-path publication; it never stages every pending change. | `src/cli/commit.rs`, `src/git.rs`, `src/fossil.rs` |
@@ -78,7 +78,8 @@ contract.
 
 ## 2.3 Addon Constraint
 
-Every registered addon is enabled by default. The `arc42` addon:
+Every registered addon except an Opt-in addon is enabled by default; `ise` is
+the one Opt-in addon. The `arc42` addon:
 
 - expands to a required `arc42-docs` artifact after `design`;
 - adds `arc42-docs` to `apply.requires` and to `design-review` dependencies;

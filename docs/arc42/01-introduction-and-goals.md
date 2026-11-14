@@ -20,9 +20,11 @@ provide defaults; project files under `givn/` override them. The initialized
 project also gets `givn/commands.yaml`, whose executable settings are applied
 after the policy configuration.
 
-`givn init` enables every registered addon unless `--no-addons` is supplied.
-There is no default-off addon in the current registry. The addon flags are
-visible in `givn/config.yaml`, and an explicit `false` is the only opt-out.
+`givn init` enables every addon whose declared default is on unless
+`--no-addons` is supplied. `ise` is the one opt-in addon in the current
+registry until promotion; every other registered addon is default-on. The
+addon flags are visible in `givn/config.yaml`, and an explicit `false` is the
+only opt-out for a default-on addon.
 
 ## 1.2 Requirements Overview
 

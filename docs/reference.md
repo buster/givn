@@ -10,9 +10,9 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 
 | Command | Purpose |
 | --- | --- |
-| `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml` and `givn/commands.yaml`, install selected addons, and generate skills. Every addon is enabled by default; `--no-addons` writes explicit `false` for all. `--agents` accepts `opencode`, `agents`, `claude`, `omp`, `maki`, or `all`. |
+| `givn init [--force] [--no-addons] [--agents <list>]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml` and `givn/commands.yaml`, install selected addons, and generate skills. Every addon whose declared default is on is enabled; `ise` is opt-in and omitted by a fresh init; `--no-addons` writes explicit `false` for all ten. `--agents` accepts `opencode`, `agents`, `claude`, `omp`, `maki`, or `all`. |
 | `givn new <id> [--skip a,b]` | Create a change directory and record the effective add-on configuration in `config-lock.yaml`. `--skip` writes `.givn-skip` and marks artifacts as intentionally not produced. |
-| `givn instructions [<id>] [--change <id>] [--json]` | No id: project state and request routing; no-active text recommends `givn-start` and names `givn new` as the direct alternative, and JSON carries `next_command`, `next_skill`, and `overview`. With an artifact id: its rendered instruction. With a policy or step id (`start`, `dialog`, `dialog-examples`, `challenge`, `dev-principles`, `domain-modeling`, `architecture-principles`, `review-reverse`, `specs-reverse`, `tasks-reverse`): the same cascade without a lifecycle stage. Artifact JSON carries `id`, `generates`, `requires`, `instruction`, and, while domain modeling applies, `skill_to_load`. `explore` is retired and refused. |
+| `givn instructions [<id>] [--change <id>] [--json]` | No id: project state and request routing; no-active text recommends `givn-start` and names `givn new` as the direct alternative, and JSON carries `next_command`, `next_skill`, and `overview`. With an artifact id: its rendered instruction. With a policy or step id (`start`, `dialog`, `dialog-examples`, `challenge`, `dev-principles`, `domain-modeling`, `architecture-principles`, `ise`, `review-reverse`, `specs-reverse`, `tasks-reverse`): the same cascade without a lifecycle stage. Artifact JSON carries `id`, `generates`, `requires`, `instruction`, and, while domain modeling applies, `skill_to_load`. `explore` is retired and refused. |
 | `givn lint [--change <id>] [paths...] [--json]` | Static feature and use-case analysis, including the projected interaction inventory for `--change`; runs no project tests. It reports missing or unlisted E2E interactions, undeclared capabilities, and unplaceable delta capabilities. Exit codes: `0` clean, `1` parse error, invalid use-case document, interaction mismatch, undeclared capability, or unplaceable delta capability, `2` `@wip`/`PENDING`, `3` duplicate title or empty feature. Precedence is `1 > 3 > 2 > 0`. |
 | `givn check` | Prints guidance and executes nothing. |
 | `givn check <artifact> [--change <id>]` | Runs the artifact's mandatory checks and then its configured `post` hooks. `tasks` runs WIP protection and change verification; `review` runs integrity, the run declaration, change-scoped lint (including the projected interaction inventory), overlap, retirement, routing, receipt, and scenario-commit checks. `givn check migration --change <id>` runs the preservation comparison; `givn check rules` reports rule cleanliness. |
@@ -31,7 +31,7 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn timeline [--change <id> \| --topic <id>] [--out <path>]` | Render one change, topic, or the project into one self-contained HTML file; default `givn/history/reports/<scope>.html`. Opens nothing and records nothing. |
 | `givn archive --change <id> [--verbose]` | Publish and verify a completed change forward-only on Git or Fossil. `--verbose` streams gate output with timestamps. Add-on drift from the change lock blocks archive. |
 | `givn eject <target> [--force]` | Materialize an embedded facet for editing, for example `design:template`, `review:instruction`, `skill:givn-propose`, `manifest`, `readme:template`. |
-| `givn addons list` / `enable <name>` / `disable <name>` | Show effective state and toggle one addon. `enable` also scaffolds addon-owned files and resyncs; `disable` removes the workflow effect but leaves existing project files. While a locked change is active, mutation is refused; the operator path is `--operator --reason "<reason>"` on an interactive terminal, recorded in the change lock. |
+| `givn addons list` / `enable <name>` / `disable <name>` | Show effective state and toggle one addon. `enable` checks the registered prerequisite relation first, scaffolds addon-owned files, and resyncs; `disable` refuses while a dependent addon is on, removes the workflow effect, and leaves existing project files. While a locked change is active, mutation is refused; the operator path is `--operator --reason "<reason>"` on an interactive terminal, recorded in the change lock. |
 | `givn skills sync` | Regenerate skills, reporters, managed `AGENTS.md` blocks, and ignore state for the persisted target selection. Recognizable old generated command files are removed; custom files are preserved with a manual notice. |
 | `givn skills targets add <agent[,agent...]>` | Add targets to `skills.targets`, touching only that line, then sync. |
 | `givn upgrade` | Refresh the managed config scaffold and generated guidance in a clean checkout, preserving user-owned values. Refuses retired keys and executable settings misplaced in `config.yaml`. |
@@ -98,8 +98,11 @@ Choose the entry point:
 
 ## Addons
 
-All addons are enabled by default. A missing key in a partial `addons:` block
-resolves to enabled; only an explicit `false` disables a flag. The retired ids
+Each addon declares its own default. Every addon except an Opt-in addon is
+enabled by default, so a missing key in a partial `addons:` block resolves that
+addon's declared default; only an explicit `false` disables a default-on addon.
+`ise` is the one Opt-in addon: its declared default is `false`, and a fresh
+`givn init` omits its key. The retired ids
 `absolute_mode`, `grill_me`, and `grill_with_docs` are refused with a manual
 replacement (`communication_policy` or `challenge`); no alias is accepted.
 
@@ -114,6 +117,29 @@ replacement (`communication_policy` or `challenge`); no alias is accepted.
 | `architecture_principles` | Serves architecture-principles guidance for proposal, design, design-review, dialog, review, and tasks. |
 | `challenge` | Generates the `givn-challenge` skill and serves the canonical challenge instruction. |
 | `outline` | Enables `givn outline report` and its advisory evidence in steps and review; that guidance renders only when the addon is enabled. No gate, verdict, waiver, or stored baseline. |
+| `ise` | Opt-in; requires `architecture_principles`. Serves `givn instructions ise`, adds the two change records to design and review guidance, and scaffolds `givn/specification.yaml` when it becomes effective. `givn addons enable ise` refuses while `architecture_principles` is off; `givn addons disable architecture_principles` refuses while `ise` is on. Neither refusal writes a flag or a file. |
+
+### `givn/specification.yaml`
+
+The declaration of the Specification holds exactly six top-level keys: the five
+roles `behavior`, `structure`, `contracts`, `limits`, and `e2e` as lists of
+project-relative path globs, plus one `source:` list of replaceable roots. An
+empty list is valid and retains nothing. The loader refuses an unknown key, an
+unknown or repeated role, an omitted role, an absent `source:` list, a non-list
+value, an unreadable file, and a path that leaves the project; the refusal names
+the element and the file and never rewrites it. A project with `ise` off never
+reads the file.
+
+`givn lint` in the default project scope reports four advisory findings and
+never changes the exit code: a declared path missing from the tree, one path
+declared in two roles, a `.feature` file outside the `behavior` globs, and an
+`e2e` role that resolves no package or a package that carries a dependency edge
+into `source`. The `e2e` role's absent package is reported by the boundary
+finding only. The dependency edge reads Cargo manifests only: a declared path
+that resolves no package manifest receives the boundary finding naming the role
+entry, and a malformed manifest skips the edge comparison for that package.
+A malformed or absent declaration is a blocking declaration error, not one of
+the four findings.
 
 ## Configuration authority
 

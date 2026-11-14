@@ -46,6 +46,7 @@ sync; the current optional presentation and documentation block is
 |---|---|---|
 | CLI arguments | in | `clap` subcommands, options, and exit status. |
 | `givn/config.yaml` | in/out | Policy and structure: version marker, artifact/apply graph, addon flags, skill targets, rules policy, record mode, instruction extensions. |
+| `givn/specification.yaml` | in | The declared Specification: five roles as path globs and one `source:` list of replaceable roots. Strict and read-only; a project declares it, Givn scaffolds it once and never rewrites it. |
 | `givn/commands.yaml` | in/out | Executable settings only: `verify`, `coverage`, and `run`. Parsed with a dedicated schema; policy keys are refused. |
 | `givn/**` artifacts | in/out | Markdown and `.feature` lifecycle files. |
 | `GIVN_FEATURES` | in | Feature path or scope exported to project command processes. |

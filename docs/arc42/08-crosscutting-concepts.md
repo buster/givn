@@ -49,6 +49,15 @@ to true, overlay processing adds a required `arc42-docs` artifact after
 The addon expansion is idempotent. The artifact's generated lifecycle marker is
 `arc42.md`; the durable chapter files are not manifest-generated paths.
 
+`givn/specification.yaml` is a third configuration authority, but it is not an
+overlay: it is read-only and parsed once by the strict declaration loader, it
+refuses any unknown or missing key, and no command writes it except the one-time
+scaffold. That scaffold runs when `ise` becomes effective and the file is
+absent, and the managed upgrade writes and stages it when `ise` is already
+effective and the file is absent. An existing declaration is never written or
+staged. It is read only while `ise` is effective, so a project without the addon
+never reads a file that happens to be present.
+
 ## 8.3 The Gherkin Delta Model
 
 The `.feature` file is the behavior specification. Active change features use:
@@ -192,6 +201,7 @@ because a red corpus is not a valid baseline. `givn lint` names every finding.
 ```text
 givn/
   config.yaml                    # structural overlay, addon flags, targets
+  specification.yaml             # declared Specification roles and source roots (ise)
   commands.yaml                  # verify, coverage, and run settings
   specs/<usecase-id>/usecase.md # permanent use-case contract
   specs/<usecase-id>/<cap>.feature # permanent tag-stripped specification
@@ -212,13 +222,14 @@ docs/arc42/                      # fixed durable Arc42 output path
 ```
 
 `givn init` creates the core `givn/` directories and command/config files. The
-current init path enables every registered addon unless `--no-addons` is passed;
-Arc42 scaffolding therefore normally appears during initialization, and the
-outline report and architecture-principles guidance are available in a fresh
-project. A project opts out with `givn addons disable <name>` or by writing an
-explicit `false`; there is no effective `arc42.output_dir` or chapter-list
-setting, and no lifecycle cascade for selecting individual durable chapter
-files.
+current init path enables every addon whose declared default is on unless
+`--no-addons` is passed; Arc42 scaffolding therefore normally appears during
+initialization, and the outline report and architecture-principles guidance are
+available in a fresh project. `ise` is omitted by default and is never enabled
+by a fresh init. A project opts out with `givn addons disable <name>` or by
+writing an explicit `false`; there is no effective `arc42.output_dir` or
+chapter-list setting, and no lifecycle cascade for selecting individual durable
+chapter files.
 
 ## 8.5 The Behavior Batch
 
@@ -421,8 +432,9 @@ Library-specific errors use typed errors and application paths add context.
 
 `givn lint` returns:
 
-- `0` for clean;
-- `1` for a parse error, an invalid use-case document, an interaction mismatch, an undeclared capability, or an unplaceable delta capability;
+- `0` for clean, including advisory `seed_status`, `persona_ref`, and the four
+  `ise` declaration placement findings;
+- `1` for a parse error, an invalid use-case document, an interaction mismatch, an undeclared capability, an unplaceable delta capability, or a malformed `givn/specification.yaml`;
 - `3` for an active duplicate scenario title or an empty feature;
 - `2` for `@wip` or PENDING.
 
@@ -555,11 +567,22 @@ exception into a general bypass for product changes.
 ## 8.11 Addons and the Arc42 Documentation Artifact
 
 An addon is embedded behavior toggled through `addons.<name>` in the project
-config. The embedded default flags are true, and `givn init` enables every
-registered addon unless `--no-addons` is supplied. A missing key in an explicit
-`addons:` block resolves to enabled; only an explicit `false` disables a flag.
-`givn init --no-addons` writes explicit false values for every known add-on, and
+config. Each addon declares its own default: the embedded default flags are
+true for every addon except an opt-in addon, and `givn init` enables every
+addon whose declared default is on unless `--no-addons` is supplied. A missing
+key in an explicit `addons:` block resolves to that addon's declared default;
+only an explicit `false` disables a default-on addon. `givn init --no-addons`
+writes explicit false values for every known add-on, and
 `givn addons disable <name>` is the per-add-on opt-out.
+
+`ise` is the one opt-in addon in the current registry until promotion. Its
+declared default is false, a fresh init omits its key, and it requires
+`architecture_principles`: enabling it while that addon is off is refused by
+name, and disabling the prerequisite while `ise` is on is refused with `ise`
+named first. Both refusals write nothing. The first effective enable scaffolds
+`givn/specification.yaml` from its documented shape when the file is absent and
+never rewrites an existing declaration. A project that never enables `ise`
+receives no new key, no new file, no new finding, and no new gate.
 
 For Arc42 specifically, `givn addons enable arc42`:
 

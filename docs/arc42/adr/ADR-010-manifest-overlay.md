@@ -63,6 +63,20 @@ resolved there. A policy key in the commands file and an executable key in the
 policy file are refused by name before any use. Both files remain
 project-owned; the split gives each kind of setting one authority.
 
+**Current amendment (add-ise-addon-and-specification).** A third authority is
+added for the declared Specification: `givn/specification.yaml` holds the five
+retained roles as path globs and one `source:` list of replaceable roots. It is
+not an overlay and adds no manifest key. It is parsed by one strict read-only
+loader — unknown or missing keys are refused by name — and only the one-time
+`ise` scaffold writes it: when the addon becomes effective and the file is
+absent, and on a managed upgrade when the addon is already effective and the
+file is absent, where the written file joins the staged allowlist. An existing
+declaration is never written or staged. The file is read only while `ise` is
+effective, so a project without the addon never reads it. The alternatives were
+a `specification:` block in `givn/config.yaml` (rejected: the lenient overlay
+top level hides a misspelled block) and convention (rejected: convention cannot
+express the `source:` partition).
+
 ### Consequences
 
 - The effective graph is the embedded manifest plus `givn/config.yaml`; `givn/commands.yaml` supplies only the executable `verify`, `coverage`, and `run` values through its dedicated schema.

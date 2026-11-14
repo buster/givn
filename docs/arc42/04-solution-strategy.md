@@ -27,7 +27,8 @@ is in the [ADR register](adr/README.md); mechanics are in
 | Product start | One author-owned `run:` declaration documents and gates how the built product starts; `givn run` executes it with a std-only readiness probe, a greppable ready line, a spec'd exit-code contract, and unix signal forwarding. |
 | Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |
 | Code-structure report | The enabled-by-default `outline` addon is advisory over production Rust, Python, Java, TypeScript, and JavaScript. It prints each unit's per-component call tree first, then metrics and classification as hints above a neutral `SourceAnalyzer` port. It stores no baseline, has no verdict vocabulary, and never gates. |
-| Arc42 | All addons are enabled by default; Arc42 chapters are scaffolded at fixed `docs/arc42/`. The first completed change establishes the twelve-chapter baseline; later changes update affected chapters. |
+| Addons | Every addon except an opt-in addon is enabled by default. `ise` joins as the one opt-in addon with an `architecture_principles` prerequisite, so a project that never enables it receives no new key, file, gate, or finding. |
+| Arc42 | Arc42 chapters are scaffolded at fixed `docs/arc42/`. The first completed change establishes the twelve-chapter baseline; later changes update affected chapters. |
 | Structural overlap | Deterministic Fingerprint evidence and review dispositions. |
 | Migration | The supported baseline is 1.0. The shipped catalog is empty; pre-1.0 projects follow a documented manual transition. Future catalog routes use the same resolver and bundle contract. |
 | Migration-free upgrade | A release without a selected route synchronizes managed guidance and creates one allowlist-only commit when files changed. |

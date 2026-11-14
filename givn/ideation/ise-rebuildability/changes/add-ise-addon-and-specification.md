@@ -1,6 +1,6 @@
 # Change seed: add-ise-addon-and-specification
 
-Status: ready
+Status: proposed by add-ise-addon-and-specification
 
 - Use-case IDs: `initialize-project` (`enable-optional-addons`),
   `upgrade-a-project` (`apply-a-managed-upgrade`),

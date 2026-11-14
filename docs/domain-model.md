@@ -91,7 +91,7 @@ flowchart TB
 | Aggregate | Owning context | Consistency responsibility |
 |---|---|---|
 | Change | Givn workflow | A change's proposal, delta specifications, design, review, and task evidence stay together and leave the active area only through archive. See [create-change](../givn/specs/create-change/usecase.md) and [archive-change](../givn/specs/archive-change/usecase.md). |
-| Permanent specification corpus | Givn workflow | Use cases, capabilities, and their executable scenarios remain the durable behavior record. See [make-usecases-canonical](../givn/specs/make-usecases-canonical/usecase.md) and [discover-specifications](../givn/specs/discover-specifications/usecase.md). |
+| Permanent specification corpus | Givn workflow | Use cases, capabilities, and their executable scenarios remain the durable behavior record. The corpus is the behavior aggregate of the Specification; it does not include contracts, limits, or the `e2e` package. See [make-usecases-canonical](../givn/specs/make-usecases-canonical/usecase.md) and [discover-specifications](../givn/specs/discover-specifications/usecase.md). |
 | Effective guidance | Givn workflow | The instruction, skill, and addon-conditional guidance a project actually receives. See [obtain-effective-guidance](../givn/specs/obtain-effective-guidance/usecase.md). |
 | Development record | Givn workflow | The local, best-effort record of agent activity and revisions. See [inspect-development-history](../givn/specs/inspect-development-history/usecase.md). |
 | Persona collection | Project record | Confirmed stakeholder review lenses survive individual changes. See [persona identity reuse](../givn/specs/fragments/fragment.md). |
