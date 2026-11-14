@@ -93,7 +93,7 @@ Feature: givn Workflow Enforcement
     And the change verification receipt records the running Givn version
     And the change verification receipt records a passed E2E scope
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ise-effective change whose delta has no E2E scenario records the E2E scope as not applicable
     Given an ise-effective change ready for change-scoped verification with no E2E scenario in its delta
     When the developer runs `givn check tasks --change ise-boundary`
@@ -101,7 +101,7 @@ Feature: givn Workflow Enforcement
     And the change verification receipt records a digest of every resolved e2e package
     And the change verification receipt records the E2E scope as not applicable
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An ise-effective change receipt whose E2E identity no longer matches the project is stale for review
     Given an ise-effective change with a current change verification receipt
     And the receipt's E2E identity no longer matches the project because <input>
@@ -118,7 +118,7 @@ Feature: givn Workflow Enforcement
       | the receipt lacks the identity | receipt lacks the E2E identity  |
       | the declaration cannot be read | the E2E identity cannot be read |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An ise-effective change receipt whose E2E scope no longer matches the delta is stale for review
     Given an ise-effective change with a current change verification receipt whose delta "<delta>"
     And the receipt's E2E scope records "<scope>"
@@ -132,7 +132,7 @@ Feature: givn Workflow Enforcement
       | has an E2E scenario | not_applicable | the E2E scope is missing                      |
       | has no E2E scenario | passed         | the E2E scope is not applicable to this delta |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change without ise keeps today's receipt without an E2E identity
     Given a change ready for change-scoped verification with ise off
     When the developer runs `givn check tasks --change ise-boundary`

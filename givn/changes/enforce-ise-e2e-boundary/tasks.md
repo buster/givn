@@ -639,16 +639,35 @@ E2E scope outcome for a delta without an `@e2e` scenario.
     - Then `the change verification receipt records a digest of every resolved
       e2e package` and `the change verification receipt records the E2E scope as
       not applicable` parse the JSON; they do not compare bytes.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the pre-implementation failure (missing e2e_identity) and the GREEN run -->
+RED: GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test
+features_runner -- --exact
+"verify-change/givn-workflow-enforcement.feature::An ise-effective change whose delta has no E2E
+scenario records the E2E scope as not applicable" -> 1 scenario (1 failed), 4 steps (3 passed, 1
+failed). Observed: "the receipt records no resolved e2e package digest: {"change":"ise-boundary",
+"command":"./emit-change-result.sh",..."content_scope":"change-proof/v1",...,"result":{"failed":0,
+"passed":1,"scope":"change","skipped":0,"total":1},"runner_exit":0,"schema":2,"status":"passed",
+...}" — the check exited 0 from a green one-scenario receipt that carried no e2e_identity.
+Production: src/proof.rs (E2eIdentity, ChangeVerification, the two optional receipt fields),
+src/e2e_boundary/mod.rs (E2eBoundary::identity), src/cli/check.rs (the preflight returns the
+accepted boundary; the check records the identity and the not_applicable scope).
+GREEN: same command -> 1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] REFACTOR: re-run the scenario and the permanent receipt scenarios in
+  - [x] REFACTOR: re-run the scenario and the permanent receipt scenarios in
         `workflow_enforcement_steps.rs`; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: both batch scenarios re-run on the final tree: 1 scenario (1 passed) each (5 and 4
+steps). cargo fmt --all -- --check clean; cargo clippy --locked --all-targets -- -D warnings clean.
+Permanent receipt scenarios (GIVN_FEATURES=givn/specs, same single-scenario command): "Consumer
+runs check tasks and receives a change verification receipt", "Review refuses a change without a
+verification receipt", "Review refuses a receipt after the delta specs changed", "Review accepts a
+current verification receipt" -> each 1 scenario (1 passed). The shared shape also holds for
+"Archive refuses a stale change verification receipt before merging", "Archive reuses the change
+receipt and runs only the merged suite", "Archive reuses a proof committed with its receipt" ->
+each 1 scenario (1 passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `receipt-identity`
+  - [x] COMMIT: `a95b6f020bf04c8ddb3f5cf9abdbcd6c4a40cc60` -- Batch: `receipt-identity`
 
 - [ ] Scenario: `A change without ise keeps today's receipt without an E2E identity`
   - Design constraints:
@@ -660,15 +679,21 @@ E2E scope outcome for a delta without an `@e2e` scenario.
     - Then `the change verification receipt contains no E2E identity and no E2E
       scope` asserts key absence and that the remaining schema-2 keys are
       unchanged.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the observed evidence (protected requirement if it passes first) and the GREEN run -->
+PROTECTED: the requirement is the pre-existing receipt shape; the first run passed before any
+production edit -> "A change without ise keeps today's receipt without an E2E identity":
+1 scenario (1 passed), 4 steps (4 passed). No behavior was manufactured for it.
+Production edit in the batch: write_change_receipt takes the ChangeVerification input struct
+(every caller migrated); the ise-off path binds no identity and no scope.
+GREEN: same command after the migration -> 1 scenario (1 passed), 4 steps (4 passed); the receipt
+holds exactly the 13 schema-2 keys and neither "e2e_identity" nor "e2e_scope".
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree -> 1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `receipt-identity`
+  - [x] COMMIT: `a95b6f020bf04c8ddb3f5cf9abdbcd6c4a40cc60` -- Batch: `receipt-identity`
 
 ---
 
@@ -741,18 +766,42 @@ unless the E2E reason needs its own repair sentence),
       the words does not fail the row while another reason does.
     - `givn check review` exits nonzero, runs no suite, and the reason text
       routes to `givn check tasks`.
-  - [ ] Implement the scenario and its tests. Run all five Examples rows.
+  - [x] Implement the scenario and its tests. Run all five Examples rows.
         Evidence:
         ```
-        <!-- paste the pre-implementation failure and the GREEN run per row -->
+RED (5 rows, before the freshness rule):
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test
+features_runner -- --exact
+"verify-change/givn-workflow-enforcement.feature::An ise-effective change receipt whose E2E
+identity no longer matches the project is stale for review"
+-> 5 scenarios (5 failed), 28 steps (23 passed, 5 failed).
+  - "the e2e package changed" and "the E2E runner command changed" failed at "stderr names <reason>";
+    stderr reported only "tested content changed: receipt ..., current ...".
+  - "the Givn version changed" and "the receipt lacks the identity" failed at "stderr says the change
+    verification receipt is stale": a receipt-only rewrite left the receipt Current, so review
+    reported no staleness.
+  - "the declaration cannot be read" failed at "stderr names <reason>"; stderr reported only
+    "tested content changed".
+Production: src/proof.rs (the seven StaleReason variants and their render lines, ScopeOutcome::is_green,
+ChangeReceipt::e2e_stale_reasons called from the shared freshness gate); the shared step
+`stderr names "..."` now matches the reason's words in order on one line, so a package path inserted
+between the words does not fail the row.
+GREEN: same command -> 5 scenarios (5 passed), 30 steps (30 passed); each row reports its own reason.
         ```
-  - [ ] REFACTOR: re-run the scenario and the permanent
+  - [x] REFACTOR: re-run the scenario and the permanent
         `Review refuses a receipt after the delta specs changed` scenario; must
         still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR on the committed tree: identity Outline -> 5 scenarios (5 passed), 30 steps (30 passed).
+Permanent scenarios (GIVN_FEATURES=givn/specs): "Review refuses a receipt after the delta specs
+changed" and "Review accepts a current verification receipt" -> each 1 scenario (1 passed);
+"Archive refuses a stale change verification receipt before merging" and "Archive reuses a proof
+committed with its receipt" -> each 1 scenario (1 passed). src/cli/archive.rs:1363 calls the same
+ChangeReceipt::freshness gate; no second archive check was added.
+cargo fmt --all -- --check clean; cargo clippy --locked --all-targets -- -D warnings clean;
+./run-tests.sh --non-e2e: 963 tests run: 963 passed, 111 skipped, exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `receipt-freshness`
+  - [x] COMMIT: `61c381427f5c9efdbf2eb18925c41a211e151a37` -- Batch: `receipt-freshness`
 
 - [ ] Scenario: `An ise-effective change receipt whose E2E scope no longer matches the delta is stale for review`
   - Design constraints:
@@ -765,16 +814,26 @@ unless the E2E reason needs its own repair sentence),
       `has_e2e_scenarios`.
     - Then the same two Then steps as the previous scenario, with the row's
       reason; the refusal names the delta-aware rule, not a generic staleness.
-  - [ ] Implement the scenario and its tests. Run both Examples rows.
+  - [x] Implement the scenario and its tests. Run both Examples rows.
         Evidence:
         ```
-        <!-- paste the pre-implementation failure and the GREEN run per row -->
+RED (2 rows, before the scope rule): same single-scenario command on
+"An ise-effective change receipt whose E2E scope no longer matches the delta is stale for review"
+-> 2 scenarios (2 failed).
+  - "has an E2E scenario" / not_applicable failed at "stderr names 'the E2E scope is missing'";
+    stderr reported only "delta features changed" and "tested content changed".
+  - "has no E2E scenario" / passed failed at "stderr says the change verification receipt is stale":
+    the receipt-only scope rewrite left freshness Current.
+Production: the delta-aware rule re-reads the delta with gherkin::parse::has_e2e_scenarios at
+freshness time: an @e2e delta needs a green scope, and a passed scope with no @e2e scenario is
+E2eScopeUnexpected.
+GREEN: same command -> 2 scenarios (2 passed), 12 steps (12 passed).
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR on the committed tree: 2 scenarios (2 passed), 12 steps (12 passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `receipt-freshness`
+  - [x] COMMIT: `61c381427f5c9efdbf2eb18925c41a211e151a37` -- Batch: `receipt-freshness`
 
 ---
 
