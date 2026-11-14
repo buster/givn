@@ -834,7 +834,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 7 steps (7 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
+  - [x] COMMIT: `715deaf954e1d64a3d480cc8b8a442e0817df848` -- Batch: `declaration-scaffold-upgrade`
 
 - [x] Scenario: `An upgrade preserves an edited declaration`
   - Design constraints:
@@ -854,7 +854,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 6 steps (6 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
+  - [x] COMMIT: `715deaf954e1d64a3d480cc8b8a442e0817df848` -- Batch: `declaration-scaffold-upgrade`
 
 - [x] Scenario: `An upgrade writes no declaration when ise is not effective`
   - Design constraints:
@@ -875,7 +875,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 5 steps (5 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
+  - [x] COMMIT: `715deaf954e1d64a3d480cc8b8a442e0817df848` -- Batch: `declaration-scaffold-upgrade`
 
 - [x] Scenario: `Repeating an upgrade after the declaration scaffold creates no second revision`
   - Design constraints:
@@ -897,7 +897,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 5 steps (5 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
+  - [x] COMMIT: `715deaf954e1d64a3d480cc8b8a442e0817df848` -- Batch: `declaration-scaffold-upgrade`
 
 - [x] Scenario: `A declaration scaffold write failure reports the path and the completed writes`
   - Design constraints:
@@ -918,7 +918,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
         ```
   - [x] REFACTOR: re-ran the scenario; no behavior change
         (1 scenario (1 passed), 5 steps (5 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
+  - [x] COMMIT: `715deaf954e1d64a3d480cc8b8a442e0817df848` -- Batch: `declaration-scaffold-upgrade`
 
 ---
 
