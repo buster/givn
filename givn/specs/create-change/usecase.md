@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:1223677f1a7615e0fe91ad76a73af5ff071a798b3c4b7ff74fc75088bee9d9c1 -->
+<!-- givn:base-sha256:8d4f981c7ab6b05709359bbdcc0efa721a0d85ee4f5127c807f55525c7c0be68 -->
 # Use case: create-change
 
 ## Level
@@ -14,9 +14,11 @@
 
 Create a change ready to carry from intent to executable specification.
 
-The delta: every change records one `Change strategy` with its `Ise Test` mode
-when it rebuilds, and a corrective change names exactly one `Spec gap` outcome
-before any fix.
+The delta: the canonical `@e2e` policy names the declared E2E package
+boundary, the `ise` instruction keeps component scenarios in the Specification
+under that boundary, every change records one `Change strategy` with its
+`Ise Test` mode when it rebuilds, and a corrective change names exactly one
+`Spec gap` outcome before any fix.
 
 ## Trigger
 
@@ -29,9 +31,16 @@ The developer starts a new change.
 
 ## Main flow
 
-1. The developer creates a change; the system writes the scaffold with a stable identity and records the effective add-on set with the change.
-2. The developer records the change's authoring decisions: the change strategy, and, when the change responds to an observed difference, exactly one `Spec gap` outcome before any fix; the system requires the strategy as the design's decision-ledger entry and keeps the classification with the corrective change.
-3. The developer reads the artifact guidance; the system keeps one canonical policy per topic and points derived guidance at it.
+1. The developer starts a change; the system writes the scaffold with a
+   stable identity and records the effective add-on set with the change.
+2. The developer records the change's authoring decisions: the change
+   strategy, and, when the change responds to an observed difference, exactly
+   one `Spec gap` outcome before any fix; the system requires the strategy as
+   the design's decision-ledger entry and keeps the classification with the
+   corrective change.
+3. The developer reads the artifact guidance; the system keeps one canonical
+   policy per topic, states the declared E2E package boundary there, and
+   points derived guidance at it.
 
 ## Extensions
 
@@ -48,9 +57,9 @@ The developer starts a new change.
 - Dialog supplies decision-critical facts, concrete consequences, material revision costs, and proportional clarification; discoverable facts are researched rather than delegated to the user as questions.
 - A change proposal carries one release note. Plan coherent named behavior batches with scenarios, validation, and intended commit boundaries; each completed batch's explicit-path revision uses the release note as subject and identifies the batch in the body, or the scenario title for a single-scenario batch.
 - Actual behavioral RED runs before production edits; actual GREEN and REFACTOR checks are recorded compactly. Existing-behavior regressions may pass immediately without a production edit for that requirement; skipped RED is admitted, never reconstructed. Record the actual completed batch revision before checking off its scenario tasks.
-- Regular and E2E executions select scope explicitly, including a shared command using GIVN_RESULT_SCOPE. Equal counts or command strings do not invalidate honest isolation; required executions still require zero failures and skips without an extra isolation run.
+- Regular and E2E executions select scope explicitly, including a shared command using GIVN_RESULT_SCOPE. The E2E execution runs the declared `e2e` package and links no production source. Equal counts or command strings do not invalidate honest isolation; required executions still require zero failures and skips without an extra isolation run.
 - Justified E2E reclassification aligns inventory, tasks, and review reasons and retains exactly one smoke for each real action; tags are never removed merely to evade verification.
-- Evidence matches the actual product interface: a real browser may render static content without invented state changes; a library's public API may be called in-process; CLI uses the binary and services their public protocol. Isolation, twins, and full-stack infrastructure are required only for dependencies that exist. Preserve applicable visual contracts, baselines, screenshots or transcripts, and honest obstacle reporting.
+- Evidence matches the actual product interface: a real browser may render static content without invented state changes; a library's public API may be called in-process only from the declared `e2e` package; a call that needs production source becomes a `@component` scenario; CLI uses the binary and services their public protocol. Isolation, twins, and full-stack infrastructure are required only for dependencies that exist. Preserve applicable visual contracts, baselines, screenshots or transcripts, and honest obstacle reporting.
 - The scaffold records the effective add-on set with the change, so a change started while `ise` is off carries `ise: false` and no `ise` gate appears halfway through.
 - Every change records one `Change strategy`: `incremental modification`, `Constant Ise`, or a whole-product rebuild.
 - A rebuilding change records its `Ise Test` mode beside the strategy: `Dry-Run Ise` or `Full replacement`.
@@ -63,6 +72,13 @@ The developer starts a new change.
 - A corrective proposal names the record and its outcome: an outcome of `specification defect` or `E2E test defect` carries the corpus or E2E suite edit in that change; `implementation defect` returns to the builder inside the Ise Test; `acceptable undocumented change` is recorded in the corpus.
 - A `Spec gap` of `E2E test defect` recorded during an `Ise Test` stops that trial, and the trial restarts after the E2E test is corrected. The `e2e` package is part of the Specification, so the corrected test is a Specification correction, not an exception to the freeze.
 - No difference is closed as silent drift.
+- The `specs` instruction owns the canonical `@e2e` policy; the design, steps, and review instructions point at it and do not restate it.
+- With `ise` effective, the canonical `@e2e` policy states that the declared `e2e` role's package holds the runner and every `@e2e` step definition; that package links no production source, `verify.e2e_command` runs it, and an unbound or skipped step fails the run.
+- Feature files stay shared, so an `@e2e` scenario and a component scenario may live in one `.feature` file; no phrase-uniqueness rule applies, because a step definition in the declared package cannot reach production source.
+- Component scenarios stay in the Specification unchanged; only their step definitions, fakes, and harness are implementation, never frozen, never diff-counted by the E2E identity, and a new feature's step bindings are expected.
+- Only the `End-to-end (E2E) test` package, as the declared `e2e` role resolves it, is frozen as acceptance authority during an `Ise Test`.
+- The `ise` instruction states the same two-layer test boundary: `@e2e` scenarios run from the declared package and survive a rebuild, while component scenarios stay in the Specification and only their step definitions and fakes are replaceable.
+- The `ise`-effective policy content, the `ise`-off allowance, and the `ise` instruction's two-layer wording are variants of the canonical-guidance action; they add no interaction-inventory entry and are regular scenarios.
 
 ## Examples
 
@@ -71,11 +87,13 @@ The developer starts a new change.
 - A whole-product rewrite records `Decides D1` with `change strategy whole-product rebuild; Ise Test mode Full replacement`; tasks 2 to 9 realize it.
 - An `Ise Test` reports a missing exit code that the contract never named: the record reads `Spec gap: specification defect`, and the corrective change adds the rule to the corpus. If the contract named the exit code, the record reads `Spec gap: implementation defect`, and the builder fixes it inside the trial with no corpus edit.
 - An undocumented column-spacing change that no consumer depends on records `Spec gap: acceptable undocumented change` and is added to the corpus.
+- A project whose `e2e` package imports a production module violates the canonical policy; the step moves to a `@component` scenario or drives the product through its real interface. An `@e2e` scenario and a component scenario may stay in one `.feature` file, because the package boundary, not the file, decides what the E2E runner executes.
+- A served `ise` instruction that called component scenarios implementation is corrected: component scenarios stay in the Specification unchanged, and only their step definitions and fakes may be rewritten inside the component boundary.
 - A change started while `ise` is off records `ise: false`; enabling `ise` during that change is refused as an add-on change until the change ends.
 - A developer creates a multi-word change without manual scaffolding.
 - An author entering through a skill relies on managed bootstrap to load dialog once before the first question and reads the relevant indexed companion examples; the skill does not carry a duplicate policy block.
 - Two scenarios in one behavior batch share its actual implementation or regression-test revision; a maintenance batch with no behavior change does not invent delta scenarios.
-- A static browser page is verified in a real browser, while a library without a service is exercised through real public API calls without inventing server infrastructure.
+- A static browser page is verified in a real browser, while a library without a service is exercised through real public API calls from the declared E2E package without inventing server infrastructure.
 
 ## Minimal guarantee
 
@@ -85,8 +103,8 @@ The project remains unchanged when an invalid identity is rejected.
 
 The project has the requested change, ready to carry from intent to
 executable specification; the change's authoring contract requires one change
-strategy in the design ledger, and a corrective change names one `Spec gap`
-outcome.
+strategy in the design ledger, a corrective change names one `Spec gap`
+outcome, and the canonical `@e2e` policy states the declared package boundary.
 
 ## Personas
 
@@ -136,7 +154,7 @@ Specification roles (`declare-the-specification`).
 
 ```mermaid
 flowchart LR
-  Actor((Developer)) --> New[[Create change]]
+  Dev((Developer)) --> New[[Create change]]
   New --> Strategy[[Record the change strategy]]
   New -->|corrective change| Gap[[Name one spec gap outcome]]
   Strategy --> Guidance[[Read canonical guidance]]
