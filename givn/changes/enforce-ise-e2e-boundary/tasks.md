@@ -190,7 +190,7 @@ here.
 
 ## Setup
 
-- [ ] Read the owning use-case documents and this change's seed before writing
+- [x] Read the owning use-case documents and this change's seed before writing
       any step: `specs/verify-change/usecase.md` and `specs/create-change/usecase.md`
       (guarantees, rules, Personas) and
       `givn/ideation/ise-rebuildability/changes/enforce-ise-e2e-boundary.md`
@@ -200,7 +200,7 @@ here.
       the interaction pre-flight maps all 22 inventory entries to matrix rows and
       existing `@e2e` scenarios.
 
-- [ ] Confirm the runner and both commands. No new runner is installed:
+- [x] Confirm the runner and both commands. No new runner is installed:
       `tests/features_runner.rs` uses cucumber-rs 0.23 with `.fail_on_skipped()`
       at both registration points, `verify.command` is
       `./run-tests.sh --non-e2e`, and `verify.e2e_command` is
@@ -209,7 +209,7 @@ here.
       single-process `cargo` path when `GIVN_RESULT_FILE` is set.
       Evidence: `givn/commands.yaml` carries both commands unchanged.
 
-- [ ] Create the step-definition skeletons named by design.md "Step Definitions",
+- [x] Create the step-definition skeletons named by design.md "Step Definitions",
       one file per capability, and register them in `tests/steps/mod.rs` with
       `unimplemented!()` bodies:
       `tests/steps/workflow_enforcement_steps.rs` (extend),
@@ -230,10 +230,16 @@ here.
       A phrase is bound exactly once across all files; a duplicate registration
       panics the runner.
       ```
-      <!-- paste cargo check --locked --tests output -->
+$ cargo check --locked --tests
+    Checking givn v0.9.20 (/home/buster/.paseo/worktrees/008cxm4u/modern-mule)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.55s
       ```
+      The support module and its fixture builders landed with the boundary
+      batches: `1a4d6bd2` registers `tests/steps/e2e_boundary_support.rs` in
+      `tests/steps/mod.rs`; every delta phrase bound so far sits in
+      `tests/steps/workflow_enforcement_steps.rs`.
 
-- [ ] Proof-of-strictness. Write one scratch delta feature outside the delta
+- [x] Proof-of-strictness. Write one scratch delta feature outside the delta
       scope (a scratch `GIVN_FEATURES` directory) containing one scenario tagged
       `@e2e` whose single step has no binding, and run it through the real runner
       with a scratch result file:
@@ -247,19 +253,61 @@ here.
       (`failed = 1`, `skipped = 0`). If it exits 0, stop: `.fail_on_skipped()` is
       not in effect on the builder the run used.
       ```
-      <!-- paste command + nonzero-exit output + the four counts -->
-      ```
+$ cat /tmp/ise-strict-probe/strict-mode-probe.feature
+@e2e
+Feature: Strict mode probe
 
-- [ ] Restore a passing baseline: delete the scratch feature and result file, run
+  @e2e
+  Scenario: An undefined step fails the run
+    Given a probe step with no binding
+
+$ GIVN_FEATURES=/tmp/ise-strict-probe \
+    GIVN_RESULT_FILE=/tmp/ise-strict-probe/probe-result.json \
+    GIVN_RESULT_SCOPE=e2e cargo test --locked --test features_runner
+Feature: Strict mode probe
+  Scenario: An undefined step fails the run
+   ✘  Given a probe step with no binding
+      Step failed:
+      Defined: tmp/ise-strict-probe/strict-mode-probe.feature:6:5
+      Step doesn't match any function
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
+error: test failed, to rerun pass `--test features_runner`
+Caused by: process didn't exit successfully: ... (exit status: 1)
+exit 1
+
+$ cat /tmp/ise-strict-probe/probe-result.json
+{"failed":1,"passed":0,"scope":"e2e","skipped":0,"total":1}
+      ```
+      Counts: total 1, passed 0, failed 1, skipped 0 — an unbound step reaches the
+      writer as a failed test, not a skip, so `.fail_on_skipped()` is in effect.
+      Deviation from the recipe above: the `--exact` path (`nextest_run`) writes
+      no `GIVN_RESULT_FILE`, so the probe ran through the plain
+      `cargo test --locked --test features_runner` path, the only path that emits
+      the counts. `GIVN_CUCUMBER_TAGS` was dropped with it — the scratch
+      directory holds only the probe scenario.
+
+- [x] Restore a passing baseline: delete the scratch feature and result file, run
       `./run-tests.sh --non-e2e`, and confirm exit 0. The delta scenarios stay
       `@wip`; the permanent tree uses none of the phrases above.
       ```
-      <!-- paste ./run-tests.sh --non-e2e summary + exit 0 -->
+$ rm -rf /tmp/ise-strict-probe
+$ ./run-tests.sh --non-e2e
+────────────
+     Summary [ 160.112s] 963 tests run: 963 passed, 111 skipped
+exit 0
       ```
+      The scratch directory is gone; the permanent tree binds none of the probe
+      phrases. The later batches (`served-policy`, `pinned-policy-replacements`)
+      keep `@wip`.
 
-- [ ] COMMIT: `<hash>` -- Batch: `setup`
+- [x] COMMIT: `1a4d6bd25f907956cfc8e3be1813ba8d104ac3a9` -- Batch: `setup`
       The skeletons and any fixture helper land in this commit, so the later
-      batches start from a clean tree.
+      batches start from a clean tree. Setup was folded into the first boundary
+      batch: `1a4d6bd2` carries the skeleton, the support module, and its
+      registration.
 
 ---
 
@@ -624,7 +672,7 @@ E2E scope outcome for a delta without an `@e2e` scenario.
 **Batch verification:** the two single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: receipt-identity'`.
 
-- [ ] Scenario: `An ise-effective change whose delta has no E2E scenario records the E2E scope as not applicable`
+- [x] Scenario: `An ise-effective change whose delta has no E2E scenario records the E2E scope as not applicable`
   - Design constraints:
     - Fixture: an `ise`-effective change whose delta has one regular scenario,
       one committed scenario revision, a clean tree, a scoped fake runner
@@ -669,7 +717,7 @@ each 1 scenario (1 passed).
         ```
   - [x] COMMIT: `a95b6f020bf04c8ddb3f5cf9abdbcd6c4a40cc60` -- Batch: `receipt-identity`
 
-- [ ] Scenario: `A change without ise keeps today's receipt without an E2E identity`
+- [x] Scenario: `A change without ise keeps today's receipt without an E2E identity`
   - Design constraints:
     - Fixture: the same shape with `config-lock.yaml` recording `ise: false`.
       No declaration is read, no boundary preflight runs, and the fixture needs
@@ -750,7 +798,7 @@ unless the E2E reason needs its own repair sentence),
 **Batch verification:** the two single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: receipt-freshness'`.
 
-- [ ] Scenario: `An ise-effective change receipt whose E2E identity no longer matches the project is stale for review`
+- [x] Scenario: `An ise-effective change receipt whose E2E identity no longer matches the project is stale for review`
   - Design constraints:
     - Examples rows and mutations: `the e2e package changed` (add a tracked file
       under `tests/e2e` and commit), `the E2E runner command changed` (edit
@@ -803,7 +851,7 @@ cargo fmt --all -- --check clean; cargo clippy --locked --all-targets -- -D warn
         ```
   - [x] COMMIT: `61c381427f5c9efdbf2eb18925c41a211e151a37` -- Batch: `receipt-freshness`
 
-- [ ] Scenario: `An ise-effective change receipt whose E2E scope no longer matches the delta is stale for review`
+- [x] Scenario: `An ise-effective change receipt whose E2E scope no longer matches the delta is stale for review`
   - Design constraints:
     - Examples rows: a delta that `has an E2E scenario` with the receipt
       recording `not_applicable` yields `the E2E scope is missing`; a delta that
@@ -882,7 +930,7 @@ capture the identity, run, read, recapture), `src/proof.rs` (the
 **Batch verification:** the three single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: e2e-scope'`.
 
-- [ ] Scenario: `An ise-effective change whose E2E run leaves a step unbound fails the tasks check`
+- [x] Scenario: `An ise-effective change whose E2E run leaves a step unbound fails the tasks check`
   - Design constraints:
     - Fixture: delta with one regular scenario and one `@e2e` scenario whose
       step the fixture runner reports as `failed = 1`, exiting nonzero. The
@@ -890,17 +938,36 @@ capture the identity, run, read, recapture), `src/proof.rs` (the
     - Then `stderr names the failing E2E run and reports 1 failed test`; Then
       `no change verification receipt is written`. The regular scope ran before
       the E2E scope, so the absence proves the second scope blocks the receipt.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the pre-implementation failure and the GREEN run -->
+RED: the test and its bindings were written first, but the production edit had already been
+written; the observed failure below was measured by reverting the uncommitted production files
+(`git stash push -- src/cli/check.rs src/proof.rs`), so the scenario ran against the base tree. No
+history was rewritten and no behaviour was broken on purpose.
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test
+features_runner -- --exact "verify-change/givn-workflow-enforcement.feature::An ise-effective
+change whose E2E run leaves a step unbound fails the tasks check"
+  ✘ Then the command exits non-zero
+    Step panicked. Captured output: expected failure, got exit Some(0): stdout=Mandatory checks
+    for 'tasks': ⚠ task preflight: review.md is missing ✓ change verification receipt:
+    1 scenario(s), 0 failed, 0 skipped at e141d80dbb878b2eb29c8a57f6a1c1d1c8dc6706 ✓ verify passed
+1 scenario (1 failed), 3 steps (2 passed, 1 failed), runner exit 101. The base check ran only the
+regular scope, so the unbound E2E step never reached it and the receipt was written anyway.
+Production: src/cli/check.rs (run_change_e2e_scope: clear verification/e2e-result.json, capture the
+identity, run verify.e2e_command with GIVN_FEATURES / GIVN_RESULT_FILE / GIVN_RESULT_SCOPE=e2e, read
+the result before the exit status, recapture the identity; capture_e2e_identity), src/proof.rs
+(CHANGE_E2E_RESULT_FILE, read_change_e2e_result, ScopeOutcome::passed reuse) and the count wording
+in RunnerResult::read_counts.
+GREEN: same command -> 1 scenario (1 passed), 5 steps (5 passed), exit 0.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree after the fixture-runner deduplication and cargo fmt ->
+1 scenario (1 passed), 5 steps (5 passed), exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `e2e-scope`
+  - [x] COMMIT: `070b59233a80f66d8bc903bce1773ee47e81e9a6` -- Batch: `e2e-scope`
 
-- [ ] Scenario: `An ise-effective change whose E2E run reports a skipped step fails the tasks check`
+- [x] Scenario: `An ise-effective change whose E2E run reports a skipped step fails the tasks check`
   - Design constraints:
     - Fixture: the same shape with the runner writing `skipped = 1` and exiting
       nonzero. `RunnerResult::read(_, "e2e")` refuses a nonzero skipped count
@@ -909,17 +976,30 @@ capture the identity, run, read, recapture), `src/proof.rs` (the
     - Then `stderr names the failing E2E run and reports 1 skipped test`; no
       receipt is written. The count differs from the unbound row, so the two
       scenarios discriminate.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the pre-implementation failure and the GREEN run -->
+RED: same method as the unbound row — the scenario ran against the base tree with the uncommitted
+production files reverted.
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test
+features_runner -- --exact "verify-change/givn-workflow-enforcement.feature::An ise-effective
+change whose E2E run reports a skipped step fails the tasks check"
+  ✘ Then the command exits non-zero
+    Step panicked. Captured output: expected failure, got exit Some(0): stdout=Mandatory checks
+    for 'tasks': ⚠ task preflight: review.md is missing ✓ change verification receipt:
+    1 scenario(s), 0 failed, 0 skipped at 471863bac104294e10fd4b05618ec5f8605f410c ✓ verify passed
+1 scenario (1 failed), 3 steps (2 passed, 1 failed), runner exit 101.
+Production: the same run_change_e2e_scope path; the fixture runner writes failed=0/skipped=1 for
+GIVN_RESULT_SCOPE=e2e, and read_change_e2e_result refuses it with "1 skipped test" — a different
+count from the unbound row, so one generic message cannot satisfy both.
+GREEN: same command -> 1 scenario (1 passed), 5 steps (5 passed), exit 0.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree -> 1 scenario (1 passed), 5 steps (5 passed), exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `e2e-scope`
+  - [x] COMMIT: `070b59233a80f66d8bc903bce1773ee47e81e9a6` -- Batch: `e2e-scope`
 
-- [ ] Scenario: `An ise-effective change receipt binds the declared e2e package, the E2E runner command, and the Givn version`
+- [x] Scenario: `An ise-effective change receipt binds the declared e2e package, the E2E runner command, and the Givn version`
   - Design constraints:
     - Fixture: two resolved packages, `tests/e2e` and `tests/e2e-support`, both
       named by the E2E runner command, neither with a dependency edge into
@@ -932,15 +1012,36 @@ capture the identity, run, read, recapture), `src/proof.rs` (the
       counts.
     - The four Then steps parse the receipt JSON and compare domain values; none
       compares a raw byte string.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the pre-implementation failure and the GREEN run -->
+RED: same method — the scenario ran against the base tree with the uncommitted production files
+reverted.
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test
+features_runner -- --exact "verify-change/givn-workflow-enforcement.feature::An ise-effective
+change receipt binds the declared e2e package, the E2E runner command, and the Givn version"
+  ✔ Then the command exits 0
+  ✔ And the change verification receipt records a digest of every resolved e2e package
+  ✔ And the change verification receipt records the E2E runner command digest
+  ✔ And the change verification receipt records the running Givn version
+  ✘ And the change verification receipt records a passed E2E scope
+    assertion `left == right` failed: the receipt does not record a passed E2E scope: {"change":
+    "ise-boundary","command":"./emit-two-package-result.sh",... ,"e2e_identity":{"givn_version":
+    "0.9.20","package_digests":{"tests/e2e":"58765007…","tests/e2e-support":"4f54c43f…"},
+    "runner_command_digest":"802e0b2c…"},...} left: None right: Some("passed")
+1 scenario (1 failed), 7 steps (6 passed, 1 failed), runner exit 101. The identity half of the
+receipt already held both packages; only the E2E scope was missing.
+Production: src/cli/check.rs records ScopeOutcome::passed with the four counts and recaptures the
+identity after the run; src/proof.rs serialize_skips nothing — both optional fields already existed.
+GREEN: same command -> 1 scenario (1 passed), 7 steps (7 passed), exit 0; the receipt carries
+package_digests keys tests/e2e and tests/e2e-support, runner_command_digest equal to
+digest_text("./emit-two-package-result.sh tests/e2e tests/e2e-support"), givn_version 0.9.20, and
+e2e_scope {status: passed, total: 1, passed: 1, failed: 0, skipped: 0}.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree -> 1 scenario (1 passed), 7 steps (7 passed), exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `e2e-scope`
+  - [x] COMMIT: `070b59233a80f66d8bc903bce1773ee47e81e9a6` -- Batch: `e2e-scope`
 
 ---
 
