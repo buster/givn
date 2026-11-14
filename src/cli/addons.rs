@@ -55,7 +55,11 @@ pub fn run_enable(
     change: Option<&str>,
 ) -> Result<()> {
     let project_root = std::env::current_dir()?;
-    let before = crate::config::overlay::load_effective()?
+    let manifest = crate::config::overlay::load_effective()?;
+    if let Some(required) = missing_prerequisite(name, &manifest) {
+        bail!("addon '{name}' requires '{required}'; enable it first");
+    }
+    let before = manifest
         .addons
         .get(name)
         .or_else(|| AddonSpec::declared_default(name))
@@ -245,10 +249,15 @@ pub fn run_disable(
     change: Option<&str>,
 ) -> Result<()> {
     let project_root = std::env::current_dir()?;
-    let before = crate::config::overlay::load_effective()?
+    let manifest = crate::config::overlay::load_effective()?;
+    if let Some(dependent) = first_dependent(name, &manifest) {
+        bail!("addon '{name}' is required by '{dependent}'; disable '{dependent}' first");
+    }
+    let before = manifest
         .addons
         .get(name)
-        .unwrap_or(true);
+        .or_else(|| AddonSpec::declared_default(name))
+        .unwrap_or(false);
     let target = guard_addon_mutation(&project_root, name, operator, reason, change)?;
     disable_scaffold(name)?;
     if let Some(change_dir) = target {
@@ -349,6 +358,39 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
 }
 
 // ── Internals ────────────────────────────────────────────────────────────────
+
+/// The first declared prerequisite of `name` that is not effective, in
+/// declared order. `None` when the addon is unregistered or every prerequisite
+/// is on.
+fn missing_prerequisite(
+    name: &str,
+    manifest: &crate::config::manifest::Manifest,
+) -> Option<&'static str> {
+    let addon = KNOWN_ADDONS.iter().find(|addon| addon.id == name)?;
+    addon
+        .requires
+        .iter()
+        .copied()
+        .find(|required| !manifest.addons.get(required).unwrap_or(false))
+}
+
+/// The first registered addon, in registry order, that requires `name` and is
+/// effective. Used to refuse disabling a prerequisite while its dependent is on.
+fn first_dependent(
+    name: &str,
+    manifest: &crate::config::manifest::Manifest,
+) -> Option<&'static str> {
+    KNOWN_ADDONS
+        .iter()
+        .find(|addon| {
+            addon.requires.contains(&name)
+                && manifest
+                    .addons
+                    .get(addon.id)
+                    .unwrap_or(addon.default_enabled)
+        })
+        .map(|addon| addon.id)
+}
 
 fn validate_addon_name(name: &str) -> Result<()> {
     if KNOWN_ADDONS.iter().any(|addon| addon.id == name) {
@@ -689,6 +731,31 @@ mod tests {
         );
         assert_eq!(addon_skill_name("challenge"), Some("givn-challenge"));
         assert_eq!(addon_skill_name("arc42"), None);
+    }
+
+    #[test]
+    fn a_disabled_prerequisite_blocks_the_enable() {
+        let mut manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        assert_eq!(missing_prerequisite("ise", &manifest), None);
+        manifest.addons.architecture_principles = false;
+        assert_eq!(
+            missing_prerequisite("ise", &manifest),
+            Some("architecture_principles")
+        );
+        assert_eq!(missing_prerequisite("outline", &manifest), None);
+        assert_eq!(missing_prerequisite("unknown", &manifest), None);
+    }
+
+    #[test]
+    fn an_effective_dependent_blocks_the_disable() {
+        let mut manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        assert_eq!(first_dependent("architecture_principles", &manifest), None);
+        manifest.addons.ise = true;
+        assert_eq!(
+            first_dependent("architecture_principles", &manifest),
+            Some("ise")
+        );
+        assert_eq!(first_dependent("outline", &manifest), None);
     }
 
     fn config_fixture(content: &str) -> (tempfile::TempDir, std::path::PathBuf) {
