@@ -6,7 +6,7 @@ Feature: enable-optional-addons
   Scenario: givn init enables every addon by default
     Given a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn init writes the nine default-on addons and omits ise
     Given a project root without a givn/ directory
     When the user runs `givn init --agents opencode`
@@ -43,7 +43,7 @@ Feature: enable-optional-addons
   Scenario: a partial addons block keeps unnamed addons enabled
     Given a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario: a partial addons block resolves each omitted addon to its declared default
     Given an initialized project whose only explicit addon setting disables outline
     When the user synchronizes skills and lists addons
@@ -61,7 +61,7 @@ Feature: enable-optional-addons
     And the file "givn/specification.yaml" exists
     And the declaration names exactly the five roles and one source list
 
-  @givn.added @wip
+  @givn.added
   Scenario: Enabling ise without its prerequisite is refused by name
     Given an initialized project selecting opencode with architecture_principles disabled
     When the user runs `givn addons enable ise`
