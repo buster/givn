@@ -263,6 +263,12 @@ enum AttributionCommands {
 #[derive(Subcommand)]
 enum IseCommands {
     /// Write a clean-room trial from one recorded revision.
+    #[command(group(
+        clap::ArgGroup::new("replacement")
+            .required(true)
+            .multiple(false)
+            .args(["full", "path"])
+    ))]
     Replace {
         /// Revision to read (defaults to HEAD).
         #[arg(long)]

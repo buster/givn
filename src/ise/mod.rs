@@ -101,7 +101,12 @@ impl Partition {
 /// Materialize a trial from one recorded revision and report its placement.
 pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> {
     let admission = admit(project_root, request.at.as_deref())?;
-    let partition = partition(&admission.declaration, &admission.entries, request);
+    let partition = partition(
+        &admission.declaration,
+        &admission.entries,
+        request,
+        &admission.revision,
+    )?;
     let report = Report {
         backend: admission.backend.name(),
         revision: admission.revision.clone(),
@@ -210,12 +215,15 @@ fn require_addons(manifest: &Manifest) -> Result<()> {
 
 /// Place every tracked path at the revision. A retained role is tested first,
 /// so a retained file under a source root stays in the trial under every form.
+/// Every replacement refusal runs before the trial is created.
 fn partition(
     declaration: &SpecificationDeclaration,
     entries: &[RevisionEntry],
     request: &ReplaceRequest,
-) -> Partition {
+    revision: &str,
+) -> Result<Partition> {
     let roles = retained_roles(declaration);
+    require_declared_retained_entries(&roles, entries, revision)?;
     let source_roots: Vec<Glob> = declaration
         .source_roots()
         .iter()
@@ -237,7 +245,9 @@ fn partition(
             .map(|entry| entry.path.clone())
             .collect()
     } else {
-        named_candidates(&tracked, &request.paths)
+        let candidates = named_candidates(&tracked, &request.paths)?;
+        require_replaceable_paths(&candidates, &roles, &source_roots, revision)?;
+        candidates
     };
     let retained_set: BTreeSet<&str> = retained.iter().map(String::as_str).collect();
     let mut replaced: Vec<String> = candidates
@@ -272,40 +282,41 @@ fn partition(
     outside.sort();
 
     let not_replaced = direct_siblings(&tracked, &replaced_set);
-    Partition {
+    Ok(Partition {
         retained,
         kept_source,
         replaced,
         outside,
         not_replaced,
-    }
+    })
 }
 
-/// The retained role patterns in declaration order. The first matching role
-/// wins, so the order is part of the contract.
-fn retained_roles(declaration: &SpecificationDeclaration) -> Vec<(Role, Glob)> {
+/// The retained role patterns in declaration order, each with its declared
+/// text. The first matching role wins, so the order is part of the contract.
+fn retained_roles(declaration: &SpecificationDeclaration) -> Vec<(Role, &str, Glob)> {
     declaration
         .roles()
         .into_iter()
         .flat_map(|(role, patterns)| {
             patterns
                 .iter()
-                .map(move |pattern| (role, Glob::compile(pattern)))
+                .map(move |pattern| (role, pattern.as_str(), Glob::compile(pattern)))
         })
         .collect()
 }
 
-fn retained_role(path: &str, roles: &[(Role, Glob)]) -> Option<Role> {
+fn retained_role(path: &str, roles: &[(Role, &str, Glob)]) -> Option<Role> {
     roles
         .iter()
-        .find(|(_, glob)| glob_matches_path_or_parent(glob, path))
-        .map(|(role, _)| *role)
+        .find(|(_, _, glob)| glob_matches_path_or_parent(glob, path))
+        .map(|(role, _, _)| *role)
 }
 
 /// The `--path` values that resolve to tracked content. A tracked file
 /// contributes itself, a directory contributes every tracked file beneath it,
-/// a glob-shaped value contributes nothing, and repeats collapse.
-fn named_candidates(tracked: &BTreeSet<&str>, values: &[String]) -> BTreeSet<String> {
+/// a glob-shaped value contributes nothing, and repeats collapse. A value the
+/// declaration's normalizer rejects is outside the project and refuses.
+fn named_candidates(tracked: &BTreeSet<&str>, values: &[String]) -> Result<BTreeSet<String>> {
     let mut directories = BTreeSet::new();
     for path in tracked {
         for (index, _) in path.match_indices('/') {
@@ -316,7 +327,9 @@ fn named_candidates(tracked: &BTreeSet<&str>, values: &[String]) -> BTreeSet<Str
     let mut candidates = BTreeSet::new();
     for value in values {
         let Some(value) = normalize_project_path(value) else {
-            continue;
+            bail!(
+                "'{value}' is outside the project; a replacement path is a project-relative tracked file or directory"
+            );
         };
         if tracked.contains(value.as_str()) {
             candidates.insert(value);
@@ -332,7 +345,54 @@ fn named_candidates(tracked: &BTreeSet<&str>, values: &[String]) -> BTreeSet<Str
             );
         }
     }
-    candidates
+    Ok(candidates)
+}
+
+/// Refusal 5: every declared retained entry must match a tracked path or a
+/// derived directory at the revision; an entry that matches nothing names
+/// itself and the revision.
+fn require_declared_retained_entries(
+    roles: &[(Role, &str, Glob)],
+    entries: &[RevisionEntry],
+    revision: &str,
+) -> Result<()> {
+    for (role, pattern, glob) in roles {
+        let matches = entries
+            .iter()
+            .any(|entry| glob_matches_path_or_parent(glob, &entry.path));
+        if !matches {
+            bail!(
+                "the declared {} entry '{pattern}' matches nothing at revision '{revision}'",
+                role.as_str()
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Refusals 6 and 7: no candidate may be retained, and every candidate must
+/// lie under a declared source root. The retained test runs first over the
+/// whole candidate set, so the reported condition is the role, not the root.
+fn require_replaceable_paths(
+    candidates: &BTreeSet<String>,
+    roles: &[(Role, &str, Glob)],
+    source_roots: &[Glob],
+    revision: &str,
+) -> Result<()> {
+    for path in candidates {
+        if let Some(role) = retained_role(path, roles) {
+            bail!(
+                "'{path}' is retained by the {} role at revision '{revision}'; a retained path is never replaced",
+                role.as_str()
+            );
+        }
+    }
+    for path in candidates {
+        if !path_or_parent_matches(source_roots, path) {
+            bail!("'{path}' is outside every declared source root at revision '{revision}'");
+        }
+    }
+    Ok(())
 }
 
 /// Whether a role or source pattern matches the path or every tracked file

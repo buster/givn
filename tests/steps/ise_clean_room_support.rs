@@ -25,6 +25,20 @@ pub(crate) const KEPT_CONTENT: &str = "pub fn kept() {}\n";
 /// The unknown top-level key the malformed declaration carries.
 pub(crate) const MALFORMED_KEY: &str = "component";
 
+/// The declared `contracts` entry a revision can be missing.
+pub(crate) const CONTRACT_PATH: &str = "docs/contract.md";
+/// The tracked document a `--path` value can name outside the source roots.
+pub(crate) const REFERENCE_PATH: &str = "docs/reference.md";
+/// The retained feature several refusal fixtures commit.
+pub(crate) const DEMO_FEATURE_PATH: &str = "givn/specs/demo.feature";
+/// The retained feature's committed content.
+pub(crate) const DEMO_FEATURE_CONTENT: &str =
+    "Feature: demo\n  Scenario: demo\n    Given nothing\n";
+/// The tracked source file a revision commits.
+pub(crate) const SOURCE_PATH: &str = "src/one.rs";
+/// The tracked source file's committed content.
+pub(crate) const SOURCE_CONTENT: &str = "pub fn one() {}\n";
+
 /// Per-scenario state for the `clean-room-preparation` fixtures.
 #[derive(Debug, Default)]
 pub(crate) struct IseCleanRoomState {
@@ -125,6 +139,19 @@ pub(crate) fn behavior_declaration(behavior: &str, source: &str) -> String {
     )
 }
 
+/// A declaration whose `contracts` role names exactly `retained`, with the
+/// other retained roles empty and one source root.
+pub(crate) fn contracts_declaration(retained: &str, source: &str) -> String {
+    format!(
+        "behavior: []\n\
+         structure: []\n\
+         contracts: [{retained}]\n\
+         limits: []\n\
+         e2e: []\n\
+         source: [{source}]\n"
+    )
+}
+
 /// The declaration with one unknown top-level key beside the six valid keys.
 pub(crate) fn malformed_declaration() -> String {
     format!("{MALFORMED_KEY}: [\"x\"]\n{}", default_declaration())
@@ -149,6 +176,59 @@ pub(crate) fn ise_project_with_declaration(declaration: &str) -> common::TestEnv
 /// Rewrite the committed declaration in place; the caller commits it.
 pub(crate) fn rewrite_declaration(env: &common::TestEnv, content: &str) {
     write_declaration(env, content);
+}
+
+/// A project with one source root and a committed revision carrying a source
+/// file and a document outside the source root, so a `--path` value resolves
+/// to tracked content that no source root covers.
+pub(crate) fn source_root_project() -> common::TestEnv {
+    let env = ise_project_with_declaration(&source_only_declaration("\"src/**\""));
+    commit_files(
+        &env,
+        &[
+            (REFERENCE_PATH, "reference\n"),
+            (SOURCE_PATH, SOURCE_CONTENT),
+        ],
+        "fixture: source root revision",
+    );
+    env
+}
+
+/// A project whose declaration retains `givn/specs/**` and whose revision
+/// commits a retained feature, so the role matches at the revision.
+pub(crate) fn retained_behavior_project() -> common::TestEnv {
+    let env =
+        ise_project_with_declaration(&behavior_declaration("\"givn/specs/**\"", "\"src/**\""));
+    commit_demo_feature(&env);
+    env
+}
+
+/// A project whose `contracts` role names a document the declaration commits
+/// nowhere; the revision read is the caller's fixture.
+pub(crate) fn contracts_project() -> common::TestEnv {
+    ise_project_with_declaration(&contracts_declaration(
+        &format!("{CONTRACT_PATH:?}"),
+        "\"src/**\"",
+    ))
+}
+
+/// Commit the retained feature the role fixtures name.
+pub(crate) fn commit_demo_feature(env: &common::TestEnv) {
+    commit_files(
+        env,
+        &[(DEMO_FEATURE_PATH, DEMO_FEATURE_CONTENT)],
+        "fixture: retained behavior",
+    );
+}
+
+/// Commit a tracked source file only, so the declared contract stays absent
+/// from the revision.
+pub(crate) fn commit_revision_without_contract(env: &common::TestEnv) {
+    commit_files(
+        env,
+        &[(SOURCE_PATH, SOURCE_CONTENT)],
+        "fixture: revision without the contract",
+    );
 }
 
 /// Write each file (creating its parent directories) and commit the whole

@@ -27,6 +27,11 @@ fn assert_exit_one(world: &GivnWorld) {
     assert_eq!(out.status.code(), Some(1), "stderr={}", stderr(world));
 }
 
+fn assert_exit_two(world: &GivnWorld) {
+    let out = output(world);
+    assert_eq!(out.status.code(), Some(2), "stderr={}", stderr(world));
+}
+
 fn assert_success(world: &GivnWorld) {
     let out = output(world);
     assert_eq!(out.status.code(), Some(0), "stderr={}", stderr(world));
@@ -190,8 +195,17 @@ fn developer_prepares_a_full_trial(world: &mut GivnWorld, revision: String) {
 
 #[then(regex = r#"^preparation fails and names "([^"]+)"$"#)]
 fn preparation_fails_and_names(world: &mut GivnWorld, needle: String) {
-    assert_exit_one(world);
+    let out = output(world);
     let text = stderr(world);
+    assert!(
+        !out.status.success(),
+        "the command succeeded; stderr={text:?}"
+    );
+    // A clap usage error exits 2; every refusal exits 1. The message class and
+    // the exit code come from the same branch, so neither failure may borrow
+    // the other's code.
+    let expected = if text.starts_with("error:") { 2 } else { 1 };
+    assert_eq!(out.status.code(), Some(expected), "stderr={text:?}");
     assert!(
         text.contains(&needle),
         "stderr {text:?} does not name {needle:?}"
@@ -318,10 +332,8 @@ fn not_implemented_0001(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[given(
     regex = r#"^a Git project with ise enabled and a declaration that retains "givn/specs/\*\*"$"#
 )]
-fn not_implemented_0002(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Git project with ise enabled and a declaration that retains "givn/specs/**""#
-    ))
+fn git_project_retaining_the_specs(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::retained_behavior_project());
 }
 
 #[given(
@@ -343,28 +355,24 @@ fn not_implemented_0004(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[given(
     regex = r#"^a Git project with ise enabled and a declaration whose "contracts" role names "docs/contract\.md"$"#
 )]
-fn not_implemented_0005(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Git project with ise enabled and a declaration whose "contracts" role names "docs/contract.md""#
-    ))
+fn git_project_with_a_contracts_role(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::contracts_project());
 }
 
 #[given(
     regex = r#"^a Git project with ise enabled and a declaration with one source root "src/\*\*"$"#
 )]
 fn git_project_with_source_only_declaration(world: &mut GivnWorld) {
-    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
-        &ise_clean_room_support::source_only_declaration("\"src/**\""),
-    ));
+    world.env = Some(ise_clean_room_support::source_root_project());
 }
 
 #[given(
     regex = r#"^a Git project with ise enabled, a declaration that retains "givn/specs/\*\*", and one source root "givn/\*\*"$"#
 )]
-fn not_implemented_0007(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Git project with ise enabled, a declaration that retains "givn/specs/**", and one source root "givn/**""#
-    ))
+fn git_project_retaining_the_specs_under_givn(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::behavior_declaration("\"givn/specs/**\"", "\"givn/**\""),
+    ));
 }
 
 #[given(
@@ -398,10 +406,8 @@ fn commit_revision_without_its_blob(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^a committed revision with "givn/specs/demo\.feature"$"#)]
-fn not_implemented_0011(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "givn/specs/demo.feature""#
-    ))
+fn commit_revision_with_demo_feature(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_demo_feature(project_env(world));
 }
 
 #[given(regex = r#"^a committed revision with "nested/_FOSSIL_"$"#)]
@@ -540,10 +546,8 @@ fn not_implemented_0022(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[given(regex = r#"^a committed revision without "docs/contract\.md"$"#)]
-fn not_implemented_0023(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision without "docs/contract.md""#
-    ))
+fn commit_revision_without_the_contract(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_revision_without_contract(project_env(world));
 }
 
 #[given(regex = r#"^a receipt file that already exists$"#)]
@@ -594,33 +598,54 @@ fn not_implemented_0030(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^preparation fails and names "--full" and "--path"$"#)]
-fn not_implemented_0031(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names "--full" and "--path""#
-    ))
+fn preparation_fails_and_names_the_two_forms(world: &mut GivnWorld) {
+    assert_exit_two(world);
+    let text = stderr(world);
+    for flag in ["--full", "--path"] {
+        assert!(
+            text.contains(flag),
+            "stderr {text:?} does not name {flag:?}"
+        );
+    }
 }
 
 #[then(regex = r#"^preparation fails and names "--full" and "--path" as mutually exclusive$"#)]
-fn not_implemented_0032(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names "--full" and "--path" as mutually exclusive"#
-    ))
+fn preparation_fails_and_names_the_conflicting_forms(world: &mut GivnWorld) {
+    assert_exit_two(world);
+    let text = stderr(world);
+    for needle in ["--full", "--path", "cannot be used with"] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not carry {needle:?}"
+        );
+    }
 }
 
 #[then(regex = r#"^preparation fails and names "docs/contract\.md" and the revision$"#)]
-fn not_implemented_0033(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names "docs/contract.md" and the revision"#
-    ))
+fn preparation_fails_and_names_the_contract_and_revision(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    let revision = ise_clean_room_support::head_revision(project_env(world));
+    let text = stderr(world);
+    for needle in [ise_clean_room_support::CONTRACT_PATH, revision.as_str()] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not name {needle:?}"
+        );
+    }
 }
 
 #[then(
     regex = r#"^preparation fails and names "givn/specs/demo\.feature" and the "behavior" role$"#
 )]
-fn not_implemented_0034(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names "givn/specs/demo.feature" and the "behavior" role"#
-    ))
+fn preparation_fails_and_names_the_retained_feature(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    let text = stderr(world);
+    for needle in [ise_clean_room_support::DEMO_FEATURE_PATH, "behavior"] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not name {needle:?}"
+        );
+    }
 }
 
 #[then(regex = r#"^preparation fails and names the existing receipt$"#)]
@@ -775,10 +800,16 @@ fn not_implemented_0054(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with a full replacement and no target$"#
 )]
-fn not_implemented_0055(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with a full replacement and no target"#
-    ))
+fn prepare_without_a_target(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.requested_revision = Some("HEAD".to_string());
+    let args = ["ise", "replace", "--at", "HEAD", "--full"];
+    let env = project_env(world);
+    let out = match world.cwd_override.clone() {
+        Some(cwd) => common::run_givn_with_envs_in(env, &cwd, &args, &[]),
+        None => common::run_givn_with_envs(env, &args, &[]),
+    };
+    world.last_output = Some(out);
 }
 
 #[when(
@@ -793,28 +824,22 @@ fn not_implemented_0056(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with both a full replacement and a path$"#
 )]
-fn not_implemented_0057(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with both a full replacement and a path"#
-    ))
+fn prepare_with_both_replacement_forms(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--full", "--path", "src/one.rs"]);
 }
 
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with neither a full replacement nor a path$"#
 )]
-fn not_implemented_0058(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with neither a full replacement nor a path"#
-    ))
+fn prepare_without_a_replacement_form(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &[]);
 }
 
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the directory path "givn/specs"$"#
 )]
-fn not_implemented_0059(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the directory path "givn/specs""#
-    ))
+fn prepare_with_the_specs_directory(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "givn/specs"]);
 }
 
 #[when(
@@ -827,19 +852,15 @@ fn prepare_with_the_keys_directory(world: &mut GivnWorld) {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the path "docs/reference\.md"$"#
 )]
-fn not_implemented_0061(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the path "docs/reference.md""#
-    ))
+fn prepare_with_the_reference_path(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "docs/reference.md"]);
 }
 
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the path "givn/specs/demo\.feature"$"#
 )]
-fn not_implemented_0062(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the path "givn/specs/demo.feature""#
-    ))
+fn prepare_with_the_demo_feature_path(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "givn/specs/demo.feature"]);
 }
 
 #[when(regex = r#"^the developer prepares a trial from "HEAD" with the path "src/\*\*"$"#)]
