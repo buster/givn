@@ -71,7 +71,7 @@ Feature: enable-optional-addons
     And the active addon settings keep "architecture_principles" disabled
     And the file "givn/specification.yaml" does not exist
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A consumer disables a required addon and the refusal names ise
     Given an ise-enabled project selecting opencode
     When the consumer runs `givn addons disable architecture_principles`
