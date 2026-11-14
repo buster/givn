@@ -131,6 +131,8 @@ pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
         println!("Next steps:");
         println!("  Edit givn/commands.yaml to set coverage.measure_command");
         println!("  and coverage.merge_command to use your project scripts.");
+    } else if name == "ise" {
+        scaffold_declaration()?;
     }
 
     Ok(())
@@ -180,6 +182,35 @@ fn scaffold_document_at(
         std::fs::create_dir_all(parent)?;
     }
     std::fs::write(&dest, content)?;
+    println!("  created  {relative_path}");
+    Ok(())
+}
+
+/// Write the declaration scaffold once. A regular file at the path is
+/// project-owned and preserved byte-for-byte; a path occupied by a directory or
+/// another non-regular file is not an existing declaration, so the write is
+/// attempted and its failure names the path and the already-written setting.
+fn scaffold_declaration() -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    let relative_path = crate::config::declaration::DECLARATION_PATH;
+    let destination = project_root.join(relative_path);
+    if destination.is_file() {
+        println!("  exists   {relative_path}  (content preserved)");
+        return Ok(());
+    }
+
+    let asset_key = "specification.yaml.tmpl";
+    let content = crate::config::embedded::Assets::get_str(asset_key)
+        .ok_or_else(|| anyhow::anyhow!("embedded declaration template missing: {asset_key}"))?;
+    if let Some(parent) = destination.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&destination, content).map_err(|error| {
+        anyhow::anyhow!(
+            "write the declaration '{relative_path}': {error}; the path is not a regular file, \
+             and addons.ise was already written to givn/config.yaml; no completion is claimed"
+        )
+    })?;
     println!("  created  {relative_path}");
     Ok(())
 }
@@ -349,6 +380,13 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
     } else if name == "coverage" {
         println!("The 'coverage' gate is now disabled.");
         println!("The coverage fence in README.md is preserved.");
+    } else if name == "ise" {
+        let project_root = std::env::current_dir()?;
+        let relative_path = crate::config::declaration::DECLARATION_PATH;
+        if project_root.join(relative_path).is_file() {
+            println!("  exists   {relative_path}  (project-owned; not removed)");
+        }
+        println!("The 'ise' declaration is project-owned and is not removed.");
     } else if is_skill_addon(name) {
         remove_skill_addon_files(name);
         println!("Removed the '{name}' skill files from every agent target.");

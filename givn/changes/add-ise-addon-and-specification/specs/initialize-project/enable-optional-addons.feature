@@ -51,7 +51,7 @@ Feature: enable-optional-addons
     And the listing reports ise as disabled
     And omitted default-on addons including challenge and communication_policy use the same enabled defaults everywhere
 
-  @givn.added @wip
+  @givn.added
   Scenario: Enabling ise writes the setting and scaffolds the declaration
     Given an initialized project selecting opencode
     When the user runs `givn addons enable ise`
@@ -81,7 +81,7 @@ Feature: enable-optional-addons
     And the active addon settings keep "ise" enabled
     And the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario: Enabling ise preserves an edited declaration
     Given an initialized project selecting opencode
     And a declaration at "givn/specification.yaml" whose bytes are recorded
@@ -90,14 +90,14 @@ Feature: enable-optional-addons
     And stdout contains "content preserved"
     And the declaration bytes equal the recorded bytes
 
-  @givn.added @wip
+  @givn.added
   Scenario: Repeating the enable changes nothing
     Given an ise-enabled project selecting opencode whose declaration bytes are recorded
     When the user runs `givn addons enable ise`
     Then the command exits 0
     And the declaration bytes equal the recorded bytes
 
-  @givn.added @wip
+  @givn.added
   Scenario: A forced re-initialization preserves an effective ise and its declaration
     Given an ise-enabled project selecting opencode whose declaration bytes are recorded
     When the user runs `givn init --force --agents opencode`
@@ -105,7 +105,7 @@ Feature: enable-optional-addons
     And the active addon settings keep "ise" enabled
     And the declaration bytes equal the recorded bytes
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabling ise preserves the declaration and reports it project-owned
     Given an ise-enabled project selecting opencode whose declaration bytes are recorded
     When the user runs `givn addons disable ise`
@@ -121,7 +121,7 @@ Feature: enable-optional-addons
     When the user runs `givn check review --change add-declaration-check`
     Then stderr does not contain "add-on configuration changed during change"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A declaration scaffold failure names the path and the applied setting
     Given an initialized project selecting opencode
     And the path "givn/specification.yaml" is a directory

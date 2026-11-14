@@ -649,7 +649,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
 **Batch verification:** the six single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: declaration-scaffold-enable'`.
 
-- [ ] Scenario: `Enabling ise writes the setting and scaffolds the declaration`
+- [x] Scenario: `Enabling ise writes the setting and scaffolds the declaration`
   - Design constraints:
     - Fixture: initialized project selecting opencode (nine default-on addons;
       `architecture_principles` is on).
@@ -657,69 +657,102 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
       `givn/specification.yaml`, `ise` is enabled in the config, the file
       exists, and it names exactly `behavior, structure, contracts, limits,
       e2e` plus one `source` list.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::Enabling ise writes the setting and scaffolds the declaration" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::Enabling ise writes the setting and scaffolds the declaration"
+
+        RED: stdout does not name "givn/specification.yaml":
+             enabled addon 'ise' in givn/config.yaml
+        GREEN: 1 scenario (1 passed); 7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 7 steps (7 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
 
-- [ ] Scenario: `Enabling ise preserves an edited declaration`
+- [x] Scenario: `Enabling ise preserves an edited declaration`
   - Design constraints:
     - Fixture: initialized project, a recorded declaration at
       `givn/specification.yaml` with project bytes.
     - Exit 0, stdout contains `content preserved`, bytes unchanged. The
       declared default is not overwritten by the scaffold.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::Enabling ise preserves an edited declaration" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::Enabling ise preserves an edited declaration"
+
+        RED: stdout missing "content preserved":
+             enabled addon 'ise' in givn/config.yaml
+        GREEN: 1 scenario (1 passed); 6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 6 steps (6 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
 
-- [ ] Scenario: `Repeating the enable changes nothing`
+- [x] Scenario: `Repeating the enable changes nothing`
   - Design constraints:
     - Fixture: `ise`-enabled project with recorded declaration bytes.
     - A second `givn addons enable ise` exits 0 and leaves the bytes equal to
       the recorded bytes.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::Repeating the enable changes nothing" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::Repeating the enable changes nothing"
+
+        existing behavior protected: passed on its first run
+        (1 scenario (1 passed); 4 steps (4 passed)). No production edit was
+        manufactured: a second enable already left the recorded declaration
+        bytes unchanged.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 4 steps (4 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
 
-- [ ] Scenario: `A forced re-initialization preserves an effective ise and its declaration`
+- [x] Scenario: `A forced re-initialization preserves an effective ise and its declaration`
   - Design constraints:
     - Fixture: `ise`-enabled project selecting opencode with recorded bytes.
     - `givn init --force --agents opencode` exits 0, `ise` stays enabled, bytes
       unchanged. The forced loop iterates all ten and applies the preserved
       value; the declaration is not rewritten.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::A forced re-initialization preserves an effective ise and its declaration" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::A forced re-initialization preserves an effective ise and its declaration"
+
+        existing behavior protected: passed on its first run
+        (1 scenario (1 passed); 5 steps (5 passed)). The forced loop already
+        restored `ise: true` and called the addon scaffold; this batch's
+        scaffold preserves an existing regular file. No production edit was
+        manufactured for this scenario.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 5 steps (5 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
 
-- [ ] Scenario: `Disabling ise preserves the declaration and reports it project-owned`
+- [x] Scenario: `Disabling ise preserves the declaration and reports it project-owned`
   - Design constraints:
     - Fixture: `ise`-enabled project with recorded bytes.
     - `givn addons disable ise` exits 0, stdout contains `project-owned`, `ise`
       is disabled, bytes unchanged. No file is removed.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::Disabling ise preserves the declaration and reports it project-owned" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::Disabling ise preserves the declaration and reports it project-owned"
+
+        RED: stdout missing "project-owned":
+             disabled addon 'ise' in givn/config.yaml
+        GREEN: 1 scenario (1 passed); 6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 6 steps (6 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
 
-- [ ] Scenario: `A declaration scaffold failure names the path and the applied setting`
+- [x] Scenario: `A declaration scaffold failure names the path and the applied setting`
   - Design constraints:
     - Fixture: initialized project; `givn/specification.yaml` is created as a
       directory before the enable.
@@ -728,12 +761,22 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
       wrote the flag before the scaffold.
     - The error text names the reason and the already-written setting; no
       success line is printed.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::A declaration scaffold failure names the path and the applied setting" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::A declaration scaffold failure names the path and the applied setting"
+
+        RED: expected failure, got exit Some(0):
+             stdout=enabled addon 'ise' in givn/config.yaml
+        GREEN: 1 scenario (1 passed); 6 steps (6 passed)
+        observed stderr: write the declaration 'givn/specification.yaml':
+             Is a directory (os error 21); the path is not a regular file, and
+             addons.ise was already written to givn/config.yaml; no completion
+             is claimed
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 6 steps (6 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-enable`
 
 ---

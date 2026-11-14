@@ -99,3 +99,94 @@ fn active_addon_settings_keep(world: &mut GivnWorld, addon: String, state: Strin
         "addon '{addon}' did not stay {state}"
     );
 }
+
+const DECLARATION_PATH: &str = "givn/specification.yaml";
+
+/// Project bytes the preservation scenarios record: valid six-key content that
+/// differs from the scaffold, so a rewrite would be visible.
+const PROJECT_DECLARATION: &str = "# Project-owned declaration fixture.\n\
+behavior: [\"givn/specs/**\"]\n\
+structure: []\n\
+contracts: [\"docs/reference.md\"]\n\
+limits: []\n\
+e2e: []\n\
+source: [\"src/**\"]\n";
+
+fn enable_ise(env: &common::TestEnv) {
+    let output = common::run_givn(env, &["addons", "enable", "ise"]);
+    assert!(
+        output.status.success(),
+        "givn addons enable ise failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[given("an initialized project selecting opencode")]
+fn initialized_project_selecting_opencode(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+}
+
+#[given(regex = r#"^a declaration at "([^"]+)" whose bytes are recorded$"#)]
+fn declaration_at_path_with_recorded_bytes(world: &mut GivnWorld, path: String) {
+    std::fs::write(env(world).path(&path), PROJECT_DECLARATION)
+        .expect("write the project-owned declaration");
+    world.specification_declaration.recorded = Some(PROJECT_DECLARATION.to_string());
+}
+
+#[given("an ise-enabled project selecting opencode whose declaration bytes are recorded")]
+fn ise_enabled_project_with_recorded_declaration(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    enable_ise(&env);
+    std::fs::write(env.path(DECLARATION_PATH), PROJECT_DECLARATION)
+        .expect("write the project-owned declaration");
+    world.specification_declaration.recorded = Some(PROJECT_DECLARATION.to_string());
+    world.env = Some(env);
+}
+
+#[given(regex = r#"^the path "([^"]+)" is a directory$"#)]
+fn path_is_a_directory(world: &mut GivnWorld, path: String) {
+    std::fs::create_dir(env(world).path(&path)).expect("create the directory occupying the path");
+}
+
+#[then(regex = r#"^stdout names "([^"]+)"$"#)]
+fn stdout_names(world: &mut GivnWorld, needle: String) {
+    let observed = stdout(world);
+    assert!(
+        observed.contains(&needle),
+        "stdout does not name {needle:?}:\n{observed}"
+    );
+}
+
+#[then("the declaration names exactly the five roles and one source list")]
+fn declaration_names_five_roles_and_source(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(env(world).path(DECLARATION_PATH))
+        .expect("read the scaffolded declaration");
+    let mut keys = Vec::new();
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let (key, value) = line
+            .split_once(':')
+            .unwrap_or_else(|| panic!("the declaration line carries no key: {line}"));
+        let value = value.trim();
+        assert!(
+            value.starts_with('[') && value.ends_with(']'),
+            "the declaration value for '{key}' is not a list: {value}"
+        );
+        keys.push(key.to_string());
+    }
+    assert_eq!(
+        keys,
+        [
+            "behavior",
+            "structure",
+            "contracts",
+            "limits",
+            "e2e",
+            "source"
+        ],
+        "the declaration does not name the five roles plus one source list"
+    );
+}
