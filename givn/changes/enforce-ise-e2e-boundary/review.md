@@ -28,50 +28,47 @@ both delta features, both delta use-case documents, `git log --name-only
 permanent guidance (`assets/instructions/{specs,ise}.md`), `docs/reference.md`,
 `docs/glossary.md`, the affected arc42 chapters, and ADR-070.
 
-Ran, read-only:
+Ran, read-only, in the first pass and again against `9b86ebe5` on 2026-11-14:
 
-- `givn status --change enforce-ise-e2e-boundary` (78/85 boxes);
+- `givn status --change enforce-ise-e2e-boundary` (88/89 boxes; the last box
+  is this review);
 - `givn check review --change enforce-ise-e2e-boundary` (gate output in
   "Verification" below);
-- `givn lint --change enforce-ise-e2e-boundary` (2 `SHAPE`, 0 `LONG`, 120
-  `SUBST`, exit 2 for the change-scoped `@wip` findings);
+- `givn lint --change enforce-ise-e2e-boundary` (clean, exit 0);
 - the delta suite, `GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs
-  cargo test --locked --test features_runner`: 28 scenarios (28 passed), 149
-  steps (149 passed), 6.90 s;
+  cargo test --locked --test features_runner`: 31 scenarios (31 passed), 166
+  steps (166 passed), 7.27 s;
 - the permanent `check-specification-health` feature in a scratch scope
-  (`GIVN_FEATURES=/tmp/perm-lint`): 57 scenarios (57 passed), 345 steps (345
-  passed), 8.87 s, proving the moved resolver did not change lint output;
+  (`GIVN_FEATURES=/tmp/perm-lint2`): 57 scenarios (57 passed), 345 steps (345
+  passed), 9.16 s, proving the moved resolver did not change lint output;
+- `cargo test --locked --lib e2e_boundary`: 30 passed, 0 failed, including the
+  target-table, anchor, source-root, import-form, and escape tests;
 - `cargo clippy --locked --all-targets -- -D warnings` (clean) and
   `cargo run -- instructions` (exit 0);
 - `givn instructions specs` and `givn instructions ise` on this repository
   (`ise` off).
 
-It did not edit production code, step definitions, specs, design, tasks,
-glossary, coverage, or README. The adversarial probes below ran in `/tmp`
-fixtures against the built binary; no reviewed file was mutated.
+The re-audit probes were rerun against the current binary in fresh `/tmp`
+fixtures. The first-pass run used the pre-closure binary; the closure results
+below are from the current tree. It edited no production code, step
+definition, spec, design, task, glossary, or README file.
 
 ## Tasks preflight
 
-`givn status --change enforce-ise-e2e-boundary` reports **78/85** boxes. Every
-Setup and scenario box is checked. The 7 unchecked boxes are the Closeout
-checks:
+`givn status --change enforce-ise-e2e-boundary` reports **88/89** boxes. Every
+Setup, scenario, and Closeout box is checked; the only unchecked box is
+`givn check review --change enforce-ise-e2e-boundary passes`, which this review
+completes.
 
-- every delta phrase is bound in a permanent step file;
-- no empty or no-op stub remains;
-- no delta scenario carries `@wip`;
-- `givn lint --change` reports no end-to-end intent finding;
-- whole-change verification (fmt, clippy, nextest, both scopes, both delta
-  scopes, lint);
-- `givn check tasks` exits 0 and records the receipt;
-- `givn check review` passes.
-
-The 18 scenario boxes record batch revisions and the change verification
-receipt at `2d7b1362` (28 change-scope scenarios) is current per the review
-gate. **Finding F0:** the Closeout commands are not run and recorded, and the
-boxes are not ticked. The author must run them and tick every box before
-archive. This review supplies the delta-scope sample, the permanent lint
-feature run, clippy, and the run gate, but not the required `./run-tests.sh
---e2e`, `./run-tests.sh --non-e2e`, and `cargo nextest run` records.
+The Closeout section (`tasks.md` `## Closeout`) records each command with its
+real output: `cargo fmt --all -- --check` exit 0, clippy exit 0, `cargo nextest
+run` 1622 passed, permanent `./run-tests.sh --non-e2e` 963 passed with 111
+skipped, permanent `./run-tests.sh --e2e` 111 passed, the delta scopes 31
+passed and 0 end-to-end, `givn lint` clean, and `givn check tasks` 31 scenarios
+at `32256f5f`. The receipt in `verification/tasks-verification.json` is that
+run (`head: 32256f5f`, 31 passed, 0 failed, 0 skipped). F0 is closed. My
+independent reruns of the delta scope (31/31) and the permanent
+`check-specification-health` feature (57/57) agree.
 
 ## Implementation evidence check
 
@@ -138,7 +135,7 @@ asserts distinct counts for the two runtime cases (`1 failed test` and
 
 ### 5. `@e2e` Then assertions
 
-The delta contains no `@e2e` scenario (0 of 18). The permanent `@e2e` scenarios
+The delta contains no `@e2e` scenario (0 of 19). The permanent `@e2e` scenarios
 that share these actions are outside the delta and unchanged; no downgraded
 Then assertion exists in the delta. Not applicable, no finding.
 
@@ -184,8 +181,8 @@ results.
 | Receipt fields `e2e_identity` and `e2e_scope` are optional and not serialized when absent (`design.md:288`) | `proof.rs:578-584` with `#[serde(default, skip_serializing_if = "Option::is_none")]`; field order otherwise unchanged | matches |
 | `not_applicable` only without a delta `@e2e`, green scope otherwise (`design.md:211`, `:430`) | `check.rs:523-538`; `proof.rs:980-1010` | matches |
 | The runner rule is textual and proves naming, not execution (`design.md:214`) | `e2e_boundary/mod.rs:369-381`; refusal text names the command and root | matches |
-| The boundary preflight runs before the no-behavior-change return (`design.md:399-403`) | `check.rs:459-469` returns on `not_applicable` before the preflight | **deviates (B2)** |
-| The dependency graph covers direct, transitive, and workspace-inherited edges (`design.md:358`, `docs/reference.md:146-160`) | `manifest.rs:76` reads only the three top-level tables; target-specific tables are ignored | **deviates (B1)** |
+| The boundary preflight runs before the no-behavior-change return (`design.md:399-403`) | `check.rs:459-460` calls `preflight_e2e_boundary` before `change_verification_not_applicable`; the no-receipt branch of `check_change_receipt` (`check.rs:700-703`) calls it too | matches (closed in `3b2c293d`) |
+| The dependency graph covers direct, transitive, and workspace-inherited edges (`design.md:358`, `docs/reference.md:146-160`) | `manifest.rs:128-145` reads the top-level, dev, build, and every `[target.<cfg>.*]` table; `mod.rs:292-315` refuses a directory that is a source root, lies inside its literal anchor, or contains a path the pattern names | matches (closed in `a072aa99`) |
 | Step Definitions: every delta phrase is bound in `workflow_enforcement_steps.rs` / `prose_consolidation_steps.rs` (`design.md` Step Definitions) | two phrases reuse permanent bindings in `specification_health_steps.rs` and `archive_proof_steps.rs` | wording drift only (O3), no behavior gap |
 
 ### 11. Interaction coverage cross-reference
@@ -250,15 +247,16 @@ holds only the runner result and the change receipt, and the archive receipt
 will carry the Cobertura report. The classification below is from inspection;
 the archive measurement will confirm or reopen it.
 
-Per-scenario classification (all 18 executed green in the delta scope):
+Per-scenario classification (all 19 executed green in the delta scope):
 
 | # | Delta scenario | Exercised production path | Classification |
 |---|---|---|---|
-| 1 | declared `e2e` role resolves no readable package | `E2eBoundary::resolve`, `MissingPackage`, `MalformedManifest` | covered |
-| 2 | package reaches a source package (3 rows) | `dependency_edges`, BFS, `DependencyEdge` | covered; target-table input missing (B1) |
+| 1 | declared `e2e` role resolves no readable package (3 rows, incl. `e2e: []`) | `E2eBoundary::resolve`, `MissingPackage`, `MalformedManifest`, the empty-role guard | covered |
+| 2 | package reaches a source package (4 rows, incl. target-specific) | `dependency_tables`, `dependency_edges`, BFS, `source_root_reached_by`, `DependencyEdge` | covered |
+| 2a | no behavior change still needs a readable declaration | preflight before the not-applicable result in check and review | covered |
 | 3 | `e2e` path under a source root | `PackageUnderSource` | covered |
 | 4 | package contains a source root | `SourceInsidePackage` | covered |
-| 5 | path resolves no package and imports source | `import_edges`, `ImportEdge` | covered for `mod`/`use`; other syntax branches untested (F1) |
+| 5 | path resolves no package and imports source | `import_edges`, `ImportEdge` | covered (the syntax branches are unit-tested) |
 | 6 | runner command names no root (3 rows) | `names_root`, `RunnerNamesNoPackage` | covered |
 | 7 | unbound E2E step | `run_change_e2e_scope`, result read, count wording | covered |
 | 8 | skipped E2E step | same path, skipped count | covered |
@@ -271,19 +269,18 @@ Per-scenario classification (all 18 executed green in the delta scope):
 | 16-17 | declared package policy; served `ise` guidance | served `specs`/`ise` render | covered (drift protection) |
 | 18 | `ise` off allowance | `{{else}}` render | covered |
 
-Gaps, by bucket:
+Gaps, by bucket, as of 2026-11-14:
 
-- **Bucket 2 (missing test coverage):** target-specific Cargo dependency tables
-  (B1), the import-reader syntax branches `from ... import`, quoted
-  `require`/`import`, `self`/`super`, and the escape-above-root guard (F1), and
-  the empty `e2e: []` refusal guard (F2). The first is also a missing behavior;
-  the last three function correctly in manual probes but have no committed
-  test.
+- **Bucket 2 (missing test coverage):** none open. B1's target-table and
+  anchor rules, F1's import branches, and F2's empty-role guard now have
+  committed tests (see "Findings and closures"). The `cargo test --locked
+  --lib e2e_boundary` run is 30 passed, 0 failed.
 - **Bucket 1 (dead code):** none found; clippy with `-D warnings` is clean and
   the resolver surface is consumed by lint, check, and proof.
-- **Bucket 3 (legitimately hard to test):** no bucket-3 claim is used for the
-  gaps above. The SCM error branches of `identity()` are fail-closed through
-  `?` and are exercised by the existing SCM failure tests, not counted as gaps.
+- **Bucket 3 (legitimately hard to test):** no bucket-3 claim is used. The SCM
+  error branches of `identity()` are fail-closed through `?` and are exercised
+  by the existing SCM failure tests, not counted as gaps.
+
 
 ## Visual review
 
@@ -341,130 +338,129 @@ No delta scenario exceeds the length limit; `givn lint --change` reports 0
 
 None. No mandatory check is deferred and no operator decision is recorded.
 
-## Findings
+## Findings and closures
 
-### B1 (blocker): a target-specific Cargo dependency edge into `source` is accepted
+Each finding below was opened in the first review pass (`REVIEW: FAIL` at
+`8dbb80ab`) and re-audited against HEAD `9b86ebe5` on 2026-11-14. Behavioral
+closures were probed with fresh `/tmp` fixtures against the current binary;
+the code closures were read at the cited lines.
 
-`src/e2e_boundary/manifest.rs:76` reads only the top-level `dependencies`,
-`dev-dependencies`, and `build-dependencies` tables. Cargo also links through
-`[target.'cfg(...)'.dependencies]` (and the dev/build variants); the resolver
-ignores those tables, so a resolved `e2e` package that links production source
-on a platform passes the blocking boundary.
+### B1 (closed 2026-11-14, `a072aa99`): target-specific Cargo dependency edges
 
-Reproduction (fixture in `/tmp/ise-exp/b`, the same shape as
-`e2e_boundary_support::ise_change_ready_for_verification`, with
+Original finding: the resolver read only the three top-level tables, so a
+direct `[target.'cfg(unix)'.dependencies]` path edge into `source` was
+accepted.
+
+Closure: `manifest::dependency_tables` (`manifest.rs:128-145`) reads the three
+top-level tables and every `[target.<cfg>.*]` variant. `source_root_reached_by`
+(`mod.rs:292-315`) refuses a target that is a `source:` root, lies inside the
+root's literal anchor (`Glob::anchor`), or contains a path the pattern names.
+`docs/reference.md:146-160` states both rules. Unit tests:
+`a_target_specific_dependency_table_is_read`,
+`a_target_specific_dependency_into_source_is_refused`,
+`a_glob_shaped_source_root_reaches_the_directory_it_anchors_in`,
+`a_dependency_that_contains_a_source_root_is_refused`,
+`a_dependency_outside_every_source_root_is_admitted`,
+`the_anchor_is_the_literal_directory_a_pattern_starts_in`; the refusal Outline
+gained the `target-specific` row.
+
+Independent probe against the current binary (fresh fixture:
+`tests/e2e/Cargo.toml` with
+`[target.'cfg(unix)'.dependencies] product = { path = "../../src" }`,
 `source: ["src/**"]`):
 
 ```text
-tests/e2e/Cargo.toml:
-  [target.'cfg(unix)'.dependencies]
-  product = { path = "../../src" }
-
 $ givn check tasks --change ise-boundary
-  ✓ change verification receipt: 1 scenario(s), 0 failed, 0 skipped at e7ab4e09...
-  ✓ E2E verification: not_applicable
-  ✓ verify passed
-  EXIT=0
-```
-
-The control with the same edge under top-level `[dependencies]` is refused:
-
-```text
 error: the declared e2e boundary cannot be accepted:
   - tests/e2e: e2e package 'e2e-tests' has a dependency edge into source (root 'src/**') through package 'product'
-  EXIT=1
+EXIT=1
 ```
 
-Variant: with `source: ["src/**/*.rs"]` the direct edge into the `src` package
-is also accepted (exit 0), because the edge check compares the package
-directory against the glob, not the package tree. The proposal says the check
-refuses when a package "reaches a `source` root through a direct, transitive,
-or workspace-inherited dependency edge"
-(`proposal.md`, Proposed Solution); `docs/reference.md:146-160` says the same
-without a table qualification; `specs/verify-change/usecase.md:116` states the
-rule. Neither R-138 nor R-139 discloses this input. Fix: read the
-`target.<cfg>.` tables (and the tree-vs-directory source match), add a delta
-example row for a target-specific edge, or record the limit with an operator
-decision. The release-note claim "links production source" is false until then.
+The top-level control is refused identically. The glob-shaped source variant
+(`source: ["src/**/*.rs"]`, top-level path edge) is also refused, now with
+`root 'src/**/*.rs'`. Closed.
 
-### B2 (blocker): the boundary preflight is skipped for a no-behavior-change change
+### B2 (closed 2026-11-14, `3b2c293d`): no-behavior-change bypass
 
-`design.md:399-403` states that the boundary preflight runs before the
-no-behavior-change return, "so an `ise`-effective change always needs a
-readable declaration and a non-empty resolved set". The implementation returns
-first: `src/cli/check.rs:459-469` evaluates
-`change_verification_not_applicable` and returns at `:461` before
-`preflight_e2e_boundary` at `:469`. `check_change_receipt` (`check.rs:696-707`)
-has the same early return, so review accepts the change too.
+Original finding: `run_change_verification` returned on
+`change_verification_not_applicable` before the boundary preflight, and
+`check_change_receipt` did the same, so an `ise`-effective change could skip
+the boundary by declaring no behavior change.
 
-Reproduction (fixture `/tmp/ise-exp/a`: an `ise: true` change lock, a proposal
-with `Behavior change: none`, `.givn-skip` containing `specs`, and no
-`givn/specification.yaml` at all):
+Closure: `check.rs:459-460` now calls `preflight_e2e_boundary` before
+`change_verification_not_applicable`; the not-applicable branch of
+`check_change_receipt` (`check.rs:700-703`) calls the preflight because it
+writes no receipt to age. A delta scenario drives both commands.
+
+Independent probe (fresh fixture: `ise: true` lock, `Behavior change: none`,
+`.givn-skip` with `specs`, no `givn/specification.yaml`):
 
 ```text
 $ givn check tasks --change ise-none
-  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)
-  ✓ verify passed
-  EXIT=0
+error: the declared e2e boundary cannot be resolved: 'givn/specification.yaml' is absent
+EXIT=1
+
+$ givn check review --change ise-none
+error: review checks failed:
+  the declared e2e boundary cannot be resolved: 'givn/specification.yaml' is absent
+EXIT=1
 ```
 
-By the design, this tree must be refused because the declaration is absent and
-the resolved set is empty. Any `ise`-effective change can therefore skip the
-new acceptance boundary by declaring no behavior change, and no delta scenario
-covers the combination. Fix: move the preflight before the not-applicable
-return (capturing the boundary when the change is otherwise not applicable),
-or amend `design.md`, `proposal.md`, the use-case rule, and
-`docs/reference.md` to state the exemption and re-run design-review; add a
-scenario for the ise-effective no-behavior change either way.
+The design-review task's recorded revert RED (`expected failure, got exit
+Some(0)`) matches the code path. Closed.
 
-### F0 (task record): 7 Closeout boxes unchecked
+### F0 (closed 2026-11-14, `7788a061` and `384f0e61`): Closeout records
 
-Recorded in "Tasks preflight". The author must run and record the whole-change
-verification, `givn check tasks`, and `givn check review`, and tick the boxes,
-before archive.
+Original finding: 7 Closeout boxes were unchecked and the commands were not
+recorded. The current `givn status` reports 88/89; the only unchecked box is
+this review. `tasks.md` `## Closeout` records fmt (exit 0), clippy (exit 0),
+nextest (1622 passed), the permanent non-e2e scope (963 passed, 111 skipped),
+the permanent e2e scope (111 passed), the delta scopes (31 passed and 0
+end-to-end), lint (clean), and `givn check tasks` (31 scenarios at
+`32256f5f`). The receipt carries that run (`head: 32256f5f`, 31 passed, 0
+failed, 0 skipped). Closed.
 
-### F1 (bucket 2): untested import-reader branches
+### F1 (closed 2026-11-14, `a072aa99`): import-reader branches
 
-`src/e2e_boundary/imports.rs` recognizes five reference forms. The delta
-scenario and the four module tests cover `mod` and `use`; these branches have
-no committed test: `from ... import` (`imports.rs:62-68`), quoted
-`require`/`import` (`:70-74`), `self`/`super` (`:141-155`), and the
-escape-above-root guard (`manifest.rs:176-186`). Manual probes refuse the first
-three:
+Original finding: the `from ... import`, quoted `require`/`import`,
+`self`/`super`, and escape-above-root branches had no committed test.
+
+Closure: `imports.rs` tests
+`a_python_from_import_names_its_module_and_is_refused`,
+`a_quoted_require_or_import_path_is_refused`,
+`a_self_import_resolves_from_the_file_directory`,
+`a_super_import_walks_up_from_the_file_directory`, and
+`an_attributed_module_declaration_is_admitted` (the admitted `#[path]` form,
+recorded as the R-139 limit). `manifest.rs`
+`a_path_dependency_may_not_escape_the_project_root` covers the shared escape
+guard. `cargo test --locked --lib e2e_boundary` is 30 passed, 0 failed. Closed.
+
+### F2 (closed 2026-11-14, `3b2c293d`): empty-role refusal test
+
+Original finding: the `e2e: []` guard had no test. Closure: the first refusal
+Outline gained the `lists no path` row (`e2e: []`), and the Then asserts the
+empty-resolution sentence. Independent probe with `e2e: []`:
 
 ```text
-from src.helpers import helper          -> error: ... imports the source path 'src' (root 'src/**')
-const x = require("../../src/helpers")  -> error: ... imports the source path 'src/helpers'
-import { helper } from "../../src/..."  -> error: ... imports the source path 'src/helpers'
+$ givn check tasks --change ise-boundary
+error: the declared e2e boundary cannot be accepted: the 'e2e' role lists no path; the change check requires a resolved E2E package
+EXIT=1
 ```
 
-Add unit tests for the three syntax forms and the admitted `#[path = ...] mod`
-form (`imports.rs` already has a test module; the admitted case is the R-139
-limit probe I ran: `#[path] mod helpers` is admitted).
+Closed.
 
-### F2 (bucket 2): the empty-role refusal guard has no test
+### F3 (closed 2026-11-14; restore `0415ffa3`, delta step `3b2c293d`): shared step strictness
 
-`src/cli/check.rs:670-675` refuses an `ise`-effective change whose declaration
-has `e2e: []` with `the 'e2e' role lists no path; the change check requires a
-resolved E2E package`. Probe: it refuses (exit 1) with that exact text. No
-committed scenario or unit test exercises the empty role list (the delta's
-`matches no path` row uses a non-empty entry that matches nothing). Add a row
-or a unit test.
+Original finding: the shared `stderr names "..."` step had been loosened from
+a contiguous substring to words in order on one line, weakening 25 permanent
+assertions.
 
-### F3 (non-blocking, route to the next change): a shared permanent step was loosened
-
-`tests/steps/archive_proof_steps.rs:742` changed the shared
-`stderr names "..."` step from `stderr.contains(needle)` to "the needle's words
-appear in order on one line, case-insensitively". 25 permanent assertions use
-that step. The loosening lets a message with an inserted or separated word
-satisfy a needle (for example a negated sentence), and it was introduced to
-serve the delta's `E2E package digest changed` reason, whose actual line
-inserts the package path. The permanent readings I sampled still pass and
-their needles are mostly single paths, so this is not a functional blocker,
-but a permanent assertion was weakened without a design decision. Recommended:
-restore contiguous matching in the shared step and bind a delta-specific step
-for the identity reason, or narrow the matcher to allow only the package-name
-insertion.
+Closure: the shared body at `tests/steps/archive_proof_steps.rs:742` is again
+exactly `assert!(stderr.contains(&needle), ...)`. The delta binds its own
+`stderr reports the stale reason "..."` step at
+`tests/steps/workflow_enforcement_steps.rs:4089`, and the two stale Outlines
+use it (delta feature lines 123 and 140). I read both bodies, so the
+restoration is strict by construction, not by the reported count. Closed.
 
 ### Minor observations (no action requested)
 
@@ -472,8 +468,8 @@ insertion.
   failure wording from `declares N failed scenario(s)` to `reports N failed
   test(s)`. This alters the archive refusal text, is not named in `design.md`
   or `docs/reference.md`, and no permanent test pins the old wording. The
-  delta's count assertions need the new wording. Record it in the next design
-  revision or the reference.
+  delta's count assertions need the new wording. This is a documentation nit
+  routed to the next change; no behavior claim in this change depends on it.
 - `ScopeOutcome::not_applicable()` serializes the zero count fields
   (`total`, `passed`, `failed`, `skipped`, `seconds`) as well as `status`
   (`proof.rs:408-413`, `:381-394`). The tasks' wording `{ "status":
@@ -490,48 +486,47 @@ insertion.
 
 ## Verification
 
-`givn check review --change enforce-ise-e2e-boundary` ran before and after the
-review commit. It passes the lint, overlap-disposition, capability-ownership,
-scenario-commit, and change-receipt checks; the integrity hook fails only on
-the recorded verdict, as the blockers require. Before the commit the receipt
-line reads `change verification receipt passed (28 scenario(s) at
-2d7b1362...)`; after it, the receipt is reused across the documentation-only
-review revision:
+`givn check review --change enforce-ise-e2e-boundary` ran against this
+revision before the review commit and exits 0. The receipt is the closed
+candidate at `32256f5f` (31 scenarios), reused across the documentation-only
+review revision. Review-relevant output:
 
 ```text
-  ✓ scenario commits passed (18 scenario(s))
-  ✓ change verification receipt reused across documentation-only revision ... (tested at 2d7b1362..., 28 scenario(s))
-  ✓ scenario commits passed (18 scenario(s))
-error: review checks failed:
-  integrity checks failed:
-  review.md actual verdict is FAIL
+givn lint: 2 file(s) checked — clean
+net delta: 17 added, 2 modified, 0 removed
+  ✓ overlap dispositions passed
+  ✓ scenario commits passed (19 scenario(s))
+  ✓ change verification receipt reused across documentation-only revision ... (tested at 32256f5f..., 31 scenario(s))
+  ✓ scenario commits passed (19 scenario(s))
 ```
 
-Exit code 1. All other review checks pass; no fabrication-audit, component,
-contract, strict-mode, coverage-classification, overlap, split, persona,
-visual, or README check failed.
+Exit code 0. Every review check passes: lint, overlap dispositions,
+capability ownership, scenario commits, receipt freshness, integrity (including
+the verdict, README impact, persona disposition, and visual markers), and the
+change-scoped lock check.
 
-Delta scope: 28 scenarios (28 passed), 149 steps (149 passed). Permanent
+Delta scope: 31 scenarios (31 passed), 166 steps (166 passed). Permanent
 `check-specification-health`: 57 scenarios (57 passed), 345 steps (345
-passed). Clippy clean. Run gate: `cargo run -- instructions` exit 0.
+passed). `cargo test --locked --lib e2e_boundary`: 30 passed. Clippy clean.
+Run gate: `cargo run -- instructions` exit 0.
 
 ## Sign-off checklist
 
 - Fabrication audit: clean for the steps' production dependency; 0 empty step
   bodies; the served-policy scenarios are disclosed drift protection.
 - Every checked task has a verified commit touching production code (the review
-  gate reports 18 scenarios with revisions).
+  gate reports 19 scenarios with revisions).
 - Every promised component exists: `E2eBoundary`, `ChangeReceipt`, the check
   integration, the lock helper, and the lint consumer.
 - Every consumer uses only its declared contract; the dependency is one-way.
 - Strict-mode proof present and passing.
-- Scenario execution evidence: the change receipt records 28 change-scope
+- Scenario execution evidence: the change receipt records 31 change-scope
   scenarios; the E2E scope is `not_applicable` because the delta has no `@e2e`
   scenario. The archive receipt will carry the measured coverage.
 - Coverage classification uses inspection (no measured report yet); every gap
-  is in bucket 1, 2, or 3.
-- Dead code deleted (none found); missing tests recorded (F1, F2); no
-  hard-to-test bucket-3 claim used for the gaps.
+  is in bucket 1, 2, or 3 and none is open.
+- Dead code deleted (none found); the missing tests are added (B1, F1, F2); no
+  hard-to-test bucket-3 claim is used.
 - No redundant unit test was added for behavior already covered by a scenario.
 - No `@wip` tags remain in the delta and no implementation-layer detail is in
   the spec.
@@ -543,34 +538,18 @@ passed). Clippy clean. Run gate: `cargo run -- instructions` exit 0.
   implementation exists.
 - The E2E scope is selected explicitly; the receipt records the regular scope
   and the delta-aware E2E outcome.
-- Implementation matches design except B2 (order) and the target-table gap B1;
-  both are recorded as blockers, not silently kept.
+- Implementation matches design: the boundary resolves before the
+  no-behavior-change result (`3b2c293d`), the dependency read covers every
+  table and the source-root comparison covers the tree (`a072aa99`), and the
+  shared step is strict again (`0415ffa3`).
 - Interaction coverage verified: 22 inventory entries, 22 matrix rows, 22
   permanent `@e2e` titles.
 - No finding is excused with an invented fourth bucket.
 
-Two blockers (B1, B2) and three required coverage/test records (F0 to F2)
-remain. The verdict is FAIL until they are resolved and this review is
-re-run.
+Every finding from the first review pass is closed and verified above. The two
+new behavioral probes (B1 target table, B2 bypass) are refused by the current
+binary, the closeout evidence is recorded, and the one remaining minor
+observation (O1, the archive failure wording) is a documentation nit routed to
+the next change. The verdict is PASS.
 
-## Finding closure
-
-Each finding's fix, its test, and the revision that carries it. The verdict
-line is the reviewer's and is unchanged by this section.
-
-| Finding | Fix | Test | Commit |
-|---|---|---|---|
-| B1 | `manifest::dependency_tables` reads the three top-level tables and every `[target.<cfg>.*]` table; `E2eBoundary::resolve` compares a dependency target through `source_root_reached_by`, which refuses a directory that is a `source:` root, lies inside the root's literal anchor (`Glob::anchor`), or contains a path the pattern names. `docs/reference.md` states both rules. | `a_target_specific_dependency_table_is_read`, `a_target_specific_dependency_into_source_is_refused`, `a_glob_shaped_source_root_reaches_the_directory_it_anchors_in`, `a_dependency_that_contains_a_source_root_is_refused`, `a_dependency_outside_every_source_root_is_admitted`, `the_anchor_is_the_literal_directory_a_pattern_starts_in`; delta Examples row `target-specific` in `An ise-effective change whose e2e package reaches a source package fails the tasks check`. Reverting both production reads fails the four resolver tests (30 -> 26 passed) and the row's fixture is refused only with the target-table read. | `a072aa990667e86a1af8b9932e486afffc083c7c`; row and doc sentence in `3b2c293d81b97048488ceeb71d12c702f2dd01df` |
-| B2 | `run_change_verification` calls `preflight_e2e_boundary` before `change_verification_not_applicable`; the not-applicable branch of `check_change_receipt` calls it too, because that branch writes no receipt to age. | Delta scenario `An ise-effective change with no behavior change still needs a readable e2e declaration`, driving both `givn check tasks` and `givn check review`. Reverting the order fails the first Then with `expected failure, got exit Some(0)` and the not-applicable line. | `3b2c293d81b97048488ceeb71d12c702f2dd01df` |
-| F0 | Every Closeout command run and recorded with its output in `tasks.md`; the receipt is refreshed after the code fixes. | The recorded runs in `tasks.md` `## Closeout`. | evidence recorded at `7788a0610ef29ffa5709dcaa7750222f63ba25f7`; closeout runs and the refreshed receipt at `384f0e617e3c55bd19eef155c6e8d714a24b0f54` |
-| F1 | No production change: the reader already handled the branches. | `a_python_from_import_names_its_module_and_is_refused`, `a_quoted_require_or_import_path_is_refused`, `a_self_import_resolves_from_the_file_directory`, `a_super_import_walks_up_from_the_file_directory`, `an_attributed_module_declaration_is_admitted` (the admitted `#[path]` limit, R-139), and `a_path_dependency_may_not_escape_the_project_root` for the escape guard. | `a072aa990667e86a1af8b9932e486afffc083c7c` |
-| F2 | The first refusal Outline gained the `lists no path` row; the Then asserts the empty-resolution sentence when the declaration has no entry. | `An ise-effective change whose declared e2e role resolves no readable package fails the tasks check`, row `lists no path` (`e2e: []`), asserting `the 'e2e' role lists no path`. | `3b2c293d81b97048488ceeb71d12c702f2dd01df` |
-| F3 | `stderr names "..."` is a contiguous substring check again; the delta binds its own `stderr reports the stale reason "..."` step and the two Outlines use it. | The permanent `archive-change` features: 6 features, 111 scenarios (111 passed), 767 steps (767 passed). | restore `0415ffa3af450013eb8eb0b1b4968ef3d18ce0f2`; delta step and phrase `3b2c293d81b97048488ceeb71d12c702f2dd01df` |
-| O1 (minor, from the review's observations) | Not actioned, as the review requested no action. The delta's two count scenarios pin `reports N failed test(s)` / `reports N skipped test(s)`; `docs/reference.md` still does not name that wording, so it stays an open documentation nit for the next change. | The two count scenarios | n/a |
-| O2, O3, O4 (minor, from the review's observations) | Not actioned: no behavior claim in the reviewed reports depends on the unsorted `content_paths` order, the `not_applicable` payload shape, or the `names_root` token rule. | n/a | n/a |
-
-The fixes were verified in this order: unit tests, the single delta scenarios,
-the whole delta scope (31 scenarios, 31 passed, 166 steps), the permanent
-`archive-change` run, then the Closeout suite recorded in `tasks.md`.
-
-REVIEW: FAIL
+REVIEW: PASS
