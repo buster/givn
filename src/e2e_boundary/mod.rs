@@ -205,9 +205,7 @@ impl E2eBoundary {
                     if !visited.insert(target.clone()) {
                         continue;
                     }
-                    let Some((pattern, _)) =
-                        source_roots.iter().find(|(_, glob)| glob.matches(target))
-                    else {
+                    let Some(pattern) = source_root_reached_by(target, &source_roots, tree) else {
                         queue.push_back((target.clone(), distance + 1));
                         continue;
                     };
@@ -223,7 +221,7 @@ impl E2eBoundary {
                         start,
                         &package.label(start),
                         &packages[target].label(target),
-                        pattern,
+                        &pattern,
                         edge,
                     ));
                 }
@@ -289,6 +287,31 @@ impl E2eBoundary {
         }
         conditions
     }
+}
+
+/// The `source` root a dependency target reaches. An edge is compared by
+/// directory, not by the pattern's own match: a target is refused when it is
+/// the root, lies inside the root's literal directory, or contains a path the
+/// pattern names. `src/**/*.rs` therefore reaches `src` although the glob
+/// matches no directory named `src`.
+fn source_root_reached_by(
+    directory: &str,
+    source_roots: &[(String, Glob)],
+    tree: &[ProjectPath],
+) -> Option<String> {
+    source_roots
+        .iter()
+        .find(|(_, glob)| {
+            let anchor = glob.anchor();
+            glob.matches(directory)
+                || (!anchor.is_empty() && is_under(directory, &anchor))
+                || tree.iter().any(|entry| {
+                    entry.path != directory
+                        && is_under(&entry.path, directory)
+                        && glob.matches(&entry.path)
+                })
+        })
+        .map(|(pattern, _)| pattern.clone())
 }
 
 /// Whether `candidate` is `root` or lies below it. The project root is `""`.
@@ -378,5 +401,130 @@ mod tests {
             conditions: Vec::new(),
         };
         assert!(boundary.conditions("./run-tests.sh tests/e2e/").is_empty());
+    }
+
+    fn write(root: &std::path::Path, relative: &str, content: &str) {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().expect("a parent directory")).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+
+    fn declaration(root: &std::path::Path, e2e: &str, source: &str) -> SpecificationDeclaration {
+        write(
+            root,
+            "givn/specification.yaml",
+            &format!(
+                "behavior: []\nstructure: []\ncontracts: []\nlimits: []\ne2e: [{e2e}]\nsource: [{source}]\n"
+            ),
+        );
+        SpecificationDeclaration::load(root)
+            .expect("a readable declaration")
+            .expect("a declaration")
+    }
+
+    fn dependency_conditions(boundary: &E2eBoundary) -> Vec<&BoundaryCondition> {
+        boundary
+            .conditions
+            .iter()
+            .filter(|condition| condition.kind == BoundaryConditionKind::DependencyEdge)
+            .collect()
+    }
+
+    #[test]
+    fn a_target_specific_dependency_into_source_is_refused() {
+        let root = tempfile::tempdir().unwrap();
+        let root = root.path();
+        let declaration = declaration(root, "\"tests/e2e\"", "\"src/**\"");
+        write(
+            root,
+            "tests/e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [target.'cfg(unix)'.dependencies]\nproduct = { path = \"../../src\" }\n",
+        );
+        write(
+            root,
+            "src/Cargo.toml",
+            "[package]\nname = \"product\"\nversion = \"0.1.0\"\n",
+        );
+
+        let boundary = E2eBoundary::resolve(root, &declaration);
+        let conditions = dependency_conditions(&boundary);
+        assert_eq!(conditions.len(), 1, "{:?}", boundary.conditions);
+        assert!(conditions[0].message.contains("through package 'product'"));
+        assert!(conditions[0].message.contains("'src/**'"));
+    }
+
+    #[test]
+    fn a_glob_shaped_source_root_reaches_the_directory_it_anchors_in() {
+        let root = tempfile::tempdir().unwrap();
+        let root = root.path();
+        let declaration = declaration(root, "\"tests/e2e\"", "\"src/**/*.rs\"");
+        write(
+            root,
+            "tests/e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [dependencies]\nproduct = { path = \"../../src\" }\n",
+        );
+        write(
+            root,
+            "src/Cargo.toml",
+            "[package]\nname = \"product\"\nversion = \"0.1.0\"\n",
+        );
+        write(root, "src/lib.rs", "pub fn helper() {}\n");
+
+        let boundary = E2eBoundary::resolve(root, &declaration);
+        let conditions = dependency_conditions(&boundary);
+        assert_eq!(conditions.len(), 1, "{:?}", boundary.conditions);
+        assert!(conditions[0].message.contains("'src/**/*.rs'"));
+    }
+
+    #[test]
+    fn a_dependency_that_contains_a_source_root_is_refused() {
+        let root = tempfile::tempdir().unwrap();
+        let root = root.path();
+        let declaration = declaration(root, "\"tests/e2e\"", "\"src/**\"");
+        write(
+            root,
+            "Cargo.toml",
+            "[package]\nname = \"app\"\nversion = \"0.1.0\"\n",
+        );
+        write(
+            root,
+            "tests/e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [dependencies]\napp = { path = \"../..\" }\n",
+        );
+        write(root, "src/lib.rs", "pub fn helper() {}\n");
+
+        let boundary = E2eBoundary::resolve(root, &declaration);
+        let conditions = dependency_conditions(&boundary);
+        assert_eq!(conditions.len(), 1, "{:?}", boundary.conditions);
+        assert!(conditions[0].message.contains("through package 'app'"));
+    }
+
+    #[test]
+    fn a_dependency_outside_every_source_root_is_admitted() {
+        let root = tempfile::tempdir().unwrap();
+        let root = root.path();
+        let declaration = declaration(root, "\"tests/e2e\"", "\"src/**/*.rs\"");
+        write(
+            root,
+            "tests/e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [dependencies]\nhelper = { path = \"../helper\" }\n",
+        );
+        write(
+            root,
+            "tests/helper/Cargo.toml",
+            "[package]\nname = \"helper\"\nversion = \"0.1.0\"\n",
+        );
+        write(root, "src/lib.rs", "pub fn helper() {}\n");
+
+        let boundary = E2eBoundary::resolve(root, &declaration);
+        assert!(
+            dependency_conditions(&boundary).is_empty(),
+            "{:?}",
+            boundary.conditions
+        );
     }
 }

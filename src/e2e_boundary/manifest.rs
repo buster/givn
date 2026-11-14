@@ -73,10 +73,7 @@ impl CargoPackage {
             return Ok(None);
         }
         let mut dependencies = Vec::new();
-        for table in ["dependencies", "dev-dependencies", "build-dependencies"] {
-            let Some(entries) = document.get(table).and_then(toml::Value::as_table) else {
-                continue;
-            };
+        for entries in dependency_tables(&document) {
             for (dependency, entry) in entries {
                 let Some(entry) = entry.as_table() else {
                     continue;
@@ -123,6 +120,29 @@ impl CargoPackage {
             }
         })
     }
+}
+
+/// Every dependency table a manifest can declare: the three top-level tables
+/// and each target-specific variant. Cargo links a path dependency declared
+/// under any of them, so the boundary reads them all.
+fn dependency_tables(document: &toml::Value) -> Vec<&toml::map::Map<String, toml::Value>> {
+    const NAMES: [&str; 3] = ["dependencies", "dev-dependencies", "build-dependencies"];
+    let mut tables = Vec::new();
+    for name in NAMES {
+        if let Some(table) = document.get(name).and_then(toml::Value::as_table) {
+            tables.push(table);
+        }
+    }
+    if let Some(targets) = document.get("target").and_then(toml::Value::as_table) {
+        for target in targets.values() {
+            for name in NAMES {
+                if let Some(table) = target.get(name).and_then(toml::Value::as_table) {
+                    tables.push(table);
+                }
+            }
+        }
+    }
+    tables
 }
 
 /// Resolve `path` (relative to the package at `base`) to a project-relative
@@ -259,6 +279,45 @@ mod tests {
         let edges = dependency_edges(&packages);
         assert_eq!(edges["e2e"], vec!["crates/app".to_string()]);
         assert!(edges["crates/app"].is_empty());
+    }
+
+    #[test]
+    fn a_target_specific_dependency_table_is_read() {
+        let root = tempfile::tempdir().unwrap();
+        write(
+            root.path(),
+            "src/Cargo.toml",
+            "[package]\nname = \"product\"\nversion = \"0.1.0\"\n",
+        );
+        write(
+            root.path(),
+            "tests/e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [target.'cfg(unix)'.dependencies]\nproduct = { path = \"../../src\" }\n\n\
+             [target.'cfg(windows)'.build-dependencies]\nhelper = { path = \"../helper\" }\n",
+        );
+        write(
+            root.path(),
+            "tests/helper/Cargo.toml",
+            "[package]\nname = \"helper\"\nversion = \"0.1.0\"\n",
+        );
+
+        let packages = packages(root.path(), &["src", "tests/e2e", "tests/helper"]);
+        let edges = dependency_edges(&packages);
+        assert_eq!(
+            edges["tests/e2e"],
+            vec!["src".to_string(), "tests/helper".to_string()]
+        );
+    }
+
+    #[test]
+    fn a_path_dependency_may_not_escape_the_project_root() {
+        assert_eq!(normalize_relative("tests/e2e", "../../../src"), None);
+        assert_eq!(
+            normalize_relative("tests/e2e", "../fixtures"),
+            Some("tests/fixtures".to_string())
+        );
+        assert_eq!(normalize_relative("", "../src"), None);
     }
 
     #[test]

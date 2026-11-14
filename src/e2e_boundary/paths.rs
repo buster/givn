@@ -100,6 +100,18 @@ impl Glob {
         self.matches_segments(0, path)
     }
 
+    /// The longest leading run of literal segments: the directory the pattern
+    /// is anchored in. `src/**/*.rs` anchors at `src`; a pattern whose first
+    /// segment already carries a wildcard anchors at the project root.
+    pub(crate) fn anchor(&self) -> String {
+        self.segments
+            .iter()
+            .take_while(|segment| !segment.contains(['*', '?']))
+            .cloned()
+            .collect::<Vec<String>>()
+            .join("/")
+    }
+
     fn matches_segments(&self, pattern_index: usize, rest: &str) -> bool {
         let Some(segment) = self.segments.get(pattern_index) else {
             return rest.is_empty();
@@ -192,5 +204,14 @@ mod tests {
     fn an_empty_pattern_matches_the_project_root_only() {
         assert!(Glob::compile(".").matches(""));
         assert!(!Glob::compile(".").matches("src"));
+    }
+
+    #[test]
+    fn the_anchor_is_the_literal_directory_a_pattern_starts_in() {
+        assert_eq!(Glob::compile("src/**/*.rs").anchor(), "src");
+        assert_eq!(Glob::compile("src").anchor(), "src");
+        assert_eq!(Glob::compile("tests/*/src").anchor(), "tests");
+        assert_eq!(Glob::compile("**/*.rs").anchor(), "");
+        assert_eq!(Glob::compile("?.rs").anchor(), "");
     }
 }

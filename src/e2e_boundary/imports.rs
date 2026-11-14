@@ -232,4 +232,69 @@ mod tests {
         );
         assert!(references("pub use givn::proof;").contains(&"givn::proof".to_string()));
     }
+
+    #[test]
+    fn a_python_from_import_names_its_module_and_is_refused() {
+        let entries = tree(&[("tests/e2e", true), ("src", true), ("src/helpers", true)]);
+        assert_eq!(
+            references("from src.helpers import helper"),
+            vec!["src.helpers"]
+        );
+        assert_eq!(
+            target_of("src.helpers", "tests/e2e/steps.rs", &entries, &roots()),
+            Some(("src/helpers".to_string(), "src/**".to_string()))
+        );
+    }
+
+    #[test]
+    fn a_quoted_require_or_import_path_is_refused() {
+        let entries = tree(&[("tests/e2e", true), ("src", true), ("src/helpers", true)]);
+        for line in [
+            "const helper = require(\"../../src/helpers\");",
+            "import { helper } from \"../../src/helpers\";",
+        ] {
+            let found = references(line);
+            assert_eq!(found, vec!["../../src/helpers"], "{line}");
+            assert_eq!(
+                target_of(&found[0], "tests/e2e/steps.rs", &entries, &roots()),
+                Some(("src/helpers".to_string(), "src/**".to_string())),
+                "{line}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_self_import_resolves_from_the_file_directory() {
+        let entries = tree(&[("src", true), ("src/lib.rs", false), ("src/helpers", true)]);
+        assert_eq!(references("use self::helpers;"), vec!["self::helpers"]);
+        assert_eq!(
+            target_of("self::helpers", "src/lib.rs", &entries, &roots()),
+            Some(("src/helpers".to_string(), "src/**".to_string()))
+        );
+    }
+
+    #[test]
+    fn a_super_import_walks_up_from_the_file_directory() {
+        let entries = tree(&[("tests/e2e", true), ("src", true), ("src/helpers", true)]);
+        assert_eq!(
+            references("use super::super::src::helpers;"),
+            vec!["super::super::src::helpers"]
+        );
+        assert_eq!(
+            target_of(
+                "super::super::src::helpers",
+                "tests/e2e/steps.rs",
+                &entries,
+                &roots()
+            ),
+            Some(("src/helpers".to_string(), "src/**".to_string()))
+        );
+    }
+
+    #[test]
+    fn an_attributed_module_declaration_is_admitted() {
+        // R-139: the reader does not read `#[path = ...]`, and the attribute
+        // hides the `mod` keyword, so this form names no project path.
+        assert!(references("#[path = \"../../src/helpers.rs\"] mod helpers;").is_empty());
+    }
 }

@@ -146,9 +146,13 @@ turns the same declared `e2e` role into a blocking acceptance boundary. The role
 resolves to its packages: each matched path's nearest `Cargo.toml` at or above it,
 or the path itself when it resolves none. Every distinct package directory is
 one resolved package and is checked on its own manifest, including direct, transitive, and
-workspace-inherited edges. The check refuses, names the condition, and writes no
-receipt when the role matches no path, when a resolved package's manifest cannot be
-read, when a resolved `e2e` path sits under a `source:` root, when a resolved
+workspace-inherited edges. The manifest read covers the top-level, dev, build, and
+every target-specific dependency table; an edge is refused when its package
+directory is a `source:` root, lies inside one, or contains a path that root
+names, so a glob such as `src/**/*.rs` reaches the package at `src`. The check
+refuses, names the condition, and writes no receipt when the role matches no
+path, when a resolved package's manifest cannot be read, when a resolved `e2e`
+path sits under a `source:` root, when a resolved
 package's tree contains a `source:` root, when a package has a dependency edge into
 `source`, when a path that resolves no package contains a reference resolving into
 a `source:` root, or when `verify.e2e_command` does not name every resolved
