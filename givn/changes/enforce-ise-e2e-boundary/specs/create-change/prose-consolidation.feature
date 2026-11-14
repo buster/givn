@@ -2,7 +2,7 @@
 
 Feature: prose-consolidation
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Canonical policy accepts the library public API as its real interface
     Given a Givn project with ise effective whose product is a library without a service or browser
     When the author reads the canonical E2E guidance
@@ -10,7 +10,7 @@ Feature: prose-consolidation
     And a call that needs production source becomes a component scenario
     And the policy does not require artificial services containers or browser infrastructure
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Canonical policy selects E2E scope explicitly rather than by command shape
     Given regular and E2E verification share one runner command
     When the author reads the canonical verification guidance

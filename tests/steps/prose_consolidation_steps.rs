@@ -508,7 +508,9 @@ fn library_api_calls_may_run_in_process(world: &mut GivnWorld) {
 
 #[then("the policy does not require artificial services containers or browser infrastructure")]
 fn policy_requires_no_artificial_infrastructure(world: &mut GivnWorld) {
-    let content = loaded_guidance(world);
+    // The sentence opens a sentence in the `ise` branch and continues one in the
+    // `ise`-off branch, so the negation is matched without case.
+    let content = loaded_guidance(world).to_lowercase();
     assert!(
         content
             .contains("do not require artificial services, containers, or browser infrastructure"),
