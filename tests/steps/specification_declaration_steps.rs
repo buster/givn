@@ -137,8 +137,13 @@ fn ise_project_with_scalar_role(world: &mut GivnWorld) {
 #[given("an ise-enabled project selecting opencode whose declaration path is a directory")]
 fn ise_project_with_directory_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
-    std::fs::create_dir(env(world).path(DECLARATION_PATH))
-        .expect("create the directory occupying the declaration path");
+    // Enabling `ise` scaffolds the declaration, so the path is occupied by a
+    // file before the directory replaces it.
+    let path = env(world).path(DECLARATION_PATH);
+    if path.is_file() {
+        std::fs::remove_file(&path).expect("remove the scaffolded declaration");
+    }
+    std::fs::create_dir(&path).expect("create the directory occupying the declaration path");
 }
 
 #[given(
