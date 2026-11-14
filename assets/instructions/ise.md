@@ -18,8 +18,9 @@ off.
   acceptance test the rebuild relies on is declared in
   `givn/specification.yaml` and reachable from the declared paths.
 - **two-layer test boundary** — `@e2e` scenarios run from the declared `e2e`
-  package and survive a rebuild; component scenarios and their step definitions
-  are implementation and may be rewritten inside the component boundary.
+  package and survive a rebuild. Component scenarios stay in the Specification
+  unchanged; only their step definitions and fakes are implementation and may
+  be rewritten inside the component boundary.
 - **persisted-state continuity** — a replacement preserves persisted state and
   public contracts; a required manual migration is a blocked rebuild.
 - **change strategy** — the change records one `change strategy` as a

@@ -141,6 +141,25 @@ entry, and a malformed manifest skips the edge comparison for that package.
 A malformed or absent declaration is a blocking declaration error, not one of
 the four findings.
 
+With the change's `config-lock.yaml` having `ise` effective, `givn check tasks`
+turns the same declared `e2e` role into a blocking acceptance boundary. The role
+resolves to its packages: each matched path's nearest `Cargo.toml` at or above it,
+or the path itself when it resolves none. Every distinct package directory is
+one resolved package and is checked on its own manifest, including direct, transitive, and
+workspace-inherited edges. The check refuses, names the condition, and writes no
+receipt when the role matches no path, when a resolved package's manifest cannot be
+read, when a resolved `e2e` path sits under a `source:` root, when a resolved
+package's tree contains a `source:` root, when a package has a dependency edge into
+`source`, when a path that resolves no package contains a reference resolving into
+a `source:` root, or when `verify.e2e_command` does not name every resolved
+`e2e` root. The runner-target rule is textual: the command must contain each
+resolved root's directory as a whole token or a token containing
+`<directory>/`. It proves naming, not execution, and a run that reported another
+scope is refused by the result's scope field. The import fallback reads
+path-resolving references only: an external package name, or a language whose
+import syntax the reader does not recognize, is admitted. A change with `ise`
+off reads no declaration and gains no boundary refusal.
+
 ## Configuration authority
 
 `givn/config.yaml` owns policy and structure:
@@ -163,7 +182,9 @@ rather than rewritten unsafely.
 - `verify.e2e_command` — the E2E runner. The default comparison value is
   `givn missing-e2e-runner`; an `@e2e` scenario in scope without a configured
   runner blocks review/archive, while a scope with no `@e2e` scenario is
-  `not_applicable`.
+  `not_applicable`. With `ise` effective for a change, the command must also
+  name the declared `e2e` package and is run at `givn check tasks` against the
+  change's delta features.
 - `verify.features_path` — where the runner reads features (default
   `givn/specs`).
 - `coverage.measure_command`, `coverage.merge_command`, `coverage.non_e2e_path`,
@@ -217,9 +238,10 @@ Gherkin/Cucumber runner rather than copying a generic command line. It must:
 
 1. Execute exactly the selected feature path from `GIVN_FEATURES`.
 2. Handle `change`, `regular`, and `e2e` in `GIVN_RESULT_SCOPE`. `change`
-   executes every active delta scenario at `GIVN_FEATURES`, including both
-   `@e2e` and non-E2E scenarios. `regular` and `e2e` use the permanent corpus:
-   regular excludes `@e2e`; E2E selects only `@e2e`.
+   executes the active delta scenarios at `GIVN_FEATURES`, including both
+   `@e2e` and non-E2E scenarios. `regular` and `e2e` use the selected feature
+   path: regular excludes `@e2e`; E2E selects only `@e2e`. Archive passes the
+   permanent corpus; an `ise`-effective change check passes the delta.
 3. Remove and write `GIVN_RESULT_FILE` on every invocation with actual scenario
    totals and outcomes.
 4. Exit non-zero for runner failures, including failed, undefined, pending,
@@ -227,9 +249,12 @@ Gherkin/Cucumber runner rather than copying a generic command line. It must:
 5. Be validated before behavior-batch RED/GREEN work begins. A missing binding,
    dependency, fixture, or result file is bootstrap failure, not assertion RED.
 
-The change runner is `verify.command`, even for a delta that contains `@e2e`
-scenarios. `verify.e2e_command` runs only the archive's permanent E2E scope;
-it is not a replacement for complete delta verification.
+By default the change runner is `verify.command`, even for a delta that
+contains `@e2e` scenarios. When the change's `config-lock.yaml` has `ise`
+effective and the delta contains `@e2e` scenarios, `givn check tasks` also runs
+`verify.e2e_command` against the same delta features with scope `e2e`; a change
+with `ise` off keeps the single change runner. `verify.e2e_command` is not a
+replacement for complete delta verification.
 
 Use the project runner's own framework and scripts. Givn's own
 [`run-tests.sh`](../run-tests.sh) is a tested reference adapter for this
@@ -251,6 +276,17 @@ selected-feature digest, command digest, relevant content digest, and declared
 scope. After the run it recaptures and requires equality; then it writes the
 receipt. Any launch, result, or stability failure leaves no green receipt.
 
+When the change lock has `ise` effective, the check first resolves the declared
+`e2e` role to its packages, then — when the delta contains `@e2e` scenarios — runs
+`verify.e2e_command` with `GIVN_RESULT_SCOPE=e2e` and
+`verification/e2e-result.json`, reads the same fail-closed counts, and requires
+the E2E identity to be unchanged. The receipt then adds `e2e_identity`
+(`package_digests` keyed by each resolved package directory or import-mode path,
+`runner_command_digest`, `givn_version`) and `e2e_scope` (`passed` with counts,
+or `not_applicable` when the delta has no `@e2e` scenario). A change with `ise`
+off writes neither key: both are optional and skipped when absent, so its
+receipt bytes match the pre-existing shape.
+
 A change declaring `Behavior change: none` with the specs artifact skipped and
 no delta feature files reports changed-scenario verification as not applicable.
 It still checks identity and scenario commits and stores applicability without a
@@ -261,12 +297,18 @@ fabricated runner result. Contradictory declarations and a missing skip refuse.
 - the feature and command digests match;
 - the tested-content digest matches (schema 2 with `change-proof/v1`);
 - the tested revision is available (Git ancestry from `HEAD`; Fossil revision
-  existence).
+  existence);
+- when the change lock has `ise` effective, the E2E identity matches: the
+  resolved package digests, the E2E runner command digest, the running
+  Givn version, and an E2E scope that is green when the delta has an `@e2e`
+  scenario and `not_applicable` when it has none.
 
 A documentation/evidence-only revision with equal tested content reuses the
 proof. Schema 1, a receipt without a known content scope, or an unknown schema
-requires strict revision equality or is refused; no reuse is assumed. A failure
-reports every independent stale reason and routes to `givn check tasks`.
+requires strict revision equality or is refused; no reuse is assumed. An
+`ise`-effective change refuses a receipt without the E2E identity by name. A
+failure reports every independent stale reason and routes to `givn check
+tasks`.
 
 ### Archive verification and recovery
 

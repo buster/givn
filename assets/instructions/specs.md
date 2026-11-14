@@ -134,14 +134,29 @@ run via `verify.e2e_command` (configured in `givn/commands.yaml`), not
 **What makes a scenario `@e2e`:**
 - It interacts through the real external boundary: a browser (via Playwright,
   Selenium, etc.), a real CLI invocation, a real HTTP client, a public library
-  API, or a real message producer/consumer — whatever the system exposes. A
-  library consumer's real public API calls may run in process; do not require
+  API, or a real message producer/consumer — whatever the system exposes.
+{{#if addons.ise}}
+  A library consumer's real public API calls may run in process only from the
+  declared `e2e` package, which links no production source; a call that needs
+  production source becomes a component scenario. Do not require artificial
+  services, containers, or browser infrastructure the product does not have.
+{{else}}
+  A library consumer's real public API calls may run in process; do not require
   artificial services, containers, or browser infrastructure the product does
   not have.
+{{/if}}
 - It may require local test infrastructure: a running application server,
   a test database, fake containers (Testcontainers), stub services.
 - It covers the critical happy path: "can a consumer actually do the thing
   through the real interface?"
+
+{{#if addons.ise}}
+**Declared E2E package.** The declared `e2e` role names the package that
+holds the E2E runner and every `@e2e` step definition. The package links no
+production source, and `verify.e2e_command` runs it. An unbound or skipped
+step fails the E2E run. Feature files stay shared: the package boundary, not
+the file, selects what the E2E runner executes.
+{{/if}}
 
 **Primary assertion rule:** each `@e2e` scenario's primary assertion is on what
 the named real interface returned, displayed, acknowledged, or made visible.
@@ -167,6 +182,10 @@ selection such as `GIVN_RESULT_SCOPE` distinguishes the executions. Equal test
 counts or identical command strings do not invalidate honestly isolated scopes,
 and no extra isolation run is required; both required executions still must
 report zero failed or skipped tests.
+{{#if addons.ise}}
+The E2E execution runs the declared `e2e` package, which links no production
+source; a shared runner that links production source is not a valid E2E target.
+{{/if}}
 
 **Justified E2E reclassification.** Moving an existing scenario out of `@e2e` is
 allowed only when it is shown to be a variant rather than a distinct user

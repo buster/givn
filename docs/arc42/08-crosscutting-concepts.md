@@ -657,15 +657,17 @@ may use `allow_failure: true`.
 When an explicit artifact is passed to `givn check`, `src/cli/check.rs` first
 runs mandatory checks:
 
-- `tasks`: change-delta WIP protection and `verify.command`;
+- `tasks`: change-delta WIP protection, the declared E2E package boundary when
+  the change lock has `ise` effective, `verify.command`, the change-scoped E2E
+  scope when the delta has `@e2e` scenarios, and the E2E-bound receipt;
 - `review`: `integrity`, the run-declaration check, change-scoped lint, the
   named-change overlap and retirement gates, the use-case/capability-routing
   gate (which reports every schema and routing diagnostic in one pass, with
   dependent completeness findings withheld while the title or Level is
-  invalid), the shared change verification receipt freshness check, and the
-  scenario-commit check. Review does not execute the test suite; scenario
-  execution is proven by the archive verification receipt. There is no outline
-  review member.
+  invalid), the shared change verification receipt freshness check including
+  the E2E identity, and the scenario-commit check. Review does not execute the
+  test suite; scenario execution is proven by the archive verification
+  receipt. There is no outline review member.
 
 These checks are not controlled by `post` and cannot be disabled by merely
 removing a hook entry. Removing the `tasks` or `review` artifact changes the

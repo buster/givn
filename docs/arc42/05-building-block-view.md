@@ -26,6 +26,7 @@ flowchart TD
     G --> ASSET[embedded assets]
     G --> TEST[repository acceptance tests]
     G --> SPEC[spec inventory, ownership, routing]
+    G --> EB[declared E2E boundary resolver]
     G --> READ[outline analysis and report]
     READ --> PORT[SourceAnalyzer port and neutral model]
     PORT --> SYN[syn adapter]
@@ -33,6 +34,9 @@ flowchart TD
     CLI --> CHECK[mandatory check and archive gates]
     CLI --> RUNBLK[run-declaration validation and run executor]
     CFG --> GRAPH[manifest overlay, commands schema, facet cascade]
+    CFG --> EB
+    CHECK --> EB
+    PROOF --> EB
     GH --> MERGE[delta parsing and merge]
     O --> FINGER[Fingerprint evidence]
     GH --> UC[use-case and fragment parser]
@@ -48,10 +52,10 @@ flowchart TD
 | `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable every addon whose declared default is on unless `--no-addons`, prompt/parse agent targets, scaffold addon files, sync, and report `givn-start` as the entry point. A sync failure exits non-zero with the failed destination and leaves the scaffold for retry. |
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
 | `cli::instructions` | Resolve artifact instructions and non-artifact policy/step instructions through the project-overrides-first cascade, serving an addon-bound id only while its addon is effective; render addon conditionals; append project extensions; return text or JSON; provide context-aware state and request-routing guidance without an id. The no-active path recommends `givn-start` and names `givn new` as the direct alternative. Domain-skill routing depends only on the `domain_modeling` addon. |
-| `cli::lint` | Parse features, report WIP/PENDING, run the default overlap scan with exit precedence 1, 3, 2, 0, project the accepted corpus for `--change` and report interaction-inventory findings, report advisory seed and persona findings, run the project-health declaration pass in the default scope (four advisory placement findings and one blocking schema error), and classify every finding as `advisory`, `finding`, or `blocking`. Runs no tests. |
-| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks. Review runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks; it executes no suite. Tasks runs change verification and writes the receipt. Also serves `check migration` and `check rules`. |
+| `cli::lint` | Parse features, report WIP/PENDING, run the default overlap scan with exit precedence 1, 3, 2, 0, project the accepted corpus for `--change` and report interaction-inventory findings, report advisory seed and persona findings, run the project-health declaration pass in the default scope (four advisory placement findings and one blocking schema error) through the shared `e2e_boundary` resolver, and classify every finding as `advisory`, `finding`, or `blocking`. Runs no tests. |
+| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks. Review runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks; it executes no suite. Tasks resolves the declared E2E boundary when the change lock has `ise` effective, refuses a boundary violation, runs the regular scope and the change-scoped E2E scope, and writes the receipt with the E2E identity. Also serves `check migration` and `check rules`. |
 | `cli::test_result` | Write the four-count runner result to `GIVN_RESULT_FILE` for simple runners. |
-| `proof` (with the check/archive adapters) | Capture stable verification inputs, validate fresh runner results, persist change and archive receipts, and classify archive provenance. |
+| `proof` (with the check/archive adapters) | Capture stable verification inputs, validate fresh runner results, persist change and archive receipts (including the optional E2E identity and E2E scope outcome), classify receipt freshness, and classify archive provenance. |
 | `cli::archive` | Check preconditions and receipt freshness; run structural gates; project and check the interaction inventory before mutation; publish the merged candidate; move the change with one rename; recheck the merged permanent inventory before verification; run regular/E2E scopes and the optional coverage gate; refresh managed README blocks; guard finalization; publish the proven receipt. Persists successful scope evidence for reuse. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, hooks, and unproven archive candidates with the resume command. |
 | `cli::history` | Read one scope's record; serve `history settings` as a non-recorded query; own the intake contract and its bounds/mode enforcement; map Claude's process-per-hook payloads into record events. |
@@ -59,7 +63,7 @@ flowchart TD
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::commit` | Reject an empty or unsafe explicit path selection, select the backend, stamp optional attribution, and create one revision with exactly the selected paths. |
 | `cli::readme` | Scaffold the README from the marked template with development and run managed blocks; run the deterministic completeness check; parse and refresh unique ordered managed marker pairs while preserving surrounding bytes. |
-| `config::lock` | Record the effective add-on values when a change starts, compare them at review/archive, and record an operator override. A missing lock means an older change and is skipped. |
+| `config::lock` | Record the effective add-on values when a change starts, compare them at review/archive, resolve whether the change's locked set has `ise` effective, and record an operator override. A missing lock means an older change and is skipped. |
 | `cli::addons` | Consume the `config::addons` registry, toggle addon flags against per-addon declared defaults and one prerequisite relation; scaffold fixed `docs/arc42/` files, the standalone `docs/glossary.md` and `docs/domain-model.md`, and `givn/specification.yaml` without overwriting existing files; report effective defaults and a project-owned declaration. |
 | `cli::skills` | `sync` regenerates selected skills, integrations, `AGENTS.md` blocks, and ignore state, then reconciles old commands and disabled addon skills; `targets add` edits only the targets line and syncs. |
 | `cli::agents_block` | Append/replace/remove one named fenced block in `AGENTS.md` while preserving all surrounding content. |
@@ -71,11 +75,12 @@ flowchart TD
 | `cli::run` | Resolve the start plan, execute the declared command, probe readiness over `std::net`, print the ready line, forward child exit codes, and forward SIGINT/SIGTERM on unix. |
 | `cli::outline` | Gate `givn outline report` on the outline addon at runtime, resolve the production roots, run the neutral analysis, and select human/JSON output or the explicit `--out` path. |
 | `outline` | Orchestrate production-source discovery, neutral analysis, call-shape resolution, per-component call-tree rendering, shared metric hints, classification, and human/JSON rendering. No action, recommendation, verdict, or gate. |
-| `outline::resolve` | Resolve every call against the callee's call shape. A candidate is accepted only when its owner matches the evidence; an unknown receiver stays `name_only`, multiple compatible methods are `ambiguous`, and a contradictory qualifier is `external`. Only resolved same-unit edges join methods for LCOM4. |
+| `outline::resolve` | Resolve every call against the callee's call shape. A candidate is accepted only when its owner matches the evidence; an unknown receiver stays `name_only`, multiple compatible methods are `ambiguous`, and a contradictory qualifier is `external`. Only resolved same-package edges join methods for LCOM4. |
 | `outline::analyzer` and adapters | Define the `SourceAnalyzer` port and neutral `Analysis` contract; `syn_adapter` parses Rust in-process; `python_adapter` starts a standard-library `python3` `ast` extractor only when a `.py` file is in scope; `tree_sitter_adapter` parses Java, TypeScript/TSX, and JavaScript in-process with bundled grammars. Parser types stay inside each adapter; per-file failures are diagnostics. |
 | `config::manifest` | Define artifact, apply, verify, coverage, addon (declared default and prerequisites), hook, run, and retirement data structures. |
 | `config::addons` | Own the addon registry: each addon's declared default and one prerequisite relation, consumed by `cli::init`, `cli::addons`, `config::lock`, and `skills::render`. |
 | `config::declaration` | Load `givn/specification.yaml` through the one strict read-only schema: five roles and one `source:` list, with unknown, repeated, missing, or out-of-project elements refused by name. |
+| `e2e_boundary` | Resolve the declared `e2e` role to its packages with the shared glob and bounded-walk semantics, report every placement and acceptance condition once, compute the per-package digests, and own the shared path/executable/bytes hash rule. Consumed by `cli::lint`, `cli::check`, and `proof`; the Cargo package reader moves here from `cli::lint`. |
 | `config::overlay` | Apply `givn/config.yaml` policy/graph overlays and the dedicated `commands.yaml` schema; expand Arc42; validate graph references/cycles; resolve targets, rules policy, and record mode. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |
 | `config::extensions` | Load the `extensions:` map, warn and drop unknown ids or malformed entries, and append the marked project-extension section. |

@@ -259,7 +259,24 @@ through its dedicated `verify`/`coverage`/`run` schema after the
 For `givn check tasks`, the binary runs the non-configurable mandatory checks:
 
 1. For a change delta, reject non-removed scenarios that still have `@wip`.
-2. Run `verify.command` with `GIVN_FEATURES` set to the active change specs.
+2. When the change's `config-lock.yaml` has `ise` effective, load
+   `givn/specification.yaml` and resolve the declared `e2e` role to its packages,
+   each matched path's package or the path itself when it resolves none.
+   Refuse, and write no receipt, on every boundary condition: matches no path, a
+   resolved package's malformed manifest, a resolved path under a `source:` root, a
+   resolved package whose tree contains a `source:` root, a direct, transitive, or
+   workspace-inherited dependency edge into `source`, a path that resolves no
+   package with a reference into `source`, or an E2E runner command that names no
+   resolved root.
+3. Run `verify.command` with `GIVN_FEATURES` set to the active change specs and
+   `GIVN_RESULT_SCOPE=change`.
+4. When the delta contains an `@e2e` scenario, run `verify.e2e_command` with the
+   same `GIVN_FEATURES`, `GIVN_RESULT_SCOPE=e2e`, and
+   `verification/e2e-result.json`; an unbound step, skipped step, nonzero exit,
+   malformed, zero, unreconciled, failed, or wrong-scope result refuses and
+   writes no receipt.
+5. Write the change verification receipt with the regular counts and, when
+   `ise` is effective, the E2E identity and E2E scope outcome.
 
 For `givn check review`, it runs:
 
@@ -310,7 +327,8 @@ flowchart TD
 
 Review does not execute `verify.command` or `verify.e2e_command`. Scenario
 execution is proven once per archive by the verification receipt; review
-inspects the static artifacts and the implementation evidence check instead.
+inspects the static artifacts, the receipt (including the optional E2E
+identity), and the implementation evidence check instead.
 
 These mandatory checks are in `src/cli/check.rs` and cannot be removed by
 removing a `post` entry. Built-in hook names also ignore `allow_failure` when
@@ -466,10 +484,17 @@ requires a clean committed tree except evidence/verification paths, sets
 validates four green counts. Before the run it captures the tested-content
 digest: every tracked and untracked non-ignored path outside the closed
 documentation/evidence allowlist, sorted, hashed with its executable marker and
-file bytes. It then writes
+file bytes. When the delta contains an `@e2e` scenario and the change lock has
+`ise` effective, it runs the same delta features through `verify.e2e_command`
+with `GIVN_RESULT_SCOPE=e2e` and
+`verification/e2e-result.json`, then recaptures the E2E identity and requires it
+to be unchanged. It then writes
 `givn/changes/<id>/verification/tasks-verification.json` (schema 2) with the
 tested revision, features digest, verify-command digest, tested-content digest,
-`content_scope: "change-proof/v1"`, and counts.
+`content_scope: "change-proof/v1"`, counts, and — when `ise` is effective — the
+resolved package digests, the E2E runner command digest, the running Givn version,
+and the E2E scope outcome. Both E2E fields are omitted rather than serialized
+as `null`, so a change with `ise` off keeps the previous receipt bytes.
 
 `givn check review` runs no tests: it reads that receipt and refuses a missing
 or stale one with `givn check tasks --change <id>`. `givn archive` performs the
@@ -486,10 +511,16 @@ without reuse. Unchanged tested content under a different, available revision
 is accepted as a documentation-only revision and keeps the proof current: the
 command prints the reused-proof message and runs no change-suite test. The
 check establishes tested-content equality; it does not inspect the intervening
-diff. A failed check reports every independent stale reason (changed features,
-changed command, changed tested content, unavailable tested revision, unbound
-schema 1 receipt, unsupported content scope, or unsupported schema) and routes
-to `givn check tasks --change <id>`.
+diff. When the change lock has `ise` effective, freshness also requires the E2E
+identity: a missing identity, an unreadable declaration, a changed resolved-package
+digest, a changed E2E runner command, a changed Givn version, or an E2E scope
+that is not green while the delta has an `@e2e` scenario (or is `passed` while
+it has none) is stale. `not_applicable` is accepted exactly when the delta has
+no `@e2e` scenario. A failed check reports
+every independent stale reason (changed features, changed command, changed
+tested content, unavailable tested revision, unbound schema 1 receipt,
+unsupported content scope, unsupported schema, or any E2E-identity reason) and
+routes to `givn check tasks --change <id>`.
 
 `givn check review` reports every use-case schema and capability-routing
 problem in one pass. The routing gate parses each referenced document and every
@@ -881,10 +912,10 @@ sequenceDiagram
     ORCH->>AN: analyze(request)
     AN-->>ORCH: neutral Analysis plus per-file diagnostics
     ORCH->>MET: compute(analysis)
-    MET-->>ORCH: per-unit metric hints
+    MET-->>ORCH: per-package metric hints
     ORCH->>CLS: classify(metrics)
     CLS-->>ORCH: classification, evidence
-    ORCH->>RPT: render(classified units)
+    ORCH->>RPT: render(classified packages)
     RPT-->>Developer: outline first, then hints; stdout or --out, exit 0
   end
 ```
@@ -916,17 +947,17 @@ sequenceDiagram
    resolved calls into the outline items. A read or parse failure is a
    diagnostic for that file, not an abort; the report continues with the
    analyzable files and names every failure.
-4. The report prints each unit as a per-component call tree first: declarations,
+4. The report prints each package as a per-component call tree first: declarations,
    signatures, order, and calls. Module outlines list their declared member
-   types as type items beside their free functions. Same-unit calls nest under
+   types as type items beside their free functions. Same-package calls nest under
    the caller; calls to another component are leaves tagged with resolution,
    visibility, and owner. A `name_only` edge is a leaf and is never expanded.
    The tree is forward-only and omits calls outside the analyzed sources. It
    contains no data, method bodies, or comments. Shared metrics and
    classification follow as hints. File code lines exclude recorded
-   `#[cfg(test)]` spans, and unit physical lines cover the unit's own spans.
-   Every analyzed unit receives exactly one classification and its evidence;
-   no action or recommendation is produced, and wholly unsupported units are
+   `#[cfg(test)]` spans, and package physical lines cover the package's own spans.
+   Every analyzed package receives exactly one classification and its evidence;
+   no action or recommendation is produced, and wholly unsupported packages are
    not classified and are named.
 5. The selected renderer writes human text or schema-v5 JSON. JSON call objects
    carry `callee`, `resolution`, and `target`; human tags lead with the
@@ -937,7 +968,7 @@ sequenceDiagram
 ## 6.20 Retired outline review gate
 
 The blocking outline review gate is retired. `givn check review` contains no
-outline analysis, no per-unit verdict, no metric waiver, and no forced reviewer
+outline analysis, no per-package verdict, no metric waiver, and no forced reviewer
 context. The outline addon still produces the advisory report described in
 6.19, and the served implementation and review guidance may refer to that
 evidence during REFACTOR and final review, but the report cannot block review or

@@ -1,6 +1,6 @@
 # Change seed: enforce-ise-e2e-boundary
 
-Status: ready
+Status: proposed by enforce-ise-e2e-boundary
 
 - Use-case IDs: `verify-change` (`givn-workflow-enforcement`) and
   `create-change` (`prose-consolidation`)
