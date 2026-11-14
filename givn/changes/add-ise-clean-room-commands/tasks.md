@@ -367,8 +367,8 @@ that binds it, and the production symbols it exercises. Every batch removes
 ### Batch 1: `admission-refusals`
 
 The preflight conditions that run before any trial content is read, plus the
-Git revision-entry reader the later batches consume. No scenario in this batch
-writes a trial.
+Git and Fossil revision-entry readers the later batches consume. No scenario in
+this batch writes a trial.
 
 **Files created:** `src/ise/mod.rs` (preflight skeleton), `src/cli/ise.rs`,
 `tests/steps/ise_clean_room_support.rs` (Git/bare-marker/dirty fixtures built in
@@ -377,6 +377,9 @@ this batch).
 dispatch), `src/cli/mod.rs` (`pub mod ise;`), `src/scm.rs`
 (`RevisionEntry { path, kind, executable }` and the `revision_files` return
 type), `src/git.rs` (`ls-tree` mode to kind and executable bit),
+`src/fossil.rs` (check-in manifest `F` cards to path, kind, and executable bit,
+with the `\s` decode and the 40/64-hex hash check; unit-tested in
+`src/fossil.rs`),
 `src/config/declaration.rs` (`normalize_project_path` becomes `pub(crate)`),
 `tests/steps/mod.rs` (register the four delta files),
 `tests/steps/clean_room_preparation_steps.rs`.
@@ -417,7 +420,7 @@ then `./run-tests.sh --non-e2e` to prove the seam change broke no permanent
 suite. **Commit:** `givn commit <paths> -m '<release note>\n\nBatch:
 admission-refusals'`.
 
-- [ ] Scenario: `Preparation refuses when the declaration is missing`
+- [x] Scenario: `Preparation refuses when the declaration is missing`
   - Design constraints:
     - Fixture: a temp Git project with `givn/config.yaml` (`addons.ise: true`,
       `addons.architecture_principles: true`), one committed file, and **no**
@@ -430,21 +433,30 @@ admission-refusals'`.
       refusal is the first check after the add-on pair and writes nothing.
     - Step file: `tests/steps/clean_room_preparation_steps.rs`; fixture
       builder: `ise_clean_room_support.rs`.
-  - [ ] Implement the scenario and its tests (test-first per `design.md`).
+  - [x] Implement the scenario and its tests (test-first per `design.md`).
         Files: `src/cli/ise.rs`, `src/ise/mod.rs`, `src/main.rs`,
         `src/cli/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`.
         Run the single-scenario command. Must pass.
         ```
-        <!-- RED: observed failure and its text. GREEN: command + scenario/step counts, exit 0 -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses when the declaration is missing"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed: the fixture builders and the
+        preflight stay one responsibility each; cargo fmt --check and
+        cargo clippy --workspace --all-targets -- -D warnings are clean; the
+        re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses a malformed declaration`
+- [x] Scenario: `Preparation refuses a malformed declaration`
   - Design constraints:
     - Fixture: `givn/config.yaml` with both add-ons on, and a
       `givn/specification.yaml` carrying one unknown top-level key (for
@@ -456,20 +468,27 @@ admission-refusals'`.
     - Contract: `SpecificationDeclaration::load` returns
       `Err(DeclarationError::…)`; the refusal renders the path and the reason
       and never the Rust enum.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a malformed declaration"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses while the ise addon is off`
+- [x] Scenario: `Preparation refuses while the ise addon is off`
   - Design constraints:
     - Fixture: `givn/config.yaml` with `addons.ise: false` and
       `architecture_principles: true`, **plus a malformed declaration** so that
@@ -481,20 +500,27 @@ admission-refusals'`.
     - Contract: the manifest add-on pair is checked before
       `SpecificationDeclaration::load`; the add-on is the effective project
       manifest's value (D3), never a change lock.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses while the ise addon is off"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses while architecture principles are off`
+- [x] Scenario: `Preparation refuses while architecture principles are off`
   - Design constraints:
     - Fixture: `givn/config.yaml` with `addons.ise: true` and
       `addons.architecture_principles: false`, and a valid declaration.
@@ -504,20 +530,27 @@ admission-refusals'`.
     - Then: exit 1; stderr names `architecture_principles`; targets absent.
     - Contract: D10 in the design ledger — both commands refuse when either
       add-on is off, before the declaration or the record is read.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses while architecture principles are off"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses a dirty checkout and names every dirty path`
+- [x] Scenario: `Preparation refuses a dirty checkout and names every dirty path`
   - Design constraints:
     - Fixture: committed `src/modified.rs` modified in the working tree, and an
       untracked `notes-untracked.md` that no ignore rule covers.
@@ -527,20 +560,27 @@ admission-refusals'`.
     - Contract: `Backend::dirty_entries` reports modified tracked files plus
       untracked non-ignored files; every path is printed, never only the first.
       The dirty check precedes the revision read.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a dirty checkout and names every dirty path"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses a project with no version-control backend`
+- [x] Scenario: `Preparation refuses a project with no version-control backend`
   - Design constraints:
     - Fixture: a plain directory with `givn/config.yaml` (both add-ons on), a
       valid declaration, one file, and no `.git` directory and no
@@ -551,20 +591,27 @@ admission-refusals'`.
       message; targets absent.
     - Contract: the command never guesses a backend and adds no second
       selector.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a project with no version-control backend"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses a project root nested inside a Git worktree`
+- [x] Scenario: `Preparation refuses a project root nested inside a Git worktree`
   - Design constraints:
     - Fixture: `git init` at `top/`, and the Givn project at
       `top/nested/project/` with `givn/config.yaml` and a valid declaration; the
@@ -574,20 +621,27 @@ admission-refusals'`.
       message); targets absent.
     - Contract: `scm::select` refuses a project root that is not the worktree
       top level; the command adds no rule of its own.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a project root nested inside a Git worktree"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses a checkout carrying both Git and Fossil markers`
+- [x] Scenario: `Preparation refuses a checkout carrying both Git and Fossil markers`
   - Design constraints:
     - Fixture: a project root with a `.git` directory **and** an `.fslckout`
       file, `givn/config.yaml` with both add-ons on, and a valid declaration.
@@ -596,20 +650,27 @@ admission-refusals'`.
       message); targets absent.
     - Contract: `scm::select` refuses the mixed marker set; no backend is
       preferred silently.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a checkout carrying both Git and Fossil markers"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
-- [ ] Scenario: `Preparation refuses an absent revision`
+- [x] Scenario: `Preparation refuses an absent revision`
   - Design constraints:
     - Fixture: a clean Git project with both add-ons on, a valid declaration,
       and one commit.
@@ -619,18 +680,25 @@ admission-refusals'`.
     - Contract: `HEAD` resolves through `Backend::revision`; an explicit value
       is checked with `commit_exists` before `revision_files` is called, so the
       refusal names the revision rather than a backend command error.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an absent revision"
+        → failed: assertion `left: Some(2)` `right: Some(1)`; stderr=
+          "error: unrecognized subcommand 'ise'".
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change was needed; fmt and clippy are clean and
+        the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `admission-refusals`
+  - [x] COMMIT: `373591cc1437daa21fd895c7c6d78cdf0e1dd538` -- Batch: `admission-refusals`
 
 ---
 
