@@ -80,7 +80,7 @@ Confirmed Persona IDs: `developer--primary-user`, `agent--technical-role`,
 | Exactly one replacement form is required | A clap argument group requires one of `--full` and `--path` and marks them mutually exclusive; neither or both is exit 2 naming both flags | `clean-room-preparation`: the neither-form and both-forms scenarios |
 | Deletion is set arithmetic on named tracked files and named directories | `--path` accepts a tracked file or a directory; a directory expands to every tracked file beneath it; a glob is never expanded; a named path absent from the revision removes nothing | `clean-room-preparation`: the directory-expansion, full-replacement, glob, duplicate, and absent-replacement scenarios; D1 |
 | A full replacement names every tracked file under the source roots | `--full` is the union of every declared `source:` root resolved at the revision; no implicit default exists | `clean-room-preparation`: the full-replacement scenarios asserting `Not replaced: 0` |
-| A retained role takes precedence over the source roots | Retained match is tested before the source-root test, for a named file and for every tracked file under a named directory; naming a retained path refuses | `clean-room-preparation`: the retained-role and directory-contains-retained scenarios |
+| A retained role takes precedence over the source roots | Retained match is tested before the source-root test, for a named file, for a named directory's expansion, and for `--full`; a retained file under a source root stays in the trial, so `Replaced` counts only non-retained files; naming a retained path refuses | `clean-room-preparation`: the retained-role and directory-contains-retained scenarios; the retained fixtures of the ignored-file, executable-bit, and explicit-revision scenarios |
 | `Not replaced` is a containment count | Direct tracked siblings in the removed files' parent directories, excluding the named files | `clean-room-preparation`: the `Not replaced: 2` and `Not replaced: 0` scenarios |
 | `Outside the declaration` counts uncopied files | The partition's fourth set; never an error | `clean-room-preparation`: the E2E prepare scenario asserts the outside file is absent |
 | Only the `e2e` package is frozen; component steps are implementation | The `E2E digest` covers resolved `e2e` files and the selected `@e2e` scenarios only; kept source has no focused identity | `trial-input-verification`: the kept-source no-drift scenario |
@@ -165,9 +165,13 @@ Arrows point from consumer to provider.
 | Contract | Consumer use case | Consumers | Implementing component today | Split trigger |
 |---|---|---|---|---|
 | `CleanRoomTrial` (`replace`, `verify`, `TrialRecord`) | `prepare-an-ise-test` (`clean-room-preparation`, `trial-input-verification`) | `cli::ise` | `src/ise` (new) | a second materialization mode (branch/worktree) or a second record scope |
-| `RevisionContent` (`revision_files`, `revision_blobs`) | `prepare-an-ise-test` (read one revision); existing archive/upgrade revision checks | `ise` (`replace`, `verify`); `cli::archive`; `cli::migration` | `src/scm`, `src/git`, `src/fossil` | a third backend or a revision stream instead of a path list |
+| `RevisionContent` (`revision_files`, `revision_blobs`) | `prepare-an-ise-test` (read one revision) | `ise` (`replace`, `verify`) | `src/scm`, `src/git`, `src/fossil` | a third backend or a revision stream instead of a path list |
 | `RevisionE2eFileSet` (`e2e_file_set`) | `prepare-an-ise-test` (freeze the resolved `e2e` package) | `ise` (`replace`, `verify`) | `src/e2e_boundary` (one responsibility: resolve the declared `e2e` role, now over a supplied revision tree) | a second resolution rule or a non-Cargo manifest |
 | `ScenarioDigest` (selected `@e2e` scenarios per feature file) | `prepare-an-ise-test` (freeze the selected `@e2e` scenarios) | `ise` (`replace`, `verify`) | `src/gherkin` (one responsibility: parse a feature string and select by tag) | a second selection rule or a non-Gherkin behavior format |
+
+`revision_files` and `revision_blobs` have no caller outside `src/scm.rs` in
+the current tree: this change's reader is their first consumer, so the
+`RevisionEntry` return-type change migrates no existing consumer.
 
 The trial record carries no verifier runner command. The independent verifier
 chooses and records the runner outside the record, so a changed runner is a
@@ -198,10 +202,12 @@ No new dependency and no version selected from memory.
   retained path and its role; a value outside every source root refuses; a
   value that is neither a tracked file nor a directory removes nothing and is
   not a tenth refusal; a glob-shaped value is never expanded. `--full` is the
-  union of the source roots at the revision after the retained-role test, so a
-  retained file that sits under a source root stays in the trial; on a
-  declaration that keeps its retained roles outside the source roots, which
-  the scenarios use, the report shows `Not replaced: 0`. `--path` values and
+  union of the source roots at the revision after the retained-role test: when
+  a tracked path matches both a retained role and a `source:` root, the
+  retained role wins and the file stays in the trial under `--full` as well as
+  under `--path`. `Replaced` therefore counts only files that are not
+  retained. On a declaration that keeps its retained roles outside the source
+  roots, which the scenarios use, the report shows `Not replaced: 0`. `--path` values and
   `--full` are checked for the retained role before any removal. Neither form
   nor both forms are valid: each is a usage error (exit 2) that names
   `--full` and `--path`. `Replaced` counts the removed tracked
@@ -508,9 +514,10 @@ The checks run in this order. Every one precedes the first write.
    target. A symlink entry on a platform without symlink support refuses.
 10. **Re-read.** Every written path is read again and compared to the revision
     entry by kind, executable bit, and bytes or target. A mismatch removes the
-    trial and writes no record. The comparison is unit-tested with an
-    injectable writer, because the CLI cannot corrupt a deterministic fixture
-    between the write and the re-read.
+    trial and writes no record. No delta scenario covers this rule: a
+    deterministic fixture cannot corrupt a file between the write and the
+    re-read. The mismatch is proven by the injectable-writer unit test in
+    `src/ise/mod.rs`.
 11. **Record.** The identities and counts are assembled; the trial record is
     written with `create_new`, or the YAML is printed to stdout. A record
     write failure removes the trial and reports the record path.
@@ -597,6 +604,21 @@ flowchart TB
 ```
 
 ## Partition Rules
+
+**Placement boundaries.** Every tracked path at the revision belongs to exactly
+one placement. A retained match is tested first, so it wins over a `source:`
+root; the table is the single statement of that precedence.
+
+| Placement | A tracked path belongs here when | Copied | Counted |
+|---|---|---|---|
+| Retained | a retained role matches the path, or every tracked file under a directory it matches; the first match in `behavior`, `structure`, `contracts`, `limits`, `e2e` order wins | yes | `Retained`; never `Replaced`, even when a `source:` root also matches |
+| Replaced | a `--path` value resolves to it, or `--full` is given and a `source:` root matches it and no retained role matches it | no | `Replaced` |
+| Kept source | a `source:` root matches it and it is neither retained nor replaced | yes | `Kept source` |
+| Outside the declaration | no retained role and no source root matches it | no | `Outside the declaration` |
+
+Retained precedence applies to `--full` as well as to `--path`: a retained file
+under a declared source root stays in the trial, so `Replaced` counts only files
+that are not retained.
 
 - **Retained.** A tracked file matched by one of the five retained role
   patterns, or every tracked file under a derived directory the pattern

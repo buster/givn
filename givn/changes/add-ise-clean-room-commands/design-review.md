@@ -298,4 +298,22 @@ No blocker is unresolved.
   update in the implementation batch (`arc42.md:40-44`), so no stale name is
   present.
 
+## Post-review clarifications
+
+Three clarifications are applied after the review sign-off; none reopens a
+decision:
+
+1. Retained precedence is stated where the reader needs it. A tracked path that
+   matches both a retained role and a `source:` root stays in the trial under
+   `--full` as well as `--path`, and `Replaced` counts only non-retained files.
+   Landed: `design.md` D1, the Use-Case Traceability retained row, the
+   `## Partition Rules` placement-boundary table, and
+   `specs/prepare-an-ise-test/usecase.md` rules.
+2. `RevisionContent` has no consumers today. The contract row and its note now
+   name only this change's `ise` reader; `cli::archive` and `cli::migration` do
+   not call `revision_files` or `revision_blobs` outside `src/scm.rs`.
+3. The re-read mismatch is unit-only. `design.md` Replace Flow step 10 and the
+   `partition-and-write` batch record that the injectable-writer unit test in
+   `src/ise/mod.rs` proves it and no delta scenario covers it.
+
 DESIGN-REVIEW: PASS
