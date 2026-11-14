@@ -525,6 +525,27 @@ impl RunnerResult {
     }
 }
 
+/// The E2E identity a receipt binds: one digest per resolved `e2e` package,
+/// the E2E runner command digest, and the Givn version that wrote it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct E2eIdentity {
+    /// Package directory (or import-mode path) to the digest of its tracked
+    /// tree.
+    pub package_digests: BTreeMap<String, String>,
+    pub runner_command_digest: String,
+    pub givn_version: String,
+}
+
+/// The verification outcome a change-scoped run records in its receipt.
+#[derive(Debug, Clone)]
+pub struct ChangeVerification {
+    pub result: RunnerResult,
+    /// Absent when the change lock has `ise` off.
+    pub e2e_identity: Option<E2eIdentity>,
+    /// The E2E scope outcome; absent when the change lock has `ise` off.
+    pub e2e_scope: Option<ScopeOutcome>,
+}
+
 /// The receipt `givn check tasks` writes after a green change-scoped run.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChangeReceipt {
@@ -543,6 +564,12 @@ pub struct ChangeReceipt {
     pub content_scope: Option<String>,
     pub runner_exit: i32,
     pub result: RunnerResult,
+    /// The E2E identity; absent on a receipt written with `ise` off.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub e2e_identity: Option<E2eIdentity>,
+    /// The E2E scope outcome; absent on a receipt written with `ise` off.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub e2e_scope: Option<ScopeOutcome>,
     pub finished_at_unix: u64,
 }
 
@@ -995,7 +1022,7 @@ pub fn write_change_receipt(
     head: &str,
     command: &str,
     tested_content_digest: &str,
-    result: RunnerResult,
+    verification: ChangeVerification,
     finished_at_unix: u64,
 ) -> Result<()> {
     let features = change_dir.join("specs");
@@ -1016,7 +1043,9 @@ pub fn write_change_receipt(
         tested_content_digest: Some(tested_content_digest.to_string()),
         content_scope: Some(CONTENT_SCOPE.to_string()),
         runner_exit: 0,
-        result,
+        result: verification.result,
+        e2e_identity: verification.e2e_identity,
+        e2e_scope: verification.e2e_scope,
         finished_at_unix,
     };
     let dir = change_dir.join("verification");
@@ -1455,12 +1484,16 @@ mod tests {
             "abc",
             "runner",
             "digest",
-            RunnerResult {
-                scope: None,
-                total: 1,
-                passed: 1,
-                failed: 0,
-                skipped: 0,
+            ChangeVerification {
+                result: RunnerResult {
+                    scope: None,
+                    total: 1,
+                    passed: 1,
+                    failed: 0,
+                    skipped: 0,
+                },
+                e2e_identity: None,
+                e2e_scope: None,
             },
             1,
         )
@@ -1494,12 +1527,16 @@ mod tests {
             "abc",
             "runner",
             "digest",
-            RunnerResult {
-                scope: None,
-                total: 2,
-                passed: 2,
-                failed: 0,
-                skipped: 0,
+            ChangeVerification {
+                result: RunnerResult {
+                    scope: None,
+                    total: 2,
+                    passed: 2,
+                    failed: 0,
+                    skipped: 0,
+                },
+                e2e_identity: None,
+                e2e_scope: None,
             },
             1,
         )
@@ -1597,12 +1634,16 @@ mod tests {
             &head,
             &manifest.verify.command,
             &digest,
-            RunnerResult {
-                scope: None,
-                total: 1,
-                passed: 1,
-                failed: 0,
-                skipped: 0,
+            ChangeVerification {
+                result: RunnerResult {
+                    scope: None,
+                    total: 1,
+                    passed: 1,
+                    failed: 0,
+                    skipped: 0,
+                },
+                e2e_identity: None,
+                e2e_scope: None,
             },
             1,
         )

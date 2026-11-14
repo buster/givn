@@ -16,6 +16,8 @@ pub(crate) struct FixtureState {
     pub(crate) source_roots: Vec<String>,
     pub(crate) import_target: Option<String>,
     pub(crate) runner_command: Option<String>,
+    /// Resolved `e2e` package directories the receipt must bind.
+    pub(crate) resolved_packages: Vec<String>,
 }
 
 pub(crate) fn env(world: &GivnWorld) -> &common::TestEnv {
@@ -128,4 +130,73 @@ pub(crate) fn set_import_target(world: &mut GivnWorld, target: &str) {
         .as_mut()
         .expect("an ise boundary fixture is required first");
     state.import_target = Some(target.to_string());
+}
+
+/// The change directory of the fixture project.
+pub(crate) fn change_path(world: &GivnWorld) -> std::path::PathBuf {
+    env(world).path(&format!("givn/changes/{CHANGE_ID}"))
+}
+
+/// Write an executable fixture script at the project root.
+pub(crate) fn write_executable(world: &GivnWorld, relative: &str, content: &str) {
+    let path = env(world).path(relative);
+    std::fs::write(&path, content).expect("write the fixture script");
+    use std::os::unix::fs::PermissionsExt;
+    let mut permissions = std::fs::metadata(&path)
+        .expect("fixture script metadata")
+        .permissions();
+    permissions.set_mode(0o755);
+    std::fs::set_permissions(&path, permissions).expect("make the fixture script executable");
+}
+
+/// A Cargo package at `directory`, recorded as the fixture's resolved `e2e`
+/// package so the receipt assertions name the same key.
+pub(crate) fn write_package(world: &mut GivnWorld, directory: &str) {
+    write_manifest(
+        world,
+        &format!("{directory}/Cargo.toml"),
+        "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n",
+    );
+    let state = world
+        .e2e_boundary
+        .as_mut()
+        .expect("an ise boundary fixture is required first");
+    state.resolved_packages.push(directory.to_string());
+}
+
+/// Point both verify commands at fake scoped runners: the regular command
+/// writes one passing scenario, the E2E command names the declared root.
+pub(crate) fn write_scoped_runners(world: &mut GivnWorld) {
+    let script = "#!/bin/sh\n\
+                  printf '{\"scope\":\"%s\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' \
+                  \"${GIVN_RESULT_SCOPE:-regular}\" > \"$GIVN_RESULT_FILE\"\n";
+    write_executable(world, "emit-change-result.sh", script);
+    common::write_commands_yaml(
+        &env(world).path("givn/commands.yaml"),
+        "verify:\n  command: \"./emit-change-result.sh\"\n  \
+         e2e_command: \"./emit-change-result.sh tests/e2e\"\n",
+    );
+}
+
+/// An `ise`-effective change ready for change-scoped verification: a resolved
+/// `e2e` package, a green regular run, and no `@e2e` scenario in the delta.
+pub(crate) fn ise_change_ready_for_verification(world: &mut GivnWorld) {
+    ise_change(world);
+    declare(world, &["tests/e2e"], &[]);
+    write_package(world, "tests/e2e");
+    write_scoped_runners(world);
+    commit(world);
+}
+
+/// The same ready change with the lock recording `ise: false`, so no
+/// declaration is read and no boundary preflight runs.
+pub(crate) fn change_ready_for_verification_without_ise(world: &mut GivnWorld) {
+    ise_change(world);
+    std::fs::write(
+        change_path(world).join("config-lock.yaml"),
+        "version: 1\naddons:\n  ise: false\noverrides: []\n",
+    )
+    .expect("write the ise-off lock");
+    write_scoped_runners(world);
+    commit(world);
 }

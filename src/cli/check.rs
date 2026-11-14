@@ -466,7 +466,7 @@ fn run_change_verification(
         check_scenario_commits(&backend, &change_dir)?;
         return Ok(());
     }
-    preflight_e2e_boundary(project_root, &change_dir, manifest)?;
+    let boundary = preflight_e2e_boundary(project_root, &change_dir, manifest)?;
     check_scenario_commits(&backend, &change_dir)?;
     let offending: Vec<String> = backend
         .dirty_entries()?
@@ -518,6 +518,21 @@ fn run_change_verification(
         );
     }
     let result = crate::proof::RunnerResult::read(&result_file, "change")?;
+    let total = result.total;
+    let delta_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&change_dir.join("specs"));
+    let e2e_identity = match &boundary {
+        Some(boundary) => Some(crate::proof::E2eIdentity {
+            package_digests: boundary.identity(project_root)?,
+            runner_command_digest: crate::proof::digest_text(&manifest.verify.e2e_command),
+            givn_version: env!("CARGO_PKG_VERSION").to_string(),
+        }),
+        None => None,
+    };
+    let e2e_scope = if e2e_identity.is_some() && !delta_has_e2e {
+        Some(crate::proof::ScopeOutcome::not_applicable())
+    } else {
+        None
+    };
     let current_manifest = load_effective()?;
     let after = crate::proof::VerificationInputs::capture(
         project_root,
@@ -538,26 +553,28 @@ fn run_change_verification(
         &head,
         &manifest.verify.command,
         &tested_content_digest,
-        result.clone(),
+        crate::proof::ChangeVerification {
+            result,
+            e2e_identity,
+            e2e_scope,
+        },
         crate::proof::unix_now(),
     )?;
-    println!(
-        "  ✓ change verification receipt: {} scenario(s), 0 failed, 0 skipped at {}",
-        result.total, head
-    );
+    println!("  ✓ change verification receipt: {total} scenario(s), 0 failed, 0 skipped at {head}");
     Ok(())
 }
 
 /// Refuse an `ise`-effective change whose declared `e2e` boundary cannot be
-/// accepted, before any runner executes. A change whose locked add-on set has
-/// `ise` off reads no declaration and gains no condition.
+/// accepted, before any runner executes, and return the accepted boundary so
+/// the receipt binds it. A change whose locked add-on set has `ise` off reads
+/// no declaration, gains no condition, and binds no identity.
 fn preflight_e2e_boundary(
     project_root: &std::path::Path,
     change_dir: &std::path::Path,
     manifest: &crate::config::manifest::Manifest,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Option<crate::e2e_boundary::E2eBoundary>> {
     if !crate::config::lock::ise_effective_for_change(change_dir)? {
-        return Ok(());
+        return Ok(None);
     }
     let declaration = match crate::config::declaration::SpecificationDeclaration::load(project_root)
     {
@@ -588,10 +605,10 @@ fn preflight_e2e_boundary(
         .map(|condition| format!("  - {}", condition.render()))
         .collect::<Vec<_>>()
         .join("\n");
-    if refused.is_empty() {
-        return Ok(());
+    if !refused.is_empty() {
+        anyhow::bail!("the declared e2e boundary cannot be accepted:\n{refused}");
     }
-    anyhow::bail!("the declared e2e boundary cannot be accepted:\n{refused}");
+    Ok(Some(boundary))
 }
 
 /// Refuse review unless a current, green change-scoped receipt exists.

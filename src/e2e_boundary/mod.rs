@@ -21,6 +21,7 @@ use imports::import_edges;
 use manifest::{
     CargoPackage, dependency_edges, is_cargo_manifest, nearest_manifest, parent_directory,
 };
+use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::path::Path;
 
@@ -242,6 +243,32 @@ impl E2eBoundary {
         }
     }
 
+    /// The digest of each resolved root's tracked tree, keyed by its
+    /// project-relative directory (or its import-mode path). No declaration
+    /// pattern and no file outside the resolved set is hashed.
+    pub(crate) fn identity(&self, project_root: &Path) -> anyhow::Result<BTreeMap<String, String>> {
+        let backend = crate::scm::select(project_root)?;
+        let entries = backend.content_paths()?;
+        let mut digests = BTreeMap::new();
+        for root in self.roots() {
+            let mut hasher = Sha256::new();
+            for entry in entries
+                .iter()
+                .filter(|entry| is_under(&entry.path.to_string_lossy(), root))
+            {
+                let relative = entry.path.to_string_lossy().replace('\\', "/");
+                hash_entry(
+                    &mut hasher,
+                    project_root,
+                    &relative,
+                    entry.gitlink.as_deref(),
+                )?;
+            }
+            digests.insert(root.clone(), digest_hex(hasher));
+        }
+        Ok(digests)
+    }
+
     /// Every resolved root the E2E runner command must name.
     pub(crate) fn roots(&self) -> impl Iterator<Item = &String> {
         self.resolved.iter().chain(self.import_paths.iter())
@@ -271,6 +298,15 @@ fn is_under(candidate: &str, root: &str) -> bool {
         || candidate
             .strip_prefix(root)
             .is_some_and(|rest| rest.starts_with('/'))
+}
+
+/// The lowercase hex rendering of a finished SHA-256 hash.
+fn digest_hex(hasher: Sha256) -> String {
+    hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 
 /// Whether the command names `root`: as a whole token, or as a token carrying

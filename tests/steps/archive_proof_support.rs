@@ -433,12 +433,16 @@ pub(crate) fn refresh_change_receipt(world: &GivnWorld, id: &str) {
         &head,
         &command,
         &tested_content_digest,
-        givn::proof::RunnerResult {
-            scope: None,
-            total: 2,
-            passed: 2,
-            failed: 0,
-            skipped: 0,
+        givn::proof::ChangeVerification {
+            result: givn::proof::RunnerResult {
+                scope: None,
+                total: 2,
+                passed: 2,
+                failed: 0,
+                skipped: 0,
+            },
+            e2e_identity: None,
+            e2e_scope: None,
         },
         1,
     )

@@ -358,12 +358,16 @@ fn write_fixture_change_receipt(world: &GivnWorld, id: &str) {
         &head,
         "./emit-result.sh regular",
         &tested_content_digest,
-        givn::proof::RunnerResult {
-            scope: None,
-            total: 2,
-            passed: 2,
-            failed: 0,
-            skipped: 0,
+        givn::proof::ChangeVerification {
+            result: givn::proof::RunnerResult {
+                scope: None,
+                total: 2,
+                passed: 2,
+                failed: 0,
+                skipped: 0,
+            },
+            e2e_identity: None,
+            e2e_scope: None,
         },
         1,
     )
@@ -3788,5 +3792,114 @@ fn no_change_verification_receipt(world: &mut GivnWorld) {
         !receipt.exists(),
         "a change verification receipt was written at {}",
         receipt.display()
+    );
+}
+
+// --- change verification receipt identity scenarios -----------------------
+
+fn change_receipt_json(world: &GivnWorld) -> serde_json::Value {
+    let id = current_change_id(world);
+    let path = change_dir_for(world, &id).join("verification/tasks-verification.json");
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "read change verification receipt {}: {error}",
+            path.display()
+        )
+    });
+    serde_json::from_str(&text).expect("the change verification receipt is valid JSON")
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification with no E2E scenario in its delta"
+)]
+fn ise_change_without_delta_e2e(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_ready_for_verification(world);
+}
+
+#[given("a change ready for change-scoped verification with ise off")]
+fn change_without_ise(world: &mut GivnWorld) {
+    e2e_boundary_support::change_ready_for_verification_without_ise(world);
+}
+
+#[then("the change verification receipt records a digest of every resolved e2e package")]
+fn receipt_records_e2e_package_digests(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let digests = receipt["e2e_identity"]["package_digests"]
+        .as_object()
+        .unwrap_or_else(|| panic!("the receipt records no resolved e2e package digest: {receipt}"));
+    let mut expected = e2e_boundary_support::state(world).resolved_packages.clone();
+    expected.sort();
+    let mut recorded: Vec<String> = digests.keys().cloned().collect();
+    recorded.sort();
+    assert_eq!(
+        recorded, expected,
+        "the receipt binds a package set other than the resolved one: {receipt}"
+    );
+    for (package, digest) in digests {
+        let digest = digest.as_str().unwrap_or_default();
+        assert_eq!(
+            digest.len(),
+            64,
+            "the digest for {package:?} is not a hex sha256: {digest:?}"
+        );
+        assert!(
+            digest
+                .chars()
+                .all(|character| character.is_ascii_hexdigit()),
+            "the digest for {package:?} is not hexadecimal: {digest:?}"
+        );
+    }
+}
+
+#[then("the change verification receipt records the E2E scope as not applicable")]
+fn receipt_records_e2e_scope_not_applicable(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    assert_eq!(
+        receipt["e2e_scope"]["status"], "not_applicable",
+        "the receipt does not record the E2E scope as not applicable: {receipt}"
+    );
+    let result =
+        change_dir_for(world, &current_change_id(world)).join("verification/e2e-result.json");
+    assert!(
+        !result.exists(),
+        "an E2E run wrote a result for a delta without an @e2e scenario at {}",
+        result.display()
+    );
+}
+
+#[then("the change verification receipt contains no E2E identity and no E2E scope")]
+fn receipt_without_e2e_keys(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let recorded = receipt
+        .as_object()
+        .expect("the change verification receipt is a JSON object");
+    assert!(
+        !recorded.contains_key("e2e_identity"),
+        "an ise-off receipt records an E2E identity: {receipt}"
+    );
+    assert!(
+        !recorded.contains_key("e2e_scope"),
+        "an ise-off receipt records an E2E scope: {receipt}"
+    );
+    let mut keys: Vec<&str> = recorded.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    let expected = [
+        "change",
+        "command",
+        "command_digest",
+        "content_scope",
+        "features_digest",
+        "features_path",
+        "finished_at_unix",
+        "head",
+        "result",
+        "runner_exit",
+        "schema",
+        "status",
+        "tested_content_digest",
+    ];
+    assert_eq!(
+        keys, expected,
+        "the ise-off receipt shape changed beyond the previous schema-2 keys: {receipt}"
     );
 }
