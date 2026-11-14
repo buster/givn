@@ -95,6 +95,12 @@ Required branches — cover every one (or explicitly record "no issue found"):
   finding. Contracts are current requirements and are never carried; a contract
   treated as an open question is a finding.
 {{/if}}
+{{#if addons.ise}}
+- **change strategy** — with `ise` effective, verify that the change records
+  exactly one `change strategy` as a `Decides D<n>` entry. An unresolved or
+  unrecorded change strategy is a finding. A rebuilding change with no recorded
+  `Ise Test` mode (`Dry-Run Ise` or `Full replacement`) is a finding.
+{{/if}}
 - **Visual design contract** — for a change that introduces or visibly changes
   a screen, `design.md` must contain the `## Visual Design Contract` section
   with its `Interface:` line and viewports. When no approved design exists,

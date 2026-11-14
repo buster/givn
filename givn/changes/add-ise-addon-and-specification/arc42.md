@@ -5,7 +5,7 @@
 | # | Chapter | Affected? | Reason | Summary of change (if Yes) |
 |---|---|---|---|---|
 | 1 | 01 introduction-and-goals | Yes | Section 1.1 states the addon default rule and now names `ise` as the one opt-in addon. | Addon posture sentence rewritten; chapter 10 unchanged because the change adds functional behavior, not a quality scenario. |
-| 2 | 02 architecture-constraints | Yes | `TC-14` asserted uniform default-on addons. | `TC-14` rewritten to per-addon declared defaults and the opt-in exception. |
+| 2 | 02 architecture-constraints | Yes | `TC-14` asserted uniform default-on addons; `TC-11` cited the pre-split lint path. | `TC-14` rewritten to per-addon declared defaults and the opt-in exception; `TC-11` provenance follows the lint module split to `src/cli/lint/mod.rs`. |
 | 3 | 03 context-and-scope | Yes | A new project input crosses the technical boundary. | The interface table gains the read-only `givn/specification.yaml` input. |
 | 4 | 04 solution-strategy | Yes | The strategy table claimed every addon is default-on. | Addons row added (opt-in posture, prerequisite, unchanged non-opted projects); Arc42 row corrected. |
 | 5 | 05 building-block-view | Yes | A new component and changed consumer contracts. | `config::addons` (registry) and `config::declaration` added; `cli::init`, `cli::instructions`, `cli::lint`, `cli::addons`, `cli::migration`, and `config::manifest` updated. |

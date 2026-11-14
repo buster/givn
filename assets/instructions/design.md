@@ -54,6 +54,31 @@ ID (`Decides D2 (seed Q5): …`), so the question-to-decision link is readable
 from the proposal and the design alone. An unresolved, unrecorded `D<n>` is a
 design-review finding.
 
+{{#if addons.ise}}
+### change strategy in the Decisions ledger
+
+Record exactly one `change strategy` as a `Decides D<n>` entry. Name one of
+three values:
+
+| Value | Meaning |
+|---|---|
+| `incremental modification` | The change edits existing components in place; their contracts and responsibilities stay. |
+| `Constant Ise` | The Specification and its `@e2e` package stay frozen; the implementation behind them is replaced. |
+| `whole-product rebuild` | The whole product is rebuilt while its declared Specification and end-to-end tests carry the behavior. |
+
+A change that rebuilds records its `Ise Test` mode beside the strategy:
+`Dry-Run Ise` (the declared end-to-end tests run against the replacement before
+cutover) or `Full replacement` (the replacement ships and the declared
+end-to-end tests prove it).
+
+The entry also names the affected consumers, the persisted state the rebuild
+must carry, and the rebuild boundary. This is the existing `## Decisions`
+entry; it adds no mandatory design field.
+
+Prose writes `change strategy` in full. A bare `strategy` names no domain
+decision.
+
+{{/if}}
 {{#if addons.architecture_principles}}
 ## Contracts and components (mandatory)
 

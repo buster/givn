@@ -220,6 +220,29 @@ Examples:
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
+{{#if addons.ise}}
+## Change strategy and Spec gap
+
+Read the change's design ledger and its proposal before classifying any
+difference.
+
+- **One `Spec gap` outcome before any fix.** Record exactly one `Spec gap`
+  outcome before any fix: `E2E test defect`, `implementation defect`,
+  `specification defect`, or `acceptable undocumented change`. More than one
+  outcome, or an outcome recorded after a fix, is a finding. The record names
+  the artifact that is wrong, not who found it.
+- **Only `specification defect` is a gap in the Specification.** An
+  `E2E test defect` is a gap in the E2E test, an `implementation defect` is a
+  gap in the build, and an `acceptable undocumented change` is no gap at all.
+- **An `E2E test defect` stops the Ise Test.** Stop the trial, correct the E2E
+  test, and restart the trial from the corrected suite. The `e2e` package is
+  part of the Specification, so the corrected test is a Specification
+  correction, not an exception to the freeze.
+- **Neighboring components.** Ask which components changed outside the
+  replaced component, and the reason for each change. Record the answer. This
+  is one review question, never a gate.
+
+{{/if}}
 {{#if addons.arc42}}
 ## Arc42 implementation conformance
 

@@ -18,7 +18,7 @@ register](adr/README.md).
 | TC-8 | CLI parsing uses `clap`; shell completions use `clap_complete`. | `src/main.rs` |
 | TC-9 | Lifecycle state is filesystem-derived; there is no state database. | `src/state.rs` |
 | TC-10 | Delta tags use the `@givn.*` namespace. | `src/gherkin/delta.rs`, `src/gherkin/merge.rs` |
-| TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint.rs` |
+| TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint/mod.rs` |
 | TC-12 | `givn/commands.yaml` is parsed with a dedicated schema for `verify`, `coverage`, and `run`; policy keys there and executable keys in `givn/config.yaml` are refused by name. | `src/config/overlay.rs` |
 | TC-13 | The dependency-age policy checks locked registry crates through `scripts/check-dep-age.sh`. | Script and project policy |
 | TC-14 | Every registered addon except an Opt-in addon is enabled by default; a missing key in a partial `addons:` block resolves that addon's declared default, and only an explicit `false` disables a default-on addon. | `src/config/manifest.rs`, `src/cli/addons.rs` |

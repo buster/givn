@@ -1340,21 +1340,23 @@ for them.)
 **Batch verification:** the seven single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: guidance-amendments'`.
 
-- [ ] Scenario: `The design-review guidance keeps a rebuild without an Ise Test mode a finding`
+- [x] Scenario: `The design-review guidance keeps a rebuild without an Ise Test mode a finding`
   - Design constraints:
     - Fixture: `ise`-enabled project with skills synchronized and an active
       change; request `givn instructions design-review --change <id>`.
     - Exit 0; the served text keeps an unresolved change strategy a finding and
       a rebuild with no recorded `Ise Test` mode a finding.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "create-change/change-strategy.feature::The design-review guidance keeps a rebuild without an Ise Test mode a finding" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "create-change/change-strategy.feature::The design-review guidance keeps a rebuild without an Ise Test mode a finding"
+        RED: the served design-review guidance omits the missing-mode requirement: # Instruction: design-review
+        GREEN: 1 scenario (1 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
 
-- [ ] Scenario: `The proposal guidance names the corrective route for each outcome`
+- [x] Scenario: `The proposal guidance names the corrective route for each outcome`
   - Design constraints:
     - Fixture: `ise`-enabled project with an active change; request
       `givn instructions proposal --change <id>`.
@@ -1363,54 +1365,62 @@ for them.)
       carries the corpus or E2E suite edit for `specification defect` and
       `E2E test defect`, and records `acceptable undocumented change` in the
       corpus.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "create-change/spec-gap.feature::The proposal guidance names the corrective route for each outcome" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "create-change/spec-gap.feature::The proposal guidance names the corrective route for each outcome"
+        RED: the served proposal guidance omits the record and its outcome: # Instruction: proposal
+        GREEN: 1 scenario (1 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
 
-- [ ] Scenario: `A spec gap record names the artifact rather than its finder`
+- [x] Scenario: `A spec gap record names the artifact rather than its finder`
   - Design constraints:
     - Same fixture; the proposal guidance requires the record to name the wrong
       artifact, not who found it.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "create-change/spec-gap.feature::A spec gap record names the artifact rather than its finder" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "create-change/spec-gap.feature::A spec gap record names the artifact rather than its finder"
+        RED: the served proposal guidance does not name the artifact: # Instruction: proposal
+        GREEN: 1 scenario (1 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
 
-- [ ] Scenario: `An E2E test defect stops the Ise Test until the test is corrected`
+- [x] Scenario: `An E2E test defect stops the Ise Test until the test is corrected`
   - Design constraints:
     - Same fixture; request `givn instructions review --change <id>`.
     - The served text stops an Ise Test on `E2E test defect` and restarts it
       after the E2E test is corrected, and states the corrected test is a
       Specification correction, not an exception to the freeze.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "create-change/spec-gap.feature::An E2E test defect stops the Ise Test until the test is corrected" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "create-change/spec-gap.feature::An E2E test defect stops the Ise Test until the test is corrected"
+        RED: the served review guidance omits "`E2E test defect` stops the Ise Test": # Instruction: review
+        GREEN: 1 scenario (1 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
 
-- [ ] Scenario: `The review guidance asks the neighboring-components question without a gate`
+- [x] Scenario: `The review guidance asks the neighboring-components question without a gate`
   - Design constraints:
     - Same fixture; the served review guidance asks for the neighboring
       components changed outside the replaced component and the reason, and
       states the answer is a review question, never a gate.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "fragments/instruction-integrity.feature::The review guidance asks the neighboring-components question without a gate" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The review guidance asks the neighboring-components question without a gate"
+        RED: the served review guidance omits the neighboring components: # Instruction: review
+        GREEN: 1 scenario (1 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
 
-- [ ] Scenario: `Architecture principles guidance follows an enabled addon`
+- [x] Scenario: `Architecture principles guidance follows an enabled addon`
   - Design constraints:
     - Fixture: `givn` project with `architecture_principles` disabled and
       skills synchronized; enable it through the Givn CLI.
@@ -1420,16 +1430,19 @@ for them.)
       `template_conditional_rendering_steps.rs`; this protects the existing
       conditional-guidance behavior while the title stops calling any enabled
       addon "opt-in".
-  - [ ] Implement the scenario and its tests (expected to pass immediately;
+  - [x] Implement the scenario and its tests (expected to pass immediately;
         record it as existing behavior protected). Evidence:
         ```
-        <!-- paste: --exact
-             "fragments/match-guidance-to-enabled-addons.feature::Architecture principles guidance follows an enabled addon" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Architecture principles guidance follows an enabled addon"
+        PASS immediately: 1 scenario (1 passed); the scenario body and its
+        bindings are unchanged from the permanent scenario it replaces, so no
+        production diff is manufactured.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
 
-- [ ] Scenario: `Outline guidance follows an enabled addon`
+- [x] Scenario: `Outline guidance follows an enabled addon`
   - Design constraints:
     - Fixture: `givn` project with the `outline` addon `enabled`/`disabled`
       and skills synchronized (Outline, both Examples).
@@ -1437,13 +1450,16 @@ for them.)
       section as the Example says; no generated skill carries outline guidance.
       Steps already bound; existing behavior protected with the corrected
       posture wording.
-  - [ ] Implement the scenario and its tests (expected to pass immediately;
+  - [x] Implement the scenario and its tests (expected to pass immediately;
         record it as existing behavior protected). Evidence:
         ```
-        <!-- paste: --exact
-             "fragments/match-guidance-to-enabled-addons.feature::Outline guidance follows an enabled addon" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "fragments/match-guidance-to-enabled-addons.feature::Outline guidance follows an enabled addon"
+        PASS immediately: 2 scenarios (2 passed), both Examples; the outline
+        body and its bindings are unchanged from the permanent scenario it
+        replaces, so no production diff is manufactured.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (2 scenarios (2 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
 
 ---

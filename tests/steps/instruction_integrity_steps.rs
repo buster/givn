@@ -3403,7 +3403,10 @@ fn served_instruction_uses_established_vocabulary(world: &mut GivnWorld) {
     "the served review guidance asks for the neighboring components changed outside the replaced component and the reason"
 )]
 fn review_guidance_asks_neighboring_components(world: &mut GivnWorld) {
-    let content = cli_stdout(world);
+    let content = cli_stdout(world)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(
         content.contains("changed outside the replaced component"),
         "the served review guidance omits the neighboring components: {content}"
@@ -3416,7 +3419,10 @@ fn review_guidance_asks_neighboring_components(world: &mut GivnWorld) {
 
 #[then("the served review guidance states that the answer is a review question, never a gate")]
 fn review_guidance_neighboring_answer_is_not_a_gate(world: &mut GivnWorld) {
-    let content = cli_stdout(world);
+    let content = cli_stdout(world)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
     assert!(
         content.contains("review question, never a gate"),
         "the served review guidance does not deny the gate: {content}"

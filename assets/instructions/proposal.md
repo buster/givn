@@ -49,6 +49,16 @@ language that a non-technical stakeholder can read and validate.
   Classify each open question with `givn instructions architecture-principles`;
   a contract is not an open question — it follows the consumer use case.
 {{/if}}
+{{#if addons.ise}}
+- **Corrective change.** When the change responds to an observed difference
+  between the frozen end-to-end test result and the declared `Specification`,
+  the proposal names the `Spec gap` record and its single outcome before any
+  fix, and names the artifact that is wrong, not who found it. The outcome
+  selects the route: `specification defect` or `E2E test defect` carries the
+  corpus or E2E suite edit in this change, `implementation defect` returns to
+  the builder inside the Ise Test with no corpus edit, and
+  `acceptable undocumented change` is recorded in the corpus.
+{{/if}}
 - **Question IDs.** Open questions carry stable IDs `D1`, `D2`, … (`D<n>` in
   the templates) with the full question and its option treatment; the
   design's ledger resolves each ID.

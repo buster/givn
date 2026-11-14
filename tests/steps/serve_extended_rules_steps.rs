@@ -74,6 +74,25 @@ pub(crate) fn served_instruction(env: &common::TestEnv, id: &str) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
+/// Run `givn instructions <id> --change <change>` against a fixture, creating
+/// the `guidance-amendments` change when the synced fixture has none. Manifest
+/// artifact instructions need a real change context.
+pub(crate) fn request_change_guidance(env: &common::TestEnv, id: &str) -> Output {
+    let change = match single_active_change(env) {
+        Some(change) => change,
+        None => {
+            let output = common::run_givn(env, &["new", "guidance-amendments"]);
+            assert!(
+                output.status.success(),
+                "create the guidance fixture change failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            "guidance-amendments".to_string()
+        }
+    };
+    common::run_givn(env, &["instructions", id, "--change", &change])
+}
+
 /// The default fixture for the ideation guidance scenarios: a Givn project
 /// with every addon enabled, so the addon-gated instruction fragments render.
 #[given("a Givn project")]
