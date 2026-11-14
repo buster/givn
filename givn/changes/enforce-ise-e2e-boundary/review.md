@@ -553,4 +553,24 @@ Two blockers (B1, B2) and three required coverage/test records (F0 to F2)
 remain. The verdict is FAIL until they are resolved and this review is
 re-run.
 
+## Finding closure
+
+Each finding's fix, its test, and the revision that carries it. The verdict
+line is the reviewer's and is unchanged by this section.
+
+| Finding | Fix | Test | Commit |
+|---|---|---|---|
+| B1 | `manifest::dependency_tables` reads the three top-level tables and every `[target.<cfg>.*]` table; `E2eBoundary::resolve` compares a dependency target through `source_root_reached_by`, which refuses a directory that is a `source:` root, lies inside the root's literal anchor (`Glob::anchor`), or contains a path the pattern names. `docs/reference.md` states both rules. | `a_target_specific_dependency_table_is_read`, `a_target_specific_dependency_into_source_is_refused`, `a_glob_shaped_source_root_reaches_the_directory_it_anchors_in`, `a_dependency_that_contains_a_source_root_is_refused`, `a_dependency_outside_every_source_root_is_admitted`, `the_anchor_is_the_literal_directory_a_pattern_starts_in`; delta Examples row `target-specific` in `An ise-effective change whose e2e package reaches a source package fails the tasks check`. Reverting both production reads fails the four resolver tests (30 -> 26 passed) and the row's fixture is refused only with the target-table read. | `a072aa990667e86a1af8b9932e486afffc083c7c`; row and doc sentence in `879081ebbffa62ddad873f6106564d89995ff693` |
+| B2 | `run_change_verification` calls `preflight_e2e_boundary` before `change_verification_not_applicable`; the not-applicable branch of `check_change_receipt` calls it too, because that branch writes no receipt to age. | Delta scenario `An ise-effective change with no behavior change still needs a readable e2e declaration`, driving both `givn check tasks` and `givn check review`. Reverting the order fails the first Then with `expected failure, got exit Some(0)` and the not-applicable line. | `879081ebbffa62ddad873f6106564d89995ff693` |
+| F0 | Every Closeout command run and recorded with its output in `tasks.md`; the receipt is refreshed after the code fixes. | The recorded runs in `tasks.md` `## Closeout`. | `2a823dc2b1983680e91fcbf7a945b2727e59b280` and the closeout-evidence commit below |
+| F1 | No production change: the reader already handled the branches. | `a_python_from_import_names_its_module_and_is_refused`, `a_quoted_require_or_import_path_is_refused`, `a_self_import_resolves_from_the_file_directory`, `a_super_import_walks_up_from_the_file_directory`, `an_attributed_module_declaration_is_admitted` (the admitted `#[path]` limit, R-139), and `a_path_dependency_may_not_escape_the_project_root` for the escape guard. | `a072aa990667e86a1af8b9932e486afffc083c7c` |
+| F2 | The first refusal Outline gained the `lists no path` row; the Then asserts the empty-resolution sentence when the declaration has no entry. | `An ise-effective change whose declared e2e role resolves no readable package fails the tasks check`, row `lists no path` (`e2e: []`), asserting `the 'e2e' role lists no path`. | `879081ebbffa62ddad873f6106564d89995ff693` |
+| F3 | `stderr names "..."` is a contiguous substring check again; the delta binds its own `stderr reports the stale reason "..."` step and the two Outlines use it. | The permanent `archive-change` features: 6 features, 111 scenarios (111 passed), 767 steps (767 passed). | restore `a44536b7eca0f8ef45ca122eda089432afd0edc2`; delta step and phrase `879081ebbffa62ddad873f6106564d89995ff693` |
+| O1 (minor, from the review's observations) | Not actioned, as the review requested no action. The delta's two count scenarios pin `reports N failed test(s)` / `reports N skipped test(s)`; `docs/reference.md` still does not name that wording, so it stays an open documentation nit for the next change. | The two count scenarios | n/a |
+| O2, O3, O4 (minor, from the review's observations) | Not actioned: no behavior claim in the reviewed reports depends on the unsorted `content_paths` order, the `not_applicable` payload shape, or the `names_root` token rule. | n/a | n/a |
+
+The fixes were verified in this order: unit tests, the single delta scenarios,
+the whole delta scope (31 scenarios, 31 passed, 166 steps), the permanent
+`archive-change` run, then the Closeout suite recorded in `tasks.md`.
+
 REVIEW: FAIL
