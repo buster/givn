@@ -23,6 +23,8 @@ pub mod archive_proof_support;
 pub mod change_strategy_e2e_steps;
 pub mod change_strategy_steps;
 pub mod choose_project_license_steps;
+pub mod clean_room_preparation_e2e_steps;
+pub mod clean_room_preparation_steps;
 pub mod coverage_readme_example_steps;
 pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
@@ -50,6 +52,7 @@ pub mod instruction_extension_steps;
 pub mod instruction_integrity_e2e_steps;
 pub mod instruction_integrity_steps;
 pub mod interaction_projection_steps;
+pub mod ise_clean_room_support;
 pub mod llm_attribution_e2e_steps;
 pub mod llm_attribution_installation_e2e_steps;
 pub mod llm_attribution_installation_steps;
@@ -97,6 +100,8 @@ pub mod specification_health_steps;
 pub mod template_conditional_rendering_e2e_steps;
 pub mod template_conditional_rendering_steps;
 pub mod template_conditional_rendering_support;
+pub mod trial_input_verification_e2e_steps;
+pub mod trial_input_verification_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod visual_design_contract_steps;
@@ -223,6 +228,8 @@ pub struct GivnWorld {
     /// State for the `specification-declaration` scenarios.
     pub(crate) specification_declaration:
         specification_declaration_steps::SpecificationDeclarationState,
+    /// State for the clean-room trial scenarios.
+    pub(crate) ise_clean_room: ise_clean_room_support::IseCleanRoomState,
 }
 
 /// A readiness probe running on a background thread.
