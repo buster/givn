@@ -1364,7 +1364,7 @@ GREEN (preflight restored):
 REFACTOR: `cargo fmt --all` and the recorded clippy run changed no behaviour;
 the scenario re-ran green in the whole-delta run below and the Closeout runs.
         ```
-  - [x] COMMIT: `879081ebbffa62ddad873f6106564d89995ff693` -- Batch: `review-closure`
+  - [x] COMMIT: `3b2c293d81b97048488ceeb71d12c702f2dd01df` -- Batch: `review-closure`
 
 ---
 
