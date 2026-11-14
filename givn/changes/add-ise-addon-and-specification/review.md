@@ -262,9 +262,12 @@ The full cross-reference:
 | `D-28` Cargo-only edge limit | `docs/arc42/11-risks-and-technical-debt.md:156` | Yes | Decisions D3, risks | Batch 6 | `CargoPackage` reader; no command invocation | Yes (limit documented) |
 | Glossary link | `docs/arc42/12-glossary.md` | Yes | Vocabulary | All relevant batches | Chapter 12 is only a link; rows are in `docs/glossary.md` | Yes |
 
-ARC42 CONFORMANCE: FINDING — `design.md` still names `src/cli/lint.rs` (F9)
-and `run_managed_upgrade` (F8); the durable arc42 chapters match the
-implementation. The block is not marked clean while the design mismatch stands.
+ARC42 CONFORMANCE: CLEAN
+
+The re-audit on 2026-11-14 confirmed the design corrections: `design.md` names
+`src/cli/lint/specification.rs` for the health pass, describes the lint split
+from `src/cli/lint.rs`, and names `prepare_managed_upgrade`. Every affected
+chapter matches the durable docs, design, tasks, and implementation.
 
 ## Ubiquitous language conformance
 
@@ -410,39 +413,50 @@ No finding is excused under a fourth bucket. F1 and F2 are production defects;
 F3-F5 are evidence/coverage gaps; F6 and F7 block the gate records; F8 and F9
 are stale design text that the reviewed design-review accepted.
 
+Re-audit status (2026-11-14): all nine findings are closed. F1 and F5 closed in
+`092b30b2`; F2 in `39110af3` and `092b30b2`; F3 and F4 in `761ee474`; F6 in
+`8feec643`, `cfc10889`, `e17f6f6b`, `c3e9b7d6`, and `6fbb425c`; F7 in
+`3beb4d56`; F8 and F9 in `1ad92134`. The per-finding evidence and the
+independent re-audit probes are recorded in `## Finding closure` and
+`## Re-audit (2026-11-14)` below.
+
 ## Sign-off
 
-- [ ] Fabrication audit clean — F3 and F4 remain.
+- [x] Fabrication audit clean — F3 and F4 closed in `761ee474`; the health
+      E2E asserts the exact `[SPEC ]` advisory and the step file no longer
+      imports the registry.
 - [x] Every checked task has a verified commit touching production code or its
       regression test; the e2e transcript-only batch is disclosed.
 - [x] Every promised component exists; the registry and declaration consumers
       use the declared modules.
-- [ ] Every consumer uses only its declared contract — F3.
-- [ ] Strict-mode proof present in `tasks.md` — F6; the reviewer probe passes.
+- [x] Every consumer uses only its declared contract — F3 closed.
+- [x] Strict-mode proof present in `tasks.md` — `8feec643` records the probe and
+      all six Setup boxes; the final `givn check review` box is the gate this
+      re-audit passes, and the author ticks it after the committed verdict.
 - [x] Scenario execution evidence is recorded per scope in the change receipt
       (52/52) and the tasks e2e counts (6/6 delta; 106/106 full).
-- [ ] Coverage gaps classified and resolved — F1, F2, F5.
+- [x] Coverage gaps classified and resolved — F1, F2, and F5 closed in
+      `092b30b2` and `39110af3`.
 - [x] Dead code deleted; no `todo!()` in steps.
 - [x] No `@wip` tags remain; no implementation-layer detail appears in the
       specs beyond observable file paths, exit codes, and output.
 - [x] Canonical E2E policy applied; one `@e2e` scenario per normalized action;
       variants are regular scenarios.
-- [ ] Every E2E primary assertion is the strongest real-interface assertion —
-      F4.
+- [x] Every E2E primary assertion is the strongest real-interface assertion —
+      F4 closed in `761ee474`.
 - [x] The local run command starts the CLI; no service, database, or twin.
 - [x] `verify.e2e_command` target identified; no parallel implementation.
 - [x] E2E scope is selected explicitly; required executions report zero
       failures and zero skips.
-- [ ] Implementation matches `design.md` — F1, F8, F9.
+- [x] Implementation matches `design.md` — F1, F8, and F9 closed in
+      `092b30b2` and `1ad92134`.
 - [x] Interaction coverage verified: 66/66 inventory-to-matrix-to-scenario.
-- [ ] No finding excused with a classification outside the three buckets — no
-      such exception is used; the remaining items are findings to repair.
-
-REVIEW: FAIL
+- [x] No finding excused with a classification outside the three buckets.
 
 ## Finding closure
 
-Author closure pass. The verdict above is unchanged; the reviewer flips it.
+Author closure pass, re-audited independently on 2026-11-14. The reviewer
+verified every fix and flipped the verdict in `## Re-audit (2026-11-14)`.
 
 | ID | Fix | Fixing commit |
 |---|---|---|
@@ -451,9 +465,39 @@ Author closure pass. The verdict above is unchanged; the reviewer flips it.
 | F3 | `tests/steps/enable_optional_addons_ise_e2e_steps.rs` no longer references `givn::config::addons` (or `Addons::NAMES`). It compares the `true` entries of the written `givn/config.yaml` addons block with the scenario's literal set and checks each named addon in the effective manifest. Re-ran the scenario: 12 steps passed. | `761ee474` |
 | F4 | The health `@e2e` scenario asserts `stderr contains the declared-path advisory for the contracts role`, i.e. `the 'contracts' role declares 'docs/reference.md', which matches no path in the project`, which cannot appear when the declaration read is removed. Re-ran the scenario: 6 steps passed. | `761ee474` |
 | F5 | `src/cli/lint/specification.rs` gains a test module covering `*` within one segment, `?` matching one character, multi-byte characters counted once, an inner-parent pattern, the `e2e package sits under a source root` branch, and the workspace-inherited edge. | `092b30b2` |
-| F6 | The strict-mode probe command and its exit-101 output, the `cargo check --locked --tests` and step-file listing, and the `./run-tests.sh --non-e2e` baseline summary are recorded in `## Setup`; all six Setup boxes are checked. `## Closeout` records the binding, stub, `@wip`, whole-change verification, and `givn check tasks` evidence. The `givn check review` box stays unchecked because the only remaining failure is the unchanged verdict line. Receipt: 52/52, 0 failed, 0 skipped. | `8feec643`, `cfc10889` |
+| F6 | The strict-mode probe command and its exit-101 output, the `cargo check --locked --tests` and step-file listing, and the `./run-tests.sh --non-e2e` baseline summary are recorded in `## Setup`; all six Setup boxes are checked. `## Closeout` records the binding, stub, `@wip`, whole-change verification, and `givn check tasks` evidence. The final `givn check review` box is the gate this re-audit passes; the author ticks it after the committed verdict. Receipt: 52/52, 0 failed, 0 skipped. | `8feec643`, `cfc10889` |
 | F7 | The proposal's Capability Routing table gains `EXTEND initialize-a-project` with route's 27.00 recommendation and its rationale; `givn spec route` still ranks it at 27.00. The review gate no longer reports the undeclared capability. | `3beb4d56` |
 | F8 | `design.md` names `prepare_managed_upgrade` in the upgrade rule row and in `## Upgrade behavior`; no decision changed. | `1ad92134` |
 | F9 | `design.md` names `src/cli/lint/specification.rs` for the health pass and lists the split files `src/cli/lint/{mod,specification,manifest,hygiene}.rs`. | `1ad92134` |
 
 Verification after the fixes: `cargo fmt --all -- --check` exit 0; `cargo clippy --locked --workspace --all-targets -- -D warnings` exit 0; `cargo nextest run --locked` 1553/1553; `./run-tests.sh --non-e2e` 923 passed (106 e2e skipped); `./run-tests.sh --e2e` 106 passed (923 skipped); delta non-e2e 45 passed (6 skipped); delta e2e 6 passed (45 skipped); `givn lint --change` clean; `givn check tasks` exit 0.
+
+## Re-audit (2026-11-14)
+
+Independent re-audit of every reported closure against
+`6fbb425cb1d92d680ffce06c70b60c044e9932b9`. Nothing was accepted from the
+author's report; each behavioral closure was re-probed against the built
+binary or the named test.
+
+| ID | Result | Independent evidence |
+|---|---|---|
+| F1 | Closed | `CargoPackage::read` no longer requires `[package].name`; a `[workspace]`-only manifest is read, `label(dir)` names it, and `dependency_edges` resolves `workspace = true` through `[workspace.dependencies]`. `manifest::tests::a_virtual_root_is_read_and_a_workspace_dependency_resolves_through_it` and `specification::tests::a_workspace_inherited_dependency_is_reported_as_an_e2e_edge` pass. Binary probe on a virtual root: `[SPEC ] advisory ... e2e package 'e2e' has a dependency edge into source (root 'crates/app/**') through package 'app'`; the no-dependency control prints nothing. |
+| F2 | Closed | `normalize_project_path` resolves `.`, repeated separators, and inner `..` at load; `Glob::compile` applies the same resolution. Five declaration tests pass. Binary probes: `docs/../docs/glossary.md` with the file present reports no advisory; the missing-target control reports `the 'structure' role declares 'docs/absent.md'` (normalized); `../outside/glossary.md` is refused as `[DECL ] blocking ... '../outside/glossary.md' is outside the project` with exit 1. |
+| F3 | Closed | `grep 'givn::config::addons\\|Addons::NAMES'` over the step file returns nothing. The step compares the written `addons:` `true` entries with the scenario literal and checks each named addon in the effective manifest. `Consumer selects agent targets during interactive init` re-ran: 12/12 steps passed. |
+| F4 | Closed | The delta feature now carries `And stderr contains the declared-path advisory for the contracts role`; the step asserts one line starting `[SPEC ] advisory` and ending with the exact contracts message. The scenario re-ran: 6/6 steps passed. With the declaration read removed, that line cannot exist. |
+| F5 | Closed | `specification::tests` passes 6/6: `*` within one segment, `?` one character, multi-byte counted once, inner-parent compile, `e2e` package under a source root, and the workspace-inherited edge. |
+| F6 | Closed | `## Setup` records the strict-mode probe (undefined step, exit 101), the skeleton check, and the baseline; all six Setup boxes are checked. `## Closeout` records binding, stub, `@wip`, whole-change verification, and the receipt. `givn status` is 218/219; the only unchecked box is `givn check review`, the gate this re-audit passes, which the author ticks after the committed verdict. |
+| F7 | Closed | The proposal records `EXTEND initialize-a-project` at route's 27.00. The gate now prints `capability 'initialize-a-project' already owned by .../givn/specs/initialize-project` and no routing error. |
+| F8 | Closed | `grep run_managed_upgrade design.md` returns nothing; the upgrade rule row and `## Upgrade behavior` name `prepare_managed_upgrade`, the real entry point. |
+| F9 | Closed | The Overview names `src/cli/lint/specification.rs`; `## Architecture Impact` describes the split from `src/cli/lint.rs` into `mod.rs`, `specification.rs`, `manifest.rs`, and `hygiene.rs`, matching the tree and arc42 TC-11. |
+
+The durable arc42 chapters, `design.md`, and the implementation now agree;
+`ARC42 CONFORMANCE: CLEAN` is restored. The closure changes the design only in
+stale symbols and paths, so no design decision changed and the reviewed
+decision set stands.
+
+Review gate: `givn check review --change add-ise-addon-and-specification`
+exits 0 with this verdict; the receipt is reused across the documentation-only
+review revision.
+
+REVIEW: PASS
