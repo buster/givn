@@ -711,9 +711,11 @@ none refuses.
 **Files created:** none (the modules exist from batch 1).
 **Files modified:** `src/ise/mod.rs` (partition, copy set, writer, re-read unit
 test), `src/cli/ise.rs` (report model: `Backend`, `Revision`, and the five count
-lines), `src/scm.rs` and `src/git.rs` (a failed blob read reports the path and
-the revision instead of being skipped), `tests/steps/ise_clean_room_support.rs`,
-`tests/steps/clean_room_preparation_steps.rs`.
+lines), `src/scm.rs` (`Backend::revision_blobs` reports an unreadable path and
+the revision for both backends; each adapter's skipped path becomes that named
+error), `tests/steps/ise_clean_room_support.rs`,
+`tests/steps/clean_room_preparation_steps.rs`. `src/git.rs` and `src/fossil.rs`
+are unchanged: the seam owns the contract and neither adapter grows.
 
 **Design constraints (batch-wide):**
 - `Partition { retained, kept_source, replaced, outside, not_replaced }`, all
@@ -752,11 +754,13 @@ the revision instead of being skipped), `tests/steps/ise_clean_room_support.rs`,
   passes on its first run is recorded as existing behavior protected.
 
 **Batch verification:** the single-scenario command below for each scenario,
-then `./run-tests.sh --non-e2e` for the `revision_blobs` behavior change.
+then `./run-tests.sh --non-e2e` for the `revision_blobs` behavior change
+(observed on `5d3a6ef`: 980 tests run, 980 passed, 111 skipped; `cargo test
+--locked --lib ise::tests` → 2 passed).
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch:
 partition-and-write'`.
 
-- [ ] Scenario: `Preparation counts the files left in a replaced path's directory`
+- [x] Scenario: `Preparation counts the files left in a replaced path's directory`
   - Design constraints:
     - Fixture: a declaration with all five roles present (`behavior`,
       `structure`, `contracts`, `limits`, `e2e` empty) and
@@ -767,20 +771,31 @@ partition-and-write'`.
       `src/keys/mod.rs` and `src/keys/tests.rs`.
     - Contract: `not_replaced` counts direct tracked siblings of the replaced
       files in their parent directories.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation counts the files left in a replaced path's directory"
+        → exit 101: assertion `left == right` failed: stderr=ise replace:
+          the clean-room trial write is not implemented yet
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        UNIT (re-read mismatch, Contradictions 7):
+          cargo test --locked --lib ise::tests → 2 passed; the corrupting
+          writer yields Mismatched { paths: ["src/kept.rs"] } and removes the
+          trial.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Removed an avoidable `replaced` clone in the partition; cargo fmt
+        --check and clippy -D warnings are clean; the re-run stayed green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
-- [ ] Scenario: `Preparation expands a directory path to the tracked files beneath it`
+- [x] Scenario: `Preparation expands a directory path to the tracked files beneath it`
   - Design constraints:
     - Fixture: `source: ["src/**"]`, empty retained roles; a committed revision
       with `src/keys/parser.rs`, `src/keys/mod.rs`, `src/other.rs`.
@@ -790,20 +805,28 @@ partition-and-write'`.
     - Contract: the directory is derived from the tracked file paths (a
       backend lists no directory entries); the expansion is bounded by the
       revision, and the retained-role test runs over the expansion.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation expands a directory path to the tracked files beneath it"
+        → exit 101: assertion `left == right` failed: stderr=ise replace:
+          the clean-room trial write is not implemented yet
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 6 steps (6 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change beyond the batch-wide clone removal;
+        cargo fmt --check and clippy -D warnings are clean; the re-run stayed
+        green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
-- [ ] Scenario: `A full replacement removes every tracked file under the source roots`
+- [x] Scenario: `A full replacement removes every tracked file under the source roots`
   - Design constraints:
     - Fixture: `behavior: ["givn/specs/**"]`, `source: ["src/**"]`; a committed
       revision with `src/one.rs`, `src/nested/two.rs`, `givn/specs/demo.feature`.
@@ -813,20 +836,28 @@ partition-and-write'`.
     - Contract: `--full` is the union of the source roots at the revision after
       the retained test; the retained role sits outside the source roots here,
       which is what makes `Not replaced: 0` (design-review blocker 1).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::A full replacement removes every tracked file under the source roots"
+        → exit 101: assertion `left == right` failed: stderr=ise replace:
+          the clean-room trial write is not implemented yet
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 6 steps (6 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change beyond the batch-wide clone removal;
+        cargo fmt --check and clippy -D warnings are clean; the re-run stayed
+        green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
-- [ ] Scenario: `Preparation does not expand a glob-shaped path`
+- [x] Scenario: `Preparation does not expand a glob-shaped path`
   - Design constraints:
     - Fixture: `source: ["src/**"]`, empty retained roles; a committed revision
       with `src/one.rs` and `src/nested/two.rs`.
@@ -835,20 +866,28 @@ partition-and-write'`.
     - Contract: `src/**` is neither a tracked file nor a directory, so it
       removes nothing and is not a refusal (D1, R-142). The value stays in
       `named_paths` only. No glob matching is used for deletion.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation does not expand a glob-shaped path"
+        → exit 101: assertion `left == right` failed: stderr=ise replace:
+          the clean-room trial write is not implemented yet
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change beyond the batch-wide clone removal;
+        cargo fmt --check and clippy -D warnings are clean; the re-run stayed
+        green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
-- [ ] Scenario: `A named path absent from the revision removes nothing`
+- [x] Scenario: `A named path absent from the revision removes nothing`
   - Design constraints:
     - Fixture: `source: ["src/**"]`, empty retained roles; a committed revision
       with `src/keys/parser.rs`.
@@ -856,20 +895,28 @@ partition-and-write'`.
     - Then: exit 0; `Replaced: 0`; the trial holds `src/keys/parser.rs`.
     - Contract: a named value that resolves to no tracked file is admitted, not
       a tenth refusal; the `Replaced` count is the developer's signal (R-142).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::A named path absent from the revision removes nothing"
+        → exit 101: assertion `left == right` failed: stderr=ise replace:
+          the clean-room trial write is not implemented yet
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change beyond the batch-wide clone removal;
+        cargo fmt --check and clippy -D warnings are clean; the re-run stayed
+        green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
-- [ ] Scenario: `Preparation reads an explicit revision and reports it`
+- [x] Scenario: `Preparation reads an explicit revision and reports it`
   - Design constraints:
     - Fixture (Contradictions 1): `structure: ["src/kept.rs"]`,
       `source: ["src/**"]`; commit one revision holding `src/kept.rs`, then a
@@ -881,20 +928,28 @@ partition-and-write'`.
     - Contract: an explicit `--at` prints the supplied identifier (design.md
       "Trial record": only `HEAD` is resolved); the read is
       `revision_files(<supplied>, "")`, never the working tree.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation reads an explicit revision and reports it"
+        → exit 101: assertion `left == right` failed: stderr=ise replace:
+          the clean-room trial write is not implemented yet
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 6 steps (6 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change beyond the batch-wide clone removal;
+        cargo fmt --check and clippy -D warnings are clean; the re-run stayed
+        green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
-- [ ] Scenario: `Preparation reads the revision and leaves an ignored file out of the trial`
+- [x] Scenario: `Preparation reads the revision and leaves an ignored file out of the trial`
   - Design constraints:
     - Fixture (Contradictions 1): `structure: ["src/kept.rs"]`,
       `source: ["src/**"]`; a committed `src/kept.rs`; a `.gitignore` rule plus
@@ -904,20 +959,28 @@ partition-and-write'`.
       `ignored.txt`.
     - Contract: preparation reads `revision_files`, not `Backend::content_paths`,
       so no ignored or untracked file can enter the trial.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation reads the revision and leaves an ignored file out of the trial"
+        → exit 101: assertion `left == right` failed: stderr=ise replace:
+          the clean-room trial write is not implemented yet
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 7 steps (7 passed).
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change beyond the batch-wide clone removal;
+        cargo fmt --check and clippy -D warnings are clean; the re-run stayed
+        green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
-- [ ] Scenario: `Preparation refuses when a revision blob cannot be read`
+- [x] Scenario: `Preparation refuses when a revision blob cannot be read`
   - Design constraints:
     - Fixture: `source: ["src/**"]`; commit `src/kept.rs`, then delete its loose
       object under `.git/objects/<xx>/<rest>` so the tree lists the path while
@@ -930,19 +993,30 @@ partition-and-write'`.
       `create_dir`, so the refusal leaves nothing behind. `src/git.rs`
       currently skips a path whose `git show` fails
       (`src/git.rs:463-477`); that skip becomes a named error.
-  - [ ] Implement the scenario and its tests. Files: `src/git.rs`,
-        `src/fossil.rs` (report the same failure), `src/scm.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/scm.rs`,
         `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses when a revision blob cannot be read"
+        → exit 101: stderr "ise replace: the clean-room trial write is not
+          implemented yet\n" does not name the unreadable path
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: the named refusal is the Backend::revision_blobs
+          contract in src/scm.rs, shared by both backends; each adapter's
+          skipped path becomes that error, so src/git.rs stays at its recorded
+          size and src/fossil.rs does not grow.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No behavior-preserving change beyond the batch-wide clone removal;
+        cargo fmt --check and clippy -D warnings are clean; the re-run stayed
+        green.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-write`
+  - [x] COMMIT: `5d3a6efb73aa1b44ef40ee72a265fdf02632c779` -- Batch: `partition-and-write`
 
 ---
 
