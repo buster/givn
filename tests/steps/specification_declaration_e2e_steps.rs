@@ -50,3 +50,19 @@ fn stderr_contains_no_declaration_schema_error(world: &mut GivnWorld) {
         "stderr reports a declaration-schema error:\n{observed}"
     );
 }
+
+/// The fixture declares `docs/reference.md`, which the fresh project does not
+/// contain, so the health pass reports it. The advisory exists only when the
+/// declaration was read and the project walk compared each declared value.
+#[then("stderr contains the declared-path advisory for the contracts role")]
+fn stderr_contains_the_contracts_role_advisory(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let expected = "the 'contracts' role declares 'docs/reference.md', which matches no path in \
+                    the project";
+    assert!(
+        observed
+            .lines()
+            .any(|line| line.starts_with("[SPEC ] advisory") && line.ends_with(expected)),
+        "stderr reports no contracts-role advisory:\n{observed}"
+    );
+}

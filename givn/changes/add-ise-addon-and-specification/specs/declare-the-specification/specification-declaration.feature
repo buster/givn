@@ -8,6 +8,7 @@ Feature: specification-declaration
     When the consumer runs `givn lint`
     Then the command exits 0
     And stderr contains no declaration-schema error
+    And stderr contains the declared-path advisory for the contracts role
     And the terminal transcript is captured for this scenario
 
   @givn.added

@@ -20,20 +20,12 @@ fn env(world: &GivnWorld) -> &common::TestEnv {
 }
 
 /// Assert a fresh initialization wrote an explicit `true` for exactly the
-/// registry's default-on addons and that every registered addon resolves to
-/// the state the scenario names.
+/// addons the scenario names, and that the effective manifest resolves each of
+/// them to enabled. The written settings are the only expected set, so an
+/// addon the scenario does not name cannot be switched on without a failure.
 #[then(regex = r#"^the active addon settings enable exactly "([^"]+)"$"#)]
 fn active_addon_settings_enable_exactly(world: &mut GivnWorld, expected: String) {
     let names: Vec<&str> = expected.split(", ").collect();
-    let declared_on: Vec<&str> = givn::config::addons::KNOWN_ADDONS
-        .iter()
-        .filter(|addon| addon.default_enabled)
-        .map(|addon| addon.id)
-        .collect();
-    assert_eq!(
-        names, declared_on,
-        "the scenario names a different default-on addon set than the registry"
-    );
     let content = std::fs::read_to_string(env(world).path("givn/config.yaml"))
         .expect("read givn/config.yaml");
     for name in &names {
@@ -44,13 +36,41 @@ fn active_addon_settings_enable_exactly(world: &mut GivnWorld, expected: String)
             "givn/config.yaml has no explicit line \"  {name}: true\":\n{content}"
         );
     }
+
+    let mut enabled: Vec<&str> = Vec::new();
+    let mut in_addons = false;
+    for line in content.lines() {
+        if line.starts_with('#') || line.trim().is_empty() {
+            continue;
+        }
+        if !line.starts_with(' ') {
+            in_addons = line == "addons:";
+            continue;
+        }
+        if !in_addons {
+            continue;
+        }
+        if let Some(name) = line
+            .strip_prefix("  ")
+            .and_then(|entry| entry.strip_suffix(": true"))
+        {
+            enabled.push(name);
+        }
+    }
+    let mut expected = names.clone();
+    expected.sort_unstable();
+    enabled.sort_unstable();
+    assert_eq!(
+        enabled, expected,
+        "givn/config.yaml enables a different addon set than the scenario names"
+    );
+
     let manifest = common::effective_manifest(env(world));
-    for name in givn::config::manifest::Addons::NAMES {
-        let enabled = names.contains(&name);
+    for name in &names {
         assert_eq!(
             manifest.addons.get(name),
-            Some(enabled),
-            "addon '{name}' does not resolve to enabled={enabled}"
+            Some(true),
+            "addon '{name}' does not resolve to enabled=true"
         );
     }
 }
