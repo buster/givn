@@ -440,7 +440,7 @@ batch 1), `tests/steps/specification_declaration_steps.rs`.
 **Batch verification:** the six single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: declaration-loader'`.
 
-- [ ] Scenario: `A malformed declaration is refused by name and left unchanged`
+- [x] Scenario: `A malformed declaration is refused by name and left unchanged`
   - Design constraints:
     - Fixture: `givn init --agents opencode`, `givn addons enable ise`
       (scaffold), record the declaration bytes, then apply one mutation per
@@ -452,83 +452,171 @@ batch 1), `tests/steps/specification_declaration_steps.rs`.
       the recorded bytes equal the bytes after the run.
     - `SpecificationDeclaration::load` performs no write; the lint command
       never rewrites the file.
-  - [ ] Implement the scenario and its tests (all Examples). Evidence:
+  - [x] Implement the scenario and its tests (all Examples). Evidence:
         ```
-        <!-- paste: --exact
-             "declare-the-specification/specification-declaration.feature::A malformed declaration is refused by name and left unchanged" -->
-        ```
-  - [ ] REFACTOR: re-run all Examples; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-loader`
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "declare-the-specification/specification-declaration.feature::A malformed declaration is refused by name and left unchanged"
 
-- [ ] Scenario: `A declaration that is not valid YAML is refused by name`
+        RED: 7 scenarios (7 failed); 21 steps (14 passed, 7 failed) — each Example
+          ✘ Then the command exits non-zero
+          Step panicked. Captured output: expected failure, got exit Some(0):
+            stdout=givn lint: no .feature files found under givn/
+        GREEN: 7 scenarios (7 passed); 35 steps (35 passed)
+        ```
+  - [x] REFACTOR: re-ran all Examples; 35 steps passed. No behavior change.
+  - [x] COMMIT: `ca2c4b511e93ff7451776e9e881a1fd00fcf77fd` -- Batch: `declaration-loader`
+
+- [x] Scenario: `A declaration that is not valid YAML is refused by name`
   - Design constraints:
     - Fixture: an `ise`-enabled project whose declaration is syntactically
       invalid YAML (e.g. an unclosed list).
     - `DeclarationError::Malformed` names `givn/specification.yaml` and the
       parser reason; exit 1.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "declare-the-specification/specification-declaration.feature::A declaration that is not valid YAML is refused by name" -->
-        ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-loader`
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "declare-the-specification/specification-declaration.feature::A declaration that is not valid YAML is refused by name"
 
-- [ ] Scenario: `A role that is not a list is refused by name`
+        RED: 3 steps (2 passed, 1 failed)
+          ✘ Then the command exits non-zero
+          Step panicked. Captured output: expected failure, got exit Some(0):
+            stdout=givn lint: no .feature files found under givn/
+        GREEN: 1 scenario (1 passed); 4 steps (4 passed)
+        ```
+  - [x] REFACTOR: re-ran; 4 steps passed. No behavior change.
+  - [x] COMMIT: `ca2c4b511e93ff7451776e9e881a1fd00fcf77fd` -- Batch: `declaration-loader`
+
+- [x] Scenario: `A role that is not a list is refused by name`
   - Design constraints:
     - Fixture: `behavior: "givn/specs/**"` (scalar) with the other five keys
       valid.
     - The type error names `behavior`; exit 1.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "declare-the-specification/specification-declaration.feature::A role that is not a list is refused by name" -->
-        ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-loader`
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "declare-the-specification/specification-declaration.feature::A role that is not a list is refused by name"
 
-- [ ] Scenario: `An unreadable declaration is refused by name`
+        RED: 3 steps (2 passed, 1 failed)
+          ✘ Then the command exits non-zero
+          Step panicked. Captured output: expected failure, got exit Some(0):
+            stdout=givn lint: no .feature files found under givn/
+        GREEN: 1 scenario (1 passed); 4 steps (4 passed)
+        ```
+  - [x] REFACTOR: re-ran; 4 steps passed. No behavior change.
+  - [x] COMMIT: `ca2c4b511e93ff7451776e9e881a1fd00fcf77fd` -- Batch: `declaration-loader`
+
+- [x] Scenario: `An unreadable declaration is refused by name`
   - Design constraints:
     - Fixture: `givn/specification.yaml` is a directory.
     - The read error is `DeclarationError::Malformed` naming the path; exit 1.
     - The path-occupied-by-a-directory case is the same condition the scaffold
       batch reports on the write path; here the loader reports it on read.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "declare-the-specification/specification-declaration.feature::An unreadable declaration is refused by name" -->
-        ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-loader`
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "declare-the-specification/specification-declaration.feature::An unreadable declaration is refused by name"
 
-- [ ] Scenario: `An unknown role is named before the role it replaces`
+        RED: 3 steps (2 passed, 1 failed)
+          ✘ Then the command exits non-zero
+          Step panicked. Captured output: expected failure, got exit Some(0):
+            stdout=givn lint: no .feature files found under givn/
+        GREEN: 1 scenario (1 passed); 4 steps (4 passed)
+        ```
+  - [x] REFACTOR: re-ran; 4 steps passed. No behavior change.
+  - [x] COMMIT: `ca2c4b511e93ff7451776e9e881a1fd00fcf77fd` -- Batch: `declaration-loader`
+
+- [x] Scenario: `An unknown role is named before the role it replaces`
   - Design constraints:
     - Fixture: the declaration spells `behaviour` and omits `behavior`
       (the other four roles and `source:` valid).
     - One refusal only: stderr names `behaviour` and does not report the
       omitted role `behavior` (assert the absence of the missing-role message,
       not of the word in the permitted-key list).
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "declare-the-specification/specification-declaration.feature::An unknown role is named before the role it replaces" -->
-        ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-loader`
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "declare-the-specification/specification-declaration.feature::An unknown role is named before the role it replaces"
 
-- [ ] Scenario: `A project with ise disabled reads no declaration`
+        RED: 3 steps (2 passed, 1 failed)
+          ✘ Then the command exits non-zero
+          Step panicked. Captured output: expected failure, got exit Some(0):
+            stdout=givn lint: no .feature files found under givn/
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed)
+        ```
+  - [x] REFACTOR: re-ran; 5 steps passed. No behavior change.
+  - [x] COMMIT: `ca2c4b511e93ff7451776e9e881a1fd00fcf77fd` -- Batch: `declaration-loader`
+
+- [x] Scenario: `A project with ise disabled reads no declaration`
   - Design constraints:
     - Fixture: initialized project selecting opencode, `ise` disabled, with a
       malformed declaration written at `givn/specification.yaml`.
     - Run `givn lint`; assert exit 0 and no declaration finding on stderr. The
       load is gated on `is_effective`, so the malformed file is never read.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "declare-the-specification/specification-declaration.feature::A project with ise disabled reads no declaration" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "declare-the-specification/specification-declaration.feature::A project with ise disabled reads no declaration"
+
+        existing behavior protected: lint already ignored the declaration, so the
+        scenario passed before the loader existed — 1 scenario (1 passed); 4 steps
+        (4 passed). It now rejects a load that is not gated on `is_effective`.
+        GREEN after the loader: 1 scenario (1 passed); 4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-loader`
+  - [x] REFACTOR: re-ran; 4 steps passed. No behavior change.
+  - [x] COMMIT: `ca2c4b511e93ff7451776e9e881a1fd00fcf77fd` -- Batch: `declaration-loader`
+
+Refusal messages through the real binary in a throwaway temp project
+(`givn init --agents opencode`, `givn addons enable ise`, one declaration
+mutation per run; exit 1 in every case, declaration bytes unchanged):
+
+```
+$ givn lint            # valid declaration
+givn lint: no .feature files found under givn/            exit 0
+
+[DECL ] blocking  givn/specification.yaml  unknown key 'components' — the declaration holds only behavior, structure, contracts, limits, e2e, and source
+[DECL ] blocking  givn/specification.yaml  unknown key 'behaviour' — the declaration holds only behavior, structure, contracts, limits, e2e, and source
+[DECL ] blocking  givn/specification.yaml  'e2e' is declared more than once
+[DECL ] blocking  givn/specification.yaml  missing role 'limits'
+[DECL ] blocking  givn/specification.yaml  missing the 'source:' list of replaceable roots
+[DECL ] blocking  givn/specification.yaml  '../other/crates/**' is outside the project
+[DECL ] blocking  givn/specification.yaml  '/opt/specs/**' is outside the project
+[DECL ] blocking  givn/specification.yaml  behavior: invalid type: string "givn/specs/**", expected a sequence at line 1 column 11
+[DECL ] blocking  givn/specification.yaml  did not find expected ',' or ']' at line 2 column 1, while parsing a flow sequence at line 1 column 11
+[DECL ] blocking  givn/specification.yaml  Is a directory (os error 21)
+[DECL ] blocking  givn/specification.yaml  the declaration is absent; the declaration checks were not performed
+
+$ givn lint --json      # absent declaration
+"kind": "specification_declaration", "level": "error", "severity": "blocking"   exit 1
+
+$ givn addons disable ise && givn lint                 # malformed file on disk
+givn lint: no .feature files found under givn/            exit 0
+```
+
+Batch REFACTOR check (outline addon enabled):
+
+```
+target/debug/givn outline report --path src/config       → 10 files, 34 units, 0 hints
+target/debug/givn outline report --path src/cli/lint.rs  → 1 file, 3 units, 1 hint (multi-type-module)
+```
+
+Covered: Rust; `config::declaration`, `config::addons`, `config::manifest`,
+`config::lock`, `config::overlay` and `cli::lint`. Omitted: `tests/steps`
+(step glue, not a component) and the embedded assets. `config::declaration`
+states one responsibility — read and strictly validate the declaration — in
+its declarations alone: `Role`, `SpecificationDeclaration` (`load`, `roles`,
+`is_effective`), `DeclarationError` (`detail`), and the private helpers
+`scan_top_level_keys`, `is_key`, `validate_role_paths`, `is_project_relative`,
+`has_windows_prefix`; the flow is `load` -> `parse` -> key scan -> role
+presence -> parse -> `validate_paths`. `cli::lint`'s `multi-type-module` hint
+predates this batch (`SeedStatus` and `Severity`) and
+`specification_declaration_finding` appears only in `run_with_root`'s call
+flow. No structural change made; behaviour unchanged.
 
 ---
 
