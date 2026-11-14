@@ -1563,7 +1563,7 @@ batch 1; this batch proves the two remaining declared requirements.)
 
 E2E setup (once, before the first `@e2e` batch):
 
-- [ ] Confirm the e2e infrastructure from design.md "E2E smoke-test
+- [x] Confirm the e2e infrastructure from design.md "E2E smoke-test
       infrastructure": no server, database, container, browser, or digital twin.
       Each scenario builds a `tempfile::TempDir`, writes a minimal Givn project,
       and runs `env!("CARGO_BIN_EXE_givn")`; Git-backed scenarios initialize a
@@ -1573,13 +1573,26 @@ E2E setup (once, before the first `@e2e` batch):
       disjoint scopes with their own tag expression (`@e2e and not
       @givn.removed` vs `not @e2e`).
       ```
-      <!-- paste: GIVN_FEATURES=… ./run-tests.sh --e2e summary,
-           and the delta count proof: @e2e 6 < full 51 -->
+      $ ./run-tests.sh --e2e
+      Summary [  38.696s] 106 tests run: 106 passed, 923 skipped
+
+      $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          ./run-tests.sh --e2e
+      Summary [   1.198s] 6 tests run: 6 passed, 45 skipped
+
+      Delta count proof: 6 `@e2e` of 51 delta scenarios (56 scenario lines
+      minus 5 `@givn.removed` placeholders) — @e2e 6 < full 51.
       ```
-- [ ] E2E strict-mode proof: the `.fail_on_skipped()` builder is the same one
+      Host prerequisite for the permanent scope (this change's own scenarios
+      need no browser): `cd tests/e2e && npm ci` plus
+      `npx playwright install chromium` for the Playwright 1.64.1 headless
+      shell. Without it the ten `inspect-development-history` browser
+      scenarios fail with `Executable doesn't exist at …/chrome-headless-shell`;
+      with it the scope is 106/106. `tests/e2e/node_modules` stays ignored.
+- [x] E2E strict-mode proof: the `.fail_on_skipped()` builder is the same one
       proven in `Setup`. Record the probe evidence there; do not repeat the
       probe.
-- [ ] COMMIT: `<hash>` -- Batch: `e2e-setup`
+- [x] COMMIT: `<hash>` -- Batch: `e2e-setup`
 
 ### Batch E1: `addon-registry-e2e`
 
