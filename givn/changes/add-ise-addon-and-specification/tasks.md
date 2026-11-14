@@ -1227,58 +1227,72 @@ Realizes decision D2. **Files created:** `assets/instructions/ise.md`.
 **Batch verification:** the four single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: ise-instruction-serving'`.
 
-- [ ] Scenario: `The ise instruction is served while ise is effective`
+- [x] Scenario: `The ise instruction is served while ise is effective`
   - Design constraints:
     - Fixture: `ise`-enabled project; run `givn instructions ise` with no
       `--change` (policy id needs none).
     - Exit 0 and the served text names the five obligations.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "obtain-effective-guidance/serve-extended-rules.feature::The ise instruction is served while ise is effective" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The ise instruction is served while ise is effective"
+        RED: expected exit 0, got Some(1): stderr=error: unknown artifact 'ise'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs, start, dialog, dialog-examples, challenge, dev-principles, domain-modeling, architecture-principles, review-reverse, specs-reverse, tasks-reverse
+        GREEN: 1 scenario (1 passed); 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed), 4 steps (4 passed); 923 passed,
+        106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
 
-- [ ] Scenario: `An ise instruction request with the addon off is refused by name`
+- [x] Scenario: `An ise instruction request with the addon off is refused by name`
   - Design constraints:
     - Fixture: initialized project with `ise` disabled.
     - Exit non-zero, stderr names `ise`, and no served instruction content is
       printed on stdout.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "obtain-effective-guidance/serve-extended-rules.feature::An ise instruction request with the addon off is refused by name" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::An ise instruction request with the addon off is refused by name"
+        RED: expected failure, got exit Some(0): stdout=# Instruction: ise
+        Run with the asset present and the guard absent. The earlier run, before
+        the asset existed, passed on the unknown-id error and proved nothing.
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed), 5 steps (5 passed); 923 passed,
+        106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
 
-- [ ] Scenario: `The machine-readable ise path carries the same content as the text path`
+- [x] Scenario: `The machine-readable ise path carries the same content as the text path`
   - Design constraints:
     - Fixture: `ise`-enabled project. Run the text path and
       `givn instructions ise --json` on the same project.
     - Exit 0; JSON `instruction` equals the served text after removing the
       optional `Skill to load now: ...` trailer.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "obtain-effective-guidance/serve-extended-rules.feature::The machine-readable ise path carries the same content as the text path" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "obtain-effective-guidance/serve-extended-rules.feature::The machine-readable ise path carries the same content as the text path"
+        RED: expected exit 0, got Some(1): stderr=error: unknown artifact 'ise'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs, start, dialog, dialog-examples, challenge, dev-principles, domain-modeling, architecture-principles, review-reverse, specs-reverse, tasks-reverse
+        GREEN: 1 scenario (1 passed); 4 steps (4 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed), 4 steps (4 passed); 923 passed,
+        106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
 
-- [ ] Scenario: `The ise instruction carries the five rebuild obligations`
+- [x] Scenario: `The ise instruction carries the five rebuild obligations`
   - Design constraints:
     - Fixture: project with `ise` enabled and skills synchronized; request the
       `ise` instruction.
     - Assert the five obligation labels and the five vocabulary terms on the
       served text. Bind in `tests/steps/instruction_integrity_steps.rs`.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "fragments/instruction-integrity.feature::The ise instruction carries the five rebuild obligations" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "fragments/instruction-integrity.feature::The ise instruction carries the five rebuild obligations"
+        RED: expected exit 0, got Some(1): stderr=error: unknown artifact 'ise'. Known artifacts: proposal, specs, design, design-review, tasks, review, arc42-docs, start, dialog, dialog-examples, challenge, dev-principles, domain-modeling, architecture-principles, review-reverse, specs-reverse, tasks-reverse
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed).
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed), 5 steps (5 passed); 923 passed,
+        106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `ise-instruction-serving`
 
 ---

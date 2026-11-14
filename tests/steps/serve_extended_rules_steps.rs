@@ -533,7 +533,15 @@ fn agent_requests_every_served_step(world: &mut GivnWorld) {
     ids.sort();
     assert!(!ids.is_empty(), "no served instruction assets found");
 
+    // An addon-bound instruction is refused by name while its addon is off, so
+    // the corpus-wide request covers only the ids this fixture can serve.
+    let listing = common::run_givn(env, &["addons", "list"]);
+    let listing = String::from_utf8_lossy(&listing.stdout).into_owned();
+
     for id in &ids {
+        if listing.contains(&format!("[disabled]  {id}")) {
+            continue;
+        }
         let mut args = vec!["instructions", id.as_str()];
         let change;
         if MANIFEST_ARTIFACT_IDS.contains(&id.as_str()) {
@@ -1437,6 +1445,94 @@ fn no_hypothetical_providers(world: &mut GivnWorld) {
         normalized_guidance(world)
             .contains("do not invent hypothetical providers or plugin registries"),
         "development principles demand hypothetical providers"
+    );
+}
+
+// --- ise instruction --------------------------------------------------------
+
+/// An initialized project with `ise` effective. Enabling the addon scaffolds
+/// `givn/specification.yaml`; the serving scenarios do not read it.
+#[given("an ise-enabled project")]
+fn ise_enabled_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let output = common::run_givn(&env, &["addons", "enable", "ise"]);
+    assert!(
+        output.status.success(),
+        "givn addons enable ise failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.env = Some(env);
+}
+
+#[given("an initialized project with ise disabled")]
+fn initialized_project_with_ise_disabled(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+}
+
+#[when("the user requests the `ise` instruction")]
+fn user_requests_ise(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(common::run_givn(env, &["instructions", "ise"]));
+}
+
+#[when("the user requests the `ise` instruction as machine-readable output")]
+fn user_requests_ise_as_json(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.previous_output = Some(common::run_givn(env, &["instructions", "ise"]));
+    world.last_output = Some(common::run_givn(env, &["instructions", "ise", "--json"]));
+}
+
+#[then("the served instruction names the five rebuild obligations")]
+fn served_instruction_names_five_obligations(world: &mut GivnWorld) {
+    let content = crate::steps::stdout(world);
+    for label in [
+        "Specification completeness",
+        "two-layer test boundary",
+        "persisted-state continuity",
+        "change strategy",
+        "Spec gap",
+    ] {
+        assert!(
+            content.contains(label),
+            "the served ise instruction is missing {label:?}: {content}"
+        );
+    }
+}
+
+#[then("no served instruction content is printed")]
+fn no_served_instruction_content_printed(world: &mut GivnWorld) {
+    let out = crate::steps::stdout(world);
+    assert!(
+        out.trim().is_empty(),
+        "the refusal printed instruction content: {out}"
+    );
+}
+
+#[then("the machine-readable instruction field equals the served text")]
+fn machine_readable_instruction_equals_served_text(world: &mut GivnWorld) {
+    let text = world
+        .previous_output
+        .as_ref()
+        .expect("the text path was not requested")
+        .stdout
+        .clone();
+    let text = String::from_utf8_lossy(&text);
+    // The text path appends the optional skill route after one newline.
+    let text = text
+        .find("\nSkill to load now: ")
+        .map_or(text.as_ref(), |index| &text[..index]);
+    let json: serde_json::Value = serde_json::from_str(&crate::steps::stdout(world))
+        .expect("the machine-readable path did not emit JSON");
+    assert_eq!(
+        json["instruction"].as_str(),
+        Some(text),
+        "the machine-readable instruction differs from the served text"
     );
 }
 

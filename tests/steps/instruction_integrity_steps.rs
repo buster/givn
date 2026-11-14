@@ -3349,3 +3349,76 @@ fn startup_guidance_scope_not_unrelated(world: &mut GivnWorld) {
         "startup guidance does not refuse unrelated work: {output}"
     );
 }
+
+// --- ise instruction obligations -------------------------------------------
+
+#[when("the consumer requests the `ise` instruction")]
+fn consumer_requests_ise_instruction(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(crate::common::run_givn(env, &["instructions", "ise"]));
+}
+
+#[then(
+    "the served instruction names Specification completeness, the two-layer test boundary, persisted-state continuity, the change strategy, and the spec gap classification"
+)]
+fn served_instruction_names_rebuild_obligations(world: &mut GivnWorld) {
+    let content = cli_stdout(world).to_lowercase();
+    for label in [
+        "specification completeness",
+        "two-layer test boundary",
+        "persisted-state continuity",
+        "change strategy",
+        "spec gap classification",
+    ] {
+        assert!(
+            content.contains(label),
+            "the served ise instruction is missing {label:?}: {content}"
+        );
+    }
+}
+
+#[then(
+    "the served instruction uses the established Component, Port, contract, Specification, and Source code vocabulary"
+)]
+fn served_instruction_uses_established_vocabulary(world: &mut GivnWorld) {
+    let content = cli_stdout(world);
+    for term in [
+        "Component",
+        "Port",
+        "contract",
+        "Specification",
+        "Source code",
+    ] {
+        assert!(
+            content.contains(term),
+            "the served ise instruction is missing {term:?}: {content}"
+        );
+    }
+}
+
+#[then(
+    "the served review guidance asks for the neighboring components changed outside the replaced component and the reason"
+)]
+fn review_guidance_asks_neighboring_components(world: &mut GivnWorld) {
+    let content = cli_stdout(world);
+    assert!(
+        content.contains("changed outside the replaced component"),
+        "the served review guidance omits the neighboring components: {content}"
+    );
+    assert!(
+        content.contains("the reason"),
+        "the served review guidance omits the reason: {content}"
+    );
+}
+
+#[then("the served review guidance states that the answer is a review question, never a gate")]
+fn review_guidance_neighboring_answer_is_not_a_gate(world: &mut GivnWorld) {
+    let content = cli_stdout(world);
+    assert!(
+        content.contains("review question, never a gate"),
+        "the served review guidance does not deny the gate: {content}"
+    );
+}

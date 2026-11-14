@@ -16,7 +16,13 @@ const POLICY_INSTRUCTION_IDS: &[&str] = &[
     "review-reverse",
     "specs-reverse",
     "tasks-reverse",
+    "ise",
 ];
+
+/// Policy instruction ids served only while a named addon is effective. The
+/// pair is (instruction id, addon id); an effective-off addon refuses the
+/// request by name before the cascade runs.
+const ADDON_BOUND_INSTRUCTION_IDS: &[(&str, &str)] = &[("ise", "ise")];
 
 /// Instruction ids retired from the callable surface. They are refused before
 /// the cascade so a project-owned override cannot restore an old entry point.
@@ -60,6 +66,15 @@ fn run_artifact(
         );
     }
     let manifest = load_effective()?;
+    if let Some((_, addon)) = ADDON_BOUND_INSTRUCTION_IDS
+        .iter()
+        .find(|(id, _)| *id == artifact)
+        && !crate::skills::render::manifest_addon_enabled(&manifest, addon)
+    {
+        bail!(
+            "instruction '{artifact}' requires the '{addon}' addon; enable it with `givn addons enable {addon}`"
+        );
+    }
     let artifact_definition = manifest.artifacts.iter().find(|a| a.id == artifact);
     let extension_rules = extension_rules(project_root, artifact);
     let addons = addon_flags(&manifest);
