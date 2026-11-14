@@ -660,7 +660,10 @@ its declarations alone: `Role`, `SpecificationDeclaration` (`load`, `roles`,
 `is_effective`), `DeclarationError` (`detail`), and the private helpers
 `scan_top_level_keys`, `is_key`, `validate_role_paths`, `is_project_relative`,
 `has_windows_prefix`; the flow is `load` -> `parse` -> key scan -> role
-presence -> parse -> `validate_paths`. `cli::lint`'s `multi-type-module` hint
+presence -> parse -> `validate_paths`. (Review finding F2 renamed
+`validate_role_paths`/`is_project_relative` to
+`normalize_role_paths`/`normalize_project_path`; the loader now stores
+normalized paths.) `cli::lint`'s `multi-type-module` hint
 predates this batch (`SeedStatus` and `Severity`) and
 `specification_declaration_finding` appears only in `run_with_root`'s call
 flow. No structural change made; behaviour unchanged.
