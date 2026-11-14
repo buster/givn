@@ -7,12 +7,15 @@
 
 use std::path::Path;
 
-use crate::ise::ReplaceRequest;
+use crate::ise::{ReplaceRequest, Report};
 
 /// Run `ise replace` and return its process exit code.
 pub fn replace(project_root: &Path, request: &ReplaceRequest) -> i32 {
     match crate::ise::replace(project_root, request) {
-        Ok(()) => 0,
+        Ok(report) => {
+            print!("{}", render(&report));
+            0
+        }
         Err(error) => {
             eprintln!("ise replace: {error:#}");
             1
@@ -29,4 +32,24 @@ pub fn verify(project_root: &Path, trial: &Path, at: &Path) -> i32 {
             1
         }
     }
+}
+
+/// The fixed report lines: backend, revision, and the five placement counts.
+fn render(report: &Report) -> String {
+    format!(
+        "Backend: {}\n\
+         Revision: {}\n\
+         Retained: {}\n\
+         Kept source: {}\n\
+         Replaced: {}\n\
+         Outside the declaration: {}\n\
+         Not replaced: {}\n",
+        report.backend,
+        report.revision,
+        report.counts.retained,
+        report.counts.kept_source,
+        report.counts.replaced,
+        report.counts.outside_declaration,
+        report.counts.not_replaced,
+    )
 }

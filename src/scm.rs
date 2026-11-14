@@ -4,6 +4,7 @@
 //! Consumers act on the returned [`Backend`] or receive a named refusal; they
 //! never derive the backend themselves.
 
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -43,6 +44,14 @@ pub enum Backend {
 }
 
 impl Backend {
+    /// The backend's name in the trial report and record.
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Git(_) => "git",
+            Self::Fossil(_) => "fossil",
+        }
+    }
+
     /// The current revision identifier of the project.
     pub fn revision(&self) -> Result<String> {
         match self {
@@ -195,16 +204,27 @@ impl Backend {
         }
     }
 
-    /// Read the named blobs from `revision`.
+    /// Read the named blobs from `revision`. A path the backend cannot read
+    /// is a named refusal: a skipped path would silently shrink the trial.
     pub fn revision_blobs(
         &self,
         revision: &str,
         paths: &[String],
     ) -> Result<Vec<(String, Vec<u8>)>> {
-        match self {
+        let blobs = match self {
             Self::Git(worktree) => worktree.revision_blobs(revision, paths),
             Self::Fossil(checkout) => checkout.revision_blobs(revision, paths),
+        }?;
+        let mut unread: BTreeSet<&str> = paths.iter().map(String::as_str).collect();
+        for (path, _) in &blobs {
+            unread.remove(path.as_str());
         }
+        if let Some(path) = unread.first() {
+            bail!(
+                "'{path}' cannot be read from revision '{revision}'; the backend returned no blob for it"
+            );
+        }
+        Ok(blobs)
     }
 
     /// Changed paths under `root` from `base` to the current revision, plus

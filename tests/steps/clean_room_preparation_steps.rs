@@ -13,7 +13,7 @@ use crate::steps::GivnWorld;
 
 use crate::common;
 use crate::steps::ise_clean_room_support;
-use crate::steps::{output, stderr};
+use crate::steps::{output, stderr, stdout};
 
 fn project_env(world: &GivnWorld) -> &common::TestEnv {
     world
@@ -25,6 +25,84 @@ fn project_env(world: &GivnWorld) -> &common::TestEnv {
 fn assert_exit_one(world: &GivnWorld) {
     let out = output(world);
     assert_eq!(out.status.code(), Some(1), "stderr={}", stderr(world));
+}
+
+fn assert_success(world: &GivnWorld) {
+    let out = output(world);
+    assert_eq!(out.status.code(), Some(0), "stderr={}", stderr(world));
+}
+
+fn assert_report_line(world: &GivnWorld, line: &str) {
+    let text = stdout(world);
+    assert!(
+        text.lines().any(|printed| printed == line),
+        "stdout {text:?} does not print the line {line:?}"
+    );
+}
+
+fn trial_path(world: &GivnWorld) -> std::path::PathBuf {
+    world.ise_clean_room.trial_path().to_path_buf()
+}
+
+fn assert_trial_holds(world: &GivnWorld, paths: &[&str]) {
+    let trial = trial_path(world);
+    for path in paths {
+        let target = trial.join(path);
+        assert!(
+            target.is_file(),
+            "the trial at {} does not hold {path}",
+            trial.display()
+        );
+    }
+}
+
+fn assert_trial_omits(world: &GivnWorld, paths: &[&str]) {
+    let trial = trial_path(world);
+    for path in paths {
+        let target = trial.join(path);
+        assert!(
+            !target.exists(),
+            "the trial at {} holds {path}",
+            trial.display()
+        );
+    }
+}
+
+/// Run one replacement form against the standard trial and receipt targets.
+fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form: &[&str]) {
+    world.ise_clean_room.ensure_targets();
+    let trial = world
+        .ise_clean_room
+        .trial_path()
+        .to_string_lossy()
+        .into_owned();
+    let receipt = world
+        .ise_clean_room
+        .receipt_path()
+        .to_string_lossy()
+        .into_owned();
+    if let Some(revision) = revision {
+        world.ise_clean_room.requested_revision = Some(revision.to_string());
+    }
+    let args = {
+        let mut args = vec!["ise", "replace"];
+        if let Some(revision) = revision {
+            args.push("--at");
+            args.push(revision);
+        }
+        args.extend(form.iter().copied());
+        args.push("--into");
+        args.push(&trial);
+        args.push("--receipt");
+        args.push(&receipt);
+        args
+    };
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let out = common::run_givn_with_envs(env, &args, &[]);
+    world.last_output = Some(out);
 }
 
 #[given(regex = r#"^a Git project with ise enabled and no declaration$"#)]
@@ -274,10 +352,10 @@ fn not_implemented_0005(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[given(
     regex = r#"^a Git project with ise enabled and a declaration with one source root "src/\*\*"$"#
 )]
-fn not_implemented_0006(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Git project with ise enabled and a declaration with one source root "src/**""#
-    ))
+fn git_project_with_source_only_declaration(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::source_only_declaration("\"src/**\""),
+    ));
 }
 
 #[given(
@@ -292,26 +370,31 @@ fn not_implemented_0007(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[given(
     regex = r#"^a Git project with ise enabled, a declaration that retains "givn/specs/\*\*", and one source root "src/\*\*"$"#
 )]
-fn not_implemented_0008(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Git project with ise enabled, a declaration that retains "givn/specs/**", and one source root "src/**""#
-    ))
+fn git_project_with_retained_behavior(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::behavior_declaration("\"givn/specs/**\"", "\"src/**\""),
+    ));
 }
 
 #[given(
     regex = r#"^a committed revision where "src/keys/parser\.rs" sits beside "src/keys/mod\.rs" and "src/keys/tests\.rs"$"#
 )]
-fn not_implemented_0009(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision where "src/keys/parser.rs" sits beside "src/keys/mod.rs" and "src/keys/tests.rs""#
-    ))
+fn commit_revision_with_three_keys_files(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("src/keys/parser.rs", "pub fn parse() {}\n"),
+            ("src/keys/mod.rs", "pub mod parser;\n"),
+            ("src/keys/tests.rs", "fn parses() {}\n"),
+        ],
+        "fixture: three keys files",
+    );
 }
 
 #[given(regex = r#"^a committed revision whose tracked blob is absent from the object store$"#)]
-fn not_implemented_0010(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision whose tracked blob is absent from the object store"#
-    ))
+fn commit_revision_without_its_blob(world: &mut GivnWorld) {
+    let revision = ise_clean_room_support::remove_kept_blob(project_env(world));
+    world.ise_clean_room.unreadable_revision = Some(revision);
 }
 
 #[given(regex = r#"^a committed revision with "givn/specs/demo\.feature"$"#)]
@@ -329,42 +412,81 @@ fn not_implemented_0012(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[given(regex = r#"^a committed revision with "src/kept\.rs"$"#)]
-fn not_implemented_0013(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "src/kept.rs""#
-    ))
+fn commit_revision_with_kept_file(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration("\"src/kept.rs\"", "\"src/**\""),
+    );
+    ise_clean_room_support::commit_files(
+        env,
+        &[(
+            ise_clean_room_support::KEPT_PATH,
+            ise_clean_room_support::KEPT_CONTENT,
+        )],
+        "fixture: kept file",
+    );
 }
 
 #[given(
     regex = r#"^a committed revision with "src/kept\.rs" and a later revision adding "src/later\.rs"$"#
 )]
-fn not_implemented_0014(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "src/kept.rs" and a later revision adding "src/later.rs""#
-    ))
+fn commit_two_revisions(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration("\"src/kept.rs\"", "\"src/**\""),
+    );
+    let first = ise_clean_room_support::commit_files(
+        env,
+        &[(
+            ise_clean_room_support::KEPT_PATH,
+            ise_clean_room_support::KEPT_CONTENT,
+        )],
+        "fixture: first revision",
+    );
+    ise_clean_room_support::commit_files(
+        env,
+        &[("src/later.rs", "pub fn later() {}\n")],
+        "fixture: later revision",
+    );
+    world.ise_clean_room.first_revision = Some(first);
 }
 
 #[given(regex = r#"^a committed revision with "src/keys/parser\.rs"$"#)]
-fn not_implemented_0015(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "src/keys/parser.rs""#
-    ))
+fn commit_revision_with_parser(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[("src/keys/parser.rs", "pub fn parse() {}\n")],
+        "fixture: parser file",
+    );
 }
 
 #[given(
     regex = r#"^a committed revision with "src/keys/parser\.rs", "src/keys/mod\.rs", and "src/other\.rs"$"#
 )]
-fn not_implemented_0016(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "src/keys/parser.rs", "src/keys/mod.rs", and "src/other.rs""#
-    ))
+fn commit_revision_with_keys_and_other(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("src/keys/parser.rs", "pub fn parse() {}\n"),
+            ("src/keys/mod.rs", "pub mod parser;\n"),
+            ("src/other.rs", "pub fn other() {}\n"),
+        ],
+        "fixture: keys and other files",
+    );
 }
 
 #[given(regex = r#"^a committed revision with "src/one\.rs" and "src/nested/two\.rs"$"#)]
-fn not_implemented_0017(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "src/one.rs" and "src/nested/two.rs""#
-    ))
+fn commit_revision_with_nested_source(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("src/one.rs", "pub fn one() {}\n"),
+            ("src/nested/two.rs", "pub fn two() {}\n"),
+        ],
+        "fixture: nested source files",
+    );
 }
 
 #[given(regex = r#"^a committed revision with "src/one\.rs" and "src/two\.rs"$"#)]
@@ -377,10 +499,19 @@ fn not_implemented_0018(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[given(
     regex = r#"^a committed revision with "src/one\.rs", "src/nested/two\.rs", and "givn/specs/demo\.feature"$"#
 )]
-fn not_implemented_0019(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "src/one.rs", "src/nested/two.rs", and "givn/specs/demo.feature""#
-    ))
+fn commit_revision_with_source_and_retained(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("src/one.rs", "pub fn one() {}\n"),
+            ("src/nested/two.rs", "pub fn two() {}\n"),
+            (
+                "givn/specs/demo.feature",
+                "Feature: Demo\n\n  Scenario: A demo step\n    Given a step\n",
+            ),
+        ],
+        "fixture: source and retained files",
+    );
 }
 
 #[given(regex = r#"^a committed revision with a repository link at "vendor/lib"$"#)]
@@ -451,10 +582,8 @@ fn not_implemented_0028(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[given(regex = r#"^an ignored file in the working tree$"#)]
-fn not_implemented_0029(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: an ignored file in the working tree"#
-    ))
+fn an_ignored_file_in_the_working_tree(world: &mut GivnWorld) {
+    ise_clean_room_support::ignore_note(project_env(world));
 }
 
 #[then(regex = r#"^no record file is written$"#)]
@@ -530,15 +659,27 @@ fn not_implemented_0039(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^preparation fails and names the unreadable path and the revision$"#)]
-fn not_implemented_0040(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names the unreadable path and the revision"#
-    ))
+fn preparation_fails_and_names_the_unreadable_blob(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    let revision = world
+        .ise_clean_room
+        .unreadable_revision
+        .clone()
+        .expect("the Given recorded the unreadable revision");
+    let text = stderr(world);
+    assert!(
+        text.contains(ise_clean_room_support::KEPT_PATH),
+        "stderr {text:?} does not name the unreadable path"
+    );
+    assert!(
+        text.contains(&revision),
+        "stderr {text:?} does not name the revision {revision:?}"
+    );
 }
 
 #[then(regex = r#"^preparation succeeds$"#)]
-fn not_implemented_0041(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(r#"not implemented: preparation succeeds"#))
+fn preparation_succeeds(world: &mut GivnWorld) {
+    assert_success(world);
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Backend: fossil"$"#)]
@@ -549,17 +690,15 @@ fn not_implemented_0042(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Not replaced: 2"$"#)]
-fn not_implemented_0043(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation succeeds and prints "Not replaced: 2""#
-    ))
+fn preparation_succeeds_with_two_siblings_left(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Not replaced: 2");
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Replaced: 0"$"#)]
-fn not_implemented_0044(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation succeeds and prints "Replaced: 0""#
-    ))
+fn preparation_succeeds_with_nothing_replaced(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Replaced: 0");
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Replaced: 1"$"#)]
@@ -570,19 +709,23 @@ fn not_implemented_0045(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Replaced: 2" and "Not replaced: 0"$"#)]
-fn not_implemented_0046(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation succeeds and prints "Replaced: 2" and "Not replaced: 0""#
-    ))
+fn preparation_succeeds_with_two_replacements(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Replaced: 2");
+    assert_report_line(world, "Not replaced: 0");
 }
 
 #[then(
     regex = r#"^preparation succeeds and prints "Revision:" with the first revision identifier$"#
 )]
-fn not_implemented_0047(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation succeeds and prints "Revision:" with the first revision identifier"#
-    ))
+fn preparation_succeeds_and_reports_the_first_revision(world: &mut GivnWorld) {
+    assert_success(world);
+    let first = world
+        .ise_clean_room
+        .first_revision
+        .clone()
+        .expect("the Given recorded the first revision");
+    assert_report_line(world, &format!("Revision: {first}"));
 }
 
 #[then(regex = r#"^preparation succeeds and prints the trial record to stdout$"#)]
@@ -677,10 +820,8 @@ fn not_implemented_0059(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the directory path "src/keys"$"#
 )]
-fn not_implemented_0060(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the directory path "src/keys""#
-    ))
+fn prepare_with_the_keys_directory(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "src/keys"]);
 }
 
 #[when(
@@ -702,28 +843,22 @@ fn not_implemented_0062(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[when(regex = r#"^the developer prepares a trial from "HEAD" with the path "src/\*\*"$"#)]
-fn not_implemented_0063(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the path "src/**""#
-    ))
+fn prepare_with_a_glob_shaped_path(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "src/**"]);
 }
 
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the path "src/keys/parser\.rs"$"#
 )]
-fn not_implemented_0064(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the path "src/keys/parser.rs""#
-    ))
+fn prepare_with_the_parser_path(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "src/keys/parser.rs"]);
 }
 
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the path "src/keys/parsr\.rs"$"#
 )]
-fn not_implemented_0065(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the path "src/keys/parsr.rs""#
-    ))
+fn prepare_with_an_absent_path(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "src/keys/parsr.rs"]);
 }
 
 #[when(
@@ -738,10 +873,13 @@ fn not_implemented_0066(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 #[when(
     regex = r#"^the developer prepares a trial from the first revision with a full replacement$"#
 )]
-fn not_implemented_0067(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from the first revision with a full replacement"#
-    ))
+fn prepare_from_the_first_revision(world: &mut GivnWorld) {
+    let first = world
+        .ise_clean_room
+        .first_revision
+        .clone()
+        .expect("the Given recorded the first revision");
+    prepare_trial(world, Some(&first), &["--full"]);
 }
 
 #[when(regex = r#"^the developer prepares a trial into a directory inside the checkout$"#)]
@@ -856,59 +994,43 @@ fn not_implemented_0082(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^the trial does not hold "src/later\.rs"$"#)]
-fn not_implemented_0083(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial does not hold "src/later.rs""#
-    ))
+fn the_trial_does_not_hold_the_later_file(world: &mut GivnWorld) {
+    assert_trial_omits(world, &["src/later.rs"]);
 }
 
 #[then(regex = r#"^the trial does not hold the ignored file$"#)]
-fn not_implemented_0084(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial does not hold the ignored file"#
-    ))
+fn the_trial_does_not_hold_the_ignored_file(world: &mut GivnWorld) {
+    assert_trial_omits(world, &[ise_clean_room_support::IGNORED_PATH]);
 }
 
 #[then(regex = r#"^the trial holds "givn/specs/demo\.feature"$"#)]
-fn not_implemented_0085(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds "givn/specs/demo.feature""#
-    ))
+fn the_trial_holds_the_demo_feature(world: &mut GivnWorld) {
+    assert_trial_holds(world, &["givn/specs/demo.feature"]);
 }
 
 #[then(regex = r#"^the trial holds "src/kept\.rs"$"#)]
-fn not_implemented_0086(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds "src/kept.rs""#
-    ))
+fn the_trial_holds_the_kept_file(world: &mut GivnWorld) {
+    assert_trial_holds(world, &[ise_clean_room_support::KEPT_PATH]);
 }
 
 #[then(regex = r#"^the trial holds "src/keys/mod\.rs" and "src/keys/tests\.rs"$"#)]
-fn not_implemented_0087(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds "src/keys/mod.rs" and "src/keys/tests.rs""#
-    ))
+fn the_trial_holds_the_keys_siblings(world: &mut GivnWorld) {
+    assert_trial_holds(world, &["src/keys/mod.rs", "src/keys/tests.rs"]);
 }
 
 #[then(regex = r#"^the trial holds "src/keys/parser\.rs"$"#)]
-fn not_implemented_0088(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds "src/keys/parser.rs""#
-    ))
+fn the_trial_holds_the_parser(world: &mut GivnWorld) {
+    assert_trial_holds(world, &["src/keys/parser.rs"]);
 }
 
 #[then(regex = r#"^the trial holds "src/one\.rs" and "src/nested/two\.rs"$"#)]
-fn not_implemented_0089(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds "src/one.rs" and "src/nested/two.rs""#
-    ))
+fn the_trial_holds_the_nested_source(world: &mut GivnWorld) {
+    assert_trial_holds(world, &["src/one.rs", "src/nested/two.rs"]);
 }
 
 #[then(regex = r#"^the trial holds "src/other\.rs"$"#)]
-fn not_implemented_0090(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds "src/other.rs""#
-    ))
+fn the_trial_holds_other(world: &mut GivnWorld) {
+    assert_trial_holds(world, &["src/other.rs"]);
 }
 
 #[then(regex = r#"^the trial holds no "\.git" entry and no "\.fslckout" entry$"#)]
@@ -919,10 +1041,25 @@ fn not_implemented_0091(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^the trial holds no file under "src"$"#)]
-fn not_implemented_0092(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds no file under "src""#
-    ))
+fn the_trial_holds_no_source_file(world: &mut GivnWorld) {
+    let trial = trial_path(world);
+    let mut directories = vec![trial.clone()];
+    while let Some(directory) = directories.pop() {
+        let entries = std::fs::read_dir(&directory).expect("read the trial directory");
+        for entry in entries {
+            let path = entry.expect("read the trial entry").path();
+            if path.is_dir() {
+                directories.push(path);
+            } else {
+                let relative = path
+                    .strip_prefix(&trial)
+                    .expect("the entry is under the trial")
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                assert!(!relative.starts_with("src/"), "the trial holds {relative}");
+            }
+        }
+    }
 }
 
 #[then(regex = r#"^the trial holds the retained file and the kept source file$"#)]
@@ -933,10 +1070,8 @@ fn not_implemented_0093(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^the trial omits "src/keys/parser\.rs" and "src/keys/mod\.rs"$"#)]
-fn not_implemented_0094(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial omits "src/keys/parser.rs" and "src/keys/mod.rs""#
-    ))
+fn the_trial_omits_the_replaced_keys_files(world: &mut GivnWorld) {
+    assert_trial_omits(world, &["src/keys/parser.rs", "src/keys/mod.rs"]);
 }
 
 #[then(regex = r#"^the trial omits the replaced source file$"#)]

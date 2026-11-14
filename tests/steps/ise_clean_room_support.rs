@@ -15,6 +15,12 @@ use crate::common;
 pub(crate) const MODIFIED_PATH: &str = "src/modified.rs";
 /// The untracked file the dirty-checkout fixture adds.
 pub(crate) const UNTRACKED_PATH: &str = "notes-untracked.md";
+/// The ignored file the revision-read fixture writes into the working tree.
+pub(crate) const IGNORED_PATH: &str = "ignored.txt";
+/// The retained source file several partition fixtures commit.
+pub(crate) const KEPT_PATH: &str = "src/kept.rs";
+/// The retained source file's committed content.
+pub(crate) const KEPT_CONTENT: &str = "pub fn kept() {}\n";
 
 /// The unknown top-level key the malformed declaration carries.
 pub(crate) const MALFORMED_KEY: &str = "component";
@@ -29,6 +35,10 @@ pub(crate) struct IseCleanRoomState {
     pub(crate) receipt_path: Option<PathBuf>,
     /// The revision the When passed to `--at`.
     pub(crate) requested_revision: Option<String>,
+    /// The first committed revision of a two-revision fixture.
+    pub(crate) first_revision: Option<String>,
+    /// The revision whose blob the fixture made unreadable.
+    pub(crate) unreadable_revision: Option<String>,
     /// The nested project root a refusal must name.
     pub(crate) nested_project_root: Option<PathBuf>,
 }
@@ -76,6 +86,45 @@ pub(crate) fn default_declaration() -> String {
     declaration("\"givn/specs/**\"", "\"src/**\"")
 }
 
+/// A declaration with the five retained roles empty and the named source
+/// roots, so `--full` replaces every tracked source file.
+pub(crate) fn source_only_declaration(source: &str) -> String {
+    format!(
+        "behavior: []\n\
+         structure: []\n\
+         contracts: []\n\
+         limits: []\n\
+         e2e: []\n\
+         source: [{source}]\n"
+    )
+}
+
+/// A declaration whose `structure` role names exactly `retained`, with the
+/// other retained roles empty and one source root.
+pub(crate) fn structure_declaration(retained: &str, source: &str) -> String {
+    format!(
+        "behavior: []\n\
+         structure: [{retained}]\n\
+         contracts: []\n\
+         limits: []\n\
+         e2e: []\n\
+         source: [{source}]\n"
+    )
+}
+
+/// A declaration whose `behavior` role retains `behavior` and whose source
+/// root is `source`.
+pub(crate) fn behavior_declaration(behavior: &str, source: &str) -> String {
+    format!(
+        "behavior: [{behavior}]\n\
+         structure: []\n\
+         contracts: []\n\
+         limits: []\n\
+         e2e: []\n\
+         source: [{source}]\n"
+    )
+}
+
 /// The declaration with one unknown top-level key beside the six valid keys.
 pub(crate) fn malformed_declaration() -> String {
     format!("{MALFORMED_KEY}: [\"x\"]\n{}", default_declaration())
@@ -84,11 +133,79 @@ pub(crate) fn malformed_declaration() -> String {
 /// An initialized Git project with `ise` enabled and a committed valid
 /// declaration.
 pub(crate) fn ise_project() -> common::TestEnv {
+    ise_project_with_declaration(&default_declaration())
+}
+
+/// An initialized Git project with `ise` enabled and the supplied committed
+/// declaration.
+pub(crate) fn ise_project_with_declaration(declaration: &str) -> common::TestEnv {
     let env = common::make_init_root();
     enable_ise(&env);
-    write_declaration(&env, &default_declaration());
+    write_declaration(&env, declaration);
     common::git_commit_all(&env, "fixture: ise project");
     env
+}
+
+/// Rewrite the committed declaration in place; the caller commits it.
+pub(crate) fn rewrite_declaration(env: &common::TestEnv, content: &str) {
+    write_declaration(env, content);
+}
+
+/// Write each file (creating its parent directories) and commit the whole
+/// tree. Returns the new revision identifier.
+pub(crate) fn commit_files(env: &common::TestEnv, files: &[(&str, &str)], message: &str) -> String {
+    for (path, content) in files {
+        let target = env.path(path);
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent).expect("create the fixture parent directory");
+        }
+        std::fs::write(&target, content).expect("write the fixture file");
+    }
+    common::git_commit_all(env, message);
+    head_revision(env)
+}
+
+/// The current revision identifier.
+pub(crate) fn head_revision(env: &common::TestEnv) -> String {
+    let output = common::git(env, &["rev-parse", "HEAD"]);
+    assert!(
+        output.status.success(),
+        "git rev-parse HEAD failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+/// Commit `KEPT_PATH` with its retained `structure` role, then delete the
+/// loose blob so the revision tree lists a path with no readable object.
+pub(crate) fn remove_kept_blob(env: &common::TestEnv) -> String {
+    rewrite_declaration(
+        env,
+        &structure_declaration(&format!("{KEPT_PATH:?}"), "\"src/**\""),
+    );
+    let revision = commit_files(env, &[(KEPT_PATH, KEPT_CONTENT)], "fixture: kept file");
+    let object = common::git(env, &["rev-parse", &format!("{revision}:{KEPT_PATH}")]);
+    assert!(
+        object.status.success(),
+        "git rev-parse for the kept blob failed: {}",
+        String::from_utf8_lossy(&object.stderr)
+    );
+    let id = String::from_utf8_lossy(&object.stdout).trim().to_string();
+    let loose = env
+        .root()
+        .join(".git/objects")
+        .join(&id[..2])
+        .join(&id[2..]);
+    std::fs::remove_file(&loose).expect("remove the loose blob object");
+    revision
+}
+
+/// Commit a `.gitignore` rule and then create the ignored file untracked.
+pub(crate) fn ignore_note(env: &common::TestEnv) {
+    std::fs::write(env.path(".gitignore"), format!("{IGNORED_PATH}\n"))
+        .expect("write the .gitignore fixture");
+    common::git_commit_all(env, "fixture: ignore the note");
+    std::fs::write(env.path(IGNORED_PATH), "ignored\n").expect("write the ignored file");
 }
 
 /// The same project without `givn/specification.yaml`.
