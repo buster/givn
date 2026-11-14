@@ -30,6 +30,13 @@
   feasible. (User; answered by `givn commit`.)
 - 2026-09-14 — Need: no Git-only claim in generated guidance for a Fossil
   project. (Frame)
+- 2026-11-13 — Need: `ise` stays opt-in, so an ordinary feature change pays
+  no new ceremony. (Frame, vision)
+- 2026-11-13 — Need: a replacement keeps persisted user data and state across
+  versions, not just compilable code. (Frame, Ise consequence "Data, state, and
+  contracts outlive the code")
+- 2026-11-13 — Need: `@e2e` suites strong enough to rebuild a module or the
+  whole product without reading the old source. (Frame, gaps G4/G7)
 
 ## Topic stances
 
@@ -52,3 +59,15 @@
   and `givn upgrade` never conflict with extensions.
 - 2026-10-13 — rules-through-instructions: expects the workflow of a fresh
   clone or second machine to stay recoverable as under local-only.
+- 2026-11-13 — ise-rebuildability: a replacement that loses user data, or
+  needs a manual state migration step the specification never named, is not a
+  successful replacement.
+- 2026-11-13 — ise-rebuildability: a clean-room rebuild and a single-unit
+  replacement must be runnable from the same commands on Git and Fossil; the
+  SCM difference stays inside givn. (open: Q3)
+- 2026-11-13 — ise-rebuildability: wants the ordinary feature workflow
+  unchanged until `givn addons enable ise`, and no gate that fires on projects
+  that never opted in.
+- 2026-11-14 — ise-rebuildability: `Q3` closed with `givn ise prepare` and
+  `givn ise verify`, bound to `addons.ise`; the Git and Fossil commands are
+  the same two commands.

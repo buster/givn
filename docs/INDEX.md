@@ -99,6 +99,10 @@ project behavior; the current contracts live in the sections above.
 - [Rules through instructions](archive/ideation/rules-through-instructions.md) —
   historical; the completed served-instruction ideation handoff. Skills-only
   invocation superseded its generated-command assumptions.
+- [Ise rebuildability](ideation/ise-rebuildability.md): historical; the
+  completed Specification-rebuild ideation handoff. Its six ready change seeds
+  live under `givn/ideation/ise-rebuildability/changes/`; the term merge is
+  deferred to the seeds that make each row true.
 
 ## Archived Analysis
 
