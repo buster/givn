@@ -1214,7 +1214,7 @@ needs new bindings; the added assertions are the same reviewed sentences batch
 **Batch verification:** the two single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: pinned-policy-replacements'`.
 
-- [ ] Scenario: `Canonical policy accepts the library public API as its real interface`
+- [x] Scenario: `Canonical policy accepts the library public API as its real interface`
   - Design constraints:
     - Replaces the permanent
       `givn/specs/create-change/prose-consolidation.feature:123-128` scenario by
@@ -1226,17 +1226,39 @@ needs new bindings; the added assertions are the same reviewed sentences batch
       infrastructure` is reused).
     - A project with `ise` off must not satisfy the new Then, so the new
       assertion cannot degrade into the old allowance.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the observed binding/assertion failure and the GREEN run -->
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test features_runner
+  -- --exact "create-change/prose-consolidation.feature::Canonical policy accepts the library public
+  API as its real interface"
+First run failed on a retained Then, not on the added one:
+  ✔ Given a Givn project with ise effective whose product is a library without a service or browser
+  ✔ When the author reads the canonical E2E guidance
+  ✔ Then consumer calls to the public library API may run in process only from the declared e2e package as real-interface evidence
+  ✔ And a call that needs production source becomes a component scenario
+  ✘ And the policy does not require artificial services containers or browser infrastructure
+    Step panicked. Captured output: E2E guidance demands infrastructure the product does not have
+1 scenario (1 failed), 5 steps (4 passed, 1 failed), runner exit 101.
+Cause: the `ise` branch opens a sentence ("Do not require artificial services, ...") while the
+`ise`-off branch continues the bullet ("do not require ..."); the retained step matched only the
+lowercase form. Fix in the glue only (the decision and the committed prose are unchanged): the
+negation is matched on lowercased served text, so the same step still reads the ise-off branch.
+GREEN: same command -> 1 scenario (1 passed), 5 steps (5 passed), exit 0.
+The added Then asserts the contiguous "may run in process only from the declared `e2e` package",
+so the ise-off sentence ("may run in process; do not require ...") cannot satisfy it; the ise-off
+served text carries no `only from the declared` (asserted by the `served-policy` batch).
+No production or prose edit.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree after `cargo fmt` -> 1 scenario (1 passed), 5 steps (5 passed),
+exit 0. The permanent `Canonical policy accepts the library public API as its real interface`
+(raw-asset fixture) and the `served-policy` ise-off scenario also re-ran green, so the
+case-insensitive match changed no retained reading.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `pinned-policy-replacements`
+  - [x] COMMIT: `137bdebdd4c81b16269fcea275194f5a4a6b7fe3` -- Batch: `pinned-policy-replacements`
 
-- [ ] Scenario: `Canonical policy selects E2E scope explicitly rather than by command shape`
+- [x] Scenario: `Canonical policy selects E2E scope explicitly rather than by command shape`
   - Design constraints:
     - Replaces the permanent
       `givn/specs/create-change/prose-consolidation.feature:130-135` scenario by
@@ -1247,15 +1269,32 @@ needs new bindings; the added assertions are the same reviewed sentences batch
     - The existing `regular and E2E verification share one runner command` Given
       is reused together with the ise-effective fixture, so the added sentence
       is read from the rendered instruction.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the observed assertion failure and the GREEN run -->
+Existing behavior protected: the five retained Then sentences were committed in `1016f3bc`; the
+Given now serves `specs`, `design`, `tasks`, and `review` from an ise-effective fixture instead of
+reading the raw assets, so the added sentence is read from the render.
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test features_runner
+  -- --exact "create-change/prose-consolidation.feature::Canonical policy selects E2E scope
+  explicitly rather than by command shape"
+  ✔ Given regular and E2E verification share one runner command
+  ✔ When the author reads the canonical verification guidance
+  ✔ Then explicit scope selection such as GIVN_RESULT_SCOPE distinguishes the executions
+  ✔ And equal test counts or command strings do not invalidate honestly isolated scopes
+  ✔ And the E2E execution runs the declared e2e package which links no production source
+  ✔ And required executions and zero failed or skipped tests remain required without an extra isolation run
+1 scenario (1 passed), 6 steps (6 passed), exit 0.
+Not tautological: the raw asset would satisfy the added sentence from the `{{#if addons.ise}}`
+branch whatever the addon state; the served ise-off text contains no "The E2E execution runs the
+declared `e2e` package". The permanent pinned scenario re-ran green on the same Given, so no
+retained assertion depended on the raw asset. No production or prose edit.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree after `cargo fmt` -> 1 scenario (1 passed), 6 steps (6 passed),
+exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `pinned-policy-replacements`
+  - [x] COMMIT: `137bdebdd4c81b16269fcea275194f5a4a6b7fe3` -- Batch: `pinned-policy-replacements`
 
 ---
 
