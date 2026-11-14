@@ -1080,7 +1080,7 @@ repository has `ise` off, so the paragraph must be absent here and the `ise`
 request must refuse by name).
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: served-policy'`.
 
-- [ ] Scenario: `Canonical policy names the declared e2e package as the E2E target`
+- [x] Scenario: `Canonical policy names the declared e2e package as the E2E target`
   - Design constraints:
     - The served `specs` instruction with `addons.ise` effective contains: the
       declared package holds the E2E runner and every `@e2e` step definition;
@@ -1089,17 +1089,33 @@ request must refuse by name).
     - Then steps assert the four sentences the feature names, each as a
       normalized substring of the served content. The runner sentence belongs to
       the `pinned-policy-replacements` batch (see `## Contradictions` 4).
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the run; protected requirement if it passes first, otherwise the observed drift -->
+Existing behavior protected: the four sentences were committed in `1016f3bc`; the new
+bindings read them from the served instruction, never from the raw asset.
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test features_runner
+  -- --exact "create-change/prose-consolidation.feature::Canonical policy names the declared e2e
+  package as the E2E target"
+  ✔ Given a Givn project with ise effective
+  ✔ When the author reads the canonical E2E guidance
+  ✔ Then the policy states that the declared e2e package holds the E2E runner and every E2E step definition
+  ✔ And the policy states that the package links no production source
+  ✔ And the policy states that an unbound or skipped step fails the E2E run
+  ✔ And the policy states that feature files stay shared
+1 scenario (1 passed), 6 steps (6 passed), exit 0.
+Not tautological: the same request on a fresh `ise`-off fixture serves neither the
+`Declared E2E package` paragraph nor any of the four sentences, so the ise-off render cannot
+satisfy this scenario (`givn instructions specs --change guidance-amendments` in a `/tmp`
+fixture; the served text carries no `{{#if`). No production edit.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree after `cargo fmt` -> 1 scenario (1 passed), 6 steps (6 passed),
+exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `served-policy`
+  - [x] COMMIT: `1fdb7e8e828bbf3699b771ee60f5fac2e3554430` -- Batch: `served-policy`
 
-- [ ] Scenario: `Served ise guidance keeps component scenarios in the Specification`
+- [x] Scenario: `Served ise guidance keeps component scenarios in the Specification`
   - Design constraints:
     - `givn instructions ise` with `addons.ise` effective serves the
       `two-layer test boundary` bullet; the three Then steps assert that
@@ -1107,17 +1123,31 @@ request must refuse by name).
       step definitions and fakes are implementation, and that the phrase
       `two-layer test boundary` is present.
     - The scenario states no gate: the bullet is an obligation, not a check.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the run; protected requirement if it passes first -->
+Existing behavior protected: the corrected bullet was committed in `1016f3bc`; the new
+bindings serve `givn instructions ise` in an ise-effective fixture.
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test features_runner
+  -- --exact "create-change/prose-consolidation.feature::Served ise guidance keeps component
+  scenarios in the Specification"
+  ✔ Given a Givn project with ise effective
+  ✔ When the author reads the served ise guidance
+  ✔ Then the guidance states that component scenarios stay in the Specification unchanged
+  ✔ And the guidance states that only their step definitions and fakes are implementation
+  ✔ And the guidance keeps the two-layer test boundary
+1 scenario (1 passed), 5 steps (5 passed), exit 0.
+Not tautological: the ise-off fixture refuses the same request by name ("instruction 'ise'
+requires the 'ise' addon; enable it with givn addons enable ise"), so the wording is reachable
+only through the addon. No production edit.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree after `cargo fmt` -> 1 scenario (1 passed), 5 steps (5 passed),
+exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `served-policy`
+  - [x] COMMIT: `1fdb7e8e828bbf3699b771ee60f5fac2e3554430` -- Batch: `served-policy`
 
-- [ ] Scenario: `Canonical policy keeps the in-process allowance while ise is off`
+- [x] Scenario: `Canonical policy keeps the in-process allowance while ise is off`
   - Design constraints:
     - The fixture has `ise` off (the default init posture). The served `specs`
       instruction contains the unconditional allowance ("may run in process")
@@ -1126,15 +1156,29 @@ request must refuse by name).
     - Then steps assert the allowance and the absence of the ise-effective
       restriction: the served text must not contain `only from the declared`, so
       an ise-off project reads no false package requirement.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste the run; protected requirement if it passes first -->
+Existing behavior protected: the `{{else}}` branch committed in `1016f3bc` already serves the
+unconditional allowance; the Given asserts the served text carries no `only from the declared`,
+so the two ise renders discriminate each other.
+GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs cargo test --locked --test features_runner
+  -- --exact "create-change/prose-consolidation.feature::Canonical policy keeps the in-process
+  allowance while ise is off"
+  ✔ Given a Givn project with ise off whose product is a library without a service or browser
+  ✔ When the author reads the canonical E2E guidance
+  ✔ Then consumer calls to the public library API may run in process as real-interface evidence
+  ✔ And the policy does not require artificial services containers or browser infrastructure
+1 scenario (1 passed), 4 steps (4 passed), exit 0.
+The absence assertion fails if the ise branch renders while the addon is off; the batch
+`served-policy` scenario above fails if it does not render while the addon is on. No production
+edit.
         ```
-  - [ ] REFACTOR: re-run the scenario; must still pass.
+  - [x] REFACTOR: re-run the scenario; must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+REFACTOR: re-run on the final tree after `cargo fmt` -> 1 scenario (1 passed), 4 steps (4 passed),
+exit 0.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `served-policy`
+  - [x] COMMIT: `1fdb7e8e828bbf3699b771ee60f5fac2e3554430` -- Batch: `served-policy`
 
 ---
 
