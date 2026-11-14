@@ -2,7 +2,7 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ise instruction carries the five rebuild obligations
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
@@ -10,7 +10,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the served instruction names Specification completeness, the two-layer test boundary, persisted-state continuity, the change strategy, and the spec gap classification
     And  the served instruction uses the established Component, Port, contract, Specification, and Source code vocabulary
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review guidance asks the neighboring-components question without a gate
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the review guidance

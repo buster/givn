@@ -12,7 +12,7 @@ Feature: spec-gap
     And  the served review guidance states that only "specification defect" is a gap in the Specification
     And  the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario: The proposal guidance names the corrective route for each outcome
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the proposal guidance for an active change
@@ -22,14 +22,14 @@ Feature: spec-gap
     And  the served proposal guidance carries the corpus or E2E suite edit for "specification defect" and "E2E test defect"
     And  the served proposal guidance records "acceptable undocumented change" in the corpus
 
-  @givn.added @wip
+  @givn.added
   Scenario: A spec gap record names the artifact rather than its finder
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the proposal guidance for an active change
     Then  the command exits 0
     And  the served proposal guidance requires the record to name the wrong artifact, not who found it
 
-  @givn.added @wip
+  @givn.added
   Scenario: An E2E test defect stops the Ise Test until the test is corrected
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the review guidance for an active change

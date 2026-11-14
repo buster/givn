@@ -6,7 +6,7 @@ Feature: match-guidance-to-enabled-addons
   Scenario: Architecture principles guidance follows the opt-in addon
     Given a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario: Architecture principles guidance follows an enabled addon
     Given  a Givn project with the architecture-principles addon disabled and the skills synchronized
     When  a consumer enables the architecture-principles addon through the Givn CLI
@@ -17,7 +17,7 @@ Feature: match-guidance-to-enabled-addons
   Scenario Outline: Outline guidance follows the opt-in addon
     Given a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Outline guidance follows an enabled addon
     Given  a Givn project with the outline addon <state> and the skills synchronized
     Then  the served steps instruction <outcome> the advisory outline section

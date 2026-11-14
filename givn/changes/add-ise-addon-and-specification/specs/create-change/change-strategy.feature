@@ -12,7 +12,7 @@ Feature: change-strategy
     And  the served design guidance requires the affected consumers, the persisted state, and the rebuild boundary
     And  the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design-review guidance keeps a rebuild without an Ise Test mode a finding
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the design-review guidance

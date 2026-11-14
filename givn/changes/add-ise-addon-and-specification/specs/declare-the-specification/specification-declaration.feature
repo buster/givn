@@ -10,7 +10,7 @@ Feature: specification-declaration
     And stderr contains no declaration-schema error
     And the terminal transcript is captured for this scenario
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A malformed declaration is refused by name and left unchanged
     Given an ise-enabled project selecting opencode whose declaration <mutation> and whose bytes are recorded
     When the user runs `givn lint`
@@ -27,28 +27,28 @@ Feature: specification-declaration
       | declares the source root "../other/crates/**" | "../other/crates/**" |
       | declares the structure path "/opt/specs/**" | "/opt/specs/**" |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A declaration that is not valid YAML is refused by name
     Given an ise-enabled project selecting opencode whose declaration is not valid YAML
     When the user runs `givn lint`
     Then the command exits non-zero
     And stderr names "givn/specification.yaml"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A role that is not a list is refused by name
     Given an ise-enabled project selecting opencode whose declaration holds a scalar for the role "behavior"
     When the user runs `givn lint`
     Then the command exits non-zero
     And stderr names "behavior"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unreadable declaration is refused by name
     Given an ise-enabled project selecting opencode whose declaration path is a directory
     When the user runs `givn lint`
     Then the command exits non-zero
     And stderr names "givn/specification.yaml"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown role is named before the role it replaces
     Given an ise-enabled project selecting opencode whose declaration misspells the role "behavior" as "behaviour"
     When the user runs `givn lint`
@@ -56,7 +56,7 @@ Feature: specification-declaration
     And stderr names "behaviour"
     And stderr does not report the omitted role "behavior"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project with ise disabled reads no declaration
     Given an initialized project selecting opencode with ise disabled and a malformed declaration
     When the user runs `givn lint`
