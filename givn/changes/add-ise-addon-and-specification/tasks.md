@@ -1941,21 +1941,25 @@ served text; transcript per scenario.
       current HEAD as `head` on every run; the closure run recorded the
       revision that carries this record, and later documentation-only
       revisions reuse it.
-- [ ] `givn check review --change add-ise-addon-and-specification` passes the
+- [x] `givn check review --change add-ise-addon-and-specification` passes the
       scenario-commit, integrity, routing, and add-on lock checks.
       ```
       $ givn check review --change add-ise-addon-and-specification
-        ✓ scenario commits passed (51 scenario(s))
+      Mandatory checks for 'review':
+        ✓ integrity checks passed
+        ✓ run declaration passed
+      givn lint: 10 file(s) checked — clean
+      net delta: 50 added, 1 modified, 5 removed
         ✓ overlap dispositions passed
-        ✓ change verification receipt reused across documentation-only revision ...
-      error: review checks failed:
-        integrity checks failed:
-        review.md actual verdict is FAIL
+        ✓ scenario commits passed (51 scenario(s))
+        ✓ change verification receipt reused across documentation-only revision 1a5cac893cccd81775c23de8510d06b6ca9aa304 (tested at c3e9b7d65c73f145b2a9f8b78bb311bc146175c2, 52 scenario(s))
+        ✓ scenario commits passed (51 scenario(s))
+      exit code: 0
       ```
-      The scenario-commit, routing (after F7), overlap, and add-on lock checks
-      pass; the only remaining failure is the reviewer's recorded verdict. The
-      author does not edit the verdict line; the reviewer's next pass flips it
-      after accepting the `## Finding closure` section.
+      The verdict flipped to `REVIEW: PASS` in the reviewer's acceptance pass
+      (`1a5cac89`); the author only recorded this gate run. The routing check
+      prints the owned-capability notes for the eight permanent capabilities and
+      no routing error.
 
 **Done when:** every box is checked with its batch `COMMIT:` revision, both
 `./run-tests.sh --non-e2e` and `./run-tests.sh --e2e` exit 0 on the full
