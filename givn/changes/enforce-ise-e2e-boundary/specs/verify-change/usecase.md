@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:ee6f6fb8ea5a9e3075d858fb7323e86db4f30bc0b72061ad7212cbaba260989e -->
+<!-- givn:base-sha256:13ebf7d61a63baeafa0838c7d19142836ae7959cc3c59364faca7756f00dbb01 -->
 # Use case: verify-change
 
 ## Level
@@ -208,6 +208,7 @@ roles (`declare-the-specification`); publishing (`archive-change`).
 ```mermaid
 flowchart LR
   Developer((Developer)) --> Check[[Run verification]]
+  Check --> Health[[Report declaration health]]
   Check --> Boundary[[Check the declared E2E boundary]]
   Check --> Migration[[Compare migration evidence]]
   Check --> Findings[[Resolve findings]]
