@@ -148,6 +148,11 @@ impl SpecificationDeclaration {
         ]
     }
 
+    /// The declared replaceable roots, in declaration order.
+    pub fn source_roots(&self) -> &[String] {
+        &self.source
+    }
+
     /// Whether the declaration applies to this project. The file is read only
     /// when the `ise` addon is effective.
     pub fn is_effective(manifest: &Manifest) -> bool {

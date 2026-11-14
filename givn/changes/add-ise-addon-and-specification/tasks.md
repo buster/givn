@@ -970,7 +970,7 @@ doc comment (exit precedence),
 **Batch verification:** the twelve single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: specification-health'`.
 
-- [ ] Scenario: `An absent declaration is reported by name and no advisory finding is computed`
+- [x] Scenario: `An absent declaration is reported by name and no advisory finding is computed`
   - Design constraints:
     - Fixture: `ise`-enabled project selecting opencode with
       `givn/specification.yaml` deleted.
@@ -978,163 +978,208 @@ doc comment (exit precedence),
       `checks were not performed`; no advisory finding.
     - Reported on a project with or without `.feature` files (load before the
       early return).
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::An absent declaration is reported by name and no advisory finding is computed" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::An absent declaration is reported by name and no advisory finding is computed"
+        PASS: 1 scenario (1 passed); 5 steps (5 passed).
+        Existing behavior protected: the absent-declaration blocking path landed
+        in `declaration-loader`.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `A declared path missing from the tree is reported as advisory`
+- [x] Scenario: `A declared path missing from the tree is reported as advisory`
   - Design constraints:
     - Fixture: declaration whose `limits` declares `docs/performance.md`;
       that path is absent.
     - Exit 0; stderr contains `advisory` and names `docs/performance.md`.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::A declared path missing from the tree is reported as advisory" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::A declared path missing from the tree is reported as advisory"
+        RED: ✘ And stderr contains "advisory"
+             Step panicked. Captured output: stderr missing "advisory":
+        GREEN: 1 scenario (1 passed); 6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `One path declared in two roles is reported as advisory`
+- [x] Scenario: `One path declared in two roles is reported as advisory`
   - Design constraints:
     - Fixture: `structure` and `behavior` both declare `givn/specs/**`.
     - Exit 0; stderr contains `advisory`, names `givn/specs/**`, and reports
       the duplicate once (one finding per duplicated string, not per role pair).
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::One path declared in two roles is reported as advisory" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::One path declared in two roles is reported as advisory"
+        RED: ✘ And stderr contains "advisory"
+             Step panicked. Captured output: stderr missing "advisory":
+        GREEN: 1 scenario (1 passed); 6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `A .feature file outside the behavior globs is reported as advisory`
+- [x] Scenario: `A .feature file outside the behavior globs is reported as advisory`
   - Design constraints:
     - Fixture: `behavior` declares only `givn/specs/orders/**`; a feature file
       exists at `givn/specs/billing/invoice.feature`.
     - Exit 0; stderr contains `advisory` and names that file. The scan excludes
       `givn/changes` and `givn/archive`.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::A .feature file outside the behavior globs is reported as advisory" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::A .feature file outside the behavior globs is reported as advisory"
+        RED: ✘ And stderr names "givn/specs/billing/invoice.feature"
+             Step panicked. Captured output: stderr missing
+             "givn/specs/billing/invoice.feature": [SPEC ] advisory
+             givn/specification.yaml & givn/specs/orders/** ...
+        GREEN: 1 scenario (1 passed); 6 steps (6 passed)
+        Fixture repair during RED: the feature directory needs a valid
+        `usecase.md`, or the project-wide use-case gate exits 1 before the
+        finding under test is observable.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `A declared e2e package missing from the tree is reported as advisory`
+- [x] Scenario: `A declared e2e package missing from the tree is reported as advisory`
   - Design constraints:
     - Fixture: `e2e` declares `tests/e2e`; the path does not exist.
     - Exit 0; stderr contains `advisory`, names `tests/e2e`, and reports the
       missing package once (no second path-missing finding for `e2e`).
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::A declared e2e package missing from the tree is reported as advisory" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::A declared e2e package missing from the tree is reported as advisory"
+        RED: ✘ And stderr contains "advisory"
+             Step panicked. Captured output: stderr missing "advisory":
+        GREEN: 1 scenario (1 passed); 7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `A declared e2e package with a dependency edge into source is reported as advisory`
+- [x] Scenario: `A declared e2e package with a dependency edge into source is reported as advisory`
   - Design constraints:
     - Fixture: `tests/e2e/Cargo.toml` (package `e2e`) with a path dependency
       on the source package at `crates/app`, and `source: ["crates/app/**"]`
       (the `**` matches zero segments, so the package directory is covered).
     - Exit 0; stderr contains `advisory`, names the e2e package and the edge
       into `source`.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::A declared e2e package with a dependency edge into source is reported as advisory" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::A declared e2e package with a dependency edge into source is reported as advisory"
+        RED: ✘ And stderr contains "advisory"
+             Step panicked. Captured output: stderr missing "advisory":
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed)
+        Note: the first GREEN attempt still failed because `toml::Value`'s
+        `FromStr` parses one value, not a document; `toml::from_str` is the
+        document entry point.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `A declared e2e package with a transitive dependency edge into source is reported as advisory`
+- [x] Scenario: `A declared e2e package with a transitive dependency edge into source is reported as advisory`
   - Design constraints:
     - Fixture: `e2e` -> `mid` -> `app`, where `app` sits under a `source:` root.
     - The graph is built from parsed manifests (path and workspace-inherited
       dependencies), not from a command; exit 0 and the same advisory shape.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::A declared e2e package with a transitive dependency edge into source is reported as advisory" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::A declared e2e package with a transitive dependency edge into source is reported as advisory"
+        RED: ✘ And stderr contains "advisory"
+             Step panicked. Captured output: stderr missing "advisory":
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `A declared e2e path with no package manifest is reported by the boundary finding`
+- [x] Scenario: `A declared e2e path with no package manifest is reported by the boundary finding`
   - Design constraints:
     - Fixture: the declared `e2e` path exists but has no `Cargo.toml` at or
       above it before the project root.
     - Exit 0; stderr contains `advisory`, names `tests/e2e` and the reason
       `no package manifest`.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::A declared e2e path with no package manifest is reported by the boundary finding" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::A declared e2e path with no package manifest is reported by the boundary finding"
+        RED: ✘ And stderr contains "advisory"
+             Step panicked. Captured output: stderr missing "advisory":
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `A malformed package manifest skips the dependency-edge finding`
+- [x] Scenario: `A malformed package manifest skips the dependency-edge finding`
   - Design constraints:
     - Fixture: the e2e package manifest is invalid TOML.
     - Exit 0; stderr contains no dependency-edge finding (the malformed
       manifest skips the comparison; no other finding is invented for it).
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::A malformed package manifest skips the dependency-edge finding" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::A malformed package manifest skips the dependency-edge finding"
+        PASS: 1 scenario (1 passed); 4 steps (4 passed).
+        Existing behavior protected: a manifest that exists but does not parse
+        is skipped for the edge comparison, and the step also rejects reporting
+        it as `no package manifest`.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `The JSON path exposes declaration findings with advisory severity`
+- [x] Scenario: `The JSON path exposes declaration findings with advisory severity`
   - Design constraints:
     - Fixture: same missing `docs/performance.md` declaration.
     - `givn lint --json` exits 0; stdout parses as JSON and contains a finding
       with `severity: "advisory"` naming `docs/performance.md`; the finding
       carries `kind` and `severity`.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::The JSON path exposes declaration findings with advisory severity" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::The JSON path exposes declaration findings with advisory severity"
+        PASS: 1 scenario (1 passed); 5 steps (5 passed).
+        Existing behavior protected: the shared `findings_json` path carries the
+        advisory finding and its `kind`/`severity`.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `Change-scoped lint does not read the declaration`
+- [x] Scenario: `Change-scoped lint does not read the declaration`
   - Design constraints:
     - Fixture: `ise`-enabled project with a malformed declaration and an
       active change with one clean delta feature
       (`common::write_fixture_delta(env, "add-declaration-check", <capability>, <scenario>)`).
     - Run `givn lint --change add-declaration-check`; exit 0 and no
       declaration finding. The health pass runs only in default scope.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::Change-scoped lint does not read the declaration" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::Change-scoped lint does not read the declaration"
+        PASS: 1 scenario (1 passed); 5 steps (5 passed).
+        Existing behavior protected: the health pass is gated on the default
+        project scope, so `--change` keeps its refusals and reads nothing.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
-- [ ] Scenario: `An empty role list retains nothing and produces no finding`
+- [x] Scenario: `An empty role list retains nothing and produces no finding`
   - Design constraints:
     - Fixture: `ise`-enabled project with the scaffolded declaration (six empty
       lists).
     - Exit 0 and no declaration finding: findings iterate declared non-empty
       lists only.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "verify-change/check-specification-health.feature::An empty role list retains nothing and produces no finding" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact "verify-change/check-specification-health.feature::An empty role list retains nothing and produces no finding"
+        PASS: 1 scenario (1 passed); 4 steps (4 passed).
+        Existing behavior protected: every finding is guarded by a declared
+        non-empty list, so the empty scaffold is silent.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
+        (12 scenarios (12 passed), 63 steps (63 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
 
 ---

@@ -86,6 +86,7 @@ pub mod skill_rewrites_steps;
 pub mod spec_discovery_deterministic_steps;
 pub mod spec_overlap_gates_steps;
 pub mod specification_declaration_steps;
+pub mod specification_health_steps;
 pub mod template_conditional_rendering_e2e_steps;
 pub mod template_conditional_rendering_steps;
 pub mod template_conditional_rendering_support;
