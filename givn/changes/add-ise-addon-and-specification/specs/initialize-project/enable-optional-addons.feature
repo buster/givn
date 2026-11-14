@@ -28,7 +28,7 @@ Feature: enable-optional-addons
   Scenario: givn addons list reports every addon enabled by default
     Given a placeholder step
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A consumer lists addons and each declared default is reported
     Given a project root without a givn/ directory
     When the consumer runs `givn init --agents opencode`

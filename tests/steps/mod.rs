@@ -32,6 +32,7 @@ pub mod development_record_steps;
 pub mod development_report_e2e_steps;
 pub mod development_report_steps;
 pub mod development_timeline_support;
+pub mod enable_optional_addons_ise_e2e_steps;
 pub mod enable_optional_addons_ise_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
 pub mod extract_coverage_gate_steps;

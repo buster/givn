@@ -975,6 +975,7 @@ fn consumer_selects_targets_in_terminal(world: &mut GivnWorld) {
     // Option order is .opencode, .agents, .claude with only .opencode
     // premarked: two down keys move to .claude, space marks it, enter confirms.
     world.last_output = Some(common::run_init_in_terminal(env, b"\x1b[B\x1b[B\x20\n"));
+    world.last_command = Some("init".to_string());
 }
 
 #[then(
