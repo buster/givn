@@ -11,9 +11,9 @@ Five coordinated surfaces, each owned by one component:
 2. **Declaration of the Specification** (`src/config/declaration.rs`, new) is a
    strict, read-only loader for `givn/specification.yaml`; the only managed
    write is the one-time scaffold from `assets/specification.yaml.tmpl`.
-3. **Specification-health pass** (`src/cli/lint.rs`) adds four advisory
-   findings and one blocking declaration error, in the default project scope
-   only.
+3. **Specification-health pass** (`src/cli/lint/specification.rs`) adds four
+   advisory findings and one blocking declaration error, in the default project
+   scope only.
 4. **Addon-bound instruction serving** (`src/cli/instructions.rs`,
    `assets/instructions/ise.md`, new) gates `givn instructions ise` on the
    effective addon.
@@ -72,7 +72,7 @@ Confirmed Persona IDs: `developer--primary-user`, `agent--technical-role`,
 | `initialize-project` rule: a fresh init writes explicit `true` for default-on addons and omits `ise` | The fresh-init loop already gates on `addon.default_enabled`; `--no-addons` writes `false` for all ten | `initialize-a-project`; modified E2E `Consumer selects agent targets during interactive init`; `enable-optional-addons`; regular `givn init --no-addons writes an explicit false for every addon including ise` |
 | `initialize-project` rule: both prerequisite refusals leave both flags unchanged | `AddonSpec.requires` read by `run_enable` and `run_disable` before any write; exact refusal strings | `enable-optional-addons`; E2E `A consumer disables a required addon and the refusal names ise`; regular `Enabling ise without its prerequisite is refused by name` |
 | `initialize-project` rule: the first effective enable scaffolds the declaration once | `scaffold_enabled("ise")` writes `assets/specification.yaml.tmpl` through a declaration-specific write that checks `is_file()`, not `exists()`; a repeated enable reports the existing file, a directory path attempts the write and fails by name | `enable-optional-addons`; regular `Enabling ise writes the setting and scaffolds the declaration`, `Enabling ise preserves an edited declaration`, `Repeating the enable changes nothing`, `A declaration scaffold failure names the path and the applied setting`, `Disabling ise preserves the declaration and reports it project-owned`, `A forced re-initialization preserves an effective ise and its declaration`, `A change locked before ise existed accepts the enabled addon` |
-| `upgrade-a-project` rule: write and stage the scaffold only when absent; report which happened | `run_managed_upgrade` adds the declaration to the failure snapshot when absent and to the staged allowlist only after it was written | `apply-a-managed-upgrade`; regular `An upgrade writes and stages the declaration when ise is effective and it is absent` |
+| `upgrade-a-project` rule: write and stage the scaffold only when absent; report which happened | `prepare_managed_upgrade` adds the declaration to the failure snapshot when absent and to the staged allowlist only after it was written | `apply-a-managed-upgrade`; regular `An upgrade writes and stages the declaration when ise is effective and it is absent` |
 | `upgrade-a-project` rule: an existing declaration joins neither the write nor the staged set | `declaration_absent` guard before both; report line `project-owned` | `apply-a-managed-upgrade`; regular `An upgrade preserves an edited declaration` |
 | `declare-the-specification` rules: strict five roles plus one `source:` list; every path bounded | `config::declaration::load` with a top-level key scan plus `deny_unknown_fields`; `Path::components` bound check | `specification-declaration`; E2E `The declared roles are read by the project-health pass`; refusal Outline |
 | `verify-change` rule: an empty declared role retains nothing and produces no finding | Findings iterate declared non-empty lists only | `check-specification-health`; regular `An empty role list retains nothing and produces no finding` |
@@ -89,10 +89,12 @@ Confirmed Persona IDs: `developer--primary-user`, `agent--technical-role`,
 ## Architecture Impact
 
 New modules `src/config/addons.rs` (registry) and `src/config/declaration.rs`
-(strict loader); modified modules: `src/cli/addons.rs`, `src/cli/init.rs`,
-`src/cli/migration.rs`, `src/cli/instructions.rs`, `src/cli/lint.rs`,
-`src/config/mod.rs`, `src/config/manifest.rs`, `src/config/lock.rs`,
-`src/skills/render.rs`.
+(strict loader); the lint module is split from `src/cli/lint.rs` into
+`src/cli/lint/mod.rs`, `src/cli/lint/specification.rs`,
+`src/cli/lint/manifest.rs`, and `src/cli/lint/hygiene.rs`. Modified modules:
+`src/cli/addons.rs`, `src/cli/init.rs`, `src/cli/migration.rs`,
+`src/cli/instructions.rs`, `src/config/mod.rs`, `src/config/manifest.rs`,
+`src/config/lock.rs`, `src/skills/render.rs`.
 New assets: `assets/specification.yaml.tmpl`, `assets/instructions/ise.md`.
 
 ```mermaid
@@ -304,7 +306,7 @@ project-owned in the disable report.
 
 ## Upgrade behavior
 
-In `run_managed_upgrade`:
+In `prepare_managed_upgrade`:
 
 1. Compute `declaration_absent = ise_effective && !path.is_file()`; a path
    occupied by a directory counts as absent so the write is attempted and its
