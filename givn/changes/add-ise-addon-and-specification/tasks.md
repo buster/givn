@@ -1592,7 +1592,7 @@ E2E setup (once, before the first `@e2e` batch):
 - [x] E2E strict-mode proof: the `.fail_on_skipped()` builder is the same one
       proven in `Setup`. Record the probe evidence there; do not repeat the
       probe.
-- [x] COMMIT: `<hash>` -- Batch: `e2e-setup`
+- [x] COMMIT: `685d475f93d011a91d5cecaff40472a607a81472` -- Batch: `e2e-setup`
 
 ### Batch E1: `addon-registry-e2e`
 
@@ -1606,7 +1606,7 @@ capture is deterministic (fixed args, temp project). Steps capture the
 transcript through the existing terminal-instruction step.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: addon-registry-e2e'`.
 
-- [ ] Scenario: `Consumer selects agent targets during interactive init`
+- [x] Scenario: `Consumer selects agent targets during interactive init`
   - Design constraints:
     - Real `givn init` subprocess driven through the PTY selection prompt;
       choose `opencode, claude`; assert the labeled selection, exit 0,
@@ -1617,27 +1617,54 @@ transcript through the existing terminal-instruction step.
     - This is the `@givn.modified` scenario: it keeps its existing steps and
       gains the posture assertions plus the transcript. It is expected to pass
       once the shared posture steps exist.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence (observed binding gap, then GREEN):
         ```
-        <!-- paste: --exact
-             "initialize-project/initialize-a-project.feature::Consumer selects agent targets during interactive init" -->
-        ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `addon-registry-e2e`
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/initialize-a-project.feature::Consumer selects agent targets during interactive init"
 
-- [ ] Scenario: `A consumer lists addons and each declared default is reported`
+        before the posture bindings: 9 steps (8 passed, 1 failed)
+          ✘ And the active addon settings enable exactly "arc42, communication_policy,
+            readme, coverage, domain_modeling, dev_principles, architecture_principles,
+            challenge, outline"
+          Step doesn't match any function
+        existing behavior protected: the PTY init already writes the nine default-on
+        addons, omits `ise`, and leaves `givn/specification.yaml` absent, so the
+        scenario rejects a regression in the fresh-init posture; no production edit.
+        after the bindings: 1 scenario (1 passed); 12 steps (12 passed)
+        transcript: evidence/visual/consumer-selects-agent-targets-during-interactive-init/transcript.txt
+        ```
+  - [x] REFACTOR: the outline report has no supported production source under
+        `tests/steps` (the changed files are step definitions, outside the
+        measured production population), so the same responsibility,
+        interface, and decomposition questions were assessed directly: the new
+        file holds only the two `@e2e` posture assertions, the interactive step
+        records its command name for the transcript, and every phrase is bound
+        once across the suite. Re-ran: 12 steps passed. No behavior change.
+  - [x] COMMIT: `a9fe8e07fd1044252a5c8e9dac99a4960864875f` -- Batch: `addon-registry-e2e`
+
+- [x] Scenario: `A consumer lists addons and each declared default is reported`
   - Design constraints:
     - Real `givn init --agents opencode` then `givn addons list`; assert exit 0,
       stdout contains `[disabled]  ise`, `[enabled ]  outline`, and
       `each omitted key resolves that addon's declared default`; capture the
       transcript.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence (passed on its first run):
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::A consumer lists addons and each declared default is reported" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::A consumer lists addons and each declared default is reported"
+
+        existing behavior protected: 1 scenario (1 passed); 8 steps (8 passed)
+        the listing already reports the omitted `ise` key by its declared default
+        and every default-on addon as enabled; the scenario needs no new binding
+        and no production edit.
+        transcript: evidence/visual/a-consumer-lists-addons-and-each-declared-default-is-reported/transcript.txt
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `addon-registry-e2e`
+  - [x] REFACTOR: re-ran the batch; 8 steps passed. No behavior change (no
+        changed component for the outline to assess; the shared CLI steps are
+        unchanged).
+  - [x] COMMIT: `a9fe8e07fd1044252a5c8e9dac99a4960864875f` -- Batch: `addon-registry-e2e`
 
 ### Batch E2: `addon-prerequisites-e2e`
 
@@ -1647,20 +1674,30 @@ transcript through the existing terminal-instruction step.
 enabled; transcript captured.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: addon-prerequisites-e2e'`.
 
-- [ ] Scenario: `A consumer disables a required addon and the refusal names ise`
+- [x] Scenario: `A consumer disables a required addon and the refusal names ise`
   - Design constraints:
     - Fixture: `ise`-enabled project selecting opencode.
     - `givn addons disable architecture_principles` exits non-zero; stderr
       contains
       `addon 'architecture_principles' is required by 'ise'; disable 'ise' first`;
       both addons stay enabled; transcript captured.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence (passed on its first run):
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::A consumer disables a required addon and the refusal names ise" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "initialize-project/enable-optional-addons.feature::A consumer disables a required addon and the refusal names ise"
+
+        existing behavior protected: 1 scenario (1 passed); 7 steps (7 passed)
+        every phrase was already bound by the `addon-prerequisites` batch
+        (`an ise-enabled project selecting opencode` in
+        enable_optional_addons_ise_steps.rs, the shared `the consumer runs`
+        binding, and `the active addon settings keep`), so the batch adds the
+        transcript and removes `@wip`; no production edit.
+        transcript: evidence/visual/a-consumer-disables-a-required-addon-and-the-refusal-names-ise/transcript.txt
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `addon-prerequisites-e2e`
+  - [x] REFACTOR: re-ran; 7 steps passed. No behavior change (no changed
+        component for the outline to assess).
+  - [x] COMMIT: `384fb66878bfa4f743ddcfe06cbd56bcf91294e8` -- Batch: `addon-prerequisites-e2e`
 
 ### Batch E3: `specification-health-e2e`
 
@@ -1672,20 +1709,33 @@ paths must exist or the four advisory findings are allowed but must not be
 schema errors.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: specification-health-e2e'`.
 
-- [ ] Scenario: `The declared roles are read by the project-health pass`
+- [x] Scenario: `The declared roles are read by the project-health pass`
   - Design constraints:
     - Fixture: `ise`-enabled project selecting opencode; write a declaration
       with `behavior`, `structure`, `contracts`, `limits`, `e2e` globs and two
       `source` roots.
     - Exit 0; stderr contains no declaration-schema error; transcript captured
       at `evidence/visual/the-declared-roles-are-read-by-the-project-health-pass/transcript.txt`.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence (passed on its first run after binding):
         ```
-        <!-- paste: --exact
-             "declare-the-specification/specification-declaration.feature::The declared roles are read by the project-health pass" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "declare-the-specification/specification-declaration.feature::The declared roles are read by the project-health pass"
+
+        existing behavior protected: 1 scenario (1 passed); 5 steps (5 passed)
+        the Given fixture and `stderr contains no declaration-schema error` are new
+        in this batch; they were bound before the first run, so no unbound-step run
+        is claimed. `config::declaration::load` and `specification_findings`
+        already accept the six-key declaration and keep the advisory findings out
+        of the exit code; no production edit. The Then rejects the blocking
+        `DECL ` level while allowing `SPEC `.
+        transcript: evidence/visual/the-declared-roles-are-read-by-the-project-health-pass/transcript.txt
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health-e2e`
+  - [x] REFACTOR: the outline report has no supported production source under
+        `tests/steps`; direct assessment: the new file holds only the
+        declaration fixture and the schema-error assertion, both driving the
+        real binary. Re-ran: 5 steps passed. No behavior change.
+  - [x] COMMIT: `a89ea27f8b96815bb1c9411f9fbdad90290e2c38` -- Batch: `specification-health-e2e`
 
 ### Batch E4: `guidance-amendments-e2e`
 
@@ -1696,34 +1746,58 @@ schema errors.
 served text; transcript per scenario.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: guidance-amendments-e2e'`.
 
-- [ ] Scenario: `The design guidance requires one recorded change strategy`
+- [x] Scenario: `The design guidance requires one recorded change strategy`
   - Design constraints:
     - `givn instructions design --change <id>` exits 0; the served text
       requires exactly one change strategy as a `Decides D` entry, names
       `incremental modification`, `Constant Ise`, and a whole-product rebuild,
       and requires the affected consumers, the persisted state, and the rebuild
       boundary; transcript captured.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence (observed binding gap, then GREEN):
         ```
-        <!-- paste: --exact
-             "create-change/change-strategy.feature::The design guidance requires one recorded change strategy" -->
-        ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments-e2e`
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "create-change/change-strategy.feature::The design guidance requires one recorded change strategy"
 
-- [ ] Scenario: `The review guidance requires one spec gap outcome before any fix`
+        first run: the Given matched two bindings (this file's and the generic
+        `^a Givn project with the ([a-z0-9-]+) addon enabled and the skills
+        synchronized$` in template_conditional_rendering_steps.rs) — the duplicate
+        was deleted and the generic Given reused.
+        existing behavior protected: 1 scenario (1 passed); 7 steps (7 passed)
+        the served design guidance already carries the ise block; no production edit.
+        transcript: evidence/visual/the-design-guidance-requires-one-recorded-change-strategy/transcript.txt
+        ```
+  - [x] REFACTOR: the outline report has no supported production source under
+        `tests/steps`; direct assessment: the file maps one requested guidance
+        id to three served-text assertions and reuses the shared fixture.
+        Re-ran: 7 steps passed. No behavior change.
+  - [x] COMMIT: `c31c3ffa98ddf4395144c88357b344566a77bbda` -- Batch: `guidance-amendments-e2e`
+
+- [x] Scenario: `The review guidance requires one spec gap outcome before any fix`
   - Design constraints:
     - `givn instructions review --change <id>` exits 0; the served text
       requires exactly one spec gap outcome before any fix, names the four
       outcomes, states that only `specification defect` is a gap in the
       Specification; transcript captured.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence (passed on its first run after binding):
         ```
-        <!-- paste: --exact
-             "create-change/spec-gap.feature::The review guidance requires one spec gap outcome before any fix" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "create-change/spec-gap.feature::The review guidance requires one spec gap outcome before any fix"
+
+        existing behavior protected: 1 scenario (1 passed); 7 steps (7 passed)
+        the three served-text assertions are new in this batch and were bound
+        before the first run, so no unbound-step run is claimed; the When and the
+        shared Given were reused from spec_gap_steps.rs and
+        template_conditional_rendering_steps.rs. The served review guidance
+        already carries the ise spec-gap block; no production edit.
+        transcript: evidence/visual/the-review-guidance-requires-one-spec-gap-outcome-before-any-fix/transcript.txt
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments-e2e`
+  - [x] REFACTOR: the outline report has no supported production source under
+        `tests/steps`; direct assessment: the file holds the three served-text
+        assertions and reads the guidance through the shared request helper.
+        Re-ran: 7 steps passed. No behavior change.
+  - [x] COMMIT: `c31c3ffa98ddf4395144c88357b344566a77bbda` -- Batch: `guidance-amendments-e2e`
 
 ---
 
