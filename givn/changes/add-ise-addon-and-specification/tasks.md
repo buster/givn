@@ -987,7 +987,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `A declared path missing from the tree is reported as advisory`
   - Design constraints:
@@ -1003,7 +1003,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `One path declared in two roles is reported as advisory`
   - Design constraints:
@@ -1019,7 +1019,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `A .feature file outside the behavior globs is reported as advisory`
   - Design constraints:
@@ -1041,7 +1041,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `A declared e2e package missing from the tree is reported as advisory`
   - Design constraints:
@@ -1057,7 +1057,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `A declared e2e package with a dependency edge into source is reported as advisory`
   - Design constraints:
@@ -1078,7 +1078,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `A declared e2e package with a transitive dependency edge into source is reported as advisory`
   - Design constraints:
@@ -1094,7 +1094,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `A declared e2e path with no package manifest is reported by the boundary finding`
   - Design constraints:
@@ -1111,7 +1111,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `A malformed package manifest skips the dependency-edge finding`
   - Design constraints:
@@ -1128,7 +1128,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `The JSON path exposes declaration findings with advisory severity`
   - Design constraints:
@@ -1145,7 +1145,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `Change-scoped lint does not read the declaration`
   - Design constraints:
@@ -1163,7 +1163,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 - [x] Scenario: `An empty role list retains nothing and produces no finding`
   - Design constraints:
@@ -1180,7 +1180,7 @@ doc comment (exit precedence),
         ```
   - [x] REFACTOR: re-ran all twelve scenarios; no behavior change
         (12 scenarios (12 passed), 63 steps (63 passed)).
-  - [ ] COMMIT: `<hash>` -- Batch: `specification-health`
+  - [x] COMMIT: `7efd0b2b4676c8b6216d548b3164dea25dc4f636` -- Batch: `specification-health`
 
 ---
 
