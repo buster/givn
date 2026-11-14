@@ -3670,6 +3670,27 @@ fn ise_change_with_runner_command(world: &mut GivnWorld, command: String) {
     e2e_boundary_support::commit(world);
 }
 
+#[given(
+    "an ise-effective change ready for change-scoped verification whose delta has one E2E scenario with an unbound step"
+)]
+fn ise_change_with_unbound_e2e_step(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_failing_e2e_run(world, "failed");
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose delta has one E2E scenario with a skipped step"
+)]
+fn ise_change_with_skipped_e2e_step(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_failing_e2e_run(world, "skipped");
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification with a passing E2E run over two declared e2e packages"
+)]
+fn ise_change_with_passing_e2e_over_two_packages(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_passing_e2e_over_two_packages(world);
+}
+
 #[then(regex = r#"^stderr names the declared e2e package and "([^"]+)"$"#)]
 fn stderr_names_declared_e2e_package(world: &mut GivnWorld, condition: String) {
     let observed = stderr(world);
@@ -3847,6 +3868,81 @@ fn receipt_records_e2e_package_digests(world: &mut GivnWorld) {
                 .chars()
                 .all(|character| character.is_ascii_hexdigit()),
             "the digest for {package:?} is not hexadecimal: {digest:?}"
+        );
+    }
+}
+
+#[then(regex = r"^stderr names the failing E2E run and reports (\d+) (failed|skipped) tests?$")]
+fn stderr_names_failing_e2e_run(world: &mut GivnWorld, count: u64, state: String) {
+    let observed = stderr(world);
+    assert!(
+        observed.contains("E2E run"),
+        "stderr names no failing E2E run: {observed}"
+    );
+    let expected = format!("{count} {state} test");
+    assert!(
+        observed.contains(&expected),
+        "stderr does not report {expected:?}: {observed}"
+    );
+}
+
+#[then("the change verification receipt records the E2E runner command digest")]
+fn receipt_records_e2e_runner_command_digest(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let command = e2e_boundary_support::state(world)
+        .runner_command
+        .clone()
+        .expect("the fixture records its E2E runner command");
+    let expected = {
+        use sha2::Digest;
+        sha2::Sha256::digest(command.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    assert_eq!(
+        receipt["e2e_identity"]["runner_command_digest"].as_str(),
+        Some(expected.as_str()),
+        "the receipt does not bind the digest of {command:?}: {receipt}"
+    );
+}
+
+#[then("the change verification receipt records the running Givn version")]
+fn receipt_records_running_givn_version(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let out = common::run_givn(e2e_boundary_support::env(world), &["--version"]);
+    let reported = String::from_utf8_lossy(&out.stdout);
+    let version = reported
+        .trim()
+        .rsplit(' ')
+        .next()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        !version.is_empty(),
+        "the built binary reports no version: {reported}"
+    );
+    assert_eq!(
+        receipt["e2e_identity"]["givn_version"].as_str(),
+        Some(version.as_str()),
+        "the receipt does not bind the running Givn version {version:?}: {receipt}"
+    );
+}
+
+#[then("the change verification receipt records a passed E2E scope")]
+fn receipt_records_passed_e2e_scope(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let scope = &receipt["e2e_scope"];
+    assert_eq!(
+        scope["status"].as_str(),
+        Some("passed"),
+        "the receipt does not record a passed E2E scope: {receipt}"
+    );
+    for (field, expected) in [("total", 1), ("passed", 1), ("failed", 0), ("skipped", 0)] {
+        assert_eq!(
+            scope[field].as_u64(),
+            Some(expected),
+            "the receipt records the wrong E2E scope {field}: {receipt}"
         );
     }
 }

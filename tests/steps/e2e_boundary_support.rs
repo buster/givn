@@ -164,18 +164,84 @@ pub(crate) fn write_package(world: &mut GivnWorld, directory: &str) {
     state.resolved_packages.push(directory.to_string());
 }
 
+/// Point both verify commands at the fixture runner and record the E2E
+/// command, so the receipt assertion knows the text its digest binds.
+fn write_verify_commands(world: &mut GivnWorld, command: &str, e2e_command: &str) {
+    common::write_commands_yaml(
+        &env(world).path("givn/commands.yaml"),
+        &format!("verify:\n  command: \"{command}\"\n  e2e_command: \"{e2e_command}\"\n"),
+    );
+    let state = world
+        .e2e_boundary
+        .as_mut()
+        .expect("an ise boundary fixture is required first");
+    state.runner_command = Some(e2e_command.to_string());
+}
+
+/// A fixture runner that writes one passing scenario for whichever scope it
+/// is asked to run.
+const PASSING_RUNNER: &str = "#!/bin/sh\n\
+     printf '{\"scope\":\"%s\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' \
+     \"${GIVN_RESULT_SCOPE:-regular}\" > \"$GIVN_RESULT_FILE\"\n";
+
 /// Point both verify commands at fake scoped runners: the regular command
 /// writes one passing scenario, the E2E command names the declared root.
 pub(crate) fn write_scoped_runners(world: &mut GivnWorld) {
-    let script = "#!/bin/sh\n\
-                  printf '{\"scope\":\"%s\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' \
-                  \"${GIVN_RESULT_SCOPE:-regular}\" > \"$GIVN_RESULT_FILE\"\n";
-    write_executable(world, "emit-change-result.sh", script);
-    common::write_commands_yaml(
-        &env(world).path("givn/commands.yaml"),
-        "verify:\n  command: \"./emit-change-result.sh\"\n  \
-         e2e_command: \"./emit-change-result.sh tests/e2e\"\n",
+    write_executable(world, "emit-change-result.sh", PASSING_RUNNER);
+    write_verify_commands(
+        world,
+        "./emit-change-result.sh",
+        "./emit-change-result.sh tests/e2e",
     );
+}
+
+/// An `ise`-effective change whose delta carries one `@e2e` scenario and whose
+/// fixture E2E run reports `failed` or `skipped` and exits nonzero. The
+/// regular scope stays green, so only the E2E result can block the receipt.
+pub(crate) fn ise_change_with_failing_e2e_run(world: &mut GivnWorld, failure: &str) {
+    let (failed, skipped) = match failure {
+        "failed" => (1, 0),
+        "skipped" => (0, 1),
+        other => panic!("unknown E2E failure state '{other}'"),
+    };
+    ise_change(world);
+    declare(world, &["tests/e2e"], &[]);
+    write_package(world, "tests/e2e");
+    add_delta_e2e_scenario(world);
+    let script = format!(
+        "#!/bin/sh\n\
+         if [ \"${{GIVN_RESULT_SCOPE:-regular}}\" = \"e2e\" ]; then\n\
+         \x20 printf '{{\"scope\":\"e2e\",\"total\":2,\"passed\":1,\"failed\":{failed},\"skipped\":{skipped}}}\\n' \
+         > \"$GIVN_RESULT_FILE\"\n\
+         \x20 exit 1\n\
+         fi\n\
+         printf '{{\"scope\":\"change\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}}\\n' \
+         > \"$GIVN_RESULT_FILE\"\n"
+    );
+    write_executable(world, "emit-failing-result.sh", &script);
+    write_verify_commands(
+        world,
+        "./emit-failing-result.sh",
+        "./emit-failing-result.sh tests/e2e",
+    );
+    commit(world);
+}
+
+/// An `ise`-effective change ready for a passing E2E run over two resolved
+/// packages, both named by the E2E runner command.
+pub(crate) fn ise_change_with_passing_e2e_over_two_packages(world: &mut GivnWorld) {
+    ise_change(world);
+    declare(world, &["tests/e2e", "tests/e2e-support"], &[]);
+    write_package(world, "tests/e2e");
+    write_package(world, "tests/e2e-support");
+    add_delta_e2e_scenario(world);
+    write_executable(world, "emit-two-package-result.sh", PASSING_RUNNER);
+    write_verify_commands(
+        world,
+        "./emit-two-package-result.sh",
+        "./emit-two-package-result.sh tests/e2e tests/e2e-support",
+    );
+    commit(world);
 }
 
 /// An `ise`-effective change ready for change-scoped verification: a resolved

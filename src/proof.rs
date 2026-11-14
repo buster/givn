@@ -511,14 +511,16 @@ impl RunnerResult {
         }
         if result.failed != 0 {
             bail!(
-                "archive blocked: {label} runner result declares {} failed scenario(s)",
-                result.failed
+                "archive blocked: {label} runner result reports {} failed {}",
+                result.failed,
+                if result.failed == 1 { "test" } else { "tests" }
             );
         }
         if result.skipped != 0 {
             bail!(
-                "archive blocked: {label} runner result declares {} skipped scenario(s)",
-                result.skipped
+                "archive blocked: {label} runner result reports {} skipped {}",
+                result.skipped,
+                if result.skipped == 1 { "test" } else { "tests" }
             );
         }
         if result.passed + result.failed + result.skipped != result.total {
@@ -698,6 +700,21 @@ impl StaleReason {
                 .to_string(),
         }
     }
+}
+
+/// Path of the change-scoped E2E runner result.
+pub const CHANGE_E2E_RESULT_FILE: &str = "verification/e2e-result.json";
+
+/// Read the change's E2E scope result. The refusal names the failing E2E run
+/// and the count the result reported, so an unbound step (a failed test) and a
+/// skipped step (a skipped test) never share one generic message.
+pub fn read_change_e2e_result(change_id: &str, path: &Path) -> Result<RunnerResult> {
+    RunnerResult::read(path, SCOPE_E2E).map_err(|error| {
+        anyhow::anyhow!(
+            "the change E2E run failed: {error}; repair the change and rerun \
+             `givn check tasks --change {change_id}`"
+        )
+    })
 }
 
 /// Path of the change-scoped verification receipt.

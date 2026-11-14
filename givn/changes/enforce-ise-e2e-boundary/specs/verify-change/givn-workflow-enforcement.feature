@@ -67,7 +67,7 @@ Feature: givn Workflow Enforcement
       | (empty)                           |
       | givn missing-e2e-runner           |
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ise-effective change whose E2E run leaves a step unbound fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose delta has one E2E scenario with an unbound step
     When the developer runs `givn check tasks --change ise-boundary`
@@ -75,7 +75,7 @@ Feature: givn Workflow Enforcement
     And stderr names the failing E2E run and reports 1 failed test
     And no change verification receipt is written
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ise-effective change whose E2E run reports a skipped step fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose delta has one E2E scenario with a skipped step
     When the developer runs `givn check tasks --change ise-boundary`
@@ -83,7 +83,7 @@ Feature: givn Workflow Enforcement
     And stderr names the failing E2E run and reports 1 skipped test
     And no change verification receipt is written
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ise-effective change receipt binds the declared e2e package, the E2E runner command, and the Givn version
     Given an ise-effective change ready for change-scoped verification with a passing E2E run over two declared e2e packages
     When the developer runs `givn check tasks --change ise-boundary`

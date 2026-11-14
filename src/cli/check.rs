@@ -520,18 +520,23 @@ fn run_change_verification(
     let result = crate::proof::RunnerResult::read(&result_file, "change")?;
     let total = result.total;
     let delta_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&change_dir.join("specs"));
-    let e2e_identity = match &boundary {
-        Some(boundary) => Some(crate::proof::E2eIdentity {
-            package_digests: boundary.identity(project_root)?,
-            runner_command_digest: crate::proof::digest_text(&manifest.verify.e2e_command),
-            givn_version: env!("CARGO_PKG_VERSION").to_string(),
-        }),
-        None => None,
-    };
-    let e2e_scope = if e2e_identity.is_some() && !delta_has_e2e {
-        Some(crate::proof::ScopeOutcome::not_applicable())
-    } else {
-        None
+    let (e2e_identity, e2e_scope) = match &boundary {
+        None => (None, None),
+        Some(boundary) if delta_has_e2e => {
+            let (scope, identity) = run_change_e2e_scope(
+                change_id,
+                &change_dir,
+                project_root,
+                manifest,
+                boundary,
+                &features,
+            )?;
+            (Some(identity), Some(scope))
+        }
+        Some(boundary) => (
+            Some(capture_e2e_identity(boundary, manifest, project_root)?),
+            Some(crate::proof::ScopeOutcome::not_applicable()),
+        ),
     };
     let current_manifest = load_effective()?;
     let after = crate::proof::VerificationInputs::capture(
@@ -546,6 +551,10 @@ fn run_change_verification(
     before.ensure_unchanged(&after)?;
     let head = before.revision;
     let tested_content_digest = before.content_digest;
+    let e2e_summary = e2e_scope.as_ref().map(|scope| match scope.status.as_str() {
+        "passed" => format!("{} scenario(s), 0 failed, 0 skipped", scope.total),
+        status => status.to_string(),
+    });
     crate::proof::write_change_receipt(
         project_root,
         &change_dir,
@@ -561,7 +570,77 @@ fn run_change_verification(
         crate::proof::unix_now(),
     )?;
     println!("  ✓ change verification receipt: {total} scenario(s), 0 failed, 0 skipped at {head}");
+    if let Some(summary) = e2e_summary {
+        println!("  ✓ E2E verification: {summary}");
+    }
     Ok(())
+}
+
+/// Capture the E2E identity a receipt binds: one digest per resolved package,
+/// the E2E runner command digest, and the running Givn version.
+fn capture_e2e_identity(
+    boundary: &crate::e2e_boundary::E2eBoundary,
+    manifest: &crate::config::manifest::Manifest,
+    project_root: &std::path::Path,
+) -> anyhow::Result<crate::proof::E2eIdentity> {
+    Ok(crate::proof::E2eIdentity {
+        package_digests: boundary.identity(project_root)?,
+        runner_command_digest: crate::proof::digest_text(&manifest.verify.e2e_command),
+        givn_version: env!("CARGO_PKG_VERSION").to_string(),
+    })
+}
+
+/// Run the change-scoped E2E suite and return the green outcome it proves with
+/// the identity captured after it. The identity is captured before the run
+/// too: a project change while the suite executes refuses instead of binding a
+/// digest that no longer matches. The result is read before the exit status,
+/// so the count refusal names the failing test the run reported.
+fn run_change_e2e_scope(
+    change_id: &str,
+    change_dir: &std::path::Path,
+    project_root: &std::path::Path,
+    manifest: &crate::config::manifest::Manifest,
+    boundary: &crate::e2e_boundary::E2eBoundary,
+    features: &str,
+) -> anyhow::Result<(crate::proof::ScopeOutcome, crate::proof::E2eIdentity)> {
+    let result_file = change_dir.join(crate::proof::CHANGE_E2E_RESULT_FILE);
+    if let Some(parent) = result_file.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let result_path = result_file.to_string_lossy().into_owned();
+    crate::proof::remove_previous_output(&result_file)?;
+    let identity_before = capture_e2e_identity(boundary, manifest, project_root)?;
+    let started = std::time::Instant::now();
+    let status = crate::subprocess::sh_streamed(
+        &manifest.verify.e2e_command,
+        &[
+            ("GIVN_FEATURES", features),
+            ("GIVN_RESULT_FILE", &result_path),
+            ("GIVN_RESULT_SCOPE", crate::proof::SCOPE_E2E),
+        ],
+        Some(project_root),
+        "E2E verification",
+    )?;
+    let seconds = started.elapsed().as_secs_f64();
+    let result = crate::proof::read_change_e2e_result(change_id, &result_file)?;
+    if !status.success() {
+        anyhow::bail!(
+            "the change E2E run failed (exit code {}); repair the change and rerun \
+             `givn check tasks --change {change_id}`",
+            status.code().unwrap_or(-1)
+        );
+    }
+    let identity_after = capture_e2e_identity(boundary, manifest, project_root)?;
+    if identity_before != identity_after {
+        anyhow::bail!(
+            "the change E2E identity changed while the E2E run executed; commit a stable \
+             project tree and rerun `givn check tasks --change {change_id}`"
+        );
+    }
+    Ok((
+        crate::proof::ScopeOutcome::passed(&result, seconds),
+        identity_after,
+    ))
 }
 
 /// Refuse an `ise`-effective change whose declared `e2e` boundary cannot be
