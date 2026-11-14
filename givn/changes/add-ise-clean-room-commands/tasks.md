@@ -982,9 +982,11 @@ partition-and-write'`.
 
 - [x] Scenario: `Preparation refuses when a revision blob cannot be read`
   - Design constraints:
-    - Fixture: `source: ["src/**"]`; commit `src/kept.rs`, then delete its loose
-      object under `.git/objects/<xx>/<rest>` so the tree lists the path while
-      the blob is absent.
+    - Fixture (Contradictions 1): `structure: ["src/kept.rs"]`,
+      `source: ["src/**"]`; commit `src/kept.rs`, then delete its loose object
+      under `.git/objects/<xx>/<rest>` so the tree lists the path while the blob
+      is absent. The retained role is what puts the file in the copy set under
+      `--full`, so the copy-set blob read is the one under test.
     - When: `givn ise replace --full --into <dir> --receipt <file>`.
     - Then: exit 1; stderr names `src/kept.rs` and the revision; the trial and
       the receipt remain absent.
