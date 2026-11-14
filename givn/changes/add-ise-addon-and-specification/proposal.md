@@ -126,6 +126,7 @@ and the ideation handoff assign.
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
 | `enable-optional-addons` | `EXTEND enable-optional-addons` (33.50) | `EXTEND enable-optional-addons` | Route agrees. The behavior registers an addon, checks its prerequisite, and scaffolds a declaration; `initialize-project` owns addon posture. |
+| `initialize-a-project` | `EXTEND initialize-a-project` (27.00) | `EXTEND initialize-a-project` | Route agrees. The modified interactive-init scenario adds the fresh addon-posture assertions to the existing init flow; `initialize-project` owns project initialization. |
 | `apply-a-managed-upgrade` | `no signal` | `EXTEND apply-a-managed-upgrade` | The managed write and staged allowlist belong to `upgrade-a-project`; route ranked no candidate because the proposal names `givn upgrade` once. |
 | `specification-declaration` | `no signal` | `NEW in declare-the-specification` | No permanent contract exists for declaring retained roles; the handoff cuts `declare-the-specification` as a new leaf. |
 | `check-specification-health` | `EXTEND check-specification-health` (27.50) | `EXTEND check-specification-health` | Route agrees. The four declaration findings are project-level advisories; the blocking change gate is a different capability in a later change. |
