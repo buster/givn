@@ -1330,7 +1330,7 @@ scenario that pins the order; the fix itself also restores the shared
   receipt freshness reasons, including `the E2E identity cannot be read`.
 - The refusal names the declaration path and the reason; no receipt is written.
 
-- [ ] Scenario: `An ise-effective change with no behavior change still needs a readable e2e declaration`
+- [x] Scenario: `An ise-effective change with no behavior change still needs a readable e2e declaration`
   - Design constraints:
     - Fixture: the `ise-boundary` change with `ise: true` in its lock, a
       proposal whose `Behavior change:` entry is `none`, `.givn-skip` naming
@@ -1339,17 +1339,32 @@ scenario that pins the order; the fix itself also restores the shared
       refusal, the declaration path, and `is absent`.
     - Both commands are driven: `givn check tasks` and `givn check review`;
       each must exit nonzero for the same absent declaration.
-  - [ ] Implement the scenario and its tests (test-first per `design.md`).
+  - [x] Implement the scenario and its tests (test-first per `design.md`).
         Files: `src/cli/check.rs`, `tests/steps/e2e_boundary_support.rs`,
         `tests/steps/workflow_enforcement_steps.rs`. Evidence:
         ```
-        <!-- observed failure, then GREEN -->
+RED (reverted preflight order: the two check calls moved back below the
+not-applicable return, `cargo test --locked --test features_runner -- --exact
+"verify-change/givn-workflow-enforcement.feature::An ise-effective change with no
+behavior change still needs a readable e2e declaration"`):
+  ✔  Given an ise-effective change with no behavior change and no readable e2e declaration
+  ✔  When the developer runs `givn check tasks --change ise-boundary`
+  ✘  Then the command exits non-zero
+     Step panicked. Captured output: expected failure, got exit Some(0): stdout=Mandatory checks for 'tasks':
+       changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)
+       ✓ verify passed
+  -> 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+GREEN (preflight restored):
+  ✔  Given / When `givn check tasks` / Then exits non-zero / And stderr names the absent e2e declaration
+  ✔  When `givn check review` / Then exits non-zero / And stderr names the absent e2e declaration
+  -> 1 scenario (1 passed), 7 steps (7 passed), exit 0
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run the scenario.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run the scenario.
         ```
-        <!-- REFACTOR evidence -->
+REFACTOR: `cargo fmt --all` and the recorded clippy run changed no behaviour;
+the scenario re-ran green in the whole-delta run below and the Closeout runs.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `review-closure`
+  - [x] COMMIT: `879081ebbffa62ddad873f6106564d89995ff693` -- Batch: `review-closure`
 
 ---
 
@@ -1419,7 +1434,7 @@ once here:
       givn lint --change enforce-ise-e2e-boundary
       ```
       Every executed scenario passes with zero failures and zero in-scope skips.
-      Record the counts; the delta holds 18 scenario names (23 executed cases
+      Record the counts; the delta holds 19 scenario names (26 executed cases
       from the `gvn-workflow-enforcement` Outlines and scenarios, 5 from
       `prose-consolidation`) and 0 end-to-end scenarios.
       ```
