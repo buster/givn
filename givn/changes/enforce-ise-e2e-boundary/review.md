@@ -328,7 +328,7 @@ Rationale: the two stale Outlines share a shape but assert different rules
 (identity-value comparison versus delta-aware scope applicability), so merging
 them would lose a distinct failure. The permanent library scenario and the
 delta ise-off scenario are the two render branches of the same action and are
-each other's negative control, so neither supersedes the other. Net delta: 16
+each other's negative control, so neither supersedes the other. Net delta: 17
 added, 2 modified, 0 removed. The two `@givn.modified` scenarios supersede the
 permanent titles they replace; no removed+added pair exists.
 

@@ -1393,7 +1393,7 @@ once here:
 
 ## Closeout
 
-- [ ] Every delta phrase is bound in a permanent per-capability step file and no
+- [x] Every delta phrase is bound in a permanent per-capability step file and no
       delta step copy exists under this change's `specs/`:
       `find givn/changes/enforce-ise-e2e-boundary/specs -name '*steps*' -print`
       prints nothing, and every new binding lives in
@@ -1402,27 +1402,41 @@ once here:
       `tests/steps/e2e_boundary_support.rs` (the archive gate re-checks the same
       condition before mutation).
       ```
-      <!-- paste the find output and the per-file binding count -->
+$ find givn/changes/enforce-ise-e2e-boundary/specs -name '*steps*' -print
+(no output, exit 0)
+$ for f in tests/steps/workflow_enforcement_steps.rs tests/steps/prose_consolidation_steps.rs; do
+    printf '%s ' "$f"; grep -c '^#\[\(given\|when\|then\)' "$f"; done
+tests/steps/workflow_enforcement_steps.rs 226
+tests/steps/prose_consolidation_steps.rs 67
       ```
-- [ ] No empty or no-op stub remains: `grep -rn 'unimplemented!\|todo!()'
+- [x] No empty or no-op stub remains: `grep -rn 'unimplemented!\|todo!()'
       tests/steps/` prints no step body (a Rust source fixture string is not a
       step body; name it if it matches).
       ```
-      <!-- paste the grep output -->
+$ grep -rn 'unimplemented!\|todo!()' tests/steps/
+tests/steps/outline_report_support.rs:581: "... pub fn shapes(... todo!() } }"
+The only hit is the Rust source fixture string passed to the outline analyzer,
+not a step body. No empty or assertion-free step body exists.
       ```
-- [ ] No delta scenario still carries `@wip`
+- [x] No delta scenario still carries `@wip`
       (`givn check tasks --change enforce-ise-e2e-boundary` refuses otherwise).
       ```
-      <!-- paste grep -rn '@wip' givn/changes/enforce-ise-e2e-boundary/specs/ -->
+$ grep -rn '@wip' givn/changes/enforce-ise-e2e-boundary/specs/
+(no output, exit 1)
       ```
-- [ ] `givn lint --change enforce-ise-e2e-boundary` reports no end-to-end intent
+- [x] `givn lint --change enforce-ise-e2e-boundary` reports no end-to-end intent
       finding: the delta carries no end-to-end scenario, and this file uses no
       end-to-end section heading or per-scenario end-to-end task line, so
       `has_e2e_intent_in_tasks` stays false.
       ```
-      <!-- paste givn lint --change enforce-ise-e2e-boundary -->
+$ givn lint --change enforce-ise-e2e-boundary; echo $?
+2 SHAPE advisory (the two pairs dispositioned in review.md "Overlap dispositions")
+0 LONG
+117 SUBST advisory
+givn lint: 2 file(s) checked — clean
+0
       ```
-- [ ] Whole-change verification, in this order:
+- [x] Whole-change verification, in this order:
       ```
       cargo fmt --all -- --check
       cargo clippy --workspace --all-targets -- -D warnings
@@ -1438,18 +1452,63 @@ once here:
       from the `gvn-workflow-enforcement` Outlines and scenarios, 5 from
       `prose-consolidation`) and 0 end-to-end scenarios.
       ```
-      <!-- paste each command's summary and exit code -->
+$ cargo fmt --all -- --check            -> exit 0
+$ cargo clippy --locked --workspace --all-targets -- -D warnings
+    Finished `dev` profile ... in 0.06s -> exit 0
+$ cargo nextest run
+    Summary [ 181.859s] 1622 tests run: 1622 passed, 0 skipped
+$ ./run-tests.sh --non-e2e
+    Summary [ 160.791s] 963 tests run: 963 passed, 111 skipped
+$ ./run-tests.sh --e2e
+    Summary [  38.990s] 111 tests run: 111 passed, 963 skipped
+$ GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs ./run-tests.sh --non-e2e
+    Summary [   3.302s] 19 tests run: 19 passed, 0 skipped
+    (the raw cucumber run of the same delta reports 31 scenarios, 31 passed,
+    166 steps, 166 passed)
+$ GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs ./run-tests.sh --e2e
+    Summary [   0.000s] 0 tests run: 0 passed, 19 skipped
+    warning: no tests to run -> exit 0 (the delta carries no @e2e scenario)
+$ givn lint --change enforce-ise-e2e-boundary
+    givn lint: 2 file(s) checked — clean -> exit 0
       ```
-- [ ] `givn check tasks --change enforce-ise-e2e-boundary` exits 0 and records
+- [x] `givn check tasks --change enforce-ise-e2e-boundary` exits 0 and records
       the change verification receipt for the delta.
       ```
-      <!-- paste the check output; record whether the receipt is ise-off shaped -->
+$ givn check tasks --change enforce-ise-e2e-boundary; echo $?
+Mandatory checks for 'tasks':
+  ✓ scenario commits passed (19 scenario(s))
+  ...
+  2 features
+  31 scenarios (31 passed)
+  166 steps (166 passed)
+  ✓ change verification receipt: 31 scenario(s), 0 failed, 0 skipped at 32256f5f0b728e16b81e9b4f6f97731338f090f1
+  ✓ verify passed
+0
+Receipt (verification/tasks-verification.json): schema 2, head 32256f5f, result
+{"scope":"change","total":31,"passed":31,"failed":0,"skipped":0}, runner_exit 0.
+It is ise-off shaped: this change's own config-lock.yaml does not have ise
+effective, so it carries no e2e_identity and no e2e_scope key.
       ```
 - [ ] `givn check review --change enforce-ise-e2e-boundary` passes the
       scenario-commit, integrity, routing, and add-on lock checks. The review
       verdict is the reviewer's, not the author's.
       ```
-      <!-- paste the gate output -->
+$ givn check review --change enforce-ise-e2e-boundary; echo $?
+Mandatory checks for 'review':
+  ✓ run declaration passed
+  givn lint: 2 file(s) checked — clean
+  net delta: 17 added, 2 modified, 0 removed
+  ✓ overlap dispositions passed
+  capability 'givn-workflow-enforcement' already owned by givn/specs/verify-change
+  capability 'prose-consolidation' already owned by givn/specs/create-change
+  ✓ scenario commits passed (19 scenario(s))
+  ✓ change verification receipt passed (31 scenario(s) at 32256f5f0b728e16b81e9b4f6f97731338f090f1)
+  ✓ scenario commits passed (19 scenario(s))
+error: review checks failed:
+  integrity checks failed:
+  review.md actual verdict is FAIL
+1
+The only failure is the recorded verdict, which is the reviewer's to flip.
       ```
 
 **Done when:** every box is checked with its batch `COMMIT:` revision,
