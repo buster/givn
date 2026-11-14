@@ -1354,7 +1354,7 @@ for them.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
+  - [x] COMMIT: `b5b46d9bea4badb0b7095a84db9aaa5cb6acb0ea` -- Batch: `guidance-amendments`
 
 - [x] Scenario: `The proposal guidance names the corrective route for each outcome`
   - Design constraints:
@@ -1373,7 +1373,7 @@ for them.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
+  - [x] COMMIT: `b5b46d9bea4badb0b7095a84db9aaa5cb6acb0ea` -- Batch: `guidance-amendments`
 
 - [x] Scenario: `A spec gap record names the artifact rather than its finder`
   - Design constraints:
@@ -1387,7 +1387,7 @@ for them.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
+  - [x] COMMIT: `b5b46d9bea4badb0b7095a84db9aaa5cb6acb0ea` -- Batch: `guidance-amendments`
 
 - [x] Scenario: `An E2E test defect stops the Ise Test until the test is corrected`
   - Design constraints:
@@ -1403,7 +1403,7 @@ for them.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
+  - [x] COMMIT: `b5b46d9bea4badb0b7095a84db9aaa5cb6acb0ea` -- Batch: `guidance-amendments`
 
 - [x] Scenario: `The review guidance asks the neighboring-components question without a gate`
   - Design constraints:
@@ -1418,7 +1418,7 @@ for them.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
+  - [x] COMMIT: `b5b46d9bea4badb0b7095a84db9aaa5cb6acb0ea` -- Batch: `guidance-amendments`
 
 - [x] Scenario: `Architecture principles guidance follows an enabled addon`
   - Design constraints:
@@ -1440,7 +1440,7 @@ for them.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (1 scenario (1 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
+  - [x] COMMIT: `b5b46d9bea4badb0b7095a84db9aaa5cb6acb0ea` -- Batch: `guidance-amendments`
 
 - [x] Scenario: `Outline guidance follows an enabled addon`
   - Design constraints:
@@ -1460,7 +1460,7 @@ for them.)
         ```
   - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
         change (2 scenarios (2 passed); 923 passed, 106 skipped).
-  - [ ] COMMIT: `<hash>` -- Batch: `guidance-amendments`
+  - [x] COMMIT: `b5b46d9bea4badb0b7095a84db9aaa5cb6acb0ea` -- Batch: `guidance-amendments`
 
 ---
 
