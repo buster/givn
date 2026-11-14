@@ -265,8 +265,9 @@ impl Default for Coverage {
     }
 }
 
-/// Addon switches. Every switch is enabled by default; an explicit `false`
-/// opts one add-on out.
+/// Addon switches. Every addon except an Opt-in addon is enabled by default;
+/// an omitted key resolves the addon's declared default and an explicit
+/// `false` opts a default-on add-on out.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Addons {
@@ -306,11 +307,16 @@ pub struct Addons {
     /// Outline report. Enabled by default; a project may disable it.
     #[serde(default = "enabled_by_default")]
     pub outline: bool,
+    /// Ise rebuildability — opt-in; declared default `false` and requires
+    /// `architecture_principles`. Serves the `ise` instruction, adds the two
+    /// change records to the guidance, and scaffolds the project declaration.
+    #[serde(default = "disabled_by_default")]
+    pub ise: bool,
 }
 
 impl Addons {
     /// Every current addon id in registry order.
-    pub const NAMES: [&'static str; 9] = [
+    pub const NAMES: [&'static str; 10] = [
         "arc42",
         "communication_policy",
         "readme",
@@ -320,6 +326,7 @@ impl Addons {
         "architecture_principles",
         "challenge",
         "outline",
+        "ise",
     ];
 
     /// Retired addon ids and their manual replacements. No alias is accepted.
@@ -330,7 +337,7 @@ impl Addons {
     ];
 
     /// The effective state of every current addon.
-    pub fn entries(&self) -> [(&'static str, bool); 9] {
+    pub fn entries(&self) -> [(&'static str, bool); 10] {
         [
             ("arc42", self.arc42),
             ("communication_policy", self.communication_policy),
@@ -341,6 +348,7 @@ impl Addons {
             ("architecture_principles", self.architecture_principles),
             ("challenge", self.challenge),
             ("outline", self.outline),
+            ("ise", self.ise),
         ]
     }
 
@@ -363,6 +371,10 @@ fn enabled_by_default() -> bool {
     true
 }
 
+fn disabled_by_default() -> bool {
+    false
+}
+
 impl Default for Addons {
     fn default() -> Self {
         Self {
@@ -375,6 +387,7 @@ impl Default for Addons {
             architecture_principles: true,
             challenge: true,
             outline: true,
+            ise: false,
         }
     }
 }

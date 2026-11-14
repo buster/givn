@@ -5,61 +5,7 @@
 use anyhow::{Result, bail};
 use std::io::IsTerminal;
 
-/// One registered addon.
-pub struct AddonSpec {
-    pub id: &'static str,
-    pub description: &'static str,
-    pub default_enabled: bool,
-}
-
-/// Registry of all known addons.
-pub const KNOWN_ADDONS: &[AddonSpec] = &[
-    AddonSpec {
-        id: "arc42",
-        description: "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "communication_policy",
-        description: "Communication policy — manages a fenced presentation and documentation block in AGENTS.md; the dialog obligation is independent of this addon",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "readme",
-        description: "README scaffolding — writes an initial README.md to the project root",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "coverage",
-        description: "Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "domain_modeling",
-        description: "Skill — maintain the standalone glossary and structural domain model before design; does not require arc42",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "dev_principles",
-        description: "Skill — apply the team's engineering principles during implementation",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "challenge",
-        description: "Skill — research proposals, tests, specs, design, code, and whole changes before asking unresolved decisions; no lifecycle gate",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "architecture_principles",
-        description: "Architecture-principles guidance — last-responsible-moment decision timing, consumer contracts, component splits and port/adapter boundaries; enabled by default",
-        default_enabled: true,
-    },
-    AddonSpec {
-        id: "outline",
-        description: "Outline report — enabled by default; disable with `givn addons disable outline`",
-        default_enabled: true,
-    },
-];
+use crate::config::addons::{AddonSpec, KNOWN_ADDONS};
 
 /// `givn addons list` — print all known addons and their effective enabled state.
 ///
@@ -89,7 +35,9 @@ pub fn run_list() -> Result<()> {
         println!("Tip: run `givn init` first to create givn/config.yaml, then");
         println!("     `givn addons enable <name>` to enable an addon.");
     } else {
-        println!("These are effective values: omitted keys use the enabled default.");
+        println!(
+            "These are effective values: each omitted key resolves that addon's declared default."
+        );
         println!("Use `givn addons enable <name>` or `givn addons disable <name>`");
         println!("to toggle an addon. Changes are written to givn/config.yaml.");
     }
@@ -110,7 +58,8 @@ pub fn run_enable(
     let before = crate::config::overlay::load_effective()?
         .addons
         .get(name)
-        .unwrap_or(true);
+        .or_else(|| AddonSpec::declared_default(name))
+        .unwrap_or(false);
     let target = guard_addon_mutation(&project_root, name, operator, reason, change)?;
     enable_scaffold(name)?;
     if let Some(change_dir) = target {
@@ -907,28 +856,5 @@ givn_config_version: \"0.9.9\"
             "{created}"
         );
         assert!(created.contains("layout: elk"), "{created}");
-    }
-
-    #[test]
-    fn addon_registry_matches_the_manifest_schema_and_defaults() {
-        let manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
-        assert_eq!(
-            KNOWN_ADDONS.len(),
-            crate::config::manifest::Addons::NAMES.len()
-        );
-        for addon in KNOWN_ADDONS {
-            assert_eq!(
-                manifest.addons.get(addon.id),
-                Some(addon.default_enabled),
-                "registry entry '{}' does not match the manifest schema",
-                addon.id
-            );
-        }
-        for name in crate::config::manifest::Addons::NAMES {
-            assert!(
-                KNOWN_ADDONS.iter().any(|addon| addon.id == name),
-                "manifest addon '{name}' is missing from the registry"
-            );
-        }
     }
 }

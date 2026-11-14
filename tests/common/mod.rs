@@ -290,6 +290,26 @@ Run the project-owned scripts used by `givn/commands.yaml`:
     .to_string()
 }
 
+/// The effective manifest of a fixture: the embedded defaults overlaid with
+/// the fixture's `givn/config.yaml` and `givn/commands.yaml`.
+pub fn effective_manifest(env: &TestEnv) -> givn::config::manifest::Manifest {
+    let mut manifest =
+        givn::config::manifest::Manifest::load_embedded().expect("load embedded manifest");
+    let config = env.path("givn/config.yaml");
+    if config.exists() {
+        let yaml = fs::read_to_string(&config).expect("read givn/config.yaml");
+        manifest =
+            givn::config::overlay::apply_config(manifest, &yaml).expect("apply givn/config.yaml");
+    }
+    let commands = env.path("givn/commands.yaml");
+    if commands.exists() {
+        let yaml = fs::read_to_string(&commands).expect("read givn/commands.yaml");
+        manifest = givn::config::overlay::apply_commands(manifest, &yaml)
+            .expect("apply givn/commands.yaml");
+    }
+    manifest
+}
+
 /// Invoke the `givn` binary with `env`'s temp dir as current directory and
 /// the given args, returning captured stdout/stderr/exit code.
 pub fn run_givn(env: &TestEnv, args: &[&str]) -> Output {

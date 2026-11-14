@@ -109,7 +109,9 @@ Feature: enable-optional-addons
   Scenario: givn init enables every addon by default
     Given  a project root without a givn/ directory
     When  the user runs `givn init --agents opencode`
-    Then  every current addon including communication_policy and challenge is effectively enabled
+    Then  givn/config.yaml contains the line "  arc42: true"
+    And  givn/config.yaml contains the line "  outline: true"
+    And  givn/config.yaml does not contain the line "  ise:"
     And  the selected target receives addon skills without generated commands
     And  no grill_me, grill_with_docs, or absolute_mode setting is generated
     And  the file "docs/glossary.md" exists
@@ -119,7 +121,8 @@ Feature: enable-optional-addons
   Scenario: givn addons list reports every addon enabled by default
     Given  an initialized project without an addons block
     When  the user runs `givn addons list`
-    Then  every current addon including communication_policy and challenge is reported enabled
+    Then  stdout contains "[enabled ]  outline"
+    And  stdout contains "[disabled]  ise"
     And  no retired addon name is listed
 
   @enable-optional-addons

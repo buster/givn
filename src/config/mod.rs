@@ -1,3 +1,4 @@
+pub mod addons;
 pub mod cascade;
 pub mod embedded;
 pub mod extensions;

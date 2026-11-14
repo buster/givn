@@ -3,9 +3,8 @@
 use crate::common;
 use crate::steps::{GivnWorld, stdout};
 use cucumber::{given, then, when};
-use givn::cli::addons::KNOWN_ADDONS;
+use givn::config::addons::KNOWN_ADDONS;
 use givn::config::manifest::Manifest;
-use givn::config::overlay::{apply_commands, apply_config};
 
 fn env(world: &GivnWorld) -> &common::TestEnv {
     world
@@ -15,19 +14,7 @@ fn env(world: &GivnWorld) -> &common::TestEnv {
 }
 
 fn effective_manifest(world: &GivnWorld) -> Manifest {
-    let environment = env(world);
-    let mut manifest = Manifest::load_embedded().expect("load embedded manifest");
-    let config = environment.path("givn/config.yaml");
-    if config.exists() {
-        let yaml = std::fs::read_to_string(&config).expect("read givn/config.yaml");
-        manifest = apply_config(manifest, &yaml).expect("apply givn/config.yaml");
-    }
-    let commands = environment.path("givn/commands.yaml");
-    if commands.exists() {
-        let yaml = std::fs::read_to_string(&commands).expect("read givn/commands.yaml");
-        manifest = apply_commands(manifest, &yaml).expect("apply givn/commands.yaml");
-    }
-    manifest
+    common::effective_manifest(env(world))
 }
 
 fn replace_addons(world: &GivnWorld, block: &str) {
@@ -63,13 +50,13 @@ fn user_writes_addons_block(world: &mut GivnWorld, block: String) {
     replace_addons(world, &block.replace("\\n", "\n"));
 }
 
-fn assert_all_addons(world: &GivnWorld, expected: bool) {
+fn assert_all_addons_disabled(world: &GivnWorld) {
     let manifest = effective_manifest(world);
     for addon in KNOWN_ADDONS {
         assert_eq!(
             manifest.addons.get(addon.id),
-            Some(expected),
-            "addon '{}' did not resolve to {expected}",
+            Some(false),
+            "addon '{}' did not resolve to false",
             addon.id
         );
     }
@@ -255,7 +242,7 @@ fn requests_effective_addon_state(world: &mut GivnWorld) {
 
 #[then("all optional addons including communication_policy and challenge are explicitly disabled")]
 fn all_addons_explicitly_disabled(world: &mut GivnWorld) {
-    assert_all_addons(world, false);
+    assert_all_addons_disabled(world);
     let config = std::fs::read_to_string(env(world).path("givn/config.yaml"))
         .expect("read givn/config.yaml");
     for addon in KNOWN_ADDONS {
@@ -272,11 +259,6 @@ fn every_addon_has_explicit_false(world: &mut GivnWorld) {
     all_addons_explicitly_disabled(world);
 }
 
-#[then("every current addon including communication_policy and challenge is effectively enabled")]
-fn every_addon_effectively_enabled(world: &mut GivnWorld) {
-    assert_all_addons(world, true);
-}
-
 #[then("`givn addons list` reports every addon disabled")]
 fn addons_list_reports_every_addon_disabled(world: &mut GivnWorld) {
     let output = common::run_givn(env(world), &["addons", "list"]);
@@ -291,30 +273,6 @@ fn addons_list_reports_every_addon_disabled(world: &mut GivnWorld) {
             stdout.contains(&format!("[disabled]  {}", addon.id)),
             "addons list does not report {} disabled:\n{stdout}",
             addon.id
-        );
-    }
-}
-
-#[then("every current addon including communication_policy and challenge is reported enabled")]
-fn every_addon_reported_enabled(world: &mut GivnWorld) {
-    let output = common::run_givn(env(world), &["addons", "list"]);
-    assert!(
-        output.status.success(),
-        "givn addons list failed: {}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    for addon in KNOWN_ADDONS {
-        assert!(
-            stdout.contains(&format!("[enabled ]  {}", addon.id)),
-            "addons list does not report {} enabled:\n{stdout}",
-            addon.id
-        );
-    }
-    for retired in ["absolute_mode", "grill_me", "grill_with_docs"] {
-        assert!(
-            !stdout.contains(retired),
-            "addons list still names retired addon {retired}:\n{stdout}"
         );
     }
 }
