@@ -152,20 +152,25 @@ code makes the statement true; no batch re-commits it.
 
 ## Setup
 
-- [ ] Read the owning use-case documents and this change's seed before writing
+- [x] Read the owning use-case documents and this change's seed before writing
       any step: `specs/*/usecase.md` (guarantees, rules, Personas),
       `specs/fragments/fragment.md` (the `ise` obligations paragraph), and
       `givn/ideation/ise-rebuildability/changes/add-ise-addon-and-specification.md`.
       Domain constraints are in `## Domain Constraints` above.
+      Evidence: every scenario's Design constraints carry its owning rule, and
+      the Interaction coverage pre-flight above maps all 66 inventory entries
+      to design matrix rows and existing `@e2e` scenarios.
 
-- [ ] Confirm the runner and `verify.command`. No new runner is installed:
+- [x] Confirm the runner and `verify.command`. No new runner is installed:
       `tests/features_runner.rs` uses cucumber-rs 0.23 with `.fail_on_skipped()`
       at both registration points, `verify.command` is
       `./run-tests.sh --non-e2e`, and `verify.e2e_command` is
       `./run-tests.sh --e2e`. The runner executes `givn/specs/**` by default and
       the change's `specs/**` under `GIVN_FEATURES`.
+      Evidence: `givn/commands.yaml` carries both commands; the probe below
+      proves the strict builder in effect.
 
-- [ ] Create the step-definition skeletons, one file per capability, each
+- [x] Create the step-definition skeletons, one file per capability, each
       registered in `tests/steps/mod.rs` with `unimplemented!()` bodies:
       `tests/steps/enable_optional_addons_ise_steps.rs`,
       `tests/steps/enable_optional_addons_ise_e2e_steps.rs`,
@@ -194,27 +199,69 @@ code makes the statement true; no batch re-commits it.
       A phrase is bound exactly once across all files; a duplicate registration
       panics the runner.
       ```
-      <!-- paste: cargo check --locked --tests output and the file list -->
+      $ cargo check --locked --tests
+          Checking givn v0.9.20 (/home/buster/.paseo/worktrees/008cxm4u/modern-mule)
+          Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.30s
+
+      $ ls tests/steps/ | grep -E 'enable_optional_addons_ise|specification_|change_strategy|spec_gap'
+      change_strategy_e2e_steps.rs
+      change_strategy_steps.rs
+      enable_optional_addons_ise_e2e_steps.rs
+      enable_optional_addons_ise_steps.rs
+      spec_gap_e2e_steps.rs
+      spec_gap_steps.rs
+      specification_declaration_e2e_steps.rs
+      specification_declaration_steps.rs
+      specification_health_steps.rs
       ```
 
-- [ ] Proof-of-strictness. Write one temporary probe feature under
+- [x] Proof-of-strictness. Write one temporary probe feature under
       `givn/changes/add-ise-addon-and-specification/specs/` containing one
       scenario whose step is undefined, run the single-scenario command against
       it, and confirm a non-zero exit.
       ```
-      <!-- paste: command + non-zero output + the cucumber "undefined/skipped" report -->
+      $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "strict-mode-probe.feature::An undefined step fails the run"
+      Feature: strict-mode probe
+        Scenario: An undefined step fails the run
+         ✘  Given a deliberately unbound phrase for the strict mode probe
+            Step failed:
+            Defined: givn/changes/add-ise-addon-and-specification/specs/strict-mode-probe.feature:4:5
+            Step doesn't match any function
+      [Summary]
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+
+      thread 'main' panicked at cucumber-0.23.0/src/cucumber.rs:1243:13:
+      1 step failed
+      error: test failed, to rerun pass `--test features_runner`
+      exit code: 101
+
+      The probe feature was deleted after the run; it is not part of the delta.
       ```
       If it exits 0, stop: `.fail_on_skipped()` is not in effect on the builder
       the run used.
 
-- [ ] Restore a passing baseline: delete the probe, run
+- [x] Restore a passing baseline: delete the probe, run
       `./run-tests.sh --non-e2e`, and confirm exit 0. The delta scenarios stay
       `@wip`; the permanent tree does not use any phrase above.
       ```
-      <!-- paste: ./run-tests.sh --non-e2e summary -->
+      $ ./run-tests.sh --non-e2e
+          Summary [ 149.582s] 923 tests run: 923 passed, 106 skipped
+      exit code: 0
+
+      The permanent scope is unchanged by the probe; the delta scenarios were
+      `@wip` when this baseline was taken. Recorded again during the F6 closure
+      on the same command and scope.
       ```
 
-- [ ] COMMIT: `<hash>` -- Batch: `setup`
+- [x] COMMIT: `b5fe6114` -- Batch: `setup`
+      The first step-definition skeleton and its registration landed with the
+      first behavior batch rather than in a standalone setup commit;
+      `ca2c4b51` and `a9fe8e07` added the remaining per-capability files, and
+      `685d475f` records the e2e setup.
 
 ---
 
@@ -1612,7 +1659,7 @@ transcript through the existing terminal-instruction step.
       choose `opencode, claude`; assert the labeled selection, exit 0,
       `opencode, claude` in `givn/config.yaml`, both skills present,
       `.agents/skills/givn-propose` absent, the active addon settings enable
-      exactly the nine default-on addons, do not name `ise`, and
+      exactly the nine addons the scenario names, do not name `ise`, and
       `givn/specification.yaml` absent.
     - This is the `@givn.modified` scenario: it keeps its existing steps and
       gains the posture assertions plus the transcript. It is expected to pass
@@ -1633,6 +1680,11 @@ transcript through the existing terminal-instruction step.
         scenario rejects a regression in the fresh-init posture; no production edit.
         after the bindings: 1 scenario (1 passed); 12 steps (12 passed)
         transcript: evidence/visual/consumer-selects-agent-targets-during-interactive-init/transcript.txt
+
+        review F3 closure (761ee474): the step no longer imports
+        `givn::config::addons`; it compares the enabled lines in the written
+        `givn/config.yaml` with the scenario's literal set and checks each named
+        addon in the effective manifest. Re-ran: 12 steps passed.
         ```
   - [x] REFACTOR: the outline report has no supported production source under
         `tests/steps` (the changed files are step definitions, outside the
@@ -1714,8 +1766,9 @@ schema errors.
     - Fixture: `ise`-enabled project selecting opencode; write a declaration
       with `behavior`, `structure`, `contracts`, `limits`, `e2e` globs and two
       `source` roots.
-    - Exit 0; stderr contains no declaration-schema error; transcript captured
-      at `evidence/visual/the-declared-roles-are-read-by-the-project-health-pass/transcript.txt`.
+    - Exit 0; stderr contains no declaration-schema error and carries the
+      contracts-role advisory for `docs/reference.md`; transcript captured at
+      `evidence/visual/the-declared-roles-are-read-by-the-project-health-pass/transcript.txt`.
   - [x] Implement the scenario and its tests. Evidence (passed on its first run after binding):
         ```
         GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
@@ -1730,6 +1783,11 @@ schema errors.
         of the exit code; no production edit. The Then rejects the blocking
         `DECL ` level while allowing `SPEC `.
         transcript: evidence/visual/the-declared-roles-are-read-by-the-project-health-pass/transcript.txt
+
+        review F4 closure (761ee474): the Then now asserts the contracts-role
+        advisory the transcript records, so the scenario fails when the
+        declaration read is removed. Re-ran: 1 scenario (1 passed); 6 steps
+        (6 passed).
         ```
   - [x] REFACTOR: the outline report has no supported production source under
         `tests/steps`; direct assessment: the new file holds only the
