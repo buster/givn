@@ -1,6 +1,13 @@
 # Change seed: add-ise-clean-room-commands
 
-Status: ready
+Status: proposed by add-ise-clean-room-commands
+
+Surface note (2026-11-14): the operator renamed the subcommand and its
+replacement flag after the design review. The delivered surface is
+`givn ise replace` with exactly one of `--full` and repeated `--path`; a
+`--path` value is a tracked file or a directory that expands to every tracked
+file beneath it. The accepted decisions below keep their substance; the names
+and the directory rule are updated in place.
 
 - Use-case IDs: `prepare-an-ise-test` (`clean-room-preparation`,
   `trial-input-verification`)
@@ -15,23 +22,23 @@ Status: ready
 
 A developer can produce a clean-room trial from a recorded revision, on Git
 and Fossil, and a verifier can confirm its frozen inputs. The command form is
-`givn ise prepare [--at <revision>] [--replace <path>...] --into <dir>
+`givn ise replace [--at <revision>] (--full | --path <path>...) --into <dir>
 [--receipt <path>] [--dry-run]`; `--into` is required and names a plain
-directory outside the checkout. The trial removes exactly the paths named with
-`--replace`, each inside a declared `source:` root, records the retained and
-`e2e` identities, and re-checks them per path on request. A refusal writes
-nothing.
+directory outside the checkout. The trial removes exactly the tracked files
+named with `--path` (or every tracked file under every `source:` root under
+`--full`), records the retained and `e2e` identities, and re-checks them per
+path on request. A refusal writes nothing.
 
 ## Capabilities delivered
 
 | Use case | Capability | Behavior this seed delivers |
 |---|---|---|
-| `prepare-an-ise-test` | `clean-room-preparation` | `givn ise prepare --into <dir>` reads the selected revision, partitions the tracked paths, performs the nine refusals before any write, writes the trial directory, re-reads every file against its revision blob, records the identities, and prints the eleven report lines. |
+| `prepare-an-ise-test` | `clean-room-preparation` | `givn ise replace (--full / --path <path>...) --into <dir>` reads the selected revision, partitions the tracked paths, performs the nine refusals before any write, writes the trial directory, re-reads every file against its revision blob, records the identities, and prints the ten fixed report lines plus the receipt line when a receipt is written. |
 | `prepare-an-ise-test` | `trial-input-verification` | `givn ise verify --trial <receipt> --at <dir>` re-checks the retained and `e2e` identities against the written trial and the current `e2e` package and reports drift per path. |
 
 ## Accepted decisions
 
-### Q3: `givn ise prepare` and `givn ise verify`
+### Q3: `givn ise replace` and `givn ise verify`
 
 - Context: The clean room needed a command surface. The alternative was
   check-only enforcement, which leaves materialization to each project's
@@ -43,13 +50,13 @@ nothing.
      CLI and no materialization contract. Cost: every project writes its own
      clean-room script; Givn never verifies that history was withheld or that
      the deletion was exact.
-  2. **`givn ise prepare` and `givn ise verify`**: In practice: one protocol
+  2. **`givn ise replace` and `givn ise verify`**: In practice: one protocol
      for a local developer, `givn-harness`, and a Givn self-rebuild. Gain: one
      tested clean-room protocol on Git and Fossil, with the refusals and the
      record owned by Givn. Cost: a new CLI surface and new materialization
      failure modes (gitlinks, symlinks, executable bits, ignored files), and
      both backends must agree.
-- Chosen: **`givn ise prepare` and `givn ise verify`**, bound to `addons.ise`.
+- Chosen: **`givn ise replace` and `givn ise verify`**, bound to `addons.ise`.
   Rejected: check-only enforcement because the clean-room guarantee would
   rest on each project's script.
 
@@ -61,7 +68,7 @@ nothing.
   The trial fixes the paths the declaration's roots bound.
 - Options:
   1. **Declared paths plus listed unit tests**: In practice:
-     `--replace crates/passuff-tui/src/keys/parser.rs --replace
+     `--path crates/passuff-tui/src/keys/parser.rs --path
      crates/passuff-tui/tests/keys.rs`. Gain: no inference; `Not replaced`
      counts the files the developer did not name. Cost: the developer must
      name every path, and a missed unit test remains in the trial.
@@ -71,12 +78,17 @@ nothing.
      settled constraints forbid; it misses variants and can delete a file the
      developer wanted kept.
   3. **Delete the component's whole directory**: In practice:
-     `--replace crates/passuff-tui/src/keys/`. Gain: one path and no
+     `--path crates/passuff-tui/src/keys/`. Gain: one path and no
      inference. Cost: it deletes files the developer did not name; no `Not
      replaced` count exists because nothing in the directory is left.
 - Chosen: **Declared paths plus listed unit tests**. Rejected: stack-marker
   inference because deletion must not read language markers; whole-directory
-  deletion because it removes unnamed files.
+  deletion because it removes unnamed files. The delivered surface adds one
+  settled form: a named `--path` directory expands to every tracked file
+  beneath it at the revision, so the developer can name a directory
+  explicitly. That is not inference (the directory is an input), and the
+  retained-role check runs over the expansion; `--full` names every tracked
+  file under every `source:` root.
 
 ### Q5 and settled constraint 4: Only the E2E package is frozen
 
@@ -149,9 +161,10 @@ nothing.
 
 ### `S4`: `--into` is required and lies outside the checkout
 
-- Context: `plan.md` `S4` settles the command surface
-  `givn ise prepare [--at <revision>] [--replace <path>...] --into <dir>
-  [--receipt <path>] [--dry-run]`. The target must lie outside the checkout
+- Context: `plan.md` `S4` settles the command surface (delivered as
+  `givn ise replace [--at <revision>] (--full | --path <path>...) --into <dir>
+  [--receipt <path>] [--dry-run]`; the earlier draft wrote the retired
+  subcommand and flag names). The target must lie outside the checkout
   and must not already exist, so the parser needs a rule for an omitted flag.
   Earlier records wrote `--into` in brackets and left the omission open.
 - Options:

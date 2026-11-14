@@ -28,7 +28,7 @@ completed change as pending work.
 The checkout contains the Rust CLI, the Git and Fossil adapters, the change
 lifecycle and archive proof, the deterministic specification tools, the
 skills-only guidance pipeline, the arc42 addon, the development record and
-report, and the advisory outline report.
+report, the clean-room trial commands, and the advisory outline report.
 
 Current architecture facts that recur in the chapters:
 
@@ -47,6 +47,9 @@ Current architecture facts that recur in the chapters:
 - Review and archive reuse a fresh change verification receipt while its tested
   content is unchanged; archive runs its merged scopes against the published
   candidate.
+- Clean-room trials are materialized by `givn ise replace` from one revision and
+  re-checked by `givn ise verify`; the `ise-trial/v1` record carries per-path
+  retained and `e2e` identities and lives outside the trial and the checkout.
 - The outline report is advisory. There is no outline review gate, verdict,
   waiver, baseline, or forced reviewer context.
 - The supported migration baseline is 1.0. The shipped migration catalog is

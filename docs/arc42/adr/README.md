@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-27 accepted records and no proposed records. The fifteen semantic-engine
+27 accepted records and one proposed record. The fifteen semantic-engine
 records were superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and
 moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -60,6 +60,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-073](ADR-073-development-record-ownership.md) | accepted | Own the development record and report harness activity through one intake interface | record-ownership and intake-contract boundary |
 | [ADR-074](ADR-074-neutral-source-analyzer-port.md) | accepted | Analyze source code behind a neutral `SourceAnalyzer` port with a `syn` adapter | dependency-direction and engine-replacement boundary |
 | [ADR-075](ADR-075-projected-interaction-integrity.md) | accepted | Enforce the projected interaction inventory before accepting a change | pre-mutation gate boundary; component split and dependency direction |
+| [ADR-076](ADR-076-clean-room-trial-record.md) | proposed | Bind a clean-room trial to a versioned, per-path record outside the trial | durable evidence scope; builder-versus-verifier boundary |
 
 ## Relationships
 
@@ -76,6 +77,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | ADR-028 (amended by prepare-0-9-10) | Mandatory review checks remain non-deactivatable. The later conditional readability/outline review member is retired; the outline addon is advisory and no `OUTLINE`/`READABILITY` verdict or waiver is required. |
 | ADR-073 (related to ADR-014, ADR-013, ADR-028) | The development record is a durable journal deliberately outside ADR-014's filesystem-derived state, delivered as one generated agent integration under ADR-013's ownership rule, and explicitly outside ADR-028's gate boundary — the record is never a gate input. |
 | ADR-011, ADR-028, ADR-070, ADR-072 -> ADR-075 | ADR-075 binds the feature-is-spec and mandatory-check contracts to a projected pre-acceptance gate; ADR-070 and ADR-072 keep proof and publication ownership. |
+| ADR-076 (related to ADR-010, ADR-070, ADR-071) | The trial record is a separate `ise-trial/v1` scope. ADR-010 owns the declaration it reads, ADR-070 owns the change verification receipt (`change-proof/v1`), and ADR-071 owns the revision read; the trial record owns only the clean-room handover evidence. |
 
 ## Evidence
 

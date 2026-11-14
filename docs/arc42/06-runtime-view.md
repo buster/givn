@@ -979,4 +979,85 @@ advisory outline guide ([`docs/outline.md`](../outline.md)). Historical gate
 material remains in archived changes and ADR history; it is not current
 architecture.
 
+## 6.21 `givn ise replace` and `givn ise verify`
+
+Both commands are bound to `addons.ise` and its `architecture_principles`
+prerequisite in the effective project config. With either off, each refuses by
+name before reading the declaration or a record. The change's
+`config-lock.yaml` is not their authority; it decides the change-scoped
+boundary gate.
+
+The parser requires exactly one of `--full` and repeated `--path`, and a
+required `--into`; neither, both, or an omitted target is a usage error (exit 2)
+that names the missing or conflicting flags.
+
+### Replace
+
+1. Load the declaration. An absent or malformed file refuses, naming
+   `givn/specification.yaml` and the loader's reason.
+2. Select the backend. The existing backend selector refuses a missing,
+   mixed, or nested repository.
+3. Read the dirty entries. A dirty checkout refuses and names every path.
+4. Resolve the revision (`HEAD` by default) and read every tracked path with
+   its kind and executable bit: `git ls-tree -r` on Git, the check-in
+   manifest's `F` lines on Fossil (with `\s` decoded and a 40-hex or 64-hex
+   hash accepted). The working tree is not the read source.
+5. Partition the tracked paths. The five retained roles are matched first; a
+   declared non-empty entry that matches nothing refuses. Each `--path` value
+   is normalized: a tracked file contributes itself, a directory contributes
+   every tracked file beneath it, a glob-shaped value is never expanded, and a
+   value that resolves no tracked path removes nothing. Over that candidate
+   set, a retained-role match refuses and a path outside every source root
+   refuses. `--full` contributes every tracked file under every source root.
+   Remaining source paths are kept source; the rest are outside the
+   declaration.
+6. Check the write targets. The trial and the receipt lie outside the
+   checkout; the trial and the receipt do not exist; the receipt is not inside
+   the trial and is not an ancestor of it. The containment check resolves the
+   deepest existing ancestor, so a symlinked parent cannot alias the target
+   inside the checkout.
+7. Refuse a gitlink, a submodule, or a copied path whose component is `.git`,
+   `.fslckout`, or `_FOSSIL_`.
+8. On `--dry-run`, print the report, the optional receipt line, and the sorted
+   `Would write:` paths, and stop. Nothing is created.
+9. Create the trial with `create_dir`, write each file with its recorded
+   executable bit or symlink target, and re-read every path against the
+   revision. A mismatch removes the trial and writes no record.
+10. Write the record with `create_new`, or print its YAML to stdout after the
+    report when `--receipt` is omitted. A record write failure removes the
+    trial.
+
+The report prints the ten fixed lines `Backend`, `Revision`, `Retained`,
+`Kept source`, `Replaced`, `Outside the declaration`, `Not replaced`,
+`Retained digest`, `E2E digest`, and `Written path`, plus `Receipt path` when
+given. The two digests are the first 12 hex characters of the rollup followed
+by `…`; the record carries the full digests and the per-path evidence.
+
+### Verify
+
+1. Load the effective manifest; `ise` off, or its prerequisite off, refuses
+   before any record or declaration read.
+2. Read the `ise-trial/v1` record with its strict schema. A wrong scope, an
+   unknown field, a missing field, or an unreadable file refuses and names the
+   record.
+3. Confirm the record belongs to this trial: the canonicalized `written_path`
+   equals `--at`, the record's `backend` equals the selected backend, and the
+   record path lies outside the trial; assert `replaced_digest` is a 64-hex
+   value. A mismatch refuses and names the record and the mismatch.
+4. Recompute each recorded retained path's digest from the trial. A missing
+   path or a mismatch is drift.
+5. Load the declaration and build the current tree from the backend's content
+   paths (tracked plus untracked non-ignored). Resolve the current e2e file set
+   and the current `@e2e` scenario map with the same rules the replacement
+   used.
+6. Compare the current e2e file set and scenario map to the record, and each
+   common path's digest. A missing path, an added path, or a changed digest is
+   drift.
+7. Print every reason once per path and exit 1, or print `Retained: clean` and
+   `E2E: clean` and exit 0.
+
+The frozen set is the record. A file the builder adds to the trial after
+preparation is outside the recorded identities; the frozen E2E suite, not the
+digest, is the acceptance authority.
+
 *[Architecture documentation index](README.md)*

@@ -27,16 +27,21 @@ flowchart TD
     G --> TEST[repository acceptance tests]
     G --> SPEC[spec inventory, ownership, routing]
     G --> EB[declared E2E boundary resolver]
+    G --> ISE[clean-room trial]
     G --> READ[outline analysis and report]
     READ --> PORT[SourceAnalyzer port and neutral model]
     PORT --> SYN[syn adapter]
     PORT --> PYA[python ast adapter]
     CLI --> CHECK[mandatory check and archive gates]
+    CLI --> ISE
     CLI --> RUNBLK[run-declaration validation and run executor]
     CFG --> GRAPH[manifest overlay, commands schema, facet cascade]
     CFG --> EB
     CHECK --> EB
     PROOF --> EB
+    ISE --> EB
+    ISE --> SCM
+    ISE --> GH
     GH --> MERGE[delta parsing and merge]
     O --> FINGER[Fingerprint evidence]
     GH --> UC[use-case and fragment parser]
@@ -54,6 +59,8 @@ flowchart TD
 | `cli::instructions` | Resolve artifact instructions and non-artifact policy/step instructions through the project-overrides-first cascade, serving an addon-bound id only while its addon is effective; render addon conditionals; append project extensions; return text or JSON; provide context-aware state and request-routing guidance without an id. The no-active path recommends `givn-start` and names `givn new` as the direct alternative. Domain-skill routing depends only on the `domain_modeling` addon. |
 | `cli::lint` | Parse features, report WIP/PENDING, run the default overlap scan with exit precedence 1, 3, 2, 0, project the accepted corpus for `--change` and report interaction-inventory findings, report advisory seed and persona findings, run the project-health declaration pass in the default scope (four advisory placement findings and one blocking schema error) through the shared `e2e_boundary` resolver, and classify every finding as `advisory`, `finding`, or `blocking`. Runs no tests. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks. Review runs integrity, the run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks; it executes no suite. Tasks resolves the declared E2E boundary when the change lock has `ise` effective, refuses a boundary violation, runs the regular scope and the change-scoped E2E scope, and writes the receipt with the E2E identity. Also serves `check migration` and `check rules`. |
+| `cli::ise` | Map the `ise replace` and `ise verify` subcommands, print the ten fixed report lines plus the optional receipt line or the per-path drift lines, and map refusals, drift, and read failures to exit 1. |
+| `ise` | Partition a selected revision into retained, kept source, replaced, and outside-the-declaration paths from exactly one of `--full` and repeated `--path`; enforce the nine refusals before any write; write and re-read the plain trial; build the `ise-trial/v1` record with per-path identities; confirm the record belongs to the trial and the backend, then re-check the trial and the current e2e set. |
 | `cli::test_result` | Write the four-count runner result to `GIVN_RESULT_FILE` for simple runners. |
 | `proof` (with the check/archive adapters) | Capture stable verification inputs, validate fresh runner results, persist change and archive receipts (including the optional E2E identity and E2E scope outcome), classify receipt freshness, and classify archive provenance. |
 | `cli::archive` | Check preconditions and receipt freshness; run structural gates; project and check the interaction inventory before mutation; publish the merged candidate; move the change with one rename; recheck the merged permanent inventory before verification; run regular/E2E scopes and the optional coverage gate; refresh managed README blocks; guard finalization; publish the proven receipt. Persists successful scope evidence for reuse. |
@@ -80,7 +87,7 @@ flowchart TD
 | `config::manifest` | Define artifact, apply, verify, coverage, addon (declared default and prerequisites), hook, run, and retirement data structures. |
 | `config::addons` | Own the addon registry: each addon's declared default and one prerequisite relation, consumed by `cli::init`, `cli::addons`, `config::lock`, and `skills::render`. |
 | `config::declaration` | Load `givn/specification.yaml` through the one strict read-only schema: five roles and one `source:` list, with unknown, repeated, missing, or out-of-project elements refused by name. |
-| `e2e_boundary` | Resolve the declared `e2e` role to its packages with the shared glob and bounded-walk semantics, report every placement and acceptance condition once, compute the per-package digests, and own the shared path/executable/bytes hash rule. Consumed by `cli::lint`, `cli::check`, and `proof`; the Cargo package reader moves here from `cli::lint`. |
+| `e2e_boundary` | Resolve the declared `e2e` role to its packages with the shared glob and bounded-walk semantics, report every placement and acceptance condition once, compute the per-package digests, and own the shared path/executable/bytes hash rule. The revision-safe `e2e_file_set` resolves the same role over a supplied path tree, so the trial reads a revision without touching the working tree. Consumed by `cli::lint`, `cli::check`, `proof`, and `ise`. |
 | `config::overlay` | Apply `givn/config.yaml` policy/graph overlays and the dedicated `commands.yaml` schema; expand Arc42; validate graph references/cycles; resolve targets, rules policy, and record mode. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |
 | `config::extensions` | Load the `extensions:` map, warn and drop unknown ids or malformed entries, and append the marked project-extension section. |
@@ -89,7 +96,7 @@ flowchart TD
 | `skills::targets` | Resolve selected targets; write skills; install per-target attribution/reporter integrations and merged Claude/Maki configuration; reconcile legacy commands, disabled addon skills, retired generated explore skills, managed paths, and AGENTS blocks. Retired exploration output is removed only when recognizable; project content is preserved with a manual notice. |
 | `skills::rules` | Resolve the generated-rules policy, write file-precise ignore entries in both destinations, transition tracked rules to local-only without deleting files, and report tracked/reachable-history occurrences. |
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
-| `gherkin::content` | Encode executable feature content for preservation and duplicate comparisons. |
+| `gherkin::content` | Encode executable feature content for preservation and duplicate comparisons; the clean-room trial selects `@e2e` scenarios and hashes their title and executable content per feature file. |
 | `gherkin::usecase_md` | Parse strict `usecase.md` and `fragment.md` documents, identities, goals, interactions, Personas, and typed relationships; collect schema diagnostics in one pass. |
 | `gherkin::interaction` | Validate interaction inventories against capabilities and feature files against the declared capability list on a `SpecCorpus`, including a projected in-memory corpus. |
 | `gherkin::delta` | Interpret delta tags, operation defaults, and capability identity. |
@@ -100,9 +107,9 @@ flowchart TD
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | `integrity_hook` | Check revision-identifier/task evidence, promised step files, Arc42 affected-file edits, coverage configuration, the README impact decision, and the visual review contract. |
 | `review_context` | Parse `Review kind`, `Author`, and `Reviewer context`; reject an independent proposal satisfied by a self-review, a reviewer equal to the author, and disagreeing design-review/review contexts. |
-| `scm::Backend` | Select Git or Fossil at the project root; expose revision identity, clean-state witness, content paths, selected-path publication, revision content, and history/revision operations used by tests and future adapters. |
-| `git` | Git backend: root-bound worktree checks, clean-state witness, HEAD resolution, selected-path commit (`git commit --only`), allowlist staging for managed upgrades, and revision-content checks. |
-| `fossil` | Fossil backend: revision identity, clean-state witness including `EXTRA`, witness-bounded publication, allowlist staging, revision-content checks, and explicit selected paths for `givn commit`. |
+| `scm::Backend` | Select Git or Fossil at the project root; expose revision identity, clean-state witness, content paths, selected-path publication, revision content, and history/revision operations used by tests and future adapters. `revision_files` returns `RevisionEntry` (path, kind, executable) for every tracked path, so the clean-room trial reads one shape on both backends. |
+| `git` | Git backend: root-bound worktree checks, clean-state witness, HEAD resolution, selected-path commit (`git commit --only`), allowlist staging for managed upgrades, and revision-content checks; `ls-tree` modes yield the revision entry kind and executable bit. |
+| `fossil` | Fossil backend: revision identity, clean-state witness including `EXTRA`, witness-bounded publication, allowlist staging, revision-content checks, explicit selected paths for `givn commit`, and check-in manifest reads for the revision entry kind, executable bit, and symlink flag. |
 | `proof` | Change and archive receipt schemas, fail-closed runner-result parsing, tested-content binding, evidence-path predicate, freshness classification, archive provenance, and reusable scope evidence. |
 | `history` / `cli::history` | Own the record entry schema, the append-only local store, scope resolution, capture modes and bounds, the recorder, ignore entries, and the intake. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance. |

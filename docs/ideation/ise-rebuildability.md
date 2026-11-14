@@ -87,7 +87,8 @@ reading of the Specification.
 
 It declares no component, no internal component directory, and no
 per-component file list. The replaced unit is trial input, passed to
-`givn ise prepare --replace <path>`, not a permanent project declaration.
+`givn ise replace --path <path>` (or named wholesale with `--full`), not a
+permanent project declaration.
 
 | Role | What it retains | Ise source element | Example carrier |
 |---|---|---|---|
@@ -163,29 +164,33 @@ has its vocabulary present.
 
 | Command | Inputs | Result |
 |---|---|---|
-| `givn ise prepare [--at <revision>] [--replace <path>...] --into <dir> [--receipt <path>] [--dry-run]` | A revision (`HEAD` when omitted), the component's paths inside the declared `source:` roots when a component is replaced, and a target outside the checkout. | A plain trial directory, the partition counts, the retained and E2E identities, and the trial record; a receipt path writes the record to a file. |
-| `givn ise verify --trial <receipt> --at <dir>` | A written trial record and the trial directory. | A per-path drift report for the retained set and the `e2e` package. |
+| `givn ise replace [--at <revision>] (--full / --path <path>...) --into <dir> [--receipt <path>] [--dry-run]` | A revision (`HEAD` when omitted), exactly one replacement form (`--full`, or repeatable `--path` values inside the declared `source:` roots; a `--path` value is a tracked file or a directory), and a target outside the checkout. | A plain trial directory, the partition counts, the retained and E2E identities, and the trial record; a receipt path writes the record to a file. |
+| `givn ise verify --trial <receipt> --at <dir>` | A written trial record and the trial directory; the record's written path and backend must name them. | A per-path drift report for the retained set and the `e2e` package. |
 
-The preparation refuses, before any write, on nine conditions.
+The replacement refuses, before any write, on nine conditions.
 
 | Refusal | Condition |
 |---|---|
-| 1 | The declaration is missing. |
-| 2 | The `ise` addon is not effective. |
+| 1 | The declaration is missing or malformed. |
+| 2 | The `ise` addon, or its `architecture_principles` prerequisite, is not effective. |
 | 3 | The checkout is dirty. |
 | 4 | The backend is missing, mixed, or nested. |
 | 5 | A retained path is missing at the selected revision. |
-| 6 | A replaced path falls outside every declared `source:` root. |
-| 7 | A replaced path is matched by a retained role. |
-| 8 | The target is inside the checkout or already exists. |
+| 6 | A `--path` value falls outside every declared `source:` root. |
+| 7 | A `--path` value, or a tracked file under a named directory, is matched by a retained role. |
+| 8 | The target is inside the checkout or already exists, or the receipt is inside the trial or an ancestor of it. |
 | 9 | A repository link or nested repository sits among the files written into the trial. |
 
 A refusal names its condition, exits non-zero, and leaves the checkout and
-the target path unchanged. `--dry-run` performs every read, the partition,
+the target path unchanged. Exactly one of `--full` and `--path` is required;
+neither, both, and an omitted `--into` are usage errors (exit 2) naming the
+missing or conflicting flags. `--dry-run` performs every read, the partition,
 every refusal, the counts, and the digests, writes no directory and no
-record, and prints the paths it would use.
+record, and prints the ten fixed lines, the optional receipt line, and the
+`Would write:` block.
 
-The report prints eleven lines, the last only when a receipt path was given.
+The report prints ten fixed lines and, only when a receipt path was given, the
+`Receipt path` line.
 
 | Line | Meaning |
 |---|---|
@@ -193,17 +198,18 @@ The report prints eleven lines, the last only when a receipt path was given.
 | `Revision` | The revision read for the trial. |
 | `Retained` | The count of retained files written. |
 | `Kept source` | The count of source files outside the replaced paths that were still written. |
-| `Replaced` | The count of paths named with `--replace`. |
+| `Replaced` | The count of tracked files actually removed by `--path` names or `--full`. |
 | `Outside the declaration` | The count of tracked files outside every declared role that were not copied. |
 | `Not replaced` | The count of tracked files in the replaced paths' directories that were not named. |
 | `Retained digest` | The tamper-evident identity of the retained set. |
 | `E2E digest` | The identity of the `@e2e` scenarios selected by tag plus every file of the `e2e` package. |
 | `Written path` | The trial directory. |
-| `Receipt path` | The record file, when `--receipt` was given. |
+| `Receipt path` | The record file, only when `--receipt` was given. |
 
 `Not replaced` is a containment count, never a refusal. It shows what the
-replacement unit still contains. `Outside the declaration` counts tracked
-files that are neither errors nor trial content.
+replacement unit still contains, and `--full` reports `0` because it removes
+the whole source set. `Outside the declaration` counts tracked files that are
+neither errors nor trial content.
 
 The trial is a plain directory outside the checkout, never a branch or a
 worktree. A branch carries history, and a Fossil checkout carries the
@@ -212,10 +218,13 @@ The trial preserves relative paths, the executable bit, and symlink targets.
 It carries no version-control metadata and no ignored or untracked files,
 because preparation reads the selected revision, not the working tree.
 
-The trial record carries the revision, the paths named with `--replace`, the
+The trial record carries the revision, the named and replaced paths, the
 counts, the retained and E2E identities, the backend, and the running Givn
 version. An omitted `--receipt` prints the record to stdout only and writes
 nothing, so `givn ise verify --trial <receipt>` requires an explicit path.
+`givn ise verify` refuses a record whose written path is not the given trial,
+whose backend is not the selected backend, or whose file lies inside the
+trial.
 
 ### 3.4 The freeze as a digest
 
@@ -296,9 +305,10 @@ names the artifact that is wrong, not who found it.
 
 ## 5. What Givn does not do
 
-- **No unit-test inference.** Deletion is set arithmetic on the paths named
-  with `--replace`, each inside a declared `source:` root. Givn does not read
-  `#[cfg(test)]`, `test_*.py`, a Maven test root, or a file-name convention.
+- **No unit-test inference.** Deletion is set arithmetic on the files named
+  with `--path` and on the source-root union under `--full`, each inside a
+  declared `source:` root. Givn does not read `#[cfg(test)]`, `test_*.py`, a
+  Maven test root, or a file-name convention, and it never expands a glob.
 - **No component list.** `givn/specification.yaml` has no `components:` key
   and no per-component file list. Internal components and their files do not
   belong in a permanent project declaration.
@@ -333,7 +343,7 @@ rejected alternatives stay in
 |---|---|---|---|
 | `Q1` | Entry-point sequence | Ideation in Givn first, paired with the Catopia harness track, then Passuff. | Passuff-first, because it delays the domain design and automated signal. |
 | `Q2` | Frame | Goal, four Givn capability areas, companion tracks, five exclusions, and four stakeholder types confirmed. | Committing to a CLI surface before Event Storming fixed the contract ahead of the use cases. |
-| `Q3` | CLI surface | `givn ise prepare` and `givn ise verify`, bound to `addons.ise`. | Check-only enforcement, which leaves the clean room to each project's script. |
+| `Q3` | CLI surface | `givn ise replace` and `givn ise verify`, bound to `addons.ise`. | Check-only enforcement, which leaves the clean room to each project's script. |
 | `Q4` | Declaration site | Dedicated `givn/specification.yaml` with five roles and a `source:` list, no component list. | A block in `givn/config.yaml` (the lenient top level hides a misspelled block) and convention (cannot express the `source` partition). |
 | `Q5` | E2E boundary | One `e2e` package holding the runner and every `@e2e` step definition, no production link, unbound or skipped step fails, feature files shared. | Keeping the tag's in-process library allowance, and splitting the suite into multiple targets. |
 | `Q6` | Addon coupling | `ise` requires `architecture_principles` in both directions. | No prerequisite (an `ise`-only project), and auto-enabling the prerequisite. |
@@ -391,7 +401,8 @@ observed value; a benchmark task file is never edited in place.
 - **Static import scanning and phrase uniqueness.** Both were rejected for
   the E2E boundary. The package dependency graph and the runner's unbound or
   skipped step failure are the settled checks.
-- **Presentation choices.** The abbreviated digest in the report and the
-  `Receipt path: stdout` line are fixed in `S4`'s design. The command
-  defaults (`--at` optional, `--dry-run`, `--receipt` to stdout when omitted)
-  are settled and stated there.
+- **Presentation choices.** The abbreviated digest in the report and the ten
+  fixed report lines (plus `Receipt path` only when a receipt is written) are
+  fixed in `S4`'s design. The command defaults (`--at` optional, exactly one
+  of `--full` and repeated `--path`, `--dry-run`, `--receipt` to stdout when
+  omitted) are settled and stated there.

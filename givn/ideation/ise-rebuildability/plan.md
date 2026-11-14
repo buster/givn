@@ -26,7 +26,7 @@ or a whole product without reading the replaced `Source code` or repository
 history, while the frozen `End-to-end (E2E) test` package stays green. The
 Givn phases ship the capabilities that make that routine repeatable: the
 opt-in `ise` addon, the declaration and its findings, the `@e2e` package gate
-and receipt identity, `givn ise prepare` and `givn ise verify`, and the
+and receipt identity, `givn ise replace` and `givn ise verify`, and the
 guidance split that keeps the instruction budget. The harness and pilot
 phases produce the evidence that decides whether the claim holds and whether
 `ise` can ever become default-on. A phase that cannot produce its evidence
@@ -37,7 +37,7 @@ stops the plan; a qualitative success report is not a substitute.
 Solid arrows are hard dependencies. Nodes without an arrow between them may
 run in parallel once their shared predecessor finishes. `S6a` starts after
 `P0` and runs in parallel with `S1` through `S5`. `S6b` is the only part gated
-on the commands, because its `ise` task variants run `givn ise prepare` and
+on the commands, because its `ise` task variants run `givn ise replace` and
 `givn ise verify`. `S10` starts after `S5` because it applies the settled E2E
 package policy.
 
@@ -47,7 +47,7 @@ flowchart TB
   S1["S1 ise addon and declaration scaffold"]
   S2["S2 declaration schema and advisory findings"]
   S3["S3 E2E package gate and receipt identity"]
-  S4["S4 givn ise prepare and ise verify"]
+  S4["S4 givn ise replace and ise verify"]
   S5["S5 stack instruction split and ise instruction"]
   S6a["S6a harness snapshots, target grading, continuity, sandbox"]
   S6b["S6b versioned ise task variants"]
@@ -91,15 +91,15 @@ flowchart TB
 | S1 | `givn` | `addons.ise` as the first `Opt-in addon`, the `architecture_principles` prerequisite in both directions, per-addon defaults, and the `givn/specification.yaml` scaffold | P0 | M | Fresh init omits `ise:`, both prerequisite refusals print by name, enabling `ise` writes the declaration once and preserves an edited one |
 | S2 | `givn` | Declaration loader and the four advisory declaration findings in `givn lint` | S1 | M | Each finding prints with exit 0; a malformed declaration is refused by name; `givn check review` behaviour is unchanged |
 | S3 | `givn` | `@e2e` package boundary as a blocking `givn check tasks` check, and receipt binding of the `e2e` digests, runner command digest, and Givn version | S2 | M | Missing package, dependency edge, wrong runner target, unbound step, and skipped step each refuse or fail without a receipt; the receipt carries all three values |
-| S4 | `givn` | `givn ise prepare` and `givn ise verify` with the settled inputs, nine refusals, eleven report lines, and trial record | S3 | L | All nine refusals occur before any write on Git and Fossil; the report prints the eleven lines; tampering with a retained or `e2e` file is reported per path |
+| S4 | `givn` | `givn ise replace` and `givn ise verify` with the settled inputs, nine refusals, ten fixed report lines plus the optional receipt line, and trial record | S3 | L | All nine refusals occur before any write on Git and Fossil; the report prints the ten fixed lines and the receipt line when a receipt is written; tampering with a retained or `e2e` file is reported per path |
 | S5 | `givn` | Stack instruction split, the `ise` instruction, the two `specs.md` amendments, and the guidance sweep | S1 | M | `givn instructions steps` carries no Rust body and names `steps-rust`; `givn instructions ise` refuses with the addon off; the instruction line budget holds |
 | S6a | `givn-harness` | Stage snapshots with a recorded revision, target-stage grading, cross-stage state continuity, and sandboxed candidate grading | P0 | L | The grader reports `fail` for a reached stage that lacks Petorania; a state directory created at stage 1 is read at stages 2 and 3; every candidate runs in the sandbox with no host package install |
-| S6b | `givn-harness` | Versioned `ise` task variants that run `givn ise prepare` and `givn ise verify` | S4, S6a | M | `benchmark verify` passes; the variants run both commands and each seeded defect trips its declared ids |
+| S6b | `givn-harness` | Versioned `ise` task variants that run `givn ise replace` and `givn ise verify` | S4, S6a | M | `benchmark verify` passes; the variants run both commands and each seeded defect trips its declared ids |
 | S7 | `givn-harness` | Catopia E1: `ise` off versus on across `initial`, `followup`, `followup2`, compared with the `v0.9.14` baseline | S4, S5, S6a, S6b | M | `ise=on` reaches 25/25, at least 119 regular plus 11 `@e2e` scenarios, and at least 87.33/79.85 coverage |
 | S8 | `givn-harness` | Catopia E2: cold rebuild of `initial` from the frozen Specification with a fresh builder | S7 | M | The frozen E2E suite passes, or every difference carries exactly one `Spec gap` outcome |
 | S9 | `givn-harness` | Catopia E3 (Constant Ise on `followup`) and E4 (state created at stage 1, migrated at stage 2, isolated at stage 3) | S7 | L | The frozen suite stays green through the one-component rebuild; every reached state check passes, and a lost or leaked state is a failure |
 | S10 | `passuff` | Separate `e2e` package, PTY at 80x24 and 120x40, HTTP mock, seeded defects that must fail | S5 | M | The package declares no dependency on production crates; every seeded defect fails a named scenario; both viewport sizes produce evidence |
-| S11 | `passuff` | Constant Ise trial with `--replace`, rebuild, frozen E2E green, neighboring components named | S4, S10 | M | The rebuilt component passes the frozen suite and the review names every changed neighboring component |
+| S11 | `passuff` | Constant Ise trial with `--path`, rebuild, frozen E2E green, neighboring components named | S4, S10 | M | The rebuilt component passes the frozen suite and the review names every changed neighboring component |
 | S12 | `passuff` | Full-product `Dry-Run Ise` from `givn/specs` plus `docs` | S11 | L | The frozen suite passes, or every difference is classified; no difference is closed as drift |
 | S13 | `givn` | Givn rebuilds itself: `@e2e` steps move out of the production-linked target, `ise` is enabled, a `Dry-Run Ise` runs, and Spec gaps are triaged | S3, S4, S5, S12 | L | The `e2e` package has no dependency on `givn`; all 108 `@e2e` scenarios are moved or retagged with a justification; every gap has one outcome |
 | S14 | `givn` | Promotion decision for `ise` with the evidence required to change its default | S8, S9, S12, S13 | S | The evidence table is complete and the user decides; without it `ise` stays off by default |
@@ -319,27 +319,32 @@ while staying advisory in the project-health pass.
 **Teaches.** Whether the receipt is strong enough to distinguish a protected
 black-box suite from candidate-editable component steps.
 
-### S4: `givn ise prepare` and `givn ise verify` (givn, L)
+### S4: `givn ise replace` and `givn ise verify` (givn, L)
 
 **Changes.**
-- Add the two commands, bound to `addons.ise`. With the addon off, both refuse
-  by name and read no declaration.
-- `givn ise prepare [--at <revision>] [--replace <path>...] --into <dir> [--receipt <path>] [--dry-run]`
-- `--into` is required and must lie outside the checkout. `--replace` is
-  repeatable; omitting it means the whole declared `source:` set. `--at`
+- Add the two commands, bound to `addons.ise` and its `architecture_principles`
+  prerequisite. With either off, both refuse by name and read no declaration
+  or record.
+- `givn ise replace [--at <revision>] (--full | --path <path>...) --into <dir> [--receipt <path>] [--dry-run]`
+- `--into` is required and must lie outside the checkout. Exactly one of
+  `--full` or `--path` is required: `--full` replaces every tracked file under
+  every declared `source:` root, `--path` is repeatable and accepts a tracked
+  file or a directory, and a directory expands to every tracked file beneath
+  it at the revision. Neither form, both forms, and an omitted `--into` are
+  usage errors (exit 2) that name the missing or conflicting flags. `--at`
   defaults to `HEAD`.
 - Refuse, by name and before any write, on the nine conditions:
 
 | # | Condition | What the refusal names |
 |---|---|---|
 | 1 | No `givn/specification.yaml` | The missing declaration |
-| 2 | `ise` is off | The addon |
+| 2 | `ise` is off, or `architecture_principles` is off | The addon |
 | 3 | Dirty checkout | The dirty path |
 | 4 | Backend missing, mixed, or nested | The backend condition |
 | 5 | A declared retained path is missing at the revision | The path |
-| 6 | A `--replace` path is outside every `source:` root | The path |
-| 7 | A `--replace` path is matched by a retained role | The path and the role |
-| 8 | The target is inside the checkout or already exists | The target |
+| 6 | A `--path` value is outside every `source:` root | The path |
+| 7 | A `--path` value, or a tracked file under a named directory, is matched by a retained role | The path and the role |
+| 8 | The target is inside the checkout or already exists, or the receipt is inside the trial or its ancestor | The target |
 | 9 | A gitlink or submodule is in the copy set | The link |
 
 - Partition tracked paths at the selected revision into retained, kept source,
@@ -347,10 +352,13 @@ black-box suite from candidate-editable component steps.
   the selected backend (`src/scm.rs`, `revision_files` and `revision_blobs`),
   never the working tree.
 - Compare containment against the root's base path: `src` and
-  `src/cli/archive.rs` both fall inside the declared root `src/**`. A partial
-  replacement may name a directory base, so `--replace crates/passuff-cli`
-  works with `source: ["crates/**"]`. Replacing the whole `source:` set omits
-  `--replace`. The change design pins this rule and tests both forms.
+  `src/cli/archive.rs` both fall inside the declared root `src/**`. `--path`
+  accepts a tracked file or a directory: `--path crates/passuff-cli` expands
+  to every tracked file beneath it with `source: ["crates/**"]`, a directory
+  that contains a retained path refuses, and a glob-shaped value is never
+  expanded. `--full` replaces every tracked file under every declared
+  `source:` root, so `Not replaced` is `0`. The change design pins this rule
+  and tests both forms.
 - Write the retained roles and kept source into one plain directory outside the
   checkout. Preserve relative paths, the executable bit, and symlink targets.
   Write no version-control metadata and no ignored or untracked file.
@@ -359,23 +367,26 @@ black-box suite from candidate-editable component steps.
   paths. Count the tracked files in the replaced paths' directories that were
   not named (`Not replaced`) and the tracked files outside every declared role
   that were not copied (`Outside the declaration`).
-- Write the trial record with the revision, the replaced paths, the counts, the
-  three identities, the backend, and the running Givn version.
-- Print the eleven report lines in this order:
+- Write the trial record with the revision, the named and replaced paths, the
+  counts, the three identities, the backend, and the running Givn version.
+- Print the ten fixed report lines in this order:
   `Backend`, `Revision`, `Retained`, `Kept source`, `Replaced`, `Outside the
   declaration`, `Not replaced`, `Retained digest`, `E2E digest`, `Written
-  path`, `Receipt path`.
-- `givn ise verify --trial <receipt> --at <dir>` re-checks the retained and
-  `e2e` identities and reports drift per path. A changed component step
-  definition produces no drift; a changed retained file or `e2e` package file
-  fails and is named.
+  path`, plus `Receipt path` when a receipt is written.
+- `givn ise verify --trial <receipt> --at <dir>` confirms the record's
+  `written_path` is the given trial, its `backend` is the selected backend,
+  and the record lies outside the trial, then re-checks the retained and `e2e`
+  identities and reports drift per path. A changed component step definition
+  produces no drift; a changed retained file or `e2e` package file fails and is
+  named.
 - **Receipt output:** `--receipt` is optional. When it is omitted, print the
-  trial record to stdout and write nothing; the report's `Receipt path` line
-  reads `stdout`. `givn ise verify --trial <receipt>` requires a record file,
-  so verification needs a prepare run with an explicit `--receipt` path.
+  trial record to stdout, print no `Receipt path` line, and write nothing.
+  `givn ise verify --trial <receipt>` requires a record file, so verification
+  needs a replace run with an explicit `--receipt` path.
 - **Dry run:** `--dry-run` performs the reads, the partition, the refusals,
   the counts, and the digests, writes no directory and no record, and prints
-  the paths it would use.
+  the ten fixed lines, the optional receipt line, and the `Would write:` block
+  with the sorted paths the trial would hold.
 - **Report digests:** print the abbreviated digest as the examples show; the
   trial record holds the full value.
 - **Mid-trial restart:** the `e2e` package is part of the Specification. A
@@ -383,34 +394,42 @@ black-box suite from candidate-editable component steps.
   trial restarts after the E2E test is corrected.
 
 **Must not change.**
-- Deletion is set arithmetic on the paths named with `--replace`. No unit-test
-  path is inferred from `#[cfg(test)]`, `test_*.py`, a Maven test root, or a
-  file name.
+- Deletion is set arithmetic on the files named with `--path` and on the union
+  of the source roots under `--full`. No unit-test path is inferred from
+  `#[cfg(test)]`, `test_*.py`, a Maven test root, or a file name; a glob is
+  never expanded.
 - A retained role takes precedence over `source:`.
 - The checkout is never written; a refusal leaves it byte for byte unchanged.
 - Component step definitions, fakes, and harness are neither frozen nor
   diff-counted.
 
 **Verification.**
-- Scenario fixtures for the nine refusals, each asserting named output and an
-  unchanged checkout.
+- Scenario fixtures for the nine refusals and the three usage errors, each
+  asserting named output and an unchanged checkout.
 - A Git fixture and a Fossil fixture for the success path, both exercising a
-  symlink, an executable file, and a nested tracked directory.
+  symlink, an executable file, and a nested tracked directory; the Fossil
+  fixture sets `allow-symlinks on`.
+- Replacement-form fixtures: a directory path expansion, `--full` reporting
+  `Not replaced: 0`, a duplicate path collapsing to one removal, and a
+  glob-shaped value removing nothing.
 - Tamper fixtures: edit a retained file, edit an `e2e` package file, edit a
   component step definition. The first two fail verification and name the path;
-  the third passes.
+  the third passes. A record with a different `written_path` or `backend`
+  refuses, and a record inside the trial refuses.
 - A `Not replaced` fixture: a replaced directory holding two tracked files you
   did not name reports `Not replaced: 2` and succeeds.
 - `cargo nextest run`, `./run-tests.sh`, `./run-tests.sh --e2e`, and
   `cargo clippy --workspace --all-targets -- -D warnings`.
 - **Evidence:** the nine refusal transcripts with a clean `git status
-  --porcelain` or `fossil changes`, the eleven-line report, the trial record,
-  and the drift transcripts.
+  --porcelain` or `fossil changes`, the ten fixed report lines plus the receipt
+  line, the trial record, and the drift transcripts.
 
 **Exit criteria.**
-- Nine refusal fixtures, two backend fixtures, three tamper fixtures, and the
-  `Not replaced` fixture pass.
-- The trial record re-checks after a fresh process reads it.
+- Nine refusal fixtures, three usage-error fixtures, two backend fixtures,
+  three tamper fixtures, the replacement-form fixtures, and the `Not replaced`
+  fixture pass.
+- The trial record re-checks after a fresh process reads it, and a record from
+  another trial or backend refuses.
 
 **Teaches.** Whether one clean-room protocol holds on Git and Fossil and
 whether digest re-checks distinguish protected inputs from implementation.
@@ -491,7 +510,7 @@ whether digest re-checks distinguish protected inputs from implementation.
 - Record a committed revision in each stage snapshot. When the stage workspace
   is dirty, write one checkpoint commit before freezing. Record the revision
   in `stage.json` and `snapshot.json`. This revision serves the later
-  `givn ise prepare`, but S6a does not call that command.
+  `givn ise replace`, but S6a does not call that command.
 - Grade by stage. A requirement whose stage is reached is `pass` or `fail`;
   `ungraded` is reserved for a stage that was not reached. At `followup2`, a
   submission that cannot run `--tenant petorania law show` is a `fail` for
@@ -543,7 +562,7 @@ behind ungraded requirements and fresh data directories.
   the frozen Specification with no access to the original source or history).
   The copied `task-initial.md` stays as the normal build.
 - State the expected commands in each variant:
-  `givn ise prepare [--at <revision>] [--replace <path>...] --into <dir> [--receipt <path>] [--dry-run]`
+  `givn ise replace [--at <revision>] (--full | --path <path>...) --into <dir> [--receipt <path>] [--dry-run]`
   and `givn ise verify --trial <record> --at <dir>`. The task must not hide the
   CLI contract the builder depends on.
 - Add seeded defects for each new requirement and make `benchmark verify` fail
@@ -625,10 +644,10 @@ repeating the `v0.9.15` collapse.
   revision, and treat its declared `Specification` as the only builder input.
   S7 runs the unmodified `catopia-v2`; the rebuild stage lives in
   `benchmarks/catopia-v2-ise` with `task-rebuild-initial.md`.
-- Run `givn ise prepare [--at <revision>] [--replace <path>...] --into <dir> [--receipt <path>] [--dry-run]`
-  with the recorded snapshot revision. Omit `--replace`, so the whole declared
-  `source:` set is replaced and `Not replaced` is 0. Pass `--receipt` to keep
-  the record file.
+- Run `givn ise replace [--at <revision>] --full --into <dir> [--receipt <path>] [--dry-run]`
+  with the recorded snapshot revision. `--full` replaces the whole declared
+  `source:` set and `Not replaced` is 0. Pass `--receipt` to keep the record
+  file.
 - Start a fresh builder session whose workspace is the trial directory only. It
   sees no original source, no original history, and no previous conversation.
 - Run the frozen `e2e` package from outside the builder's write authority.
@@ -662,7 +681,7 @@ build and which rules it still lacks.
 **Changes.**
 - **E3, Constant Ise on `followup`:** run `benchmarks/catopia-v2-ise` with
   `task-followup-ise.md`, choose one component whose consumer contract is
-  unchanged, name its paths with `--replace`, prepare a trial, rebuild the
+  unchanged, name its paths with `--path`, prepare a trial, rebuild the
   component, and run the frozen E2E suite.
 - **E4, state continuity:** run the three stages of
   `benchmarks/catopia-v2-ise` with the shared state directory. Stage 1 creates
@@ -749,8 +768,8 @@ losing its E2E evidence.
 **Changes.**
 - Declare a `Change strategy` of `Constant Ise` with `Ise Test mode Dry-Run
   Ise` in the design ledger.
-- Prepare the trial with `givn ise prepare [--at <revision>] [--replace <path>...] --into <dir> [--receipt <path>] [--dry-run]`.
-  Pass `--replace` for `crates/passuff-cli/src/tui/keys.rs` and any internal
+- Prepare the trial with `givn ise replace [--at <revision>] --path <path>... --into <dir> [--receipt <path>] [--dry-run]`.
+  Pass `--path` for `crates/passuff-cli/src/tui/keys.rs` and any internal
   unit tests outside that file, and pass `--receipt` for the record.
 - Rebuild the key parser behind its unchanged consumer contract.
 - Run the frozen `e2e` package. Record every neighboring component changed
@@ -778,8 +797,8 @@ losing its E2E evidence.
 ### S12: Passuff full-product Dry-Run Ise (passuff, L)
 
 **Changes.**
-- Prepare a full-product trial with the canonical prepare command and no
-  `--replace`; the whole declared `source:` set is replaced. The trial keeps
+- Prepare a full-product trial with the canonical replace command and
+  `--full`; the whole declared `source:` set is replaced. The trial keeps
   the declared `behavior` (`givn/specs`), `structure`, `contracts`, `limits`,
   and `e2e` paths; the `e2e` package stays outside the replaced root.
 - Rebuild the product from the retained Specification with a fresh builder.
@@ -831,8 +850,8 @@ losing its E2E evidence.
   must be green before the project opts in.
 - **Change B, the rebuild:** enable `ise`, start a change so the lock records
   `ise: true`, run `givn check tasks` to prove the boundary passes on Givn
-  itself, run a `Dry-Run Ise` with the canonical prepare command and no
-  `--replace`; the whole declared `source:` set is replaced. Triage every
+  itself, run a `Dry-Run Ise` with the canonical replace command and
+  `--full`; the whole declared `source:` set is replaced. Triage every
   difference.
 - Keep the component runner for component scenarios. Both runners read the
   same feature files and filter by tag; only the `e2e` package is frozen.
@@ -905,7 +924,7 @@ losing its E2E evidence.
 | G1 | A seed cannot be passed to `/givn-propose` without this conversation | Return to P0; do not start the phase |
 | G2 | The four core step instructions (`specs`, `steps`, `design`, `review`) show a net increase, or `wc -l assets/instructions/*.md` exceeds 4,500 lines | Stop S5; re-cut the split before S7 |
 | G3 | The `e2e` package manifest graph reaches `source` | Stop the change; do not weaken the gate |
-| G4 | Any of the nine `ise prepare` refusals writes anything before refusing, or a Fossil fixture fails | Stop S4; no trial result is admissible |
+| G4 | Any of the nine `ise replace` refusals writes anything before refusing, or a Fossil fixture fails | Stop S4; no trial result is admissible |
 | G5 | `ise=on` yields fewer than 119 regular plus 11 `@e2e` scenarios, or coverage below 87.33/79.85 | Stop the plan; the instruction posture repeats `v0.9.15` |
 | G6 | A difference in E2 has no `Spec gap` outcome, or a difference is closed as drift | Stop S8; the classification is incomplete |
 | G7 | The Constant Ise rebuild changes the consumer contract | Stop E3; the trial is not Constant Ise |
@@ -932,7 +951,7 @@ Additional stop rules:
 | Fossil materialization edge cases | A Fossil fixture fails on symlinks, executable bits, nested checkouts, or a dirty tree | The nine refusals are checked before any write; one Git and one Fossil fixture; refuse gitlinks and submodules by name; no inference from markers |
 | Harness grader gaps inflate results | A reached stage reports `ungraded`, a fresh data directory passes a continuity check, or a defect passes | S6a target-stage grading and state carry; S6b seeded defects; negative grader fixtures; no host `pip install` |
 | Enabling `ise` on Givn before its E2E steps are black-box | `cargo tree -p givn-e2e` shows `givn`, or `givn check tasks` refuses after enablement | Split S13 into the boundary change and the enablement change; gate G10; do not set `ise: true` in `givn/config.yaml` early |
-| A stage snapshot has no usable revision | `givn ise prepare` cannot read the recorded revision, or the tree is dirty | S6a writes one checkpoint commit before freezing and records the revision; S8 refuses to start without it |
+| A stage snapshot has no usable revision | `givn ise replace` cannot read the recorded revision, or the tree is dirty | S6a writes one checkpoint commit before freezing and records the revision; S8 refuses to start without it |
 | A trial record sits in the builder's write authority | The record and the trial can be edited together, and the digest check passes | Require an explicit `--receipt` outside the trial for any trial a verifier re-checks; an omitted `--receipt` prints to stdout and leaves no file to trust |
 | Paid campaign cost runs past the budget | The spend line approaches the cap before the third stage | Finite `--budget-usd`, dated price table, sequential conditions, one trial per condition first; stop after `initial` when the budget is tight |
 | Passuff in-process tests carry behavior no black-box scenario covers | Retagging removes the only assertion for a user action | Inventory each `@e2e` scenario before retagging; add a black-box scenario first; a reason is required for every retag |
@@ -956,10 +975,11 @@ Additional stop rules:
 - **Historical benchmarks.** `catopia-v2` and `catopia-spring-v2` stay
   byte-identical. Any rebuild-permitting experiment lives in a new versioned
   benchmark.
-- **Presentation choices.** The abbreviated digest in the report and the
-  `Receipt path: stdout` line are fixed in S4's design. The command defaults
-  (`--at` optional, `--dry-run`, `--receipt` to stdout when omitted) are
-  settled and stated in S4.
+- **Presentation choices.** The abbreviated digest in the report and the ten
+  fixed report lines (plus `Receipt path` only when a receipt is written) are
+  fixed in S4's design. The command defaults (`--at` optional, exactly one of
+  `--full` and repeated `--path`, `--dry-run`, `--receipt` to stdout when
+  omitted) are settled and stated in S4.
 
 ## 8. Working branches
 

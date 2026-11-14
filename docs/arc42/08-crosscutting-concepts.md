@@ -582,7 +582,10 @@ name, and disabling the prerequisite while `ise` is on is refused with `ise`
 named first. Both refusals write nothing. The first effective enable scaffolds
 `givn/specification.yaml` from its documented shape when the file is absent and
 never rewrites an existing declaration. A project that never enables `ise`
-receives no new key, no new file, no new finding, and no new gate.
+receives no new key, no new file, no new finding, and no new gate. An
+`ise`-effective project also receives `givn ise replace` and `givn ise verify`;
+both refuse by name with the addon or its prerequisite off and read no
+declaration or record.
 
 For Arc42 specifically, `givn addons enable arc42`:
 
@@ -1457,5 +1460,64 @@ reported for manual transition. Legacy generated explore command files remain
 recognized for removal. The upgrade snapshot and versioned-rules staging include
 retired managed paths so a tracked generated explore skill is removed from the
 revision rather than left as an uncommitted deletion.
+
+## 8.29 The Clean-Room Trial Record
+
+`givn ise replace` writes one trial record under the `ise-trial/v1` content
+scope, or prints it to stdout when `--receipt` is omitted. The record is the
+verifier's evidence for one `Ise Test`; it is not the change verification
+receipt (`change-proof/v1`), which binds a change's test execution, and it is
+not a change artifact.
+
+| Field | Content |
+|---|---|
+| `schema`, `content_scope` | `1`, `ise-trial/v1` |
+| `backend` | `git` or `fossil` |
+| `revision` | The resolved revision for `HEAD`, the supplied identifier otherwise |
+| `named_paths` | Every distinct `--path` value, sorted; empty under `--full` |
+| `replaced_paths` | The tracked files actually removed, sorted; a named directory contributes its expansion |
+| `counts` | `retained`, `kept_source`, `replaced`, `outside_declaration`, `not_replaced` |
+| `retained_digest`, `e2e_digest`, `replaced_digest` | Full rollup digests |
+| `retained_files`, `e2e_files` | Per-path digests, sorted |
+| `e2e_scenarios` | Per-feature-file digest of the selected `@e2e` scenarios |
+| `written_path` | The absolute trial directory |
+| `givn_version` | The running Givn version |
+
+The per-path digest rule includes the path, the entry kind (`f` regular, `x`
+executable regular, `l` symlink), the executable marker, and the bytes or
+symlink target. The rollups hash the sorted `path NUL digest` pairs. The
+resolved `e2e` package file set and the `behavior` feature set are disjoint by
+construction, so no path appears twice in the `e2e` rollup. The report
+abbreviates each rollup to its first 12 hex characters plus `…`; the record
+carries the full value. This per-path evidence is what lets `givn ise verify`
+name a drifting file instead of only reporting that a set changed.
+
+The two write targets are the trial and the receipt. Both lie outside the
+checkout, the trial does not exist, and the receipt does not exist, does not lie
+inside the trial, and is not an ancestor of it. The record therefore cannot be
+edited with the trial, and the checkout is never written by preparation,
+including the receipt.
+
+`givn ise verify` treats the record as a trust anchor only after three checks:
+the canonicalized `written_path` equals `--at`, the record's `backend` equals
+the selected backend, and the record path lies outside the trial. It then
+asserts the recorded `replaced_digest` and re-checks the retained and `e2e`
+identities. The record carries no runner command; the independent verifier
+chooses and records the runner outside the record.
+
+The e2e identity is revision-resolved: each path matched by the declared `e2e`
+role resolves to its nearest `Cargo.toml` directory at the revision, and every
+tracked file under each resolved root is hashed. The `@e2e` scenarios come from
+the `.feature` files matched by the `behavior` role. A matched path that
+resolves no manifest is its own root. Component step definitions and kept
+source are not in the focused e2e identity.
+
+Git and Fossil agree on one `RevisionEntry` shape. Git derives the kind and the
+executable bit from `git ls-tree` modes. Fossil derives them from the check-in
+manifest's `F` lines (`x` executable, `l` symlink), read through
+`fossil artifact`; the path has `\s` decoded to a space, and a 40-hex or
+64-hex blob hash is accepted. Fossil writes an `l` entry only with
+`allow-symlinks on`. A manifest read or parse failure refuses before any
+write.
 
 *[Architecture documentation index](README.md)*
