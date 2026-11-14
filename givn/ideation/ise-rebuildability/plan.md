@@ -960,3 +960,57 @@ Additional stop rules:
   `Receipt path: stdout` line are fixed in S4's design. The command defaults
   (`--at` optional, `--dry-run`, `--receipt` to stdout when omitted) are
   settled and stated in S4.
+
+## 8. Working branches
+
+No Ise work is committed to `main` in any repository during the experiment.
+Each repository has one integration branch, every phase commits to it, and
+`main` receives the work only after the `S14` decision and only on the
+operator's instruction.
+
+| Repo | Integration branch | Base | Created |
+|---|---|---|---|
+| `givn` | `ise/implementation` | `discuss-ise-principles-givn-instructions` at `03c5e43d` | before `S1` |
+| `givn-harness` | `ise/evaluation` | `main` | before `S6a` |
+| `passuff` | `ise/trial` | `generation-2` | before `S10` |
+
+Creation commands, run in each checkout:
+
+```sh
+# givn, this worktree
+git switch -c ise/implementation discuss-ise-principles-givn-instructions
+
+# givn-harness
+git switch -c ise/evaluation main
+
+# passuff
+git switch -c ise/trial generation-2
+```
+
+**Why the `givn` base is the discussion branch.** The six seeds and the
+published plan live in commit `03c5e43d` on
+`discuss-ise-principles-givn-instructions`, and that commit is not on `main`.
+A branch off `main` would not contain the seeds, so `/givn-propose` would
+have nothing to read. The implementation branch descends from the topic
+record, which is the design input, and the eventual merge to `main` carries
+both.
+
+**Why `passuff` bases on `generation-2`.** The rebuilt product lives there;
+`main` does not carry it.
+
+**Clean-checkout precondition.** A branch is created only when the target
+checkout carries no pending work, because switching with unrelated changes
+entangles two efforts. `givn` is clean, so its branch is created before `S1`.
+`givn-harness` carries a modified `AGENTS.md`; `passuff` carries modified
+`AGENTS.md` and `README.md`, plus untracked `Cargo.toml`, `Cargo.lock`,
+`crates/`, `rust-toolchain.toml`, and `scripts/bundle-macos.sh`. Their
+branches are created at `S6a` and `S10`. The phase records the pending work
+it found and does not commit it. The `iseprinciples` checkout is never
+modified, so it gets no branch.
+
+**One branch, many commits.** Each seed's change is one coherent set of
+commits on the integration branch, following `AGENTS.md`: one atomic
+`givn commit` per behavior batch with explicit paths.
+
+**Phase report.** Every phase records the branch it is on, the base it was
+created from, and whether the checkout was clean at creation.
