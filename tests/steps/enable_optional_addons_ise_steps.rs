@@ -100,6 +100,36 @@ fn active_addon_settings_keep(world: &mut GivnWorld, addon: String, state: Strin
     );
 }
 
+/// Assert the project's explicit addon lines and its effective resolution
+/// both disable exactly the named registry set, `ise` included.
+#[then(regex = r#"^the active addon settings disable exactly "([^"]+)"$"#)]
+fn active_addon_settings_disable_exactly(world: &mut GivnWorld, expected: String) {
+    let names: Vec<&str> = expected.split(", ").collect();
+    assert_eq!(
+        names,
+        givn::config::manifest::Addons::NAMES,
+        "the scenario names a different addon set than the registry"
+    );
+    let content = std::fs::read_to_string(env(world).path("givn/config.yaml"))
+        .expect("read givn/config.yaml");
+    for name in &names {
+        assert!(
+            content
+                .lines()
+                .any(|line| line == format!("  {name}: false")),
+            "givn/config.yaml has no explicit line \"  {name}: false\":\n{content}"
+        );
+    }
+    let manifest = common::effective_manifest(env(world));
+    for name in &names {
+        assert_eq!(
+            manifest.addons.get(name),
+            Some(false),
+            "addon '{name}' does not resolve to disabled"
+        );
+    }
+}
+
 const DECLARATION_PATH: &str = "givn/specification.yaml";
 
 /// Project bytes the preservation scenarios record: valid six-key content that
@@ -121,9 +151,57 @@ fn enable_ise(env: &common::TestEnv) {
     );
 }
 
+/// A Git-backed initialized fixture whose `ise` addon is enabled.
+fn ise_enabled_project() -> common::TestEnv {
+    let env = common::make_init_root();
+    enable_ise(&env);
+    env
+}
+
 #[given("an initialized project selecting opencode")]
 fn initialized_project_selecting_opencode(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
+}
+
+#[given("an ise-enabled project selecting opencode")]
+fn ise_enabled_project_selecting_opencode(world: &mut GivnWorld) {
+    world.env = Some(ise_enabled_project());
+}
+
+const LOCK_FIXTURE_CHANGE: &str = "add-declaration-check";
+
+/// The lock a change created before `ise` existed recorded: the nine
+/// default-on addons, no `ise` key.
+const PRE_ISE_LOCK: &str = r"version: 1
+addons:
+  arc42: true
+  communication_policy: true
+  readme: true
+  coverage: true
+  domain_modeling: true
+  dev_principles: true
+  architecture_principles: true
+  challenge: true
+  outline: true
+overrides: []
+";
+
+#[given("an active change whose addon lock lists the nine default-on addons and omits \"ise\"")]
+fn active_change_with_pre_ise_lock(world: &mut GivnWorld) {
+    let env = env(world);
+    common::write_fixture_delta(
+        env,
+        LOCK_FIXTURE_CHANGE,
+        "addon-lock",
+        "Lock acceptance fixture behavior",
+    );
+    std::fs::write(
+        env.path(&format!(
+            "givn/changes/{LOCK_FIXTURE_CHANGE}/config-lock.yaml"
+        )),
+        PRE_ISE_LOCK,
+    )
+    .expect("write the pre-ise add-on lock");
 }
 
 #[given(regex = r#"^a declaration at "([^"]+)" whose bytes are recorded$"#)]
@@ -135,8 +213,7 @@ fn declaration_at_path_with_recorded_bytes(world: &mut GivnWorld, path: String) 
 
 #[given("an ise-enabled project selecting opencode whose declaration bytes are recorded")]
 fn ise_enabled_project_with_recorded_declaration(world: &mut GivnWorld) {
-    let env = common::make_init_root();
-    enable_ise(&env);
+    let env = ise_enabled_project();
     std::fs::write(env.path(DECLARATION_PATH), PROJECT_DECLARATION)
         .expect("write the project-owned declaration");
     world.specification_declaration.recorded = Some(PROJECT_DECLARATION.to_string());

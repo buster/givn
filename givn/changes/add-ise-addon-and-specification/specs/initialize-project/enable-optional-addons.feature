@@ -16,7 +16,7 @@ Feature: enable-optional-addons
     And givn/config.yaml does not contain the line "  ise:"
     And the file "givn/specification.yaml" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn init --no-addons writes an explicit false for every addon including ise
     Given a project root without a givn/ directory
     When the user runs `givn init --no-addons --agents opencode`
@@ -114,7 +114,7 @@ Feature: enable-optional-addons
     And the active addon settings keep "ise" disabled
     And the declaration bytes equal the recorded bytes
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change locked before ise existed accepts the enabled addon
     Given an ise-enabled project selecting opencode
     And an active change whose addon lock lists the nine default-on addons and omits "ise"

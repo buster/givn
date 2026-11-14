@@ -1490,12 +1490,32 @@ batch 1; this batch proves the two remaining declared requirements.)
     - Exit 0; the active addon settings disable exactly the ten names above;
       `givn/specification.yaml` does not exist. Mandatory dialog bootstrap is
       unaffected.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::givn init --no-addons writes an explicit false for every addon including ise" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact
+          "initialize-project/enable-optional-addons.feature::givn init --no-addons writes an explicit false for every addon including ise"
+        RED (binding only; `disable_all` landed in batch 1):
+           ✘  And the active addon settings disable exactly "arc42, communication_policy, readme, coverage, domain_modeling, dev_principles, architecture_principles, challenge, outline, ise"
+              Step failed:
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        GREEN — existing behavior protected; `src/cli/addons.rs::disable_all`
+        already writes the explicit false for all ten addons, so no production
+        diff was manufactured:
+           ✔  When the user runs `givn init --no-addons --agents opencode`
+           ✔  Then the command exits 0
+           ✔  And the active addon settings disable exactly "arc42, communication_policy, readme, coverage, domain_modeling, dev_principles, architecture_principles, challenge, outline, ise"
+           ✔  And the file "givn/specification.yaml" does not exist
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `no-addons-and-lock`
 
 - [ ] Scenario: `A change locked before ise existed accepts the enabled addon`
@@ -1506,12 +1526,35 @@ batch 1; this batch proves the two remaining declared requirements.)
     - Run `givn check review --change add-declaration-check`; assert stderr
       does not contain `add-on configuration changed during change`. Do not
       assert the exit code: unrelated review checks may fail on the fixture.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "initialize-project/enable-optional-addons.feature::A change locked before ise existed accepts the enabled addon" -->
+        $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs cargo test --locked --test features_runner -- --exact
+          "initialize-project/enable-optional-addons.feature::A change locked before ise existed accepts the enabled addon"
+        RED (binding only):
+           ✘  Given an ise-enabled project selecting opencode
+              Step failed:
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+        GREEN — existing behavior protected; `src/config/lock.rs::differences`
+        (batch 1) iterates the recorded keys, so the omitted `ise` key reports
+        no drift:
+           ✔  Given an ise-enabled project selecting opencode
+           ✔  And an active change whose addon lock lists the nine default-on addons and omits "ise"
+           ✔  When the user runs `givn check review --change add-declaration-check`
+           ✔  Then stderr does not contain "add-on configuration changed during change"
+        [Summary]
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        Sensitivity: mutating `differences()` to iterate the current keys reports
+        `ise: disabled -> enabled` and fails this scenario, so the assertion
+        rejects the omitted-key alternative. Mutation reverted.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario and the full non-e2e suite; no behavior
+        change (1 scenario (1 passed); 923 passed, 106 skipped).
   - [ ] COMMIT: `<hash>` -- Batch: `no-addons-and-lock`
 
 ---
