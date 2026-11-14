@@ -2,7 +2,7 @@
 
 Feature: spec-gap
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The review guidance requires one spec gap outcome before any fix
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the review guidance for an active change

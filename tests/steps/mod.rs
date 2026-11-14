@@ -20,6 +20,7 @@ pub mod archive_proof_steps;
 pub mod archive_proof_support;
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
+pub mod change_strategy_e2e_steps;
 pub mod change_strategy_steps;
 pub mod choose_project_license_steps;
 pub mod coverage_readme_example_steps;
@@ -86,6 +87,7 @@ pub mod serve_extended_rules_e2e_steps;
 pub mod serve_extended_rules_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_discovery_deterministic_steps;
+pub mod spec_gap_e2e_steps;
 pub mod spec_gap_steps;
 pub mod spec_overlap_gates_steps;
 pub mod specification_declaration_e2e_steps;

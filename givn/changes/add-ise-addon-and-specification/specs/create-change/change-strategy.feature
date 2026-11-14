@@ -2,7 +2,7 @@
 
 Feature: change-strategy
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The design guidance requires one recorded change strategy
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the design guidance for an active change
