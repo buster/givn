@@ -2,7 +2,7 @@
 
 Feature: apply-a-managed-upgrade
 
-  @givn.added @wip
+  @givn.added
   Scenario: An upgrade writes and stages the declaration when ise is effective and it is absent
     Given  a clean Git project with a committed checkpoint and ise effective and no declaration
     When  the consumer runs `givn upgrade`
@@ -12,7 +12,7 @@ Feature: apply-a-managed-upgrade
     And  the declaration names exactly the five roles and one source list
     And  the report names the declaration as written
 
-  @givn.added @wip
+  @givn.added
   Scenario: An upgrade preserves an edited declaration
     Given  a clean Git project with a committed checkpoint and ise effective and a project-edited declaration whose bytes are recorded
     When  the consumer runs `givn upgrade`
@@ -21,7 +21,7 @@ Feature: apply-a-managed-upgrade
     And  the declaration bytes equal the recorded bytes
     And  the report names the declaration as project-owned
 
-  @givn.added @wip
+  @givn.added
   Scenario: An upgrade writes no declaration when ise is not effective
     Given  a clean Git project with a committed checkpoint and ise disabled and a leftover declaration whose bytes are recorded
     When  the consumer runs `givn upgrade`
@@ -29,7 +29,7 @@ Feature: apply-a-managed-upgrade
     And  the revision contains no path "givn/specification.yaml"
     And  the declaration bytes equal the recorded bytes
 
-  @givn.added @wip
+  @givn.added
   Scenario: Repeating an upgrade after the declaration scaffold creates no second revision
     Given  a clean Git project with a committed checkpoint and ise effective and an upgrade-written declaration
     When  the consumer runs `givn upgrade`
@@ -37,7 +37,7 @@ Feature: apply-a-managed-upgrade
     And  no second managed revision is created
     And  the declaration bytes are unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A declaration scaffold write failure reports the path and the completed writes
     Given  a clean Git project with a committed checkpoint and ise effective and the path "givn/specification.yaml" is a directory
     When  the consumer runs `givn upgrade`

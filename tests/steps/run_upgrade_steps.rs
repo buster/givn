@@ -460,16 +460,14 @@ fn latest_revision_changes(env: &common::TestEnv) -> Vec<(String, String)> {
 }
 
 fn is_managed_allowlist_path(path: &str) -> bool {
-    if matches!(
-        path,
-        "givn/config.yaml"
-            | "givn/commands.yaml"
-            | ".gitignore"
-            | ".fossil-settings/ignore-glob"
-            | ".githooks/commit-msg"
-            | ".claude/settings.local.json"
-            | ".maki/lua/givn-timeline.lua"
-    ) {
+    if matches!(path, |"givn/config.yaml"| "givn/commands.yaml"
+        | "givn/specification.yaml"
+        | ".gitignore"
+        | ".fossil-settings/ignore-glob"
+        | ".githooks/commit-msg"
+        | ".claude/settings.local.json"
+        | ".maki/lua/givn-timeline.lua")
+    {
         return true;
     }
     [
@@ -1676,4 +1674,253 @@ fn then_custom_commands_preserved(world: &mut GivnWorld) {
     let stdout = crate::steps::stdout(world);
     assert!(stdout.contains("manual transition"), "{stdout}");
     assert!(stdout.contains("givn-review.md"), "{stdout}");
+}
+
+// --- Declaration scaffold in the managed upgrade --------------------------
+
+const DECLARATION_PATH: &str = "givn/specification.yaml";
+
+/// Project-owned declaration bytes valid under the strict schema; a rewrite
+/// would be visible because they differ from the scaffold.
+const EDITED_DECLARATION: &str = "# Project-owned declaration fixture.\n\
+behavior: [\"givn/specs/**\"]\n\
+structure: []\n\
+contracts: [\"docs/reference.md\"]\n\
+limits: []\n\
+e2e: []\n\
+source: [\"src/**\"]\n";
+
+fn declaration_env(world: &GivnWorld) -> &common::TestEnv {
+    world.env.as_ref().expect("upgrade fixture")
+}
+
+/// Write an explicit addon setting without running the addon command, so a
+/// fixture can present `ise` effective while the declaration is absent.
+fn set_addon_flag(env: &common::TestEnv, addon: &str, enabled: bool) {
+    let path = env.path("givn/config.yaml");
+    let content = std::fs::read_to_string(&path).expect("read config");
+    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+    let start = lines
+        .iter()
+        .position(|line| line == "addons:")
+        .expect("the fixture config declares the addons block");
+    lines.insert(start + 1, format!("  {addon}: {enabled}"));
+    std::fs::write(&path, format!("{}\n", lines.join("\n"))).expect("write config");
+}
+
+fn write_declaration(env: &common::TestEnv, content: &str) {
+    std::fs::write(env.path(DECLARATION_PATH), content).expect("write the declaration fixture");
+}
+
+fn record_checkpoint(world: &mut GivnWorld, env: common::TestEnv) {
+    let config = std::fs::read_to_string(env.path("givn/config.yaml")).expect("read config");
+    let state = UpgradeState {
+        head_before: Some(head_revision(&env)),
+        commits_before: Some(revision_count(&env)),
+        config_before: Some(config),
+        ..UpgradeState::default()
+    };
+    store_upgrade_state(world, &state);
+    world.env = Some(env);
+}
+
+fn commit_checkpoint(env: &common::TestEnv) {
+    commit_fixture(env, "fixture: declaration checkpoint");
+}
+
+#[given("a clean Git project with a committed checkpoint and ise effective and no declaration")]
+fn given_ise_effective_without_declaration(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    set_addon_flag(&env, "ise", true);
+    assert!(
+        !env.path(DECLARATION_PATH).exists(),
+        "the fixture must not carry a declaration"
+    );
+    commit_checkpoint(&env);
+    record_checkpoint(world, env);
+}
+
+#[given(
+    "a clean Git project with a committed checkpoint and ise effective and a project-edited declaration whose bytes are recorded"
+)]
+fn given_ise_effective_with_edited_declaration(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    set_addon_flag(&env, "ise", true);
+    write_declaration(&env, EDITED_DECLARATION);
+    commit_checkpoint(&env);
+    world.specification_declaration.recorded = Some(EDITED_DECLARATION.to_string());
+    record_checkpoint(world, env);
+}
+
+#[given(
+    "a clean Git project with a committed checkpoint and ise disabled and a leftover declaration whose bytes are recorded"
+)]
+fn given_ise_disabled_with_leftover_declaration(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    write_declaration(&env, EDITED_DECLARATION);
+    commit_checkpoint(&env);
+    world.specification_declaration.recorded = Some(EDITED_DECLARATION.to_string());
+    record_checkpoint(world, env);
+}
+
+#[given(
+    "a clean Git project with a committed checkpoint and ise effective and an upgrade-written declaration"
+)]
+fn given_ise_effective_with_upgrade_written_declaration(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    set_addon_flag(&env, "ise", true);
+    commit_checkpoint(&env);
+    let first = common::run_givn(&env, &["upgrade"]);
+    assert!(
+        first.status.success(),
+        "the first upgrade failed: {}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let written = std::fs::read_to_string(env.path(DECLARATION_PATH))
+        .expect("the first upgrade writes the declaration");
+    world.specification_declaration.recorded = Some(written);
+    let state = UpgradeState {
+        head_before: Some(head_revision(&env)),
+        commits_before: Some(revision_count(&env)),
+        ..UpgradeState::default()
+    };
+    store_upgrade_state(world, &state);
+    world.env = Some(env);
+}
+
+#[given(
+    "a clean Git project with a committed checkpoint and ise effective and the path \"givn/specification.yaml\" is a directory"
+)]
+fn given_ise_effective_with_declaration_directory(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    set_addon_flag(&env, "ise", true);
+    std::fs::create_dir(env.path(DECLARATION_PATH))
+        .expect("create the directory occupying the declaration path");
+    commit_checkpoint(&env);
+    record_checkpoint(world, env);
+}
+
+#[then(regex = r#"^the revision contains the path "([^"]+)"$"#)]
+fn then_revision_contains_path(world: &mut GivnWorld, path: String) {
+    let env = declaration_env(world);
+    let changes = latest_revision_changes(env);
+    assert!(
+        changes
+            .iter()
+            .any(|(status, changed)| changed == &path && status != "D"),
+        "the managed revision does not contain {path}: {changes:?}"
+    );
+}
+
+#[then(regex = r#"^the revision contains no path "([^"]+)"$"#)]
+fn then_revision_contains_no_path(world: &mut GivnWorld, path: String) {
+    let env = declaration_env(world);
+    let changes = latest_revision_changes(env);
+    assert!(
+        !changes.iter().any(|(_, changed)| changed == &path),
+        "the managed revision contains {path}: {changes:?}"
+    );
+}
+
+#[then(regex = r#"^the revision carries no diff for the path "([^"]+)"$"#)]
+fn then_revision_carries_no_diff(world: &mut GivnWorld, path: String) {
+    let env = declaration_env(world);
+    let changes = latest_revision_changes(env);
+    assert!(
+        !changes.iter().any(|(_, changed)| changed == &path),
+        "the managed revision carries a diff for {path}: {changes:?}"
+    );
+}
+
+#[then("the report names the declaration as written")]
+fn then_report_names_declaration_written(world: &mut GivnWorld) {
+    let observed = crate::steps::stdout(world);
+    assert!(
+        observed.contains(DECLARATION_PATH),
+        "the report does not name {DECLARATION_PATH}:\n{observed}"
+    );
+    assert!(
+        observed.contains("declared Specification"),
+        "the report does not name the declaration as written:\n{observed}"
+    );
+}
+
+#[then("the report names the declaration as project-owned")]
+fn then_report_names_declaration_project_owned(world: &mut GivnWorld) {
+    let observed = crate::steps::stdout(world);
+    assert!(
+        observed.contains(DECLARATION_PATH),
+        "the report does not name {DECLARATION_PATH}:\n{observed}"
+    );
+    assert!(
+        observed.contains("project-owned"),
+        "the report does not name the declaration as project-owned:\n{observed}"
+    );
+}
+
+#[then("the command reports the project is current")]
+fn then_project_is_current(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(
+        output.status.success(),
+        "upgrade failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let observed = crate::steps::stdout(world);
+    assert!(
+        observed.contains("already up to date"),
+        "the command does not report the project is current:\n{observed}"
+    );
+}
+
+#[then("no second managed revision is created")]
+fn then_no_second_managed_revision(world: &mut GivnWorld) {
+    let env = declaration_env(world);
+    let state = load_upgrade_state(world);
+    assert_eq!(
+        revision_count(env),
+        state
+            .commits_before
+            .expect("revision count before the second upgrade"),
+        "the second upgrade created a managed revision"
+    );
+}
+
+#[then("the declaration bytes are unchanged")]
+fn then_declaration_bytes_unchanged(world: &mut GivnWorld) {
+    let recorded = world
+        .specification_declaration
+        .recorded
+        .clone()
+        .expect("the Given records the declaration bytes first");
+    let current = std::fs::read_to_string(declaration_env(world).path(DECLARATION_PATH))
+        .expect("read the declaration after the second upgrade");
+    assert_eq!(current, recorded, "the declaration bytes changed");
+}
+
+#[then(regex = r#"^the command exits nonzero and names "([^"]+)"$"#)]
+fn then_exits_nonzero_names_path(world: &mut GivnWorld, path: String) {
+    let output = crate::steps::output(world);
+    assert!(!output.status.success(), "upgrade unexpectedly succeeded");
+    let observed = crate::steps::stderr(world);
+    assert!(
+        observed.contains(&path),
+        "stderr does not name {path}:\n{observed}"
+    );
+}
+
+#[then("the report identifies the completed writes and the checkpoint")]
+fn then_report_completed_writes_and_checkpoint(world: &mut GivnWorld) {
+    let observed = crate::steps::stderr(world);
+    let state = load_upgrade_state(world);
+    assert!(observed.contains("checkpoint:"), "{observed}");
+    assert!(
+        observed.contains(&state.head_before.expect("checkpoint revision")),
+        "{observed}"
+    );
+    assert!(observed.contains("completed writes:"), "{observed}");
+    assert!(
+        observed.contains("- givn/config.yaml"),
+        "the completed writes omit the refreshed config:\n{observed}"
+    );
 }

@@ -814,7 +814,7 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
 **Batch verification:** the five single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: declaration-scaffold-upgrade'`.
 
-- [ ] Scenario: `An upgrade writes and stages the declaration when ise is effective and it is absent`
+- [x] Scenario: `An upgrade writes and stages the declaration when ise is effective and it is absent`
   - Design constraints:
     - Fixture: clean Git project at a committed checkpoint with `ise`
       effective and no declaration.
@@ -822,43 +822,62 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
       allowlist-only managed revision exists; the revision contains
       `givn/specification.yaml`; the declaration names the five roles and one
       `source` list; the report names the declaration as written.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade writes and stages the declaration when ise is effective and it is absent" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade writes and stages the declaration when ise is effective and it is absent"
+
+        RED: the managed revision does not contain givn/specification.yaml
+             (the revision carried only generated-integration changes)
+        GREEN: 1 scenario (1 passed); 7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 7 steps (7 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
 
-- [ ] Scenario: `An upgrade preserves an edited declaration`
+- [x] Scenario: `An upgrade preserves an edited declaration`
   - Design constraints:
     - Fixture: clean Git project with committed checkpoint, `ise` effective,
       and a project-edited declaration whose bytes are recorded.
     - The revision carries no diff for the path; bytes unchanged; the report
       names the declaration as project-owned. It never joins the staged set.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade preserves an edited declaration" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade preserves an edited declaration"
+
+        RED: the report does not name givn/specification.yaml
+             (stdout listed only attribution and integration lines)
+        GREEN: 1 scenario (1 passed); 6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 6 steps (6 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
 
-- [ ] Scenario: `An upgrade writes no declaration when ise is not effective`
+- [x] Scenario: `An upgrade writes no declaration when ise is not effective`
   - Design constraints:
     - Fixture: clean Git project, `ise` disabled, leftover declaration whose
       bytes are recorded.
     - The revision contains no `givn/specification.yaml`; bytes unchanged; no
       read of the declaration.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade writes no declaration when ise is not effective" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade writes no declaration when ise is not effective"
+
+        existing behavior protected: passed on its first run
+        (1 scenario (1 passed); 5 steps (5 passed)). The upgrade already left
+        the declaration untouched with `ise` off; no production edit was
+        manufactured for it.
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 5 steps (5 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
 
-- [ ] Scenario: `Repeating an upgrade after the declaration scaffold creates no second revision`
+- [x] Scenario: `Repeating an upgrade after the declaration scaffold creates no second revision`
   - Design constraints:
     - Fixture: clean Git project with `ise` effective and an
       upgrade-written declaration (run the upgrade once).
@@ -866,15 +885,21 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
       `Managed Givn files are already up to date for <version> (no changes)`
       (`src/cli/upgrade.rs:72`), creates no second revision, and leaves the
       declaration bytes unchanged.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "upgrade-a-project/apply-a-managed-upgrade.feature::Repeating an upgrade after the declaration scaffold creates no second revision" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "upgrade-a-project/apply-a-managed-upgrade.feature::Repeating an upgrade after the declaration scaffold creates no second revision"
+
+        RED: the first upgrade writes the declaration: Os { code: 2,
+             kind: NotFound, message: "No such file or directory" }
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 5 steps (5 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
 
-- [ ] Scenario: `A declaration scaffold write failure reports the path and the completed writes`
+- [x] Scenario: `A declaration scaffold write failure reports the path and the completed writes`
   - Design constraints:
     - Fixture: clean Git project, `ise` effective, and
       `givn/specification.yaml` is a directory.
@@ -882,12 +907,17 @@ declaration-specific write), `src/cli/init.rs` (forced path only if needed),
       completed writes and the checkpoint; no complete rollback is promised.
     - `FileSnapshot` restores what it captured; the directory is not a captured
       file and is not removed.
-  - [ ] Implement the scenario and its tests. Evidence:
+  - [x] Implement the scenario and its tests. Evidence:
         ```
-        <!-- paste: --exact
-             "upgrade-a-project/apply-a-managed-upgrade.feature::A declaration write failure reports the path and the completed writes" -->
+        GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "upgrade-a-project/apply-a-managed-upgrade.feature::A declaration scaffold write failure reports the path and the completed writes"
+
+        RED: upgrade unexpectedly succeeded
+        GREEN: 1 scenario (1 passed); 5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run; no behavior change.
+  - [x] REFACTOR: re-ran the scenario; no behavior change
+        (1 scenario (1 passed), 5 steps (5 passed)).
   - [ ] COMMIT: `<hash>` -- Batch: `declaration-scaffold-upgrade`
 
 ---
