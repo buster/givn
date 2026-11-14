@@ -265,8 +265,13 @@ fn apply_parsed(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
 
 /// Load the effective manifest: embedded default + project overlay (if present).
 pub fn load_effective() -> Result<Manifest> {
+    load_effective_at(&std::env::current_dir()?)
+}
+
+/// `load_effective` against an explicit project root, for a caller that
+/// resolves the root itself instead of relying on the working directory.
+pub fn load_effective_at(project_root: &std::path::Path) -> Result<Manifest> {
     let base = Manifest::load_embedded()?;
-    let project_root = std::env::current_dir()?;
     let config_path = project_root.join("givn/config.yaml");
 
     let manifest = if config_path.exists() {

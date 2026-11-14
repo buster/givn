@@ -85,6 +85,7 @@ pub mod serve_extended_rules_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_discovery_deterministic_steps;
 pub mod spec_overlap_gates_steps;
+pub mod specification_declaration_steps;
 pub mod template_conditional_rendering_e2e_steps;
 pub mod template_conditional_rendering_steps;
 pub mod template_conditional_rendering_support;
@@ -209,6 +210,9 @@ pub struct GivnWorld {
     #[allow(dead_code)] // Tasks E5–E9 read it.
     pub(crate) development_report_e2e:
         Option<development_report_e2e_steps::DevelopmentReportE2eState>,
+    /// State for the `specification-declaration` scenarios.
+    pub(crate) specification_declaration:
+        specification_declaration_steps::SpecificationDeclarationState,
 }
 
 /// A readiness probe running on a background thread.

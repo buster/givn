@@ -1,3 +1,4 @@
+use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
 use crate::gherkin::delta::is_removed_placeholder;
 use crate::gherkin::parse::{LintKind, collect_feature_files, parse_file};
 use crate::overlap::analysis::Finding;
@@ -7,7 +8,7 @@ use anyhow::Result;
 ///
 /// Exit codes:
 ///   0 = clean
-///   1 = parse error
+///   1 = parse error or a refused specification declaration
 ///   2 = @wip / PENDING
 ///   3 = duplicate scenario title (overlap hard error) or empty feature
 ///
@@ -55,6 +56,19 @@ fn run_with_root(
         findings.extend(check_persona_references(project_root, change));
     }
     let advisory_count = findings.len();
+
+    // The declaration is read before the empty-feature shortcut, so a malformed
+    // or absent declaration is refused on a project with no `.feature` file. A
+    // refused declaration is the only finding: the advisory pass would read a
+    // partial role set. `ise` off reads nothing, whatever sits on disk.
+    if default_scope && let Some(finding) = specification_declaration_finding(project_root)? {
+        if json {
+            println!("{}", findings_json(std::slice::from_ref(&finding))?);
+        } else {
+            render_prose(&finding);
+        }
+        return Ok(1);
+    }
 
     let feature_files = if !paths.is_empty() {
         paths.iter().map(std::path::PathBuf::from).collect()
@@ -291,6 +305,31 @@ fn run_with_root(
         0
     };
     Ok(exit_code)
+}
+
+/// The blocking declaration finding for the default project scope. `Some`
+/// short-circuits the run with exit 1: a refused, unreadable, or absent
+/// declaration leaves no complete role set to check anything else against.
+/// Nothing is read while `ise` is off.
+fn specification_declaration_finding(project_root: &std::path::Path) -> Result<Option<Finding>> {
+    let manifest = crate::config::overlay::load_effective_at(project_root)?;
+    if !SpecificationDeclaration::is_effective(&manifest) {
+        return Ok(None);
+    }
+    let message = match SpecificationDeclaration::load(project_root) {
+        Ok(Some(_)) => return Ok(None),
+        Ok(None) => {
+            "the declaration is absent; the declaration checks were not performed".to_string()
+        }
+        Err(error) => error.detail(),
+    };
+    Ok(Some(Finding {
+        kind: "specification_declaration".to_string(),
+        level: "error".to_string(),
+        files: vec![DECLARATION_PATH.to_string()],
+        titles: vec![message],
+        contradiction: false,
+    }))
 }
 
 /// The parsed status of a change seed.
@@ -554,7 +593,8 @@ impl Severity {
 /// register here; rendering never changes.
 fn severity_for(kind: &str) -> Severity {
     match kind {
-        "parse_error"
+        "specification_declaration"
+        | "parse_error"
         | "duplicate_title"
         | "empty_feature"
         | "usecase_invalid"
@@ -590,6 +630,7 @@ fn render_prose(finding: &Finding) {
     let severity = severity_for(&finding.kind).as_str();
     let level = match finding.kind.as_str() {
         "duplicate_title" => "DUPL ",
+        "specification_declaration" => "DECL ",
         "shape_match" => "SHAPE",
         "subset" => "SUBST",
         "long_scenario" => "LONG ",
