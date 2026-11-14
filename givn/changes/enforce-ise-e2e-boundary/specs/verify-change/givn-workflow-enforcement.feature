@@ -53,7 +53,7 @@ Feature: givn Workflow Enforcement
     And stderr names the e2e path and the imported source package
     And no change verification receipt is written
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An ise-effective change whose E2E runner command names no declared e2e root fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose E2E runner command is "<command>"
     When the developer runs `givn check tasks --change ise-boundary`

@@ -3651,6 +3651,21 @@ fn ise_change_with_import_edge(world: &mut GivnWorld) {
     e2e_boundary_support::commit(world);
 }
 
+#[given(
+    regex = r#"^an ise-effective change ready for change-scoped verification whose E2E runner command is "([^"]+)"$"#
+)]
+fn ise_change_with_runner_command(world: &mut GivnWorld, command: String) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+    e2e_boundary_support::write_manifest(
+        world,
+        "tests/e2e/Cargo.toml",
+        "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n",
+    );
+    e2e_boundary_support::set_e2e_command(world, &command);
+    e2e_boundary_support::commit(world);
+}
+
 #[then(regex = r#"^stderr names the declared e2e package and "([^"]+)"$"#)]
 fn stderr_names_declared_e2e_package(world: &mut GivnWorld, condition: String) {
     let observed = stderr(world);
@@ -3730,6 +3745,39 @@ fn stderr_names_e2e_path_and_imported_package(world: &mut GivnWorld) {
                 && line.contains(&target)),
         "stderr does not name the import edge from {path:?} to {target:?}:\n{observed}"
     );
+}
+
+#[then("stderr names the declared e2e root and the E2E runner command")]
+fn stderr_names_e2e_root_and_runner_command(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    let root = state
+        .declared_entry
+        .clone()
+        .expect("the fixture declares an e2e root");
+    let command = state
+        .runner_command
+        .clone()
+        .expect("the fixture declares an E2E runner command");
+    assert!(
+        observed.contains(&root),
+        "stderr does not name the declared e2e root {root:?}:\n{observed}"
+    );
+    assert!(
+        observed.contains("E2E runner command"),
+        "stderr does not name the E2E runner command:\n{observed}"
+    );
+    if command.is_empty() {
+        assert!(
+            observed.contains("command ''"),
+            "an empty E2E runner command is not rendered explicitly:\n{observed}"
+        );
+    } else {
+        assert!(
+            observed.contains(&command),
+            "stderr does not show the E2E runner command {command:?}:\n{observed}"
+        );
+    }
 }
 
 #[then("no change verification receipt is written")]

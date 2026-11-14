@@ -15,6 +15,7 @@ pub(crate) struct FixtureState {
     pub(crate) declared_entry: Option<String>,
     pub(crate) source_roots: Vec<String>,
     pub(crate) import_target: Option<String>,
+    pub(crate) runner_command: Option<String>,
 }
 
 pub(crate) fn env(world: &GivnWorld) -> &common::TestEnv {
@@ -101,6 +102,24 @@ pub(crate) fn write_manifest(world: &GivnWorld, relative: &str, content: &str) {
 /// developer runs the change check from.
 pub(crate) fn commit(world: &GivnWorld) {
     common::commit_fixture(env(world));
+}
+
+/// Point `verify.e2e_command` at the scenario's command, mapping `(empty)` to
+/// the explicit empty value the declaration carries.
+pub(crate) fn set_e2e_command(world: &mut GivnWorld, command: &str) {
+    let command = if command == "(empty)" {
+        String::new()
+    } else {
+        command.to_string()
+    };
+    let yaml =
+        format!("verify:\n  command: \"givn missing-testrunner\"\n  e2e_command: \"{command}\"\n");
+    common::write_commands_yaml(&env(world).path("givn/commands.yaml"), &yaml);
+    let state = world
+        .e2e_boundary
+        .as_mut()
+        .expect("an ise boundary fixture is required first");
+    state.runner_command = Some(command);
 }
 
 pub(crate) fn set_import_target(world: &mut GivnWorld, target: &str) {
