@@ -1932,13 +1932,15 @@ served text; transcript per scenario.
       $ givn check tasks --change add-ise-addon-and-specification
         ✓ scenario commits passed (51 scenario(s))
         ✓ change verification receipt: 52 scenario(s), 0 failed, 0 skipped
-          at bcaf7bf1bb743bd9243018f6c47cc4dc97958298
+          at the tested revision
         ✓ verify passed
       exit code: 0
       ```
       Receipt: `verification/tasks-verification.json` (`status: passed`,
-      `scope: change`, 52/52, 0 failed, 0 skipped). The gate re-recorded it
-      after the closure commits, so it names the current revision.
+      `scope: change`, 52/52, 0 failed, 0 skipped). The gate records the
+      current HEAD as `head` on every run; the closure run recorded the
+      revision that carries this record, and later documentation-only
+      revisions reuse it.
 - [ ] `givn check review --change add-ise-addon-and-specification` passes the
       scenario-commit, integrity, routing, and add-on lock checks.
       ```
