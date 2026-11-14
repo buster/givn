@@ -1489,26 +1489,28 @@ Receipt (verification/tasks-verification.json): schema 2, head 32256f5f, result
 It is ise-off shaped: this change's own config-lock.yaml does not have ise
 effective, so it carries no e2e_identity and no e2e_scope key.
       ```
-- [ ] `givn check review --change enforce-ise-e2e-boundary` passes the
+- [x] `givn check review --change enforce-ise-e2e-boundary` passes the
       scenario-commit, integrity, routing, and add-on lock checks. The review
       verdict is the reviewer's, not the author's.
       ```
 $ givn check review --change enforce-ise-e2e-boundary; echo $?
 Mandatory checks for 'review':
+  ✓ integrity checks passed
   ✓ run declaration passed
+  [SHAPE] / [SUBST] rows are advisory only
   givn lint: 2 file(s) checked — clean
   net delta: 17 added, 2 modified, 0 removed
   ✓ overlap dispositions passed
   capability 'givn-workflow-enforcement' already owned by givn/specs/verify-change
   capability 'prose-consolidation' already owned by givn/specs/create-change
   ✓ scenario commits passed (19 scenario(s))
-  ✓ change verification receipt passed (31 scenario(s) at 32256f5f0b728e16b81e9b4f6f97731338f090f1)
+  ✓ change verification receipt reused across documentation-only revision
+    65696b7f3ef232e533c2ff7ae5b1a26c18845644
+    (tested at 32256f5f0b728e16b81e9b4f6f97731338f090f1, 31 scenario(s))
   ✓ scenario commits passed (19 scenario(s))
-error: review checks failed:
-  integrity checks failed:
-  review.md actual verdict is FAIL
-1
-The only failure is the recorded verdict, which is the reviewer's to flip.
+0
+The reviewer flipped the verdict after closing every finding; the gate now
+reads `REVIEW: PASS`.
       ```
 
 **Done when:** every box is checked with its batch `COMMIT:` revision,
