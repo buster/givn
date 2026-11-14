@@ -344,3 +344,19 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the author requests the normal Givn startup instructions through the Givn CLI
     Then  the startup guidance says the reported step applies when continuing that change
     And  the startup guidance says the reported step does not authorize unrelated work
+
+  @instruction-integrity
+  Scenario: The ise instruction carries the five rebuild obligations
+    Given  a Givn project with the ise addon enabled and the skills synchronized
+    When  the consumer requests the `ise` instruction
+    Then  the command exits 0
+    And  the served instruction names Specification completeness, the two-layer test boundary, persisted-state continuity, the change strategy, and the spec gap classification
+    And  the served instruction uses the established Component, Port, contract, Specification, and Source code vocabulary
+
+  @instruction-integrity
+  Scenario: The review guidance asks the neighboring-components question without a gate
+    Given  a Givn project with the ise addon enabled and the skills synchronized
+    When  the consumer requests the review guidance
+    Then  the command exits 0
+    And  the served review guidance asks for the neighboring components changed outside the replaced component and the reason
+    And  the served review guidance states that the answer is a review question, never a gate

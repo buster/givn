@@ -183,3 +183,25 @@ Feature: The served instruction carries the built-in rules and the project's ext
     When  the user runs `givn instructions explore`
     Then  the command fails
     And  stderr contains "givn instructions start"
+
+  @serve-extended-rules
+  Scenario: The ise instruction is served while ise is effective
+    Given  an ise-enabled project
+    When  the user requests the `ise` instruction
+    Then  the command exits 0
+    And  the served instruction names the five rebuild obligations
+
+  @serve-extended-rules
+  Scenario: An ise instruction request with the addon off is refused by name
+    Given  an initialized project with ise disabled
+    When  the user requests the `ise` instruction
+    Then  the command exits non-zero
+    And  stderr names "ise"
+    And  no served instruction content is printed
+
+  @serve-extended-rules
+  Scenario: The machine-readable ise path carries the same content as the text path
+    Given  an ise-enabled project
+    When  the user requests the `ise` instruction as machine-readable output
+    Then  the command exits 0
+    And  the machine-readable instruction field equals the served text

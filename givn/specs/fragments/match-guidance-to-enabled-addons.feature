@@ -20,12 +20,6 @@ Feature: Match guidance to enabled addons
     Then  the served design instruction omits the Contracts and components section
     And  the served design-review instruction omits the Contracts and components branch
 
-  Scenario: Architecture principles guidance follows the opt-in addon
-    Given  a Givn project with the architecture-principles addon disabled and the skills synchronized
-    When  a consumer enables the architecture-principles addon through the Givn CLI
-    Then  the served design instruction contains the Contracts and components section
-    And  the served design-review instruction contains the Contracts and components branch
-
   Scenario: The architecture-principles instruction keeps the decision-timing rule
     Given  a Givn project with the architecture-principles addon enabled and the skills synchronized
     Then  the served architecture-principles instruction contains "last responsible moment"
@@ -83,17 +77,6 @@ Feature: Match guidance to enabled addons
       | disabled | omits |
 
   @match-guidance-to-enabled-addons
-  Scenario Outline: Outline guidance follows the opt-in addon
-    Given  a Givn project with the outline addon <state> and the skills synchronized
-    Then  the served steps instruction <outcome> the advisory outline section
-    And  the served review instruction <outcome> the advisory outline section
-    And  no generated skill carries outline guidance
-    Examples:
-      | state | outcome |
-      | enabled | contains |
-      | disabled | omits |
-
-  @match-guidance-to-enabled-addons
   Scenario: Disabling arc42 keeps the generated domain-modeling skill
     Given  a Givn project with the domain-modeling and arc42 addons enabled and the skills synchronized
     When  a consumer disables the arc42 addon through the Givn CLI
@@ -114,3 +97,21 @@ Feature: Match guidance to enabled addons
     Then  a generated domain-modeling skill exists
     And  the served review instruction contains the Ubiquitous language conformance section
     And  the served design-review instruction omits the Architecture documentation (arc42) branch
+
+  @match-guidance-to-enabled-addons
+  Scenario: Architecture principles guidance follows an enabled addon
+    Given  a Givn project with the architecture-principles addon disabled and the skills synchronized
+    When  a consumer enables the architecture-principles addon through the Givn CLI
+    Then  the served design instruction contains the Contracts and components section
+    And  the served design-review instruction contains the Contracts and components branch
+
+  @match-guidance-to-enabled-addons
+  Scenario Outline: Outline guidance follows an enabled addon
+    Given  a Givn project with the outline addon <state> and the skills synchronized
+    Then  the served steps instruction <outcome> the advisory outline section
+    And  the served review instruction <outcome> the advisory outline section
+    And  no generated skill carries outline guidance
+    Examples:
+      | state | outcome |
+      | enabled | contains |
+      | disabled | omits |

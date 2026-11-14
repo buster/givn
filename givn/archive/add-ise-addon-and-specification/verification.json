@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "change": "add-ise-addon-and-specification",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "create-change/change-strategy.feature",
+    "create-change/spec-gap.feature",
+    "declare-the-specification/specification-declaration.feature",
+    "fragments/instruction-integrity.feature",
+    "fragments/match-guidance-to-enabled-addons.feature",
+    "initialize-project/enable-optional-addons.feature",
+    "initialize-project/initialize-a-project.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature",
+    "upgrade-a-project/apply-a-managed-upgrade.feature",
+    "verify-change/check-specification-health.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "create-change/change-strategy.feature",
+    "create-change/spec-gap.feature",
+    "declare-the-specification/specification-declaration.feature",
+    "fragments/instruction-integrity.feature",
+    "fragments/match-guidance-to-enabled-addons.feature",
+    "initialize-project/enable-optional-addons.feature",
+    "initialize-project/initialize-a-project.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature",
+    "upgrade-a-project/apply-a-managed-upgrade.feature",
+    "verify-change/check-specification-health.feature"
+  ],
+  "merge_targets": {
+    "create-change/change-strategy.feature": "givn/specs/create-change/change-strategy.feature",
+    "create-change/spec-gap.feature": "givn/specs/create-change/spec-gap.feature",
+    "declare-the-specification/specification-declaration.feature": "givn/specs/declare-the-specification/specification-declaration.feature",
+    "fragments/instruction-integrity.feature": "givn/specs/fragments/instruction-integrity.feature",
+    "fragments/match-guidance-to-enabled-addons.feature": "givn/specs/fragments/match-guidance-to-enabled-addons.feature",
+    "initialize-project/enable-optional-addons.feature": "givn/specs/initialize-project/enable-optional-addons.feature",
+    "initialize-project/initialize-a-project.feature": "givn/specs/initialize-project/initialize-a-project.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature": "givn/specs/obtain-effective-guidance/serve-extended-rules.feature",
+    "upgrade-a-project/apply-a-managed-upgrade.feature": "givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature",
+    "verify-change/check-specification-health.feature": "givn/specs/verify-change/check-specification-health.feature"
+  },
+  "started_at_unix": 1794673014,
+  "finished_at_unix": null
+}
