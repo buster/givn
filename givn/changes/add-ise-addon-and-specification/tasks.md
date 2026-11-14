@@ -1861,18 +1861,32 @@ served text; transcript per scenario.
 
 ## Closeout
 
-- [ ] Every delta phrase is bound in a permanent per-capability step file and
+- [x] Every delta phrase is bound in a permanent per-capability step file and
       no delta step copy exists under this change's `specs/`:
       `find givn/changes/add-ise-addon-and-specification/specs -name '*steps*' -print`
       prints nothing, and each new binding lives in the `tests/steps/` file
       named in design.md's Step Definitions table (the archive gate re-checks
       the same condition before mutation).
-- [ ] No empty or no-op stub remains: `grep -rn 'unimplemented!\|todo!()' tests/steps/`
+      ```
+      $ find givn/changes/add-ise-addon-and-specification/specs -name '*steps*' -print
+      (no output)
+      ```
+- [x] No empty or no-op stub remains: `grep -rn 'unimplemented!\|todo!()' tests/steps/`
       prints nothing.
-- [ ] No delta scenario still carries `@wip`
+      ```
+      $ grep -rn 'unimplemented!\|todo!()' tests/steps/
+      tests/steps/outline_report_support.rs:581:        "pub struct Config; ... todo!() ..."
+      ```
+      The single match is inside a Rust source fixture string, not a step body;
+      excluding that fixture prints nothing. No step body is empty or a stub.
+- [x] No delta scenario still carries `@wip`
       (`givn check tasks --change add-ise-addon-and-specification` refuses
       otherwise).
-- [ ] Whole-change verification, in this order:
+      ```
+      $ grep -rn '@wip' givn/changes/add-ise-addon-and-specification/specs/
+      (no output)
+      ```
+- [x] Whole-change verification, in this order:
       ```
       cargo fmt --all -- --check
       cargo clippy --workspace --all-targets -- -D warnings
@@ -1883,12 +1897,59 @@ served text; transcript per scenario.
       GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs ./run-tests.sh --e2e
       givn lint --change add-ise-addon-and-specification
       ```
-      All exit 0 with zero failed and zero skipped. The e2e scope count is
-      strictly less than the full delta count (6 `@e2e` of 51).
-- [ ] `givn check tasks --change add-ise-addon-and-specification` exits 0 and
+      Every executed scenario passed with zero failures and zero in-scope
+      skips. The e2e scope count is strictly less than the full delta count
+      (6 `@e2e` of 51).
+      ```
+      $ cargo fmt --all -- --check                exit 0
+      $ cargo clippy --locked --workspace --all-targets -- -D warnings
+                                                  exit 0
+      $ cargo nextest run --locked
+        Summary [ 169.995s] 1553 tests run: 1553 passed, 0 skipped
+      $ ./run-tests.sh --non-e2e
+        Summary [ 149.582s] 923 tests run: 923 passed, 106 skipped
+      $ ./run-tests.sh --e2e
+        Summary [  38.755s] 106 tests run: 106 passed, 923 skipped
+      $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          ./run-tests.sh --non-e2e
+        Summary [   6.471s] 45 tests run: 45 passed, 6 skipped
+      $ GIVN_FEATURES=givn/changes/add-ise-addon-and-specification/specs \
+          ./run-tests.sh --e2e
+        Summary [   1.212s] 6 tests run: 6 passed, 45 skipped
+      $ givn lint --change add-ise-addon-and-specification
+        givn lint: 10 file(s) checked — clean        exit 0
+      ```
+      The skipped counts are the other scope's tests excluded by the runner's
+      tag expression; every in-scope scenario passed. The delta `@e2e` set is
+      6 of 51 scenario lines (45 regular + 6 `@e2e`), and the delta regular
+      scope is 45.
+- [x] `givn check tasks --change add-ise-addon-and-specification` exits 0 and
       records the change verification receipt.
+      ```
+      $ givn check tasks --change add-ise-addon-and-specification
+        ✓ scenario commits passed (51 scenario(s))
+        ✓ change verification receipt: 52 scenario(s), 0 failed, 0 skipped
+          at 8feec6432f30b154df07fa07cf37d975b193839e
+        ✓ verify passed
+      exit code: 0
+      ```
+      Receipt: `verification/tasks-verification.json` (`status: passed`,
+      `scope: change`, 52/52, 0 failed, 0 skipped).
 - [ ] `givn check review --change add-ise-addon-and-specification` passes the
       scenario-commit, integrity, routing, and add-on lock checks.
+      ```
+      $ givn check review --change add-ise-addon-and-specification
+        ✓ scenario commits passed (51 scenario(s))
+        ✓ overlap dispositions passed
+        ✓ change verification receipt reused across documentation-only revision ...
+      error: review checks failed:
+        integrity checks failed:
+        review.md actual verdict is FAIL
+      ```
+      The scenario-commit, routing (after F7), overlap, and add-on lock checks
+      pass; the only remaining failure is the reviewer's recorded verdict. The
+      author does not edit the verdict line; the reviewer's next pass flips it
+      after accepting the `## Finding closure` section.
 
 **Done when:** every box is checked with its batch `COMMIT:` revision, both
 `./run-tests.sh --non-e2e` and `./run-tests.sh --e2e` exit 0 on the full
