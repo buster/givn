@@ -118,6 +118,15 @@ pub fn read(change_dir: &Path) -> Result<Option<AddonLock>> {
     Ok(Some(lock))
 }
 
+/// Whether the change's recorded add-on lock has `ise` effective.
+///
+/// The change's lock is the authority, not the current project manifest: a
+/// change with no lock, or with `ise: false` in its lock, gains no boundary
+/// gate even if the project later enables `ise`.
+pub fn ise_effective_for_change(change_dir: &Path) -> Result<bool> {
+    Ok(read(change_dir)?.is_some_and(|lock| lock.addons.get("ise").copied().unwrap_or(false)))
+}
+
 fn write(change_dir: &Path, lock: &AddonLock) -> Result<()> {
     let path = change_dir.join(LOCK_FILE);
     let content = serde_yaml_ng::to_string(lock)

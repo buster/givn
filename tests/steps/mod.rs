@@ -33,6 +33,7 @@ pub mod development_record_steps;
 pub mod development_report_e2e_steps;
 pub mod development_report_steps;
 pub mod development_timeline_support;
+pub mod e2e_boundary_support;
 pub mod enable_optional_addons_ise_e2e_steps;
 pub mod enable_optional_addons_ise_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
@@ -169,6 +170,8 @@ pub struct GivnWorld {
     /// Working directory override for the next `givn` invocation (nested
     /// project scenario); `None` means the fixture root.
     pub(crate) cwd_override: Option<std::path::PathBuf>,
+    /// Fixture state for the declared e2e boundary scenarios.
+    pub(crate) e2e_boundary: Option<e2e_boundary_support::FixtureState>,
     /// Skip the generic archive auto-commit for fixtures that intentionally
     /// present a dirty or hook-rejecting worktree.
     pub(crate) skip_auto_commit: bool,

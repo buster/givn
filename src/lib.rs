@@ -7,6 +7,7 @@
 pub mod cli;
 pub mod cobertura;
 pub mod config;
+pub mod e2e_boundary;
 pub mod error;
 pub mod fossil;
 pub mod gherkin;

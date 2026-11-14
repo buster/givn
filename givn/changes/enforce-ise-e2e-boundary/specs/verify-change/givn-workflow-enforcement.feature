@@ -2,7 +2,7 @@
 
 Feature: givn Workflow Enforcement
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An ise-effective change whose declared e2e role resolves no readable package fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose e2e role "<state>"
     When the developer runs `givn check tasks --change ise-boundary`
@@ -15,7 +15,7 @@ Feature: givn Workflow Enforcement
       | matches no project path                  | matches no path |
       | resolves a package with a malformed manifest | cannot be read  |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: An ise-effective change whose e2e package reaches a source package fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose e2e package reaches a source package through a "<edge>" dependency
     When the developer runs `givn check tasks --change ise-boundary`
@@ -29,7 +29,7 @@ Feature: givn Workflow Enforcement
       | transitive          |
       | workspace-inherited |
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ise-effective change whose e2e path sits under a source root fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose e2e path sits under a source root
     When the developer runs `givn check tasks --change ise-boundary`
@@ -37,7 +37,7 @@ Feature: givn Workflow Enforcement
     And stderr names the e2e path and the source root
     And no change verification receipt is written
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ise-effective change whose e2e package contains a source root fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose e2e package contains a source root
     When the developer runs `givn check tasks --change ise-boundary`
@@ -45,7 +45,7 @@ Feature: givn Workflow Enforcement
     And stderr names the e2e package and the source root
     And no change verification receipt is written
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ise-effective change whose e2e path resolves no package and imports a source package fails the tasks check
     Given an ise-effective change ready for change-scoped verification whose e2e path resolves no package and imports a package under a source root
     When the developer runs `givn check tasks --change ise-boundary`

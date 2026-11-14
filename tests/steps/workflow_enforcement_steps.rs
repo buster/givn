@@ -3,6 +3,7 @@ use std::process::Output;
 
 use super::GivnWorld;
 use crate::common;
+use crate::steps::e2e_boundary_support;
 
 fn output(world: &GivnWorld) -> &Output {
     world
@@ -3520,4 +3521,224 @@ fn developer_runs_migration_coverage(world: &mut GivnWorld) {
         &["check", "migration", "--change", "migration-test"],
     );
     world.last_output = Some(out);
+}
+
+// --- declared e2e boundary fixtures ---------------------------------------
+
+#[given(
+    regex = r#"^an ise-effective change ready for change-scoped verification whose e2e role "([^"]+)"$"#
+)]
+fn ise_change_with_e2e_role(world: &mut GivnWorld, state: String) {
+    e2e_boundary_support::ise_change(world);
+    match state.as_str() {
+        "matches no project path" => {
+            e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+        }
+        "resolves a package with a malformed manifest" => {
+            e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        other => panic!("unknown e2e role state '{other}'"),
+    }
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    regex = r#"^an ise-effective change ready for change-scoped verification whose e2e package reaches a source package through a "([^"]+)" dependency$"#
+)]
+fn ise_change_with_source_edge(world: &mut GivnWorld, edge: String) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+    match edge.as_str() {
+        "direct" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\ngivn_product = { path = \"../../src\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        "transitive" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\nhelper = { path = \"../fixtures/helper\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/fixtures/helper/Cargo.toml",
+                "[package]\nname = \"helper\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\ngivn_product = { path = \"../../../src\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        "workspace-inherited" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "Cargo.toml",
+                "[workspace]\nmembers = [\"tests/e2e\"]\n\n\
+                 [workspace.dependencies]\ngivn_product = { path = \"src\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\ngivn_product = { workspace = true }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        other => panic!("unknown dependency edge '{other}'"),
+    }
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose e2e path sits under a source root"
+)]
+fn ise_change_with_path_under_source(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["src/e2e-tests"], &["src/**"]);
+    e2e_boundary_support::write_file(world, "src/e2e-tests/harness.txt", "fixture\n");
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose e2e package contains a source root"
+)]
+fn ise_change_with_source_inside_package(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["."], &["src/**"]);
+    e2e_boundary_support::write_manifest(
+        world,
+        "Cargo.toml",
+        "[package]\nname = \"app\"\nversion = \"0.1.0\"\n",
+    );
+    e2e_boundary_support::write_file(world, "src/lib.rs", "pub fn helper() {}\n");
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose e2e path resolves no package and imports a package under a source root"
+)]
+fn ise_change_with_import_edge(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+    e2e_boundary_support::write_file(
+        world,
+        "tests/e2e/steps.rs",
+        "use givn::proof::ChangeReceipt;\n\nmod ../../src/helpers;\n",
+    );
+    e2e_boundary_support::write_file(world, "src/helpers.rs", "pub fn helper() {}\n");
+    e2e_boundary_support::set_import_target(world, "src/helpers");
+    e2e_boundary_support::commit(world);
+}
+
+#[then(regex = r#"^stderr names the declared e2e package and "([^"]+)"$"#)]
+fn stderr_names_declared_e2e_package(world: &mut GivnWorld, condition: String) {
+    let observed = stderr(world);
+    let entry = e2e_boundary_support::state(world)
+        .declared_entry
+        .clone()
+        .expect("the fixture declares an e2e entry");
+    assert!(
+        observed.contains(&entry),
+        "stderr does not name the declared e2e entry {entry:?}:\n{observed}"
+    );
+    assert!(
+        observed.contains(&condition),
+        "stderr does not state the {condition:?} condition:\n{observed}"
+    );
+}
+
+#[then("stderr names the e2e path and the source root")]
+fn stderr_names_e2e_path_and_source_root(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    let path = state
+        .declared_entry
+        .clone()
+        .expect("the fixture declares an e2e path");
+    assert!(
+        observed.contains(&path),
+        "stderr does not name the e2e path {path:?}:\n{observed}"
+    );
+    assert!(
+        observed.contains("source root"),
+        "stderr does not name the source root condition:\n{observed}"
+    );
+    assert!(
+        state
+            .source_roots
+            .iter()
+            .any(|root| observed.contains(root)),
+        "stderr names no declared source root:\n{observed}"
+    );
+}
+
+#[then("stderr names the e2e package and the source root")]
+fn stderr_names_e2e_package_and_source_root(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    assert!(
+        observed.contains("e2e package"),
+        "stderr does not name the e2e package:\n{observed}"
+    );
+    assert!(
+        state
+            .source_roots
+            .iter()
+            .any(|root| observed.contains(root)),
+        "stderr names no declared source root:\n{observed}"
+    );
+}
+
+#[then("stderr names the e2e path and the imported source package")]
+fn stderr_names_e2e_path_and_imported_package(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    let path = state
+        .declared_entry
+        .clone()
+        .expect("the fixture declares an e2e path");
+    let target = state
+        .import_target
+        .clone()
+        .expect("the fixture imports a source path");
+    assert!(
+        observed
+            .lines()
+            .any(|line| line.contains("imports the source path")
+                && line.contains(&path)
+                && line.contains(&target)),
+        "stderr does not name the import edge from {path:?} to {target:?}:\n{observed}"
+    );
+}
+
+#[then("no change verification receipt is written")]
+fn no_change_verification_receipt(world: &mut GivnWorld) {
+    let id = current_change_id(world);
+    let receipt = change_dir_for(world, &id).join("verification/tasks-verification.json");
+    assert!(
+        !receipt.exists(),
+        "a change verification receipt was written at {}",
+        receipt.display()
+    );
 }

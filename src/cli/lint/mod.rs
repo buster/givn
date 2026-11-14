@@ -1,5 +1,4 @@
 mod hygiene;
-mod manifest;
 mod specification;
 
 use crate::gherkin::delta::is_removed_placeholder;

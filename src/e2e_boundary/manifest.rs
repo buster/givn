@@ -1,11 +1,18 @@
+//! Static Cargo package reading for the declared `e2e` boundary.
+//!
+//! The reader never invokes `cargo`: it parses each manifest that the bounded
+//! project walk found and resolves path and workspace-inherited edges. A
+//! manifest the reader cannot use is reported with its reason, because the
+//! boundary cannot be proven from it.
+
 /// Whether a project-relative path is a Cargo manifest.
-pub(super) fn is_cargo_manifest(path: &str) -> bool {
+pub(crate) fn is_cargo_manifest(path: &str) -> bool {
     path.rsplit('/').next() == Some("Cargo.toml")
 }
 
 /// The nearest manifest directory at or above `path`, bounded at the project
 /// root (`""`).
-pub(super) fn nearest_manifest(
+pub(crate) fn nearest_manifest(
     manifest_directories: &std::collections::BTreeSet<String>,
     path: &str,
 ) -> Option<String> {
@@ -26,7 +33,8 @@ pub(super) fn nearest_manifest(
 /// A package manifest read statically, without invoking `cargo`. A virtual
 /// workspace root carries no `[package]` and is still read, because a member's
 /// `workspace = true` dependency resolves through it.
-pub(super) struct CargoPackage {
+#[derive(Debug)]
+pub(crate) struct CargoPackage {
     /// `[package].name`; `None` for a virtual workspace root.
     name: Option<String>,
     dependencies: Vec<Dependency>,
@@ -36,6 +44,7 @@ pub(super) struct CargoPackage {
 
 /// One dependency edge declared by a manifest. A registry dependency carries
 /// no project path and is not an edge into `source`.
+#[derive(Debug)]
 enum Dependency {
     /// An explicit `path = "..."` dependency, normalized to a project-relative
     /// directory.
@@ -45,9 +54,15 @@ enum Dependency {
 }
 
 impl CargoPackage {
-    pub(super) fn read(dir: &str, manifest: &std::path::Path) -> Option<Self> {
-        let content = std::fs::read_to_string(manifest).ok()?;
-        let document: toml::Value = toml::from_str(&content).ok()?;
+    /// Read one manifest. `Ok(None)` means the file parses but declares
+    /// neither a `[package]` nor a `[workspace]`; `Err` carries the reason the
+    /// manifest cannot be used.
+    pub(crate) fn read(
+        dir: &str,
+        manifest: &std::path::Path,
+    ) -> std::result::Result<Option<Self>, String> {
+        let content = std::fs::read_to_string(manifest).map_err(|error| error.to_string())?;
+        let document: toml::Value = toml::from_str(&content).map_err(|error| error.to_string())?;
         let name = document
             .get("package")
             .and_then(|package| package.get("name"))
@@ -55,7 +70,7 @@ impl CargoPackage {
             .map(str::to_string);
         let has_workspace = document.get("workspace").is_some();
         if name.is_none() && !has_workspace {
-            return None;
+            return Ok(None);
         }
         let mut dependencies = Vec::new();
         for table in ["dependencies", "dev-dependencies", "build-dependencies"] {
@@ -89,17 +104,17 @@ impl CargoPackage {
                     .collect()
             })
             .unwrap_or_default();
-        Some(CargoPackage {
+        Ok(Some(CargoPackage {
             name,
             dependencies,
             workspace_dependencies,
             has_workspace,
-        })
+        }))
     }
 
     /// The package name for a finding. A virtual workspace root has no
     /// `[package]`, so its manifest directory names it.
-    pub(super) fn label(&self, dir: &str) -> String {
+    pub(crate) fn label(&self, dir: &str) -> String {
         self.name.clone().unwrap_or_else(|| {
             if dir.is_empty() {
                 ".".to_string()
@@ -112,7 +127,7 @@ impl CargoPackage {
 
 /// Resolve `path` (relative to the package at `base`) to a project-relative
 /// directory, refusing an escape above the project root.
-fn normalize_relative(base: &str, path: &str) -> Option<String> {
+pub(crate) fn normalize_relative(base: &str, path: &str) -> Option<String> {
     let mut segments: Vec<&str> = base
         .split('/')
         .filter(|segment| !segment.is_empty())
@@ -131,7 +146,7 @@ fn normalize_relative(base: &str, path: &str) -> Option<String> {
 }
 
 /// The direct dependency edges between the parsed packages.
-pub(super) fn dependency_edges(
+pub(crate) fn dependency_edges(
     packages: &std::collections::BTreeMap<String, CargoPackage>,
 ) -> std::collections::BTreeMap<String, Vec<String>> {
     let mut edges: std::collections::BTreeMap<String, Vec<String>> =
@@ -179,7 +194,7 @@ fn workspace_root<'a>(
 }
 
 /// The parent directory of a project-relative path; the project root is `""`.
-pub(super) fn parent_directory(path: &str) -> String {
+pub(crate) fn parent_directory(path: &str) -> String {
     path.rsplit_once('/')
         .map_or(String::new(), |(parent, _)| parent.to_string())
 }
@@ -208,7 +223,9 @@ mod tests {
                 };
                 (
                     (*directory).to_string(),
-                    CargoPackage::read(directory, &manifest).expect("a readable manifest"),
+                    CargoPackage::read(directory, &manifest)
+                        .expect("a readable manifest")
+                        .expect("a package"),
                 )
             })
             .collect()
@@ -252,6 +269,19 @@ mod tests {
             "Cargo.toml",
             "[dependencies]\napp = { path = \"app\" }\n",
         );
-        assert!(CargoPackage::read("", &root.path().join("Cargo.toml")).is_none());
+        assert!(
+            CargoPackage::read("", &root.path().join("Cargo.toml"))
+                .expect("a readable manifest")
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn a_malformed_manifest_names_the_parse_failure() {
+        let root = tempfile::tempdir().unwrap();
+        write(root.path(), "Cargo.toml", "[package\nname = \"app\"\n");
+        let reason = CargoPackage::read("", &root.path().join("Cargo.toml"))
+            .expect_err("a malformed manifest is refused");
+        assert!(reason.contains("TOML"), "{reason}");
     }
 }

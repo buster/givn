@@ -466,6 +466,7 @@ fn run_change_verification(
         check_scenario_commits(&backend, &change_dir)?;
         return Ok(());
     }
+    preflight_e2e_boundary(project_root, &change_dir, manifest)?;
     check_scenario_commits(&backend, &change_dir)?;
     let offending: Vec<String> = backend
         .dirty_entries()?
@@ -545,6 +546,52 @@ fn run_change_verification(
         result.total, head
     );
     Ok(())
+}
+
+/// Refuse an `ise`-effective change whose declared `e2e` boundary cannot be
+/// accepted, before any runner executes. A change whose locked add-on set has
+/// `ise` off reads no declaration and gains no condition.
+fn preflight_e2e_boundary(
+    project_root: &std::path::Path,
+    change_dir: &std::path::Path,
+    manifest: &crate::config::manifest::Manifest,
+) -> anyhow::Result<()> {
+    if !crate::config::lock::ise_effective_for_change(change_dir)? {
+        return Ok(());
+    }
+    let declaration = match crate::config::declaration::SpecificationDeclaration::load(project_root)
+    {
+        Ok(Some(declaration)) => declaration,
+        Ok(None) => anyhow::bail!(
+            "the declared e2e boundary cannot be resolved: '{}' is absent",
+            crate::config::declaration::DECLARATION_PATH
+        ),
+        Err(error) => anyhow::bail!("the declared e2e boundary cannot be resolved: {error}"),
+    };
+    let boundary = crate::e2e_boundary::E2eBoundary::resolve(project_root, &declaration);
+    let conditions = boundary.conditions(&manifest.verify.e2e_command);
+    if conditions.is_empty() && boundary.roots().next().is_none() {
+        anyhow::bail!(
+            "the declared e2e boundary cannot be accepted: the 'e2e' role lists no path; the \
+             change check requires a resolved E2E package"
+        );
+    }
+    for condition in conditions
+        .iter()
+        .filter(|condition| !condition.acceptance())
+    {
+        println!("  ⚠ e2e boundary: {}", condition.render());
+    }
+    let refused = conditions
+        .iter()
+        .filter(|condition| condition.acceptance())
+        .map(|condition| format!("  - {}", condition.render()))
+        .collect::<Vec<_>>()
+        .join("\n");
+    if refused.is_empty() {
+        return Ok(());
+    }
+    anyhow::bail!("the declared e2e boundary cannot be accepted:\n{refused}");
 }
 
 /// Refuse review unless a current, green change-scoped receipt exists.
