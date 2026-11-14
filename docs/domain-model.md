@@ -95,7 +95,7 @@ flowchart TB
 | Effective guidance | Givn workflow | The instruction, skill, and addon-conditional guidance a project actually receives. See [obtain-effective-guidance](../givn/specs/obtain-effective-guidance/usecase.md). |
 | Development record | Givn workflow | The local, best-effort record of agent activity and revisions. See [inspect-development-history](../givn/specs/inspect-development-history/usecase.md). |
 | Persona collection | Project record | Confirmed stakeholder review lenses survive individual changes. See [persona identity reuse](../givn/specs/fragments/fragment.md). |
-| Project configuration | Project record | Addon flags, artifact graph, and command settings resolve to one effective configuration. See [initialize-project](../givn/specs/initialize-project/usecase.md). |
+| Project configuration | Project record | Addon flags, artifact graph, and command settings resolve to one effective configuration; each addon's materialization is the filesystem effect its registry entry declares, observed separately from the flag. See [initialize-project](../givn/specs/initialize-project/usecase.md). |
 
 ## Relationships
 

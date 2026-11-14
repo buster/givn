@@ -47,4 +47,9 @@ Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.
 
+The active register gained one decision in the `addon-artifact-report`
+change: [ADR-076](adr/ADR-076-addon-materialization-declaration.md) places an
+addon's filesystem effect on its registry entry, read by both the scaffold
+routines and the `givn addons list` materialization report.
+
 *[Architecture documentation index](README.md)*
