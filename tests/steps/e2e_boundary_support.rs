@@ -254,6 +254,23 @@ pub(crate) fn ise_change_ready_for_verification(world: &mut GivnWorld) {
     commit(world);
 }
 
+/// An `ise`-effective change that declares no behavior change, explicitly skips
+/// specs, and has no `givn/specification.yaml`, so only the boundary preflight
+/// can refuse it.
+pub(crate) fn ise_change_without_behavior_change(world: &mut GivnWorld) {
+    ise_change(world);
+    let change = change_path(world);
+    std::fs::write(
+        change.join("proposal.md"),
+        "# Proposal: ise-boundary\n\nBehavior change: none\n",
+    )
+    .expect("write the no-behavior-change proposal");
+    std::fs::write(change.join(".givn-skip"), "specs\n").expect("write the specs skip");
+    std::fs::remove_file(change.join("specs/verify-change/givn-workflow-enforcement.feature"))
+        .expect("remove the delta feature");
+    commit(world);
+}
+
 /// The same ready change with the lock recording `ise: false`, so no
 /// declaration is read and no boundary preflight runs.
 pub(crate) fn change_ready_for_verification_without_ise(world: &mut GivnWorld) {

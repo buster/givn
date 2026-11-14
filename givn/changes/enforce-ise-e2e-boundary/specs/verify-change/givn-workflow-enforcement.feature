@@ -11,9 +11,20 @@ Feature: givn Workflow Enforcement
     And no change verification receipt is written
 
     Examples:
-      | state                                    | condition       |
-      | matches no project path                  | matches no path |
-      | resolves a package with a malformed manifest | cannot be read  |
+      | state                                    | condition                    |
+      | matches no project path                  | matches no path              |
+      | resolves a package with a malformed manifest | cannot be read           |
+      | lists no path                            | the 'e2e' role lists no path |
+
+  @givn.added
+  Scenario: An ise-effective change with no behavior change still needs a readable e2e declaration
+    Given an ise-effective change with no behavior change and no readable e2e declaration
+    When the developer runs `givn check tasks --change ise-boundary`
+    Then the command exits non-zero
+    And stderr names the absent e2e declaration
+    When the developer runs `givn check review --change ise-boundary`
+    Then the command exits non-zero
+    And stderr names the absent e2e declaration
 
   @givn.added
   Scenario Outline: An ise-effective change whose e2e package reaches a source package fails the tasks check
@@ -28,6 +39,7 @@ Feature: givn Workflow Enforcement
       | direct              |
       | transitive          |
       | workspace-inherited |
+      | target-specific     |
 
   @givn.added
   Scenario: An ise-effective change whose e2e path sits under a source root fails the tasks check
@@ -108,7 +120,7 @@ Feature: givn Workflow Enforcement
     When the developer runs `givn check review --change ise-boundary`
     Then the command exits non-zero
     And stderr says the change verification receipt is stale
-    And stderr names "<reason>"
+    And stderr reports the stale reason "<reason>"
 
     Examples:
       | input                          | reason                          |
@@ -125,7 +137,7 @@ Feature: givn Workflow Enforcement
     When the developer runs `givn check review --change ise-boundary`
     Then the command exits non-zero
     And stderr says the change verification receipt is stale
-    And stderr names "<reason>"
+    And stderr reports the stale reason "<reason>"
 
     Examples:
       | delta               | scope          | reason                                        |

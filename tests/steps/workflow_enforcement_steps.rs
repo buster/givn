@@ -3546,6 +3546,9 @@ fn ise_change_with_e2e_role(world: &mut GivnWorld, state: String) {
                 "[package\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n",
             );
         }
+        "lists no path" => {
+            e2e_boundary_support::declare(world, &[], &["src/**"]);
+        }
         other => panic!("unknown e2e role state '{other}'"),
     }
     e2e_boundary_support::commit(world);
@@ -3602,6 +3605,19 @@ fn ise_change_with_source_edge(world: &mut GivnWorld, edge: String) {
                 "tests/e2e/Cargo.toml",
                 "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
                  [dependencies]\ngivn_product = { workspace = true }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        "target-specific" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [target.'cfg(unix)'.dependencies]\ngivn_product = { path = \"../../src\" }\n",
             );
             e2e_boundary_support::write_manifest(
                 world,
@@ -3694,17 +3710,38 @@ fn ise_change_with_passing_e2e_over_two_packages(world: &mut GivnWorld) {
 #[then(regex = r#"^stderr names the declared e2e package and "([^"]+)"$"#)]
 fn stderr_names_declared_e2e_package(world: &mut GivnWorld, condition: String) {
     let observed = stderr(world);
-    let entry = e2e_boundary_support::state(world)
-        .declared_entry
-        .clone()
-        .expect("the fixture declares an e2e entry");
-    assert!(
-        observed.contains(&entry),
-        "stderr does not name the declared e2e entry {entry:?}:\n{observed}"
-    );
+    let declared = e2e_boundary_support::state(world).declared_entry.clone();
+    match declared {
+        Some(entry) => assert!(
+            observed.contains(&entry),
+            "stderr does not name the declared e2e entry {entry:?}:\n{observed}"
+        ),
+        None => assert!(
+            observed.contains("the 'e2e' role lists no path"),
+            "stderr does not name the empty e2e role:\n{observed}"
+        ),
+    }
     assert!(
         observed.contains(&condition),
         "stderr does not state the {condition:?} condition:\n{observed}"
+    );
+}
+
+#[given("an ise-effective change with no behavior change and no readable e2e declaration")]
+fn ise_change_without_behavior_change(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_without_behavior_change(world);
+}
+
+#[then("stderr names the absent e2e declaration")]
+fn stderr_names_absent_e2e_declaration(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    assert!(
+        observed.contains("the declared e2e boundary cannot be resolved"),
+        "stderr does not refuse the unresolvable boundary: {observed}"
+    );
+    assert!(
+        observed.contains("givn/specification.yaml") && observed.contains("is absent"),
+        "stderr does not name the absent declaration: {observed}"
     );
 }
 
@@ -4042,5 +4079,29 @@ fn stderr_says_change_receipt_stale(world: &mut GivnWorld) {
     assert!(
         observed.contains("change verification receipt is stale"),
         "stderr does not say the change verification receipt is stale: {observed}"
+    );
+}
+
+/// The delta's reason assertion. A stale reason may name its subject between
+/// two of its words (`e2e package digest for '<path>' changed`), so the words
+/// must appear in order on one line; this binding is delta-scoped so no
+/// permanent assertion is loosened.
+#[then(regex = r#"^stderr reports the stale reason "([^"]+)"$"#)]
+fn stderr_reports_stale_reason(world: &mut GivnWorld, reason: String) {
+    let observed = stderr(world);
+    let words: Vec<String> = reason.split_whitespace().map(str::to_lowercase).collect();
+    let named = observed.lines().any(|line| {
+        let mut rest = line.to_lowercase();
+        words.iter().all(|word| match rest.find(word.as_str()) {
+            Some(index) => {
+                rest = rest[index + word.len()..].to_string();
+                true
+            }
+            None => false,
+        })
+    });
+    assert!(
+        named,
+        "stderr has no line reporting the stale reason {reason:?} in order: {observed}"
     );
 }

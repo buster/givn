@@ -456,6 +456,7 @@ fn run_change_verification(
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
     preflight_readme_impact(&change_dir);
+    let boundary = preflight_e2e_boundary(project_root, &change_dir, manifest)?;
     let not_applicable = crate::proof::change_verification_not_applicable(&change_dir)?;
     let backend = crate::scm::select(project_root)?;
     if not_applicable {
@@ -466,7 +467,6 @@ fn run_change_verification(
         check_scenario_commits(&backend, &change_dir)?;
         return Ok(());
     }
-    let boundary = preflight_e2e_boundary(project_root, &change_dir, manifest)?;
     check_scenario_commits(&backend, &change_dir)?;
     let offending: Vec<String> = backend
         .dirty_entries()?
@@ -698,6 +698,9 @@ fn check_change_receipt(
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
     if crate::proof::change_verification_not_applicable(&change_dir)? {
+        // No receipt exists for a change that declares no behavior change, so
+        // the boundary preflight is the acceptance check review can make.
+        preflight_e2e_boundary(project_root, &change_dir, manifest)?;
         println!(
             "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
         );

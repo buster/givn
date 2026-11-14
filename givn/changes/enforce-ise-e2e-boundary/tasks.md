@@ -52,9 +52,10 @@ scenario. Whole-change checks are in `## Closeout`.
 | `e2e-scope` | 3 | `gvn-workflow-enforcement` |
 | `served-policy` | 3 | `prose-consolidation` |
 | `pinned-policy-replacements` | 2 | `prose-consolidation` |
-| **Total** | **18** | 13 `gvn-workflow-enforcement` + 5 `prose-consolidation` |
+| `review-closure` | 1 | `gvn-workflow-enforcement` |
+| **Total** | **19** | 14 `gvn-workflow-enforcement` + 5 `prose-consolidation` |
 
-Every scenario of `specs/verify-change/givn-workflow-enforcement.feature` (13)
+Every scenario of `specs/verify-change/givn-workflow-enforcement.feature` (14)
 and `specs/create-change/prose-consolidation.feature` (5) appears in exactly one
 batch by exact title. The delta adds no scenario the features do not contain and
 adds no `@e2e` scenario at all.
@@ -402,12 +403,14 @@ hash move touches.
     - Examples rows: `matches no project path` yields `MissingPackage` whose
       message contains `matches no path`; `resolves a package with a malformed
       manifest` yields `MalformedManifest` whose message contains
-      `cannot be read`.
+      `cannot be read`; `lists no path` declares `e2e: []` and yields the empty
+      resolution refusal, `the 'e2e' role lists no path`.
     - Fixture (`e2e_boundary_support.rs`): a temp project, `git init`, one
       committed change directory with `config-lock.yaml` recording `ise: true`,
       a `givn/specification.yaml` whose `e2e:` entry matches no path (row 1), and
       a `source:` list naming `src`. Row 2 declares `e2e: ["tests/e2e"]` and
-      writes a `tests/e2e/Cargo.toml` that is not valid TOML.
+      writes a `tests/e2e/Cargo.toml` that is not valid TOML. Row 3 declares an
+      empty `e2e:` list.
     - The Given step per row lives in
       `tests/steps/workflow_enforcement_steps.rs`; it drives
       `common::run_givn` and writes files only. It imports no givn module.
@@ -447,7 +450,8 @@ REFACTOR: extracted the condition vocabulary into src/e2e_boundary/conditions.rs
 
 - [x] Scenario: `An ise-effective change whose e2e package reaches a source package fails the tasks check`
   - Design constraints:
-    - Examples rows: `direct`, `transitive`, `workspace-inherited`.
+    - Examples rows: `direct`, `transitive`, `workspace-inherited`,
+      `target-specific`.
     - Fixture: `tests/e2e` is a Cargo package; `src` is a package under the
       declared `source:` root. Direct: `tests/e2e/Cargo.toml` names
       `givn_product = { path = "../../src" }`. Transitive: `tests/e2e` depends on
@@ -455,12 +459,14 @@ REFACTOR: extracted the condition vocabulary into src/e2e_boundary/conditions.rs
       a workspace root `Cargo.toml` declares
       `[workspace.dependencies] givn_product = { path = "src" }` and
       `tests/e2e/Cargo.toml` names `givn_product.workspace = true`.
+      Target-specific: `tests/e2e/Cargo.toml` declares the edge under
+      `[target.'cfg(unix)'.dependencies]`.
     - Then `stderr names the e2e package and the dependency edge into "source"`
       asserts the resolved package directory and a dependency-edge phrase naming
       `source` on one stderr line; `DependencyEdge` renders as
       `dependency edge into 'source'` with the edge kind.
     - Then `no change verification receipt is written` as above.
-  - [x] Implement the scenario and its tests. Run all three Examples rows.
+  - [x] Implement the scenario and its tests. Run all four Examples rows.
         Files: `src/e2e_boundary/mod.rs` (edge traversal),
         `src/e2e_boundary/manifest.rs` (workspace-inherited resolution).
         Evidence:
@@ -1298,9 +1304,58 @@ exit 0.
 
 ---
 
+### Batch 8: `review-closure`
+
+The review found that the boundary preflight ran after the no-behavior-change
+return, so an `ise`-effective change could skip the acceptance boundary by
+declaring no behavior change. The preflight now runs before that return in both
+the tasks check and the review receipt check. This batch adds the one delta
+scenario that pins the order; the fix itself also restores the shared
+`stderr names` assertion and adds the unit tests recorded in `review.md`
+`## Finding closure`.
+
+**Files modified:** `src/cli/check.rs` (preflight order in
+`run_change_verification`; preflight in the not-applicable branch of
+`check_change_receipt`), `tests/steps/e2e_boundary_support.rs`,
+`tests/steps/workflow_enforcement_steps.rs`,
+`givn/changes/enforce-ise-e2e-boundary/specs/verify-change/givn-workflow-enforcement.feature`,
+`docs/reference.md`.
+
+**Design constraints (batch-wide):**
+- `design.md:399-403`: the boundary preflight runs before the
+  no-behavior-change return, so an `ise`-effective change always needs a
+  readable declaration and a non-empty resolved set.
+- The not-applicable branch writes no receipt, so the preflight is the only
+  boundary evidence review can require there; an applicable change keeps its
+  receipt freshness reasons, including `the E2E identity cannot be read`.
+- The refusal names the declaration path and the reason; no receipt is written.
+
+- [ ] Scenario: `An ise-effective change with no behavior change still needs a readable e2e declaration`
+  - Design constraints:
+    - Fixture: the `ise-boundary` change with `ise: true` in its lock, a
+      proposal whose `Behavior change:` entry is `none`, `.givn-skip` naming
+      `specs`, the delta feature removed, and no `givn/specification.yaml`.
+    - Then `stderr names the absent e2e declaration` asserts the boundary
+      refusal, the declaration path, and `is absent`.
+    - Both commands are driven: `givn check tasks` and `givn check review`;
+      each must exit nonzero for the same absent declaration.
+  - [ ] Implement the scenario and its tests (test-first per `design.md`).
+        Files: `src/cli/check.rs`, `tests/steps/e2e_boundary_support.rs`,
+        `tests/steps/workflow_enforcement_steps.rs`. Evidence:
+        ```
+        <!-- observed failure, then GREEN -->
+        ```
+  - [ ] REFACTOR: clean up, no behaviour change. Re-run the scenario.
+        ```
+        <!-- REFACTOR evidence -->
+        ```
+  - [ ] COMMIT: `<hash>` -- Batch: `review-closure`
+
+---
+
 ## Delta end-to-end scope
 
-The delta adds no end-to-end scenario: 0 of the 18 delta scenarios carry the
+The delta adds no end-to-end scenario: 0 of the 19 delta scenarios carry the
 `@e2e` tag, and the boundary refusals, receipt inspections, and served-policy
 cases are variants of actions whose end-to-end scenarios already exist
 permanently (see `## Interaction coverage pre-flight`). Consequences, recorded
@@ -1315,7 +1370,7 @@ once here:
 - **Both executions still run.** `./run-tests.sh --e2e` must exit 0 on the
   permanent scope and on the delta scope (`GIVN_FEATURES=givn/changes/enforce-ise-e2e-boundary/specs`),
   proving the change removed no end-to-end coverage; the delta end-to-end count
-  is 0 of 18.
+  is 0 of 19.
 - **Strict mode is unchanged.** The `.fail_on_skipped()` proof from `## Setup`
   covers both scopes; the delta needs no second probe.
 

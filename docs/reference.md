@@ -150,6 +150,9 @@ workspace-inherited edges. The manifest read covers the top-level, dev, build, a
 every target-specific dependency table; an edge is refused when its package
 directory is a `source:` root, lies inside one, or contains a path that root
 names, so a glob such as `src/**/*.rs` reaches the package at `src`. The check
+resolves the boundary before the no-behavior-change result, so an `ise`-effective
+change always needs a readable declaration and a non-empty resolved set; `givn
+check review` makes the same check for a change that writes no receipt. The check
 refuses, names the condition, and writes no receipt when the role matches no
 path, when a resolved package's manifest cannot be read, when a resolved `e2e`
 path sits under a `source:` root, when a resolved
