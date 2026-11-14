@@ -23,9 +23,12 @@ pub(super) fn nearest_manifest(
     None
 }
 
-/// A package manifest read statically, without invoking `cargo`.
+/// A package manifest read statically, without invoking `cargo`. A virtual
+/// workspace root carries no `[package]` and is still read, because a member's
+/// `workspace = true` dependency resolves through it.
 pub(super) struct CargoPackage {
-    pub(super) name: String,
+    /// `[package].name`; `None` for a virtual workspace root.
+    name: Option<String>,
     dependencies: Vec<Dependency>,
     workspace_dependencies: std::collections::BTreeMap<String, String>,
     has_workspace: bool,
@@ -45,7 +48,15 @@ impl CargoPackage {
     pub(super) fn read(dir: &str, manifest: &std::path::Path) -> Option<Self> {
         let content = std::fs::read_to_string(manifest).ok()?;
         let document: toml::Value = toml::from_str(&content).ok()?;
-        let name = document.get("package")?.get("name")?.as_str()?.to_string();
+        let name = document
+            .get("package")
+            .and_then(|package| package.get("name"))
+            .and_then(toml::Value::as_str)
+            .map(str::to_string);
+        let has_workspace = document.get("workspace").is_some();
+        if name.is_none() && !has_workspace {
+            return None;
+        }
         let mut dependencies = Vec::new();
         for table in ["dependencies", "dev-dependencies", "build-dependencies"] {
             let Some(entries) = document.get(table).and_then(toml::Value::as_table) else {
@@ -82,7 +93,19 @@ impl CargoPackage {
             name,
             dependencies,
             workspace_dependencies,
-            has_workspace: document.get("workspace").is_some(),
+            has_workspace,
+        })
+    }
+
+    /// The package name for a finding. A virtual workspace root has no
+    /// `[package]`, so its manifest directory names it.
+    pub(super) fn label(&self, dir: &str) -> String {
+        self.name.clone().unwrap_or_else(|| {
+            if dir.is_empty() {
+                ".".to_string()
+            } else {
+                dir.to_string()
+            }
         })
     }
 }
@@ -159,4 +182,76 @@ fn workspace_root<'a>(
 pub(super) fn parent_directory(path: &str) -> String {
     path.rsplit_once('/')
         .map_or(String::new(), |(parent, _)| parent.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    fn write(root: &std::path::Path, relative: &str, content: &str) {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().expect("a parent directory")).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+
+    /// Read the named manifest directories into the package map keyed by their
+    /// project-relative directory.
+    fn packages(root: &std::path::Path, directories: &[&str]) -> BTreeMap<String, CargoPackage> {
+        directories
+            .iter()
+            .map(|directory| {
+                let manifest = if directory.is_empty() {
+                    root.join("Cargo.toml")
+                } else {
+                    root.join(directory).join("Cargo.toml")
+                };
+                (
+                    (*directory).to_string(),
+                    CargoPackage::read(directory, &manifest).expect("a readable manifest"),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_virtual_root_is_read_and_a_workspace_dependency_resolves_through_it() {
+        let root = tempfile::tempdir().unwrap();
+        write(
+            root.path(),
+            "Cargo.toml",
+            "[workspace]\nmembers = [\"crates/app\", \"e2e\"]\n\n\
+             [workspace.dependencies]\napp = { path = \"crates/app\" }\n",
+        );
+        write(
+            root.path(),
+            "crates/app/Cargo.toml",
+            "[package]\nname = \"app\"\nversion = \"0.1.0\"\n",
+        );
+        write(
+            root.path(),
+            "e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [dependencies]\napp = { workspace = true }\n",
+        );
+
+        let packages = packages(root.path(), &["", "crates/app", "e2e"]);
+        assert_eq!(packages[""].label(""), ".");
+        assert_eq!(packages["e2e"].label("e2e"), "e2e-tests");
+
+        let edges = dependency_edges(&packages);
+        assert_eq!(edges["e2e"], vec!["crates/app".to_string()]);
+        assert!(edges["crates/app"].is_empty());
+    }
+
+    #[test]
+    fn a_manifest_with_neither_a_package_nor_a_workspace_is_skipped() {
+        let root = tempfile::tempdir().unwrap();
+        write(
+            root.path(),
+            "Cargo.toml",
+            "[dependencies]\napp = { path = \"app\" }\n",
+        );
+        assert!(CargoPackage::read("", &root.path().join("Cargo.toml")).is_none());
+    }
 }

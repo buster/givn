@@ -213,8 +213,9 @@ fn specification_findings(
             match nearest_manifest(&manifest_directories, &candidate) {
                 Some(directory) => {
                     // A manifest that exists but does not parse (malformed, or
-                    // carrying no [package]) skips the edge comparison for that
-                    // package; no finding is invented for it.
+                    // declaring neither a package nor a workspace) skips the
+                    // edge comparison for that directory; no finding is
+                    // invented for it.
                     if packages.contains_key(&directory) {
                         resolved.insert(directory);
                     }
@@ -247,7 +248,7 @@ fn specification_findings(
                     start,
                     format!(
                         "e2e package '{}' sits under a source root ('{pattern}')",
-                        package.name
+                        package.label(start)
                     ),
                 ));
             }
@@ -281,7 +282,8 @@ fn specification_findings(
                         format!(
                             "e2e package '{}' has a {edge} into source (root '{pattern}') through \
                              package '{}'",
-                            package.name, packages[target].name
+                            package.label(start),
+                            packages[target].label(target)
                         ),
                     ));
                 }
@@ -372,16 +374,24 @@ struct Glob {
 }
 
 impl Glob {
+    /// Compile a declared pattern. `.` and repeated separators disappear and an
+    /// inner `..` cancels the segment before it, so a pattern accepted by the
+    /// declaration loader matches the path it spells.
     fn compile(pattern: &str) -> Self {
-        let segments = std::path::Path::new(pattern)
-            .components()
-            .filter_map(|component| match component {
+        let mut segments: Vec<String> = Vec::new();
+        for component in std::path::Path::new(pattern).components() {
+            match component {
                 std::path::Component::Normal(segment) => {
-                    Some(segment.to_string_lossy().into_owned())
+                    segments.push(segment.to_string_lossy().into_owned())
                 }
-                _ => None,
-            })
-            .collect();
+                std::path::Component::ParentDir => {
+                    segments.pop();
+                }
+                std::path::Component::CurDir
+                | std::path::Component::RootDir
+                | std::path::Component::Prefix(_) => {}
+            }
+        }
         Glob { segments }
     }
 
@@ -441,5 +451,142 @@ fn segment_matches(pattern: &str, text: &str) -> bool {
                     &text[character.len_utf8()..],
                 )
         }),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn write(root: &std::path::Path, relative: &str, content: &str) {
+        let path = root.join(relative);
+        std::fs::create_dir_all(path.parent().expect("a parent directory")).unwrap();
+        std::fs::write(path, content).unwrap();
+    }
+
+    /// The six-key declaration with three lists this module's findings read.
+    fn declaration(behavior: &[&str], e2e: &[&str], source: &[&str]) -> String {
+        let list = |paths: &[&str]| {
+            paths
+                .iter()
+                .map(|path| format!("\"{path}\""))
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        format!(
+            "behavior: [{}]\nstructure: []\ncontracts: []\nlimits: []\ne2e: [{}]\nsource: [{}]\n",
+            list(behavior),
+            list(e2e),
+            list(source)
+        )
+    }
+
+    fn findings(root: &std::path::Path) -> Vec<Finding> {
+        let declaration = SpecificationDeclaration::load(root)
+            .expect("a readable declaration")
+            .expect("a declaration");
+        specification_findings(root, &declaration)
+    }
+
+    fn reports(found: &[Finding], title: &str) -> bool {
+        found
+            .iter()
+            .any(|finding| finding.titles.iter().any(|candidate| candidate == title))
+    }
+
+    #[test]
+    fn a_star_matches_within_one_segment() {
+        let glob = Glob::compile("givn/specs/*.feature");
+        assert!(glob.matches("givn/specs/a.feature"));
+        assert!(!glob.matches("givn/specs/nested/a.feature"));
+    }
+
+    #[test]
+    fn a_question_mark_matches_one_character() {
+        let glob = Glob::compile("src/?.rs");
+        assert!(glob.matches("src/a.rs"));
+        assert!(!glob.matches("src/ab.rs"));
+        assert!(!glob.matches("src/.rs"));
+    }
+
+    #[test]
+    fn wildcards_count_a_multi_byte_character_once() {
+        assert!(Glob::compile("src/?.rs").matches("src/é.rs"));
+        assert!(Glob::compile("sp*/x").matches("spéc/x"));
+        assert!(!Glob::compile("src/??.rs").matches("src/é.rs"));
+    }
+
+    #[test]
+    fn an_inner_parent_segment_compiles_to_the_same_pattern() {
+        let glob = Glob::compile("docs/../docs/glossary.md");
+        assert!(glob.matches("docs/glossary.md"));
+        assert!(!glob.matches("docs/../docs/glossary.md"));
+    }
+
+    #[test]
+    fn an_e2e_package_under_a_source_root_is_reported() {
+        let root = tempfile::tempdir().unwrap();
+        write(
+            root.path(),
+            "Cargo.toml",
+            "[package]\nname = \"app\"\nversion = \"0.1.0\"\n",
+        );
+        write(
+            root.path(),
+            "src/e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [dependencies]\napp = { path = \"../..\" }\n",
+        );
+        write(
+            root.path(),
+            "givn/specification.yaml",
+            &declaration(&[], &["src/e2e"], &["src/**"]),
+        );
+
+        let found = findings(root.path());
+        assert!(
+            reports(
+                &found,
+                "e2e package 'e2e-tests' sits under a source root ('src/**')"
+            ),
+            "{found:#?}"
+        );
+    }
+
+    #[test]
+    fn a_workspace_inherited_dependency_is_reported_as_an_e2e_edge() {
+        let root = tempfile::tempdir().unwrap();
+        write(
+            root.path(),
+            "Cargo.toml",
+            "[workspace]\nmembers = [\"crates/app\", \"tests/e2e\"]\n\n\
+             [workspace.dependencies]\napp = { path = \"crates/app\" }\n",
+        );
+        write(
+            root.path(),
+            "crates/app/Cargo.toml",
+            "[package]\nname = \"app\"\nversion = \"0.1.0\"\n",
+        );
+        write(
+            root.path(),
+            "tests/e2e/Cargo.toml",
+            "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+             [dependencies]\napp = { workspace = true }\n",
+        );
+        write(
+            root.path(),
+            "givn/specification.yaml",
+            &declaration(&[], &["tests/e2e"], &["crates/**"]),
+        );
+
+        let found = findings(root.path());
+        assert!(
+            reports(
+                &found,
+                "e2e package 'e2e-tests' has a dependency edge into source (root 'crates/**') \
+                 through package 'app'"
+            ),
+            "{found:#?}"
+        );
     }
 }
