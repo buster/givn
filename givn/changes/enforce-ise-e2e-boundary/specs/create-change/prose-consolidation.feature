@@ -19,7 +19,7 @@ Feature: prose-consolidation
     And the E2E execution runs the declared e2e package which links no production source
     And required executions and zero failed or skipped tests remain required without an extra isolation run
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy names the declared e2e package as the E2E target
     Given a Givn project with ise effective
     When the author reads the canonical E2E guidance
@@ -28,7 +28,7 @@ Feature: prose-consolidation
     And the policy states that an unbound or skipped step fails the E2E run
     And the policy states that feature files stay shared
 
-  @givn.added @wip
+  @givn.added
   Scenario: Served ise guidance keeps component scenarios in the Specification
     Given a Givn project with ise effective
     When the author reads the served ise guidance
@@ -36,7 +36,7 @@ Feature: prose-consolidation
     And the guidance states that only their step definitions and fakes are implementation
     And the guidance keeps the two-layer test boundary
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy keeps the in-process allowance while ise is off
     Given a Givn project with ise off whose product is a library without a service or browser
     When the author reads the canonical E2E guidance

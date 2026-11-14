@@ -451,6 +451,37 @@ fn loaded_guidance(world: &GivnWorld) -> String {
     content.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// An initialized project with `ise` effective. Enabling the addon scaffolds
+/// `givn/specification.yaml` and switches the served `{{#if addons.ise}}`
+/// branches on.
+fn ise_effective_project() -> common::TestEnv {
+    let env = common::make_init_root();
+    let output = common::run_givn(&env, &["addons", "enable", "ise"]);
+    assert!(
+        output.status.success(),
+        "givn addons enable ise failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    env
+}
+
+/// Serve an instruction in the fixture and normalize it for substring
+/// assertions. Manifest artifact ids need a change context;
+/// `request_change_guidance` creates `guidance-amendments` when the fixture has
+/// none.
+fn normalized_served(env: &common::TestEnv, id: &str) -> String {
+    let output = crate::steps::serve_extended_rules_steps::request_change_guidance(env, id);
+    assert!(
+        output.status.success(),
+        "givn instructions {id} failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout)
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 #[given("a project whose product is a library without a service or browser")]
 fn project_with_library_product(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
@@ -487,17 +518,16 @@ fn policy_requires_no_artificial_infrastructure(world: &mut GivnWorld) {
 
 #[given("regular and E2E verification share one runner command")]
 fn shared_verification_runner(world: &mut GivnWorld) {
-    let combined = [
-        "assets/instructions/specs.md",
-        "assets/instructions/design.md",
-        "assets/instructions/tasks.md",
-        "assets/instructions/review.md",
-    ]
-    .iter()
-    .map(|relative| normalized_asset(relative))
-    .collect::<Vec<_>>()
-    .join("\n");
+    // The amended policy is conditional on `ise`; read it rendered, never from
+    // the raw asset, so an `ise`-off render cannot satisfy the added sentence.
+    let env = ise_effective_project();
+    let combined = ["specs", "design", "tasks", "review"]
+        .iter()
+        .map(|id| normalized_served(&env, id))
+        .collect::<Vec<_>>()
+        .join("\n");
     world.additional_output = Some(combined);
+    world.env = Some(env);
 }
 
 #[when("the author reads the canonical verification guidance")]
@@ -539,6 +569,145 @@ fn required_executions_remain_without_extra_run(world: &mut GivnWorld) {
             || content.contains("without an extra isolation run")
             || content.contains("without adding an extra isolation run"),
         "verification guidance adds an isolation run"
+    );
+}
+
+// --- enforce-ise-e2e-boundary: ise-effective canonical guidance ------------
+
+#[given("a Givn project with ise effective")]
+fn project_with_ise_effective(world: &mut GivnWorld) {
+    let env = ise_effective_project();
+    world.additional_output = Some(normalized_served(&env, "specs"));
+    world.env = Some(env);
+}
+
+#[given(
+    "a Givn project with ise effective whose product is a library without a service or browser"
+)]
+fn ise_effective_library_project(world: &mut GivnWorld) {
+    let env = ise_effective_project();
+    world.additional_output = Some(normalized_served(&env, "specs"));
+    world.env = Some(env);
+}
+
+#[given("a Givn project with ise off whose product is a library without a service or browser")]
+fn ise_off_library_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let served = normalized_served(&env, "specs");
+    assert!(
+        !served.contains("only from the declared"),
+        "an ise-off project reads the declared-package restriction: {served}"
+    );
+    world.additional_output = Some(served);
+    world.env = Some(env);
+}
+
+#[when("the author reads the served ise guidance")]
+fn author_reads_served_ise_guidance(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a Givn project is required first");
+    world.additional_output = Some(normalized_served(env, "ise"));
+}
+
+#[then(
+    "the policy states that the declared e2e package holds the E2E runner and every E2E step definition"
+)]
+fn policy_package_holds_runner_and_step_definitions(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("holds the E2E runner and every `@e2e` step definition"),
+        "the served policy does not place the runner and the step definitions in the declared package: {content}"
+    );
+}
+
+#[then("the policy states that the package links no production source")]
+fn policy_package_links_no_production_source(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("The package links no production source"),
+        "the served policy does not state that the declared package links no production source: {content}"
+    );
+}
+
+#[then("the policy states that an unbound or skipped step fails the E2E run")]
+fn policy_unbound_or_skipped_step_fails(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("An unbound or skipped step fails the E2E run"),
+        "the served policy does not fail an unbound or skipped E2E step: {content}"
+    );
+}
+
+#[then("the policy states that feature files stay shared")]
+fn policy_feature_files_stay_shared(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("Feature files stay shared"),
+        "the served policy does not keep feature files shared across the package boundary: {content}"
+    );
+}
+
+#[then("the guidance states that component scenarios stay in the Specification unchanged")]
+fn guidance_component_scenarios_stay_in_specification(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("Component scenarios stay in the Specification unchanged"),
+        "the served ise guidance does not keep component scenarios in the Specification: {content}"
+    );
+}
+
+#[then("the guidance states that only their step definitions and fakes are implementation")]
+fn guidance_only_step_definitions_and_fakes_are_implementation(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("only their step definitions and fakes are implementation"),
+        "the served ise guidance does not scope implementation to step definitions and fakes: {content}"
+    );
+}
+
+#[then("the guidance keeps the two-layer test boundary")]
+fn guidance_keeps_two_layer_test_boundary(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("two-layer test boundary"),
+        "the served ise guidance drops the two-layer test boundary: {content}"
+    );
+}
+
+#[then(
+    "consumer calls to the public library API may run in process only from the declared e2e package as real-interface evidence"
+)]
+fn library_calls_run_in_process_only_from_declared_package(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("public library API"),
+        "E2E guidance does not accept a public library API: {content}"
+    );
+    assert!(
+        content.contains("may run in process only from the declared `e2e` package"),
+        "E2E guidance does not scope in-process library calls to the declared package: {content}"
+    );
+}
+
+#[then("a call that needs production source becomes a component scenario")]
+fn production_source_call_becomes_component_scenario(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("a call that needs production source becomes a component scenario"),
+        "E2E guidance keeps a production-source call in the declared package: {content}"
+    );
+}
+
+#[then("the E2E execution runs the declared e2e package which links no production source")]
+fn e2e_execution_runs_declared_package(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains(
+            "The E2E execution runs the declared `e2e` package, which links no production source"
+        ),
+        "verification guidance accepts a shared runner that links production source: {content}"
     );
 }
 
