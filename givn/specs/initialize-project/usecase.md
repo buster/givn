@@ -103,6 +103,7 @@ The project has the selected discoverable thin skills, one managed dialog bootst
 | initialize-a-project | initialize with an explicit noninteractive target selection (SCM backend and no-SCM are precondition variants) | Consumer runs init non-interactively and gets opencode skills |
 | initialize-a-project | resynchronize selected targets | Consumer re-syncs skills after init and the selection is honoured |
 | enable-optional-addons | enable the outline addon | Consumer enables the outline addon and it is listed as enabled |
+| enable-optional-addons | list addons with their materialized files | Consumer lists addons and sees each addon's materialized files reported |
 
 ## Includes
 

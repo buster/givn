@@ -60,6 +60,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-073](ADR-073-development-record-ownership.md) | accepted | Own the development record and report harness activity through one intake interface | record-ownership and intake-contract boundary |
 | [ADR-074](ADR-074-neutral-source-analyzer-port.md) | accepted | Analyze source code behind a neutral `SourceAnalyzer` port with a `syn` adapter | dependency-direction and engine-replacement boundary |
 | [ADR-075](ADR-075-projected-interaction-integrity.md) | accepted | Enforce the projected interaction inventory before accepting a change | pre-mutation gate boundary; component split and dependency direction |
+| [ADR-076](ADR-076-addon-materialization-declaration.md) | accepted | Declare each addon's materialization on its registry entry | ownership boundary between the registry and its consumers; compile-time exhaustiveness |
 
 ## Relationships
 

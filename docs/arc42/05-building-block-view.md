@@ -60,7 +60,7 @@ flowchart TD
 | `cli::commit` | Reject an empty or unsafe explicit path selection, select the backend, stamp optional attribution, and create one revision with exactly the selected paths. |
 | `cli::readme` | Scaffold the README from the marked template with development and run managed blocks; run the deterministic completeness check; parse and refresh unique ordered managed marker pairs while preserving surrounding bytes. |
 | `config::lock` | Record the effective add-on values when a change starts, compare them at review/archive, and record an operator override. A missing lock means an older change and is skipped. |
-| `cli::addons` | Toggle addon flags from an all-enabled registry; scaffold fixed `docs/arc42/` files plus the standalone `docs/glossary.md` and `docs/domain-model.md` without overwriting existing files; report effective defaults. |
+| `cli::addons` | Toggle addon flags from an all-enabled registry; each registry entry declares its addon materialization (scaffolded paths, a managed block, and the generated skill name); scaffold fixed `docs/arc42/` files plus the standalone `docs/glossary.md` and `docs/domain-model.md` without overwriting existing files; report effective defaults together with the observed materialization state and one literal suggestion per difference, writing nothing. |
 | `cli::skills` | `sync` regenerates selected skills, integrations, `AGENTS.md` blocks, and ignore state, then reconciles old commands and disabled addon skills; `targets add` edits only the targets line and syncs. |
 | `cli::agents_block` | Append/replace/remove one named fenced block in `AGENTS.md` while preserving all surrounding content. |
 | `cli::project_hint` | Keep the unconditional `givn-project` block current. |
