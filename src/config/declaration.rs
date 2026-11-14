@@ -176,7 +176,7 @@ impl SpecificationDeclaration {
             serde_yaml_ng::from_str(content).map_err(|error| DeclarationError::Malformed {
                 reason: error.to_string(),
             })?;
-        let declaration = SpecificationDeclaration {
+        let mut declaration = SpecificationDeclaration {
             behavior: document.behavior,
             structure: document.structure,
             contracts: document.contracts,
@@ -184,15 +184,24 @@ impl SpecificationDeclaration {
             e2e: document.e2e,
             source: document.source,
         };
-        declaration.validate_paths()?;
+        declaration.normalize_paths()?;
         Ok(declaration)
     }
 
-    fn validate_paths(&self) -> Result<(), DeclarationError> {
-        for (_, paths) in self.roles() {
-            validate_role_paths(paths)?;
+    /// Store every declared value lexically normalized, so a reader that
+    /// matches paths sees one spelling per path.
+    fn normalize_paths(&mut self) -> Result<(), DeclarationError> {
+        for paths in [
+            &mut self.behavior,
+            &mut self.structure,
+            &mut self.contracts,
+            &mut self.limits,
+            &mut self.e2e,
+            &mut self.source,
+        ] {
+            normalize_role_paths(paths)?;
         }
-        validate_role_paths(&self.source)
+        Ok(())
     }
 }
 
@@ -244,31 +253,38 @@ fn is_key(candidate: &str) -> bool {
     characters.all(|character| character.is_ascii_alphanumeric() || character == '_')
 }
 
-fn validate_role_paths(paths: &[String]) -> Result<(), DeclarationError> {
-    for path in paths {
-        if !is_project_relative(path) {
-            return Err(DeclarationError::OutsideProject { path: path.clone() });
+fn normalize_role_paths(paths: &mut [String]) -> Result<(), DeclarationError> {
+    for path in paths.iter_mut() {
+        match normalize_project_path(path) {
+            Some(normalized) => *path = normalized,
+            None => {
+                return Err(DeclarationError::OutsideProject { path: path.clone() });
+            }
         }
     }
     Ok(())
 }
 
-/// Whether every declared value stays inside the project: non-empty, not
-/// absolute (POSIX or Windows drive), and no `..` above the project root.
-fn is_project_relative(value: &str) -> bool {
+/// Resolve a declared value to a project-relative path: `.` and repeated
+/// separators disappear, an inner `..` cancels the segment before it, and a
+/// value that is empty, absolute (POSIX or Windows drive), or escapes the
+/// project root is refused.
+fn normalize_project_path(value: &str) -> Option<String> {
     if value.is_empty() || value.starts_with('/') || has_windows_prefix(value) {
-        return false;
+        return None;
     }
-    let mut depth = 0usize;
+    let mut segments: Vec<&str> = Vec::new();
     for component in Path::new(value).components() {
         match component {
-            Component::Normal(_) => depth += 1,
-            Component::ParentDir if depth > 0 => depth -= 1,
-            Component::ParentDir | Component::RootDir | Component::Prefix(_) => return false,
+            Component::Normal(segment) => segments.push(segment.to_str()?),
+            Component::ParentDir => {
+                segments.pop()?;
+            }
             Component::CurDir => {}
+            Component::RootDir | Component::Prefix(_) => return None,
         }
     }
-    true
+    Some(segments.join("/"))
 }
 
 fn has_windows_prefix(value: &str) -> bool {
@@ -315,7 +331,7 @@ mod tests {
     }
 
     #[test]
-    fn a_value_that_escapes_the_project_is_refused() {
+    fn a_value_that_escapes_the_project_is_refused_by_name() {
         for escape in ["../other/crates/**", "/opt/specs/**", "C:/specs/**", ""] {
             let mut lines: Vec<String> = valid()
                 .iter()
@@ -324,18 +340,40 @@ mod tests {
             lines[5] = format!("source: [\"{escape}\"]");
             let error = SpecificationDeclaration::parse(&lines.join("\n"))
                 .expect_err("an outside-project value is refused");
-            assert!(
-                matches!(error, DeclarationError::OutsideProject { .. }),
-                "{escape} produced {error}"
-            );
+            match error {
+                DeclarationError::OutsideProject { path } => assert_eq!(path, escape),
+                other => panic!("{escape} produced {other}"),
+            }
         }
     }
 
     #[test]
-    fn a_relative_value_with_inner_parent_segments_stays_inside() {
-        assert!(is_project_relative("src/../src/lib.rs"));
-        assert!(is_project_relative("givn/specs/**"));
-        assert!(!is_project_relative("src/../../outside"));
+    fn a_declared_path_is_normalized_lexically() {
+        assert_eq!(
+            normalize_project_path("docs/../docs/glossary.md").as_deref(),
+            Some("docs/glossary.md")
+        );
+        assert_eq!(
+            normalize_project_path("./src/lib.rs").as_deref(),
+            Some("src/lib.rs")
+        );
+        assert_eq!(
+            normalize_project_path("src//lib.rs").as_deref(),
+            Some("src/lib.rs")
+        );
+        assert_eq!(normalize_project_path("src/../../outside"), None);
+    }
+
+    #[test]
+    fn the_loader_stores_the_normalized_path() {
+        let mut entries = valid();
+        entries[1] = ("structure", r#"["docs/../docs/glossary.md"]"#);
+        let declaration = SpecificationDeclaration::parse(&declaration(&entries))
+            .expect("an inner parent segment stays inside the project");
+        assert_eq!(
+            declaration.roles()[1].1,
+            vec!["docs/glossary.md".to_string()]
+        );
     }
 
     #[test]
