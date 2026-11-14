@@ -148,7 +148,7 @@ contract, one component; no second role list exists anywhere.
 | cucumber-rs | 0.23 (locked in `Cargo.lock`) | Existing test runner; unchanged |
 | cargo-nextest | locked by `run-tests.sh` default | Existing runner; unchanged |
 
-No glob crate: `src/config/declaration.rs` implements a 60-line matcher for
+No glob crate: `src/cli/lint/specification.rs` implements a 60-line matcher for
 `*`, `**`, `?`, and literal segments plus one bounded project walker. Adding a
 second walker dependency for one advisory finding is not justified.
 

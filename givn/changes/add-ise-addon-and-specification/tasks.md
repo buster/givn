@@ -970,6 +970,18 @@ doc comment (exit precedence),
 **Batch verification:** the twelve single-scenario commands below.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: specification-health'`.
 
+**Batch REFACTOR (2026-11-14):** `src/cli/lint.rs` became the module directory
+`src/cli/lint/` with behavior unchanged: `mod.rs` (entry, dispatch, scopes,
+severity, rendering), `specification.rs` (health pass, four advisory findings,
+bounded walker, glob matcher), `manifest.rs` (Cargo manifest reader, dependency
+edges, project-relative path helpers), `hygiene.rs` (seed-status and
+persona-reference advisories). The first extraction left `mod.rs` at 577 code
+lines, so the hygiene findings and the manifest cluster moved out along their
+finding boundaries. Outline: `mod.rs` 369, `specification.rs` 385,
+`manifest.rs` 139, `hygiene.rs` 211 code lines. Evidence:
+`check-specification-health` 12 scenarios (12 passed), 63 steps (63 passed);
+`./run-tests.sh --non-e2e` 923 passed, 106 skipped.
+
 - [x] Scenario: `An absent declaration is reported by name and no advisory finding is computed`
   - Design constraints:
     - Fixture: `ise`-enabled project selecting opencode with
