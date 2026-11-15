@@ -141,6 +141,15 @@ impl Glob {
     }
 }
 
+/// Whether the pattern matches the path or any ancestor directory of it. A
+/// retained entry that names a directory covers every file beneath it.
+pub(crate) fn glob_matches_path_or_parent(glob: &Glob, path: &str) -> bool {
+    glob.matches(path)
+        || path
+            .match_indices('/')
+            .any(|(index, _)| glob.matches(&path[..index]))
+}
+
 /// Whether one path segment matches one pattern segment. Wildcards consume
 /// whole characters, so a multi-byte character counts as one `?`.
 fn segment_matches(pattern: &str, text: &str) -> bool {

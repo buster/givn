@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 use anyhow::{Result, bail};
 
 use crate::config::declaration::{Role, SpecificationDeclaration, normalize_project_path};
-use crate::e2e_boundary::Glob;
+use crate::e2e_boundary::{Glob, glob_matches_path_or_parent};
 use crate::scm::RevisionEntry;
 
 use super::{Counts, ReplaceRequest};
@@ -270,13 +270,6 @@ fn path_or_parent_matches(globs: &[Glob], path: &str) -> bool {
     globs
         .iter()
         .any(|glob| glob_matches_path_or_parent(glob, path))
-}
-
-fn glob_matches_path_or_parent(glob: &Glob, path: &str) -> bool {
-    glob.matches(path)
-        || path
-            .match_indices('/')
-            .any(|(index, _)| glob.matches(&path[..index]))
 }
 
 /// The direct tracked files in the replaced files' parent directories that

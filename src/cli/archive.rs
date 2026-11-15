@@ -132,6 +132,10 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     if fresh {
         ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
         ensure_change_receipt(&backend, &manifest, &project_root, &change_dir, change)?;
+        // A declared retained path must survive the move. The declaration is
+        // read through the one strict loader and only while `ise` is
+        // effective; nothing is written before this refusal.
+        ensure_declared_paths_survive_archive(&project_root, &backend, &manifest, change)?;
         println!(
             "[{}] Archiving change '{change}'...",
             crate::subprocess::local_timestamp()
@@ -1394,6 +1398,193 @@ fn ensure_change_receipt(
     Ok(())
 }
 
+/// The largest number of isolated retained paths the refusal lists before it
+/// counts the remainder.
+const MAX_REPORTED_RETAINED_PATHS: usize = 20;
+
+/// One declared retained entry the archive move would isolate.
+struct RetainedPathOffender {
+    role: &'static str,
+    entry: String,
+    moved_path: String,
+    advice: Option<String>,
+}
+
+/// Refuse a fresh archive while `ise` is effective and a declared retained
+/// path would be isolated by the move (design.md "Guard Algorithm").
+///
+/// The declaration is project-owned: it is read through the one strict loader
+/// and never written. An entry survives when it matches a content path outside
+/// `givn/changes/<id>/` or the `givn/archive/<id>/` form of one inside it. A
+/// project with `ise` off reads no declaration.
+fn ensure_declared_paths_survive_archive(
+    project_root: &Path,
+    backend: &crate::scm::Backend,
+    manifest: &crate::config::manifest::Manifest,
+    change: &str,
+) -> Result<()> {
+    if !crate::config::declaration::SpecificationDeclaration::is_effective(manifest) {
+        return Ok(());
+    }
+    let declaration = match crate::config::declaration::SpecificationDeclaration::load(project_root)
+    {
+        Ok(Some(declaration)) => declaration,
+        Ok(None) => return Ok(()),
+        Err(error) => {
+            bail!("archive blocked: the declared retained paths cannot be read: {error}")
+        }
+    };
+    let mut content_paths: Vec<String> = backend
+        .content_paths()?
+        .iter()
+        .map(|entry| entry.path.to_string_lossy().replace('\\', "/"))
+        .collect();
+    content_paths.sort();
+    let offenders = declared_retained_path_offenders(&declaration, change, &content_paths);
+    if offenders.is_empty() {
+        return Ok(());
+    }
+    bail!("{}", retained_path_refusal(&offenders, change))
+}
+
+/// The declared retained entries the move isolates, ordered by role
+/// declaration order then entry text.
+fn declared_retained_path_offenders(
+    declaration: &crate::config::declaration::SpecificationDeclaration,
+    change: &str,
+    content_paths: &[String],
+) -> Vec<RetainedPathOffender> {
+    let (moved, surviving) = partition_content_paths(change, content_paths);
+    let archived: Vec<String> = moved
+        .iter()
+        .map(|path| archived_counterpart(path, change))
+        .collect();
+    let mut offenders: Vec<(usize, RetainedPathOffender)> = Vec::new();
+    for (role_order, (role, patterns)) in declaration.roles().into_iter().enumerate() {
+        for entry in patterns {
+            let glob = crate::e2e_boundary::Glob::compile(entry);
+            let Some(first_matched) = moved
+                .iter()
+                .find(|path| crate::e2e_boundary::glob_matches_path_or_parent(&glob, path))
+            else {
+                continue;
+            };
+            let survives = surviving
+                .iter()
+                .map(|path| path.as_str())
+                .chain(archived.iter().map(String::as_str))
+                .any(|path| crate::e2e_boundary::glob_matches_path_or_parent(&glob, path));
+            if survives {
+                continue;
+            }
+            offenders.push((
+                role_order,
+                RetainedPathOffender {
+                    role: role.as_str(),
+                    entry: entry.clone(),
+                    moved_path: reported_moved_path(&glob, change, first_matched.as_str()),
+                    advice: archive_advice(entry),
+                },
+            ));
+        }
+    }
+    offenders.sort_by(|(left_order, left), (right_order, right)| {
+        left_order
+            .cmp(right_order)
+            .then_with(|| left.entry.cmp(&right.entry))
+    });
+    offenders
+        .into_iter()
+        .map(|(_, offender)| offender)
+        .collect()
+}
+
+/// Split the content listing into the paths this archive moves and the paths
+/// that stay.
+fn partition_content_paths<'a>(
+    change: &str,
+    content_paths: &'a [String],
+) -> (Vec<&'a String>, Vec<&'a String>) {
+    let root = format!("givn/changes/{change}");
+    let under = format!("{root}/");
+    let mut moved = Vec::new();
+    let mut surviving = Vec::new();
+    for path in content_paths {
+        if path == &root || path.starts_with(&under) {
+            moved.push(path);
+        } else {
+            surviving.push(path);
+        }
+    }
+    (moved, surviving)
+}
+
+/// The archive location of a path the move carries:
+/// `givn/changes/<id><rest>` → `givn/archive/<id><rest>`.
+fn archived_counterpart(path: &str, change: &str) -> String {
+    match path.strip_prefix(&format!("givn/changes/{change}")) {
+        Some(rest) => format!("givn/archive/{change}{rest}"),
+        None => path.to_string(),
+    }
+}
+
+/// The shallowest prefix of `matched`, at or below `givn/changes/<id>`, that
+/// the pattern itself matches: the moved path the refusal names.
+fn reported_moved_path(glob: &crate::e2e_boundary::Glob, change: &str, matched: &str) -> String {
+    let root = format!("givn/changes/{change}");
+    let under = format!("{root}/");
+    for (index, _) in matched.match_indices('/') {
+        let prefix = &matched[..index];
+        if (prefix == root || prefix.starts_with(&under)) && glob.matches(prefix) {
+            return prefix.to_string();
+        }
+    }
+    matched.to_string()
+}
+
+/// The shape-preserving archived pattern to declare instead: the leading
+/// `givn/changes` segments replaced by `givn/archive`. `None` when the entry
+/// reaches the change tree through another prefix, so no narrower path is
+/// invented.
+fn archive_advice(entry: &str) -> Option<String> {
+    let mut segments: Vec<&str> = entry.split('/').collect();
+    if segments.len() < 2 || segments[0] != "givn" || segments[1] != "changes" {
+        return None;
+    }
+    segments[1] = "archive";
+    Some(segments.join("/"))
+}
+
+/// The refusal text: bounded offender lines, the remainder count, and the
+/// repair sentence naming the declaration.
+fn retained_path_refusal(offenders: &[RetainedPathOffender], change: &str) -> String {
+    let mut lines = vec![String::from(
+        "archive blocked: a declared retained path is moved by this archive:",
+    )];
+    for offender in offenders.iter().take(MAX_REPORTED_RETAINED_PATHS) {
+        let advice = match &offender.advice {
+            Some(advice) => format!("declare '{advice}'"),
+            None => format!("the archived paths must still match '{}'", offender.entry),
+        };
+        lines.push(format!(
+            "  - {} '{}' matches '{}'; {advice}",
+            offender.role, offender.entry, offender.moved_path
+        ));
+    }
+    if offenders.len() > MAX_REPORTED_RETAINED_PATHS {
+        lines.push(format!(
+            "  +{} more",
+            offenders.len() - MAX_REPORTED_RETAINED_PATHS
+        ));
+    }
+    lines.push(format!(
+        "A retained role names a path that survives `givn archive`. Declare the archived or \
+         another durable path in givn/specification.yaml and rerun `givn archive --change \
+         {change}`."
+    ));
+    lines.join("\n")
+}
+
 /// Block unless the dirty worktree contains only evidence paths.
 /// Refuse a projected or merged interaction-inventory mismatch.
 fn ensure_interaction_inventory(findings: Vec<crate::overlap::analysis::Finding>) -> Result<()> {
@@ -1873,6 +2064,118 @@ fn record_retirement(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A declaration whose only populated role is `limits`, loaded through the
+    /// real strict loader.
+    fn declaration_with_limits(
+        entries: &[&str],
+    ) -> crate::config::declaration::SpecificationDeclaration {
+        let root = tempfile::TempDir::new().unwrap();
+        let mut text = String::new();
+        for role in ["behavior", "structure", "contracts", "e2e"] {
+            text.push_str(&format!("{role}: []\n"));
+        }
+        text.push_str("limits:\n");
+        for entry in entries {
+            text.push_str(&format!("  - \"{entry}\"\n"));
+        }
+        text.push_str("source:\n  - \"src/**\"\n");
+        std::fs::create_dir_all(root.path().join("givn")).unwrap();
+        std::fs::write(root.path().join("givn/specification.yaml"), text).unwrap();
+        crate::config::declaration::SpecificationDeclaration::load(root.path())
+            .expect("the fixture declaration loads")
+            .expect("the fixture declaration exists")
+    }
+
+    fn listing(paths: &[&str]) -> Vec<String> {
+        paths.iter().map(|path| (*path).to_string()).collect()
+    }
+
+    #[test]
+    fn a_literal_under_the_change_tree_is_refused_with_its_archived_path() {
+        let declaration = declaration_with_limits(&["givn/changes/moved-limits/design.md"]);
+        let content = listing(&["givn/changes/moved-limits/design.md", "givn/config.yaml"]);
+        let offenders = declared_retained_path_offenders(&declaration, "moved-limits", &content);
+        assert_eq!(offenders.len(), 1);
+        assert_eq!(offenders[0].role, "limits");
+        assert_eq!(
+            offenders[0].moved_path,
+            "givn/changes/moved-limits/design.md"
+        );
+        assert_eq!(
+            offenders[0].advice.as_deref(),
+            Some("givn/archive/moved-limits/design.md")
+        );
+    }
+
+    #[test]
+    fn an_entry_matching_only_the_archived_counterpart_survives() {
+        let declaration = declaration_with_limits(&["givn/*/moved-limits/design.md"]);
+        let content = listing(&["givn/changes/moved-limits/design.md", "givn/config.yaml"]);
+        assert!(
+            declared_retained_path_offenders(&declaration, "moved-limits", &content).is_empty()
+        );
+    }
+
+    #[test]
+    fn a_wildcard_spanning_the_change_tree_is_refused_with_its_archived_pattern() {
+        let declaration = declaration_with_limits(&["givn/changes/**"]);
+        let content = listing(&["givn/changes/moved-limits/design.md", "givn/config.yaml"]);
+        let offenders = declared_retained_path_offenders(&declaration, "moved-limits", &content);
+        assert_eq!(offenders.len(), 1);
+        assert_eq!(offenders[0].moved_path, "givn/changes/moved-limits");
+        assert_eq!(offenders[0].advice.as_deref(), Some("givn/archive/**"));
+    }
+
+    #[test]
+    fn a_broad_root_covering_surviving_content_is_accepted() {
+        let declaration = declaration_with_limits(&["givn/**"]);
+        let content = listing(&["givn/changes/moved-limits/design.md", "givn/config.yaml"]);
+        assert!(
+            declared_retained_path_offenders(&declaration, "moved-limits", &content).is_empty()
+        );
+    }
+
+    #[test]
+    fn a_literal_for_another_active_change_is_unaffected() {
+        let declaration = declaration_with_limits(&["givn/changes/other-change/design.md"]);
+        let content = listing(&[
+            "givn/changes/moved-limits/design.md",
+            "givn/changes/other-change/design.md",
+        ]);
+        assert!(
+            declared_retained_path_offenders(&declaration, "moved-limits", &content).is_empty()
+        );
+    }
+
+    #[test]
+    fn an_entry_matching_a_content_path_outside_the_move_is_accepted() {
+        let declaration = declaration_with_limits(&["givn/changes/**"]);
+        let content = listing(&[
+            "givn/changes/moved-limits/design.md",
+            "givn/changes/other-active/design.md",
+        ]);
+        assert!(
+            declared_retained_path_offenders(&declaration, "moved-limits", &content).is_empty()
+        );
+    }
+
+    #[test]
+    fn the_refusal_lists_twenty_offenders_and_counts_the_rest() {
+        let entries: Vec<String> = (1..=21)
+            .map(|index| format!("givn/changes/many-limits/limit-{index:02}.md"))
+            .collect();
+        let entry_refs: Vec<&str> = entries.iter().map(String::as_str).collect();
+        let declaration = declaration_with_limits(&entry_refs);
+        let content: Vec<String> = entries.clone();
+        let offenders = declared_retained_path_offenders(&declaration, "many-limits", &content);
+        assert_eq!(offenders.len(), 21);
+        let refusal = retained_path_refusal(&offenders, "many-limits");
+        assert_eq!(refusal.matches("matches '").count(), 20, "{refusal}");
+        assert!(refusal.contains("limit-20.md"), "{refusal}");
+        assert!(!refusal.contains("limit-21.md"), "{refusal}");
+        assert!(refusal.contains("  +1 more"), "{refusal}");
+    }
 
     #[test]
     fn scope_runner_receives_its_declared_environment() {

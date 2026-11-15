@@ -10,7 +10,7 @@ Feature: Require Durable Retained Paths
     And  the change directory has been moved to givn/archive/
     And  the archived change contains "design.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Archive is blocked when a declared retained path moves with the change
     Given a givn project with a completed change "moved-limits" ready to archive
     And  an effective declaration whose limits role names "<entry>"
@@ -29,7 +29,7 @@ Feature: Require Durable Retained Paths
       | givn/changes/moved-limits/design.md  | givn/changes/moved-limits/design.md  | givn/archive/moved-limits/design.md |
       | givn/changes/**                      | givn/changes/moved-limits            | givn/archive/**                     |
 
-  @givn.added @wip
+  @givn.added
   Scenario: The refusal reports at most twenty isolated retained paths
     Given a givn project with a completed change "many-limits" ready to archive
     And  an effective declaration whose limits role names 21 paths under "givn/changes/many-limits/"
@@ -39,7 +39,7 @@ Feature: Require Durable Retained Paths
     And  stderr says "+1 more"
     And  the change directory still exists under givn/changes/
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive is blocked when the declaration cannot be loaded
     Given a givn project with a completed change "broken-declaration" ready to archive
     And  an effective but malformed declaration
@@ -50,7 +50,7 @@ Feature: Require Durable Retained Paths
     And  the change directory still exists under givn/changes/
     And  no archive candidate exists for "broken-declaration"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A retained root that also covers the archive location is unaffected
     Given a givn project with a completed change "broad-limits" ready to archive
     And  an effective declaration whose limits role names "givn/**"
@@ -58,7 +58,7 @@ Feature: Require Durable Retained Paths
     Then the command exits 0
     And  the change directory has been moved to givn/archive/
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project with ise off archives without reading the declaration
     Given a givn project with a completed change "ise-off" ready to archive
     And  a declaration whose limits role names "givn/changes/ise-off/design.md" while ise is off

@@ -14,7 +14,7 @@ mod paths;
 
 pub(crate) use conditions::BoundaryCondition;
 pub(crate) use hash::hash_entry;
-pub(crate) use paths::{Glob, ProjectPath, walk_project};
+pub(crate) use paths::{Glob, ProjectPath, glob_matches_path_or_parent, walk_project};
 
 use crate::config::declaration::{Role, SpecificationDeclaration, normalize_project_path};
 use imports::import_edges;
