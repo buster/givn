@@ -1,6 +1,6 @@
 # Change seed: split-stack-instructions
 
-Status: proposed by split-stack-instructions
+Status: implemented in split-stack-instructions
 
 - Use-case IDs: `obtain-effective-guidance` (`serve-extended-rules`) and
   fragment `support` (`instruction-integrity`)
