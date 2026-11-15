@@ -2,7 +2,7 @@
   "schema": 2,
   "change": "guard-retained-paths-across-archive",
   "status": "passed",
-  "head": "9be16da3f534be0e04736a83273622cff7d8e30f",
+  "head": "faf2cf06099cc696dc2c4ee9153c4054f7221655",
   "features_path": "givn/changes/guard-retained-paths-across-archive/specs",
   "features_digest": "a54e42a678f690f1f6e3e56cd3ea8579cd56eb27240c81e2f6e9b15694bc8c0d",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1794778340
+  "finished_at_unix": 1794778591
 }
