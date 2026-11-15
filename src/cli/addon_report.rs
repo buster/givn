@@ -207,3 +207,70 @@ pub fn observed_line(observed: &Observed) -> String {
         Observed::None => "              artifacts: none".to_string(),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn declared_paths() -> Vec<&'static str> {
+        KNOWN_ADDONS
+            .iter()
+            .flat_map(|addon| match addon.materialization {
+                Materialization::Files(files) | Materialization::FilesAndSkill { files, .. } => {
+                    files.to_vec()
+                }
+                Materialization::ManagedBlock { .. } | Materialization::None => Vec::new(),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_shared_path_belongs_to_exactly_one_addon() {
+        // `docs/glossary.md` is scaffolded by both arc42 and domain_modeling;
+        // the report must attribute it to one so the other is never `partial`.
+        let paths = declared_paths();
+        let mut shared: Vec<&str> = Vec::new();
+        for (index, path) in paths.iter().enumerate() {
+            if paths[index + 1..].contains(path) && !shared.contains(path) {
+                shared.push(path);
+            }
+        }
+        let glossary = own_files(&["docs/glossary.md"]).collect::<Vec<_>>();
+        assert!(
+            glossary.is_empty(),
+            "shared paths must not count against an addon: {shared:?}"
+        );
+        let arc42 = KNOWN_ADDONS
+            .iter()
+            .find(|addon| addon.id == "arc42")
+            .expect("arc42 registered");
+        assert!(
+            declares(arc42, "docs/glossary.md"),
+            "arc42 still scaffolds and keeps the glossary"
+        );
+    }
+
+    #[test]
+    fn the_report_module_has_no_write_path() {
+        // Only the production half: the assertions below name the same
+        // symbols they forbid.
+        let source = include_str!("addon_report.rs");
+        let production: String = source
+            .split("#[cfg(test)]")
+            .next()
+            .unwrap_or_default()
+            .lines()
+            .filter(|line| {
+                let trimmed = line.trim_start();
+                !trimmed.starts_with("//")
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        for symbol in ["fs::write", "remove_file", "remove_dir_all", "set_addon"] {
+            assert!(
+                !production.contains(symbol),
+                "the report must not mutate the project: found {symbol}"
+            );
+        }
+    }
+}
