@@ -3083,13 +3083,21 @@ that distinguishes it.
       givn lint --change add-ise-clean-room-commands → exit 0; 3 file(s) checked — clean
       The delta holds 64 scenarios, 2 of them @e2e.
       ```
-- [ ] `givn check tasks --change add-ise-clean-room-commands` exits 0 and
+- [x] `givn check tasks --change add-ise-clean-room-commands` exits 0 and
       records the change verification receipt. This change's own
       `config-lock.yaml` has `ise: false`, so the receipt is ise-off shaped (no
       `e2e_identity`, no `e2e_scope`); the delta e2e scope is proven by the
       explicit `--e2e` run above.
       ```
-      <!-- paste git status and the receipt summary -->
+      $ git status --short
+      ?? givn/changes/add-ise-clean-room-commands/verification/
+      $ givn check tasks --change add-ise-clean-room-commands → exit 0
+      [Summary]
+      3 features
+      62 scenarios (62 passed)
+      296 steps (296 passed)
+        ✓ change verification receipt: 62 scenario(s), 0 failed, 0 skipped at 14973c13b75fab8322045a11fe98dcad57df28f8
+        ✓ verify passed
       ```
 - [ ] `givn check review --change add-ise-clean-room-commands` passes the
       scenario-commit, integrity, routing, and add-on lock checks. The review
