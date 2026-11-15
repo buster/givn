@@ -1,6 +1,6 @@
 # Change seed: add-ise-clean-room-commands
 
-Status: proposed by add-ise-clean-room-commands
+Status: implemented in add-ise-clean-room-commands
 
 Surface note (2026-11-14): the operator renamed the subcommand and its
 replacement flag after the design review. The delivered surface is
