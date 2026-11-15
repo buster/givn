@@ -1,65 +1,32 @@
 Scenario: Consumer archives a change whose declared retained paths survive the move
 argv: givn archive --change durable-paths
-cwd (fixture project root): /tmp/guard-durable-paths-out.CcMcIO/project
-binary: target/debug/givn (the repository binary built from 23ba7139)
-fixture revision (before archive): 0da0138ea38f73303d5908b089e5e3cbee511ee8
+cwd (fixture project root): /tmp/.tmp6zs7pe
 exit: 0
 
-context commands (all in that project):
-  git init -q
-  git config user.email fixture@example.com
-  git config user.name "Givn Fixture"
-  git config commit.gpgsign false
-  givn init --agents opencode
-  givn addons enable ise
-  givn/config.yaml: addons coverage false, readme false
-  givn/commands.yaml: verify.command "./emit-result.sh regular", verify.e2e_command "./emit-result.sh e2e", run declaration product_type cli
-  givn/changes/durable-paths/.givn-skip: specs
-  givn/changes/durable-paths/proposal.md: Behavior change: none
-  givn/specification.yaml: limits: ["givn/archive/durable-paths/design.md"]
-  git add -A && git commit -m "fixture: archivable no-behavior change and ise declaration"
-  committed: givn/config.yaml, givn/commands.yaml, givn/specification.yaml, givn/changes/durable-paths/**, emit-result.sh, tests/steps/archive_proof_steps.rs
-
 --- stdout (raw) ---
-  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)
-[21:45:46] Archiving change 'durable-paths'...
-[21:45:46] Running archive gate hooks...
-[21:45:46] ✓ Gate hooks passed
-[21:45:46] ✓ run declaration passed
-[21:45:46] Running static review gates...
-net delta: 0 added, 0 modified, 0 removed
-net delta json: {"added":0,"modified":0,"removed":0}
+[22:01:11] ✓ change verification receipt passed (2 scenario(s))
+[22:01:11] Archiving change 'durable-paths'...
+[22:01:11] Running archive gate hooks...
+[22:01:11] ✓ Gate hooks passed
+[22:01:11] ✓ run declaration passed
+[22:01:11] ✓ README completeness gate passed
+[22:01:11] Running static review gates...
+net delta: 1 added, 0 modified, 0 removed
+net delta json: {"added":1,"modified":0,"removed":0}
   ✓ overlap dispositions passed
-[21:45:46] ✓ Static review gates passed
-[21:45:46] ✓ Candidate committed
+capability 'demo-cap' already owned by /tmp/.tmp6zs7pe/givn/specs/demo-cap
+[22:01:11] ✓ Static review gates passed
+[22:01:11] ✓ Candidate committed
 Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks.
-[21:45:46] Running regular verification: ./emit-result.sh regular
-[21:45:46] ✓ Archived 'durable-paths' to /tmp/guard-durable-paths-out.CcMcIO/project/givn/archive/durable-paths
-Verification receipt: /tmp/guard-durable-paths-out.CcMcIO/project/givn/archive/durable-paths/verification.json
+[22:01:11] Running regular verification: ./emit-result.sh regular
+[22:01:11] ✓ development managed block refreshed
+[22:01:11] ✓ Archived 'durable-paths' to /tmp/.tmp6zs7pe/givn/archive/durable-paths
+Verification receipt: /tmp/.tmp6zs7pe/givn/archive/durable-paths/verification.json
 
 Change archived successfully.
 The delta specs have been merged into givn/specs/.
 
 --- stderr (raw) ---
 
-
---- tree after archive ---
-givn/archive/durable-paths/.givn-skip
-givn/archive/durable-paths/proposal.md
-givn/archive/durable-paths/design.md
-givn/archive/durable-paths/design-review.md
-givn/archive/durable-paths/tasks.md
-givn/archive/durable-paths/review.md
-givn/archive/durable-paths/arc42.md
-givn/archive/durable-paths/verification.json
-givn/config.yaml
-givn/commands.yaml
-givn/history/events.jsonl
-givn/specification.yaml
-
---- archived design.md ---
--rw-r--r-- 1 buster buster 116 15. Nov 21:45 givn/archive/durable-paths/design.md
-
-The declared retained path names the archived location, so the declaration stays
-resolvable after the move and the archive succeeds. This transcript is the real
-CLI evidence for the success path; the guard this change adds preserves it.
+--- archived /tmp/.tmp6zs7pe/givn/archive/durable-paths/design.md ---
+116 bytes

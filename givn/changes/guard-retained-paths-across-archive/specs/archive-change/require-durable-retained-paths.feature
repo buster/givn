@@ -1,7 +1,7 @@
 @givn.delta @require-durable-retained-paths
 Feature: Require Durable Retained Paths
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer archives a change whose declared retained paths survive the move
     Given a givn project with a completed change "durable-paths" ready to archive
     And  an effective declaration whose limits role names "givn/archive/durable-paths/design.md"
