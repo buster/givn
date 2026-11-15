@@ -130,7 +130,7 @@ As a special exception under section 7 of the GNU General Public License, versio
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 86% (20223/23650)
+Line coverage: 86% (21287/24693)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
