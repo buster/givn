@@ -891,6 +891,14 @@ fn final_register_has_stack_instructions_adr(world: &mut GivnWorld) {
         .count();
     assert_eq!(accepted, 29, "unexpected accepted ADR count");
     assert_eq!(proposed, 0, "unexpected proposed ADR count");
+    let stack_instructions = register
+        .lines()
+        .find(|line| line.contains("[ADR-077]"))
+        .unwrap_or_else(|| panic!("the register carries no ADR-077 row"));
+    assert!(
+        stack_instructions.contains("| accepted |"),
+        "the ADR-077 row is not accepted: {stack_instructions}"
+    );
 }
 
 #[then("the final register has 27 accepted decisions and no proposed decisions")]
