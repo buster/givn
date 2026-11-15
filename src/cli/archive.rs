@@ -2178,6 +2178,39 @@ mod tests {
     }
 
     #[test]
+    fn an_entry_reaching_the_change_tree_through_another_prefix_has_no_archived_advice() {
+        let declaration = declaration_with_limits(&["**/changes/moved-limits/**"]);
+        let content = listing(&["givn/changes/moved-limits/design.md", "givn/config.yaml"]);
+        let offenders = declared_retained_path_offenders(&declaration, "moved-limits", &content);
+        assert_eq!(offenders.len(), 1, "the entry isolates the moved content");
+        assert_eq!(
+            offenders[0].advice, None,
+            "the entry reaches the change tree through another prefix, so no replacement \
+             pattern is invented"
+        );
+    }
+
+    #[test]
+    fn the_refusal_states_that_archived_paths_must_still_match_a_prefixless_entry() {
+        let declaration = declaration_with_limits(&["**/changes/moved-limits/**"]);
+        let content = listing(&["givn/changes/moved-limits/design.md", "givn/config.yaml"]);
+        let offenders = declared_retained_path_offenders(&declaration, "moved-limits", &content);
+        let refusal = retained_path_refusal(&offenders, "moved-limits");
+        assert!(
+            refusal.contains(
+                "  - limits '**/changes/moved-limits/**' matches \
+                 'givn/changes/moved-limits'; the archived paths must still match \
+                 '**/changes/moved-limits/**'"
+            ),
+            "the refusal must state the entry the archived paths have to still match: {refusal}"
+        );
+        assert!(
+            !refusal.contains("declare '"),
+            "the refusal must not invent a replacement pattern: {refusal}"
+        );
+    }
+
+    #[test]
     fn scope_runner_receives_its_declared_environment() {
         let root = tempfile::TempDir::new().unwrap();
         let result = root.path().join("result.json");
