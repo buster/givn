@@ -650,16 +650,20 @@ GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --e2
                               2 passed, 62 skipped                exit 0
 givn lint --change add-ise-clean-room-commands                     exit 0 (clean)
 givn check tasks --change add-ise-clean-room-commands             exit 0
-  62 scenarios / 296 steps; receipt 62 scenario(s), 0 failed, 0 skipped at 14973c13
+  62 scenarios / 296 steps; receipt 62 scenario(s), 0 failed, 0 skipped
 ```
 
-The receipt is reused for the documentation-only revision `ab36632a`; both
-`verify` runs rewrote the verify transcript with new `/tmp` paths and the
-permanent e2e run rewrote three archived screenshot pairs, so those files were
-restored with `git checkout --` before the tasks commit. `givn check review`
-now fails only on `review.md actual verdict is FAIL`; the routing, overlap,
-scenario-commit, and receipt checks pass. The disposition table dropped nine
-rows whose pairs no longer shape-match after the added scenarios; the gate
-reports no undispositioned pair.
+Every closure commit after the tested tree is documentation-only, so
+`givn check tasks` re-records the receipt and reuses it across those revisions;
+the reader takes the bound revision from
+`givn/changes/add-ise-clean-room-commands/verification/tasks-verification.json`
+rather than from this prose. Both `verify` runs rewrote the verify transcript
+with new `/tmp` paths and the permanent e2e run rewrote three archived
+screenshot pairs, so those files were restored with `git checkout --` before
+the tasks commit. `givn check review` now fails only on `review.md actual
+verdict is FAIL`; the routing, overlap, scenario-commit, and receipt checks
+pass. The disposition table dropped nine rows whose pairs no longer
+shape-match after the added scenarios; the gate reports no undispositioned
+pair.
 
 REVIEW: FAIL
