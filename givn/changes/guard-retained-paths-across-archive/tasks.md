@@ -178,7 +178,7 @@ Files: `src/cli/archive.rs` (guard and helpers), `src/e2e_boundary/paths.rs`
 `src/ise/partition.rs` (import), `tests/steps/require_durable_retained_paths_steps.rs`
 (step definitions), `tests/steps/mod.rs` (module registration).
 
-- [ ] Scenario: Archive is blocked when a declared retained path moves with the change
+- [x] Scenario: Archive is blocked when a declared retained path moves with the change
   - Design constraints: The guard is
     `ensure_declared_paths_survive_archive(&project_root, &backend, &manifest, change)`,
     called in `cli::archive::run` inside `if fresh { ... }` after
@@ -214,7 +214,7 @@ Files: `src/cli/archive.rs` (guard and helpers), `src/e2e_boundary/paths.rs`
     and `givn/archive/**` or the archived literal.
   - [x] COMMIT: 710e0a7c7a666b61296662d248ece030203f116e -- Batch: retained-path-guard
 
-- [ ] Scenario: The refusal reports at most twenty isolated retained paths
+- [x] Scenario: The refusal reports at most twenty isolated retained paths
   - Design constraints: `MAX_REPORTED_RETAINED_PATHS = 20` caps the refusal
     lines; offenders are sorted by role declaration order then entry text, the
     first twenty print, and the remainder is appended as `+N more`. The fixture
@@ -228,7 +228,7 @@ Files: `src/cli/archive.rs` (guard and helpers), `src/e2e_boundary/paths.rs`
     lines and `  +1 more`, with the 21st entry absent.
   - [x] COMMIT: 710e0a7c7a666b61296662d248ece030203f116e -- Batch: retained-path-guard
 
-- [ ] Scenario: Archive is blocked when the declaration cannot be loaded
+- [x] Scenario: Archive is blocked when the declaration cannot be loaded
   - Design constraints: `SpecificationDeclaration::load` wraps a refusal as
     `archive blocked: the declared retained paths cannot be read: {error}`; the
     loader's own message carries `givn/specification.yaml:` and the reason
@@ -244,7 +244,7 @@ Files: `src/cli/archive.rs` (guard and helpers), `src/e2e_boundary/paths.rs`
     directory present, and no candidate.
   - [x] COMMIT: 710e0a7c7a666b61296662d248ece030203f116e -- Batch: retained-path-guard
 
-- [ ] Scenario: A retained root that also covers the archive location is unaffected
+- [x] Scenario: A retained root that also covers the archive location is unaffected
   - Design constraints: An entry survives iff it matches a surviving content
     path or an archived counterpart, so `givn/**` is accepted: it matches moved
     content and surviving content (for example `givn/specs/`,
@@ -261,7 +261,7 @@ Files: `src/cli/archive.rs` (guard and helpers), `src/e2e_boundary/paths.rs`
     matches surviving content (`givn/config.yaml`, `givn/specs/`).
   - [x] COMMIT: 710e0a7c7a666b61296662d248ece030203f116e -- Batch: retained-path-guard
 
-- [ ] Scenario: A project with ise off archives without reading the declaration
+- [x] Scenario: A project with ise off archives without reading the declaration
   - Design constraints: `SpecificationDeclaration::is_effective(manifest)` is
     the early return; with `addons.ise` off the declaration file is not read, so
     a `limits` entry naming `givn/changes/<id>/design.md` archives normally.
@@ -278,7 +278,7 @@ Files: `src/cli/archive.rs` (guard and helpers), `src/e2e_boundary/paths.rs`
   - GREEN: the scenario passes; the declaration is present but unread.
   - [x] COMMIT: 710e0a7c7a666b61296662d248ece030203f116e -- Batch: retained-path-guard
 
-- [ ] Unit tests for the predicate in `src/cli/archive.rs` (part of this
+- [x] Unit tests for the predicate in `src/cli/archive.rs` (part of this
       batch's commit, not a scenario): `declared_retained_path_offenders` over a
       synthetic content listing covers a literal under the change tree refused
       with its archived literal advice, an entry matching only the archived
@@ -304,7 +304,7 @@ feature's `@wip` removal. The served text landed in `d160e7ed`
 (`assets/instructions/ise.md`, `assets/instructions/archive.md`), so this
 scenario protects existing behavior and records a discrimination probe.
 
-- [ ] Scenario: The ise instruction says declared retained paths survive archiving
+- [x] Scenario: The ise instruction says declared retained paths survive archiving
   - Design constraints: The Given enables `ise` and synchronizes skills through
     `tests/common`; the When runs `givn instructions ise`; the Then asserts the
     served text names the retained-path survival rule (`must survive`)
@@ -331,7 +331,7 @@ definitions plus the transcript capture), `tests/steps/mod.rs` (module
 registration), the delta feature's `@wip` removal, and the rewritten
 `evidence/visual/consumer-archives-a-change-whose-declared-retained-paths-survive-the-move/transcript.txt`.
 
-- [ ] Scenario: Consumer archives a change whose declared retained paths survive the move
+- [x] Scenario: Consumer archives a change whose declared retained paths survive the move
   - Design constraints: The `@e2e` driver is the compiled binary
     (`CARGO_BIN_EXE_givn`) run as a subprocess through `tests/common`. The Given
     builds the `ready_change` Git fixture, enables `ise`, and declares
