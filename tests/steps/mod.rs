@@ -10,6 +10,7 @@ use cucumber::{World, gherkin::Step, given, then, when};
 
 use crate::common;
 
+pub mod addon_artifact_report_steps;
 pub mod adr_qualification_gate_e2e_steps;
 pub mod adr_qualification_gate_steps;
 pub mod agent_activity_reporting_e2e_steps;
@@ -215,6 +216,14 @@ pub struct GivnWorld {
 pub(crate) struct ProbeJob {
     pub(crate) port: u16,
     pub(crate) handle: std::thread::JoinHandle<givn::cli::run::ProbeOutcome>,
+}
+
+impl GivnWorld {
+    /// Record the output of a command run outside the shared `the user runs`
+    /// step (for example a When phrased for one capability).
+    pub(crate) fn set_last_output(&mut self, out: Output) {
+        self.last_output = Some(out);
+    }
 }
 
 // --- helpers ---------------------------------------------------------------

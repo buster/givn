@@ -76,7 +76,7 @@ Declared values, one source of truth:
 | `domain_modeling` | `FilesAndSkill { files: ["docs/domain-model.md"], skill: "givn-domain-modeling" }` |
 | `dev_principles` | `FilesAndSkill { files: [], skill: "givn-dev-principles" }` |
 | `challenge` | `FilesAndSkill { files: [], skill: "givn-challenge" }` |
-| `architecture_principles` | `ManagedBlock { file: "AGENTS.md", /* givn:begin:architecture-principles markers */ }` |
+| `architecture_principles` | `None` (gates the `architecture-principles` instruction in `src/cli/instructions.rs:15`; writes no project file) |
 | `outline` | `None` |
 
 Each declaration is checked against the corresponding scaffold or generation routine before implementation; a mismatch is a design defect fixed here, not a compromise in the report. The `readme` addon also owns the `givn:coverage-badge` fence inside `README.md`; because the file itself is the declared path, a missing README already reports `missing`, and the fence is not tracked separately.

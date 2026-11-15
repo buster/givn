@@ -533,7 +533,14 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Archive { change, verbose } => cli::archive::run(&change, verbose),
         Commands::Eject { target, force } => cli::eject::run(&target, force),
         Commands::Addons { command } => match command {
-            AddonsCommands::List => cli::addons::run_list(),
+            AddonsCommands::List => {
+                // A broken enabled addon exits 1 without being an error: the
+                // listing itself succeeded (ADR-076).
+                if cli::addons::run_list()? {
+                    std::process::exit(1);
+                }
+                Ok(())
+            }
             AddonsCommands::Enable {
                 name,
                 operator,
