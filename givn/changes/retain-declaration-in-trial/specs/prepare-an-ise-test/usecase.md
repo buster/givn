@@ -38,7 +38,7 @@ The developer starts an Ise Test.
 
 ## Extensions
 
-- 3: the declaration is malformed or unreadable at the selected revision → the system refuses, names the declaration path and the loader's reason, and writes nothing; protects the minimal guarantee.
+- 3: the declaration is malformed, not UTF-8, or unreadable at the selected revision → the system refuses, names the declaration path and the loader's or decoding reason, and writes nothing; protects the minimal guarantee.
 - 3: the selected revision does not record the declaration → the system refuses, names `givn/specification.yaml` and the revision, and writes nothing; protects the minimal guarantee.
 - 3: `ise` is not effective, or its `architecture_principles` prerequisite is not effective → the system refuses by name, reads no declaration, and writes nothing; protects the minimal guarantee.
 - 3: neither `--full` nor `--path` is given, both are given, or `--into` is omitted → the command refuses as a usage error, names the missing or conflicting flags, exits 2, and writes nothing; protects the minimal guarantee.

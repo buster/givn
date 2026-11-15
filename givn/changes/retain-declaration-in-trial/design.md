@@ -97,6 +97,7 @@ Persona to this change).
 | The copy at the selected revision is the partition authority and the trial's copy | `admit` reads the entry list, then parses the revision's declaration bytes | `clean-room-preparation`: `Preparation partitions with the declaration recorded at the selected revision` (roles and bytes from the older revision) |
 | A revision without the declaration refuses before any write | the `admit` membership check | `clean-room-preparation`: `Preparation refuses a revision that does not record the declaration`; the permanent missing-declaration scenario keeps its path assertion |
 | A malformed declaration at the selected revision refuses with the loader's reason | `from_content` parses the revision's bytes, not the working tree's | `clean-room-preparation`: `Preparation refuses a malformed declaration at the selected revision`, whose first revision is malformed while `HEAD` is valid |
+| A declaration that is not UTF-8 at the selected revision refuses and names the path | `admit` decodes the revision's bytes before the one strict loader | `clean-room-preparation`: `Preparation refuses a declaration that is not UTF-8`, whose first revision holds the invalid bytes while `HEAD` is valid |
 | A retained path is never replaced, and a `source:` root cannot remove it | the retained test runs before the source-root test and before `replaced` | `clean-room-preparation`: `A full replacement keeps the declaration under a source root` asserts `Replaced: 3` (the fixture's committed `givn/config.yaml`, `givn/commands.yaml`, and `givn/notes.md`) and holds the declaration |
 | Naming the declaration, or a directory containing it, refuses | the declaration candidate check in `require_replaceable_paths` | `clean-room-preparation`: `Preparation refuses a replacement path that names the declaration` and `Preparation refuses a directory that contains the declaration` |
 | The record's retained set carries the declaration with its digest | `identities(retained_paths())`; `rollup` over the retained map | `clean-room-preparation`: `The trial record lists the declaration in its retained set`; the E2E prepare scenario asserts the receipt's fields |
@@ -325,7 +326,8 @@ keep their shapes.
 `load` keeps its signature and delegates. The key scan, the role order, the
 normalizer, and every `DeclarationError` variant are unchanged, so a
 revision's malformed declaration reports the same reason a working-tree one
-did.
+did. `admit` decodes the revision's bytes as UTF-8 before the loader runs; a
+decoding failure refuses with `<path>: <utf8 error>` and names the path.
 
 ### Record content
 
@@ -474,7 +476,7 @@ flowchart TB
 
 | # | Condition | Named output |
 |---|---|---|
-| 1 | A declaration recorded at the revision is malformed or unreadable | `givn/specification.yaml` and the loader reason |
+| 1 | A declaration recorded at the revision is malformed, not UTF-8, or unreadable | `givn/specification.yaml` and the loader or decoding reason |
 | 2 | `ise` off, or `architecture_principles` off | `ise` or `architecture_principles` and the enable command |
 | 3 | Dirty checkout | the dirty paths |
 | 4 | Missing, mixed, or nested backend | the selector's message |
@@ -492,17 +494,18 @@ write failure, `2` clap usage. Every refusal prints `ise replace: <reason>` or
 
 | Boundary | Adversarial cases the scenarios must cover |
 |---|---|
-| Declaration | absent from the revision; malformed at the revision; `ise` off; `architecture_principles` off; empty role lists; a role entry matching nothing; a role entry that also matches the declaration; the working tree's declaration differing from the revision's; a declaration outside every role and every source root; a declaration inside a source root |
+| Declaration | absent from the revision; malformed at the revision; not UTF-8 at the revision; `ise` off; `architecture_principles` off; empty role lists; a role entry matching nothing; a role entry that also matches the declaration; the working tree's declaration differing from the revision's; a declaration outside every role and every source root; a declaration inside a source root |
 | Declaration as a candidate | named exactly by `--path`; inside a `--path` directory's expansion; under `--full` with a covering source root |
-| Revision | `HEAD`; explicit revision; absent revision; a revision that predates the declaration; an unreadable blob; a malformed historical declaration while `HEAD` is valid; Fossil |
+| Revision | `HEAD`; explicit revision; absent revision; a revision that predates the declaration; an unreadable blob; a malformed historical declaration while `HEAD` is valid; non-UTF-8 historical declaration bytes while `HEAD` is valid; Fossil |
 | Replacement form and target | unchanged from the permanent corpus |
 | Record | unchanged shape; a record without the declaration entry (an older trial) still verifies |
 | Verify | the declaration changed in the trial; the declaration missing from the trial; a checkout declaration edit that moves only `structure:` or `limits:` reports clean; a checkout declaration edit that adds an `e2e:` root names the gained package path; every other recorded retained path unchanged |
 
-The declaration boundary gains six cases that did not exist: absence at the
-revision, malformed at the revision, the working-tree-versus-revision
-difference, a role that also matches the declaration, exact and directory
-candidacy, and a covering source root. The malformed-at-the-revision scenario
+The declaration boundary gains seven cases that did not exist: absence at the
+revision, malformed at the revision, an undecodable declaration at the
+revision, the working-tree-versus-revision difference, a role that also
+matches the declaration, exact and directory candidacy, and a covering source
+root. The malformed-at-the-revision scenario
 uses an older revision whose `HEAD` is valid, so it distinguishes the revision
 read from a working-tree read. The identity, precedence, and lifetime cases are
 covered because the declaration now travels the same path, but each is asserted
@@ -612,6 +615,7 @@ New bindings, by file:
 | `clean_room_preparation_steps.rs` | Given `a Git project with ise enabled and a declaration whose "contracts" role names "givn/**"` |
 | `clean_room_preparation_steps.rs` | Given `a Git project with ise enabled and a declaration whose "structure" role names "docs/glossary.md"` |
 | `clean_room_preparation_steps.rs` | Given `a Git project with ise enabled, a malformed declaration in its first revision, and a valid declaration at "HEAD"` |
+| `clean_room_preparation_steps.rs` | Given `a Git project with ise enabled, a non-UTF-8 declaration in its first revision, and a valid declaration at "HEAD"` |
 | `clean_room_preparation_steps.rs` | Given `a committed revision with "docs/glossary.md" and "src/one.rs"` |
 | `clean_room_preparation_steps.rs` | Given `a committed revision with "givn/notes.md"` |
 | `clean_room_preparation_steps.rs` | Given `a committed revision with "givn/specs/a.md"` |
@@ -622,6 +626,7 @@ New bindings, by file:
 | `clean_room_preparation_steps.rs` | When `the developer prepares a trial from "HEAD" with the directory path "givn"` |
 | `clean_room_preparation_steps.rs` | Then `preparation fails and names "givn/specification.yaml" as retained` |
 | `clean_room_preparation_steps.rs` | Then `preparation fails and names "givn/specification.yaml" and the revision` |
+| `clean_room_preparation_steps.rs` | Then `preparation fails and names "givn/specification.yaml" and the UTF-8 error` |
 | `clean_room_preparation_steps.rs` | Then `preparation succeeds and prints "Retained: 2"` |
 | `clean_room_preparation_steps.rs` | Then `preparation succeeds and prints "Replaced: 3"` |
 | `clean_room_preparation_steps.rs` | Then `the receipt lists "givn/specification.yaml" in its retained set` |
@@ -653,6 +658,7 @@ Fixture changes in `tests/steps/ise_clean_room_support.rs`:
 | new | A project whose `contracts` role names `givn/**` and whose revision's `givn/` holds only the declaration and `givn/specs/a.md` (the config is excluded), so `Retained: 2` isolates the union |
 | new | A declaration whose `structure` role names one document (`docs/glossary.md`), with one `src/**` source root |
 | new | A project whose first revision declares the malformed declaration and whose `HEAD` declares the valid one, so the working tree is clean at `HEAD` |
+| new | A project whose first revision commits non-UTF-8 declaration bytes and whose `HEAD` declares the valid one, so the working tree is clean at `HEAD` |
 | new | A project whose first revision predates the declaration and whose `HEAD` records it |
 | new | A later revision that rewrites the declaration without the `structure` entry: it records the current `HEAD` as the first revision, then commits `source_only_declaration` over it |
 

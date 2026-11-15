@@ -72,6 +72,13 @@ Feature: Clean-room preparation
     And  the trial path and the receipt path remain absent
 
   @givn.added
+  Scenario: Preparation refuses a declaration that is not UTF-8
+    Given  a Git project with ise enabled, a non-UTF-8 declaration in its first revision, and a valid declaration at "HEAD"
+    When  the developer prepares a trial from the first revision with a full replacement
+    Then  preparation fails and names "givn/specification.yaml" and the UTF-8 error
+    And  the trial path and the receipt path remain absent
+
+  @givn.added
   Scenario: A full replacement keeps the declaration under a source root
     Given  a Git project with ise enabled and a declaration that sources "givn/**"
     And  a committed revision with "givn/notes.md"

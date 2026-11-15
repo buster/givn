@@ -381,7 +381,7 @@ leaves the checkout and the target unchanged.
 
 | # | Condition | Named output |
 | --- | --- | --- |
-| 1 | A declaration recorded at the revision is malformed or unreadable | `givn/specification.yaml` and the loader reason |
+| 1 | A declaration recorded at the revision is malformed, not UTF-8, or unreadable | `givn/specification.yaml` and the loader or decoding reason |
 | 2 | `ise` off, or `architecture_principles` off | the add-on and its enable command |
 | 3 | Dirty checkout | every dirty path |
 | 4 | Missing, mixed, or nested backend | the selector's message |

@@ -24,6 +24,8 @@ pub(crate) const KEPT_CONTENT: &str = "pub fn kept() {}\n";
 
 /// The unknown top-level key the malformed declaration carries.
 pub(crate) const MALFORMED_KEY: &str = "component";
+/// The declaration bytes the non-UTF-8 fixture commits at its first revision.
+pub(crate) const NON_UTF8_DECLARATION_BYTES: &[u8] = b"behavior: [\"givn/specs/**\"]\n\xff\n";
 
 /// The declaration every trial retains as an implicit entry.
 pub(crate) const DECLARATION_PATH: &str = "givn/specification.yaml";
@@ -511,6 +513,25 @@ pub(crate) fn malformed_first_revision_project() -> (common::TestEnv, String) {
         &env,
         &[(KEPT_PATH, KEPT_CONTENT)],
         "fixture: malformed declaration",
+    );
+    write_declaration(&env, &source_only_declaration("\"src/**\""));
+    common::git_commit_all(&env, "fixture: valid declaration");
+    (env, first)
+}
+
+/// A Git project whose first revision commits declaration bytes that are not
+/// UTF-8 and whose `HEAD` records the valid one, so the working tree is clean
+/// while the selected revision's declaration cannot be decoded. Returns the
+/// project and the first revision identifier.
+pub(crate) fn non_utf8_first_revision_project() -> (common::TestEnv, String) {
+    let env = common::make_init_root();
+    enable_ise(&env);
+    std::fs::write(env.path(DECLARATION_PATH), NON_UTF8_DECLARATION_BYTES)
+        .expect("write the non-UTF-8 declaration");
+    let first = commit_files(
+        &env,
+        &[(KEPT_PATH, KEPT_CONTENT)],
+        "fixture: non-UTF-8 declaration",
     );
     write_declaration(&env, &source_only_declaration("\"src/**\""));
     common::git_commit_all(&env, "fixture: valid declaration");

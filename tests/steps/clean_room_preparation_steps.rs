@@ -386,6 +386,20 @@ fn preparation_fails_and_names_the_loader_reason(world: &mut GivnWorld) {
     );
 }
 
+#[then(regex = r#"^preparation fails and names "givn/specification\.yaml" and the UTF-8 error$"#)]
+fn preparation_fails_and_names_the_declaration_and_the_utf8_error(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    let text = stderr(world);
+    assert!(
+        text.contains(ise_clean_room_support::DECLARATION_PATH),
+        "stderr {text:?} does not name the declaration"
+    );
+    assert!(
+        text.contains("invalid utf-8"),
+        "stderr {text:?} does not carry the UTF-8 error"
+    );
+}
+
 #[then(regex = r#"^the declaration is not read$"#)]
 fn the_declaration_is_not_read(world: &mut GivnWorld) {
     let text = stderr(world);
@@ -1626,6 +1640,15 @@ fn git_project_whose_first_revision_predates_the_declaration(world: &mut GivnWor
 )]
 fn git_project_with_a_malformed_first_revision(world: &mut GivnWorld) {
     let (env, first) = ise_clean_room_support::malformed_first_revision_project();
+    world.ise_clean_room.first_revision = Some(first);
+    world.env = Some(env);
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled, a non-UTF-8 declaration in its first revision, and a valid declaration at "HEAD"$"#
+)]
+fn git_project_with_a_non_utf8_first_revision(world: &mut GivnWorld) {
+    let (env, first) = ise_clean_room_support::non_utf8_first_revision_project();
     world.ise_clean_room.first_revision = Some(first);
     world.env = Some(env);
 }
