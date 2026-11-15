@@ -2,7 +2,7 @@
 
 Feature: The served instruction carries the built-in rules and the project's extension
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Core step guidance names each stack instruction with its load condition
     Given  a Givn project with an active change
     When  the author requests the steps instructions through the Givn CLI
@@ -18,7 +18,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
       | steps-go     | godog         |
       | steps-ruby   | cucumber-ruby |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Core step guidance carries no stack body
     Given  a Givn project with an active change
     When  the author requests the steps instructions through the Givn CLI
@@ -28,7 +28,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And  the served text still requires one step definition file per capability
     And  the served text keeps the archive binding-token list for every runner
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Design guidance names each stack instruction with its load condition and carries no runner table
     Given  a Givn project with an active change
     When  the author requests the design instructions through the Givn CLI
@@ -46,14 +46,14 @@ Feature: The served instruction carries the built-in rules and the project's ext
       | steps-go     | godog         |
       | steps-ruby   | cucumber-ruby |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Specs and review guidance carry no stack body
     Given  a Givn project with an active change
     When  the author requests the specs and review instructions through the Givn CLI
     Then  neither served text names a stack instruction
     And  neither served text carries a per-runner mechanism
 
-  @givn.added @wip
+  @givn.added
   Scenario: The tasks guidance points at the stack mapping and carries no stack body
     Given  a Givn project with an active change
     When  the author requests the tasks and reverse-engineering tasks instructions through the Givn CLI
@@ -61,7 +61,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     And  neither served text carries a per-runner step path, stub, or strict mechanism
     And  both served texts still require the strict-mode proof
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Every stack instruction is served only on its own request with its runner body
     Given  a Givn project with an active change
     And  the author has requested the steps instructions
@@ -83,14 +83,14 @@ Feature: The served instruction carries the built-in rules and the project's ext
       | steps-go     | `ctx.Step(`  | `godog.ErrPending`                    | fails by default      | `go test ./... -run TestFeatures`         |
       | steps-ruby   | `Given(`    | `pending("TODO")`                     | fail on pending       | `cucumber --name "<title>"`               |
 
-  @givn.added @wip
+  @givn.added
   Scenario: The machine-readable stack path carries the same content as the text path
     Given  a Givn project with an active change
     When  the author requests "steps-rust" as machine-readable output
     Then  the command exits 0
     And  the machine-readable instruction field equals the served text
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown stack instruction id is refused by name with the known list
     Given  a Givn project with an active change
     When  the author requests "steps-rustt"

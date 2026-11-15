@@ -2,7 +2,7 @@
 
 Feature: Instruction and skill guidance remains complete and machine-readable
 
-  @givn.added @wip
+  @givn.added
   Scenario: Every instruction id a served instruction names resolves
     Given  a Givn project with an active change and the guidance reference check available
     When  the maintainer runs the guidance reference check over every served instruction
@@ -10,7 +10,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  every instruction id an effective addon instruction names resolves
     And  the check names no unresolved instruction id
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dangling stack instruction id fails the reference check by name
     Given  a Givn project with an active change
     And  a steps instruction override that names "steps-rustt"
@@ -18,7 +18,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then  the check fails
     And  it names "steps-rustt"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A policy instruction named with a change context is a finding
     Given  a Givn project with an active change and the guidance reference check available
     And  a served instruction names "proposal" without a change context
@@ -28,7 +28,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  it names "steps" and the extra change context
     And  it reports no finding for "proposal"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ise instruction names only instruction ids that resolve
     Given  a Givn project with the ise addon enabled and the guidance reference check available
     When  the maintainer requests the ise instruction and runs the reference check over it
@@ -37,7 +37,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the served text names the artifact instruction that owns the change-strategy record and the one that owns the spec-gap record
     And  every named instruction id resolves
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review guidance keeps every surviving obligation
     Given  a Givn project with an active change
     When  the maintainer requests the review instructions through the Givn CLI
