@@ -1923,7 +1923,7 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope
 (`GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs`) as well.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: trial-record'`.
 
-- [ ] Scenario: `Preparation collapses a repeated path`
+- [x] Scenario: `Preparation collapses a repeated path`
   - Design constraints:
     - Fixture: `source: ["src/**"]`, empty retained roles; a committed revision
       with `src/one.rs` and `src/two.rs`.
@@ -1933,20 +1933,31 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope
       and `replaced_paths` holds one entry.
     - Contract: `named_paths` is sorted and deduplicated; `counts.replaced ==
       replaced_paths.len()`.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/record.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/record.rs`,
         `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED replay (not chronological; the implementation preceded the first
+          run): the bound not-implemented Given fails with
+          "not implemented: a committed revision with \"src/one.rs\" and
+          \"src/two.rs\""; 1 scenario (1 failed), 2 steps (1 passed, 1 failed).
+        GREEN: the same command -> exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: `named_paths` normalizes, sorts, and deduplicates the
+          `--path` input; the partition already collapses the repeat, so one
+          path is replaced and one is recorded.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No production edit. `cargo fmt` and
+        `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+        clean; see the batch-wide REFACTOR evidence in the `@e2e` scenario.
+        Re-ran the scenario: 1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `trial-record`
+  - [x] COMMIT: `0eb1c514cf5af97e4e808c84835ea0602369727e` -- Batch: `trial-record`
 
-- [ ] Scenario: `Preparation prints the trial record to stdout when no receipt path is given`
+- [x] Scenario: `Preparation prints the trial record to stdout when no receipt path is given`
   - Design constraints:
     - Fixture: a clean Git project with a valid declaration and one committed
       file.
@@ -1956,20 +1967,31 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope
       `Receipt path` line.
     - Contract: D4 — the receipt line is conditional; the record is printed
       after the report on the same stream.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/record.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/record.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED replay (not chronological): the bound not-implemented When fails
+          with "not implemented: the developer prepares a trial from \"HEAD\"
+          with a full replacement and no receipt";
+          1 scenario (1 failed), 2 steps (1 passed, 1 failed).
+        GREEN: the same command -> exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: `replace` returns the rendered YAML in the report when
+          `--receipt` is absent and leaves `receipt` empty, so `render` prints
+          no `Receipt path` line and writes no file.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No production edit. `cargo fmt` and
+        `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+        clean; the batch-wide suite evidence is in the `@e2e` scenario. Re-ran
+        the scenario: 1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `trial-record`
+  - [x] COMMIT: `0eb1c514cf5af97e4e808c84835ea0602369727e` -- Batch: `trial-record`
 
-- [ ] Scenario: `A dry run performs every read and writes no trial or record`
+- [x] Scenario: `A dry run performs every read and writes no trial or record`
   - Design constraints:
     - Fixture: a clean Git project with a declaration that retains one file and
       declares one source root with two tracked files, so `Would write:` has
@@ -1981,20 +2003,38 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope
       absent.
     - Contract: the dry run performs every read, the partition, every refusal,
       the counts, and the identities, and stops before `create_dir`.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED replay (not chronological): the bound not-implemented When fails
+          with "not implemented: the developer runs a dry run from \"HEAD\"
+          with a full replacement and a receipt";
+          1 scenario (1 failed), 2 steps (1 passed, 1 failed).
+        GREEN: the same command -> exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        RESOLVED CONTRADICTION: this scenario's shared Given (`a Git project
+          with ise enabled and a declaration`) builds the default fixture, so
+          the block holds its five retained files
+          (docs/arc42/02-architecture-constraints.md, docs/glossary.md,
+          docs/reference.md, givn/specs/demo.feature, tests/e2e/Cargo.toml),
+          not the three entries this task's Fixture note predicts. The step
+          asserts that fixture's sorted union; a dedicated three-entry fixture
+          would need a new Given phrase, which the feature text does not have.
+        IMPLEMENTATION: the dry run performs the blob reads and identities
+          before returning; `create_dir` and the record write are skipped.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No production edit. `cargo fmt` and
+        `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+        clean; the batch-wide suite evidence is in the `@e2e` scenario. Re-ran
+        the scenario: 1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `trial-record`
+  - [x] COMMIT: `0eb1c514cf5af97e4e808c84835ea0602369727e` -- Batch: `trial-record`
 
-- [ ] Scenario: `Preparation refuses when the record cannot be written`
+- [x] Scenario: `Preparation refuses when the record cannot be written`
   - Design constraints:
     - Fixture: `--receipt` names a path whose parent is a regular file, so
       `create_new` fails after the trial exists.
@@ -2003,20 +2043,30 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope
       created is removed.
     - Contract: design-review blocker 3 — the refusal is reachable only after
       the write, so the created trial is removed and no record exists.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED replay (not chronological): the bound not-implemented Given fails
+          with "not implemented: a receipt path whose parent directory is a
+          regular file"; 1 scenario (1 failed), 2 steps (1 passed, 1 failed).
+        GREEN: the same command -> exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: `TrialRecord::write` opens with `create_new`; `replace`
+          removes the trial it created and returns the error that names the
+          receipt path.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No production edit. `cargo fmt` and
+        `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+        clean; the batch-wide suite evidence is in the `@e2e` scenario. Re-ran
+        the scenario: 1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `trial-record`
+  - [x] COMMIT: `0eb1c514cf5af97e4e808c84835ea0602369727e` -- Batch: `trial-record`
 
-- [ ] @e2e Scenario: `Developer prepares a clean-room trial from a recorded revision`
+- [x] @e2e Scenario: `Developer prepares a clean-room trial from a recorded revision`
   - Design constraints:
     - Fixture: a temp Git project with `ise` enabled; a declaration that
       retains `givn/specs/**`, declares `tests/e2e`, and replaces `src/**`; a
@@ -2043,20 +2093,48 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope
       `givn/changes/add-ise-clean-room-commands/evidence/visual/developer-prepares-a-clean-room-trial-from-a-recorded-revision/transcript.txt`.
     - Step file: `tests/steps/clean_room_preparation_e2e_steps.rs` (separate
       from the regular steps).
-  - [ ] Implement the scenario and its tests. Files:
+  - [x] Implement the scenario and its tests. Files:
         `tests/steps/clean_room_preparation_e2e_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`, the committed transcript. Run
         the single-scenario command under the e2e scope, then
         `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs
         ./run-tests.sh --e2e`. Must pass.
         ```
-        <!-- RED / GREEN evidence, including the e2e scope counts -->
+        RED replay (not chronological): the bound not-implemented Given fails
+          with "not implemented: a Git project with ise enabled and a
+          declaration that retains \"givn/specs/**\", declares \"tests/e2e\",
+          and replaces \"src/**\""; 1 scenario (1 failed).
+        GREEN: the single-scenario command -> exit 0;
+          1 scenario (1 passed), 11 steps (11 passed).
+        E2E SCOPE: GIVN_FEATURES=.../clean-room-preparation.feature
+          ./run-tests.sh --e2e -> 1 test run: 1 passed, 41 skipped.
+          ./run-tests.sh --e2e (permanent) -> 111 passed, 980 skipped.
+        E2E SCOPE LIMIT: the whole change delta
+          (GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs)
+          selects both `@e2e` scenarios and fails on the still-unimplemented
+          `trial-input-verification` one (1 passed, 1 failed, 57 skipped);
+          batch `verify` owns that scenario. The owning-feature scope above is
+          this batch's clean e2e evidence.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run both, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run both, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        OUTLINE (advisory; src/ise, src/e2e_boundary, src/gherkin): 17 files,
+          53 units, 3 hints, all pre-existing method-length/multi-type
+          hints in files this batch did not change structurally. The new
+          units read by declaration: `TrialRecord` owns the record, its
+          `identities`/`scenario_digests` helpers own one identity set each,
+          `e2e_file_set` resolves the declared packages over a revision tree,
+          and `abbreviate` owns the report's digest rendering.
+        CODE LINES: src/ise/mod.rs 437, partition.rs 238, record.rs 132,
+          verify.rs 10; all within the 500 limit.
+        No production edit in REFACTOR. `cargo fmt` and
+          `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+          clean; `./run-tests.sh --non-e2e` is 980/980 and
+          `./run-tests.sh --e2e` is 111/111. Re-ran the single scenario:
+          1 scenario (1 passed), 11 steps (11 passed); the owning-feature e2e
+          scope: 1 passed, 41 skipped.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `trial-record`
+  - [x] COMMIT: `0eb1c514cf5af97e4e808c84835ea0602369727e` -- Batch: `trial-record`
 
 ---
 
