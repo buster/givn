@@ -389,7 +389,7 @@ a statement reality contradicts is corrected in that batch.
       `tests/steps/serve_extended_rules_steps.rs` from its first use on.
       ```
 
-- [ ] COMMIT: `<hash>` -- Batch: `setup`
+- [x] COMMIT: `03070b80` -- Batch: `setup`
 
 ---
 
@@ -723,7 +723,7 @@ adds the bindings and the assertions only.
 **Files modified:** `tests/steps/serve_extended_rules_steps.rs` (bindings plus
 the token constants from `## Setup`). **Production:** none.
 
-- [ ] Scenario: `Core step guidance names each stack instruction with its load condition`
+- [x] Scenario: `Core step guidance names each stack instruction with its load condition`
   - Design constraints:
     - Outline, 6 rows: `steps-rust`/`cucumber-rs`, `steps-python`/`behave`,
       `steps-node`/`cucumber-js`, `steps-java`/`cucumber-jvm`,
@@ -743,25 +743,31 @@ the token constants from `## Setup`). **Production:** none.
       stack-instruction rule).
     - Evidence: existing behavior protected; no production edit.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS: bind the When and both Thens.
+  - [x] TESTS: bind the When and both Thens.
         ```
-        RED: not available, existing behavior protected (`02126585`). Probe
-        instead: delete one id line from assets/instructions/steps.md, run the
-        row, observe the failure naming that id, restore the file.
-        paste: probe failure and the restored green run
+        RED: not available, existing behavior protected (`02126585`).
+        probe: removed the line "`steps-rust` when the change's runner is
+        `cucumber-rs`;" from assets/instructions/steps.md, ran the Outline:
+          ✘ Then the served text names "steps-rust" when the change's runner
+            is "cucumber-rs"
+            "the served text does not name "`steps-rust` when the change's
+             runner is `cucumber-rs`""
+          6 scenarios (5 passed, 1 failed)
+        restored the file; green run: 6 scenarios (6 passed), 24 steps.
         ```
-  - [ ] IMPLEMENTATION + GREEN: no production change; the assertions above.
+  - [x] IMPLEMENTATION + GREEN: no production change; the assertions above.
         ```
-        paste: 6 scenarios (6 passed) for the Outline
+        6 scenarios (6 passed), 24 steps (24 passed) for the Outline.
         ```
-  - [ ] REFACTOR: whitespace-normalization helper only if a fragment straddles
+  - [x] REFACTOR: whitespace-normalization helper only if a fragment straddles
         a line break; no behaviour change.
         ```
-        paste
+        No straddle: every load-condition sentence fits one served line, so no
+        normalization was added. cargo fmt/clippy clean; re-run 6 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `stack-load-conditions`
+  - [x] COMMIT: `eb5a9456` -- Batch: `stack-load-conditions`
 
-- [ ] Scenario: `Design guidance names each stack instruction with its load condition and carries no runner table`
+- [x] Scenario: `Design guidance names each stack instruction with its load condition and carries no runner table`
   - Design constraints:
     - Outline, 6 rows, same id/runner pairs as above.
     - When: new `the author requests the design instructions through the Givn
@@ -777,25 +783,36 @@ the token constants from `## Setup`). **Production:** none.
       instruction (`design.md:25-28,144-155`).
     - Evidence: existing behavior protected; no production edit.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS: bind the When and the four Thens.
+  - [x] TESTS: bind the When and the four Thens.
         ```
-        probe: add `.fail_on_skipped()` to assets/instructions/design.md, run
-        the row, observe the absence failure, restore.
-        paste: probe failure and the restored green run
+        probe: inserted "Probe: `.fail_on_skipped()` is the Rust mechanism."
+        under design.md's `## Strict mode (mandatory)` and ran the Outline:
+          ✘ And the served text carries no per-runner strict-mode mechanism
+            "the served text carries the per-runner strict-mode mechanism
+             ".fail_on_skipped()""
+        restored the file; green run: 6 scenarios (6 passed), 36 steps.
+        When: the existing `the author requests the design instructions through
+        the Givn CLI` binding is reused (it requests --change
+        instruction-integrity, the fixture's only active change).
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste: 6 scenarios (6 passed)
+        6 scenarios (6 passed), 36 steps (36 passed).
         ```
-  - [ ] REFACTOR.
+  - [x] REFACTOR.
         ```
-        paste
+        STRICT_MECHANISMS and RUN_COMMANDS are declared once here and reused by
+        the stack-bodies, core-absence, and tasks-guidance batches. fmt/clippy
+        clean; re-run 6 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `stack-load-conditions`
+  - [x] COMMIT: `eb5a9456` -- Batch: `stack-load-conditions`
 
-- [ ] Batch verification: both `--exact` commands; fmt; clippy.
+- [x] Batch verification: both `--exact` commands; fmt; clippy.
       ```
-      paste
+      steps Outline:  6 scenarios (6 passed)
+      design Outline: 6 scenarios (6 passed)
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ### Batch 4: `stack-bodies`
@@ -807,7 +824,7 @@ carries its runner's binding, stub, strict mechanism, and command, while the
 **Files modified:** `tests/steps/serve_extended_rules_steps.rs`.
 **Production:** none.
 
-- [ ] Scenario: `Every stack instruction is served only on its own request with its runner body`
+- [x] Scenario: `Every stack instruction is served only on its own request with its runner body`
   - Design constraints:
     - Outline, 6 rows with `(id, binding, stub, strict, command)`:
       `steps-rust` (`#[given(`, `unimplemented!()`, `.fail_on_skipped()`,
@@ -836,28 +853,46 @@ carries its runner's binding, stub, strict mechanism, and command, while the
       `src/config/cascade.rs`; the assertion never reads the asset file.
     - Evidence: existing behavior protected; no production edit.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS: bind the Given, the When, and the Thens.
+  - [x] TESTS: bind the Given, the When, and the Thens.
         ```
-        probe: delete the `- Strict mode:` bullet from
-        assets/instructions/steps-go.md, run the `steps-go` row, observe the
-        failure naming the missing mechanism, restore.
-        paste: probe failure and the restored green run
+        probe: removed the line "- Strict mode: `godog.ErrPending` fails by
+        default; no flag is needed." from assets/instructions/steps-go.md and
+        ran the Outline:
+          ✘ And the served text carries "`godog.ErrPending`"
+            "the served text does not carry "`godog.ErrPending`""
+          6 scenarios (5 passed, 1 failed)
+        restored the file; green run: 6 scenarios (6 passed), 60 steps.
+
+        Feature correction found while binding: three Examples cells wrapped
+        the expected fragment in backticks where the asset carries the phrase
+        inside a longer code span, so the literal assertion could never match
+        (steps-java `PendingException("TODO")`, steps-go `fails by default`,
+        steps-ruby `fail on pending`). The cells now carry the bare mechanism
+        fragment, exactly the row table this task specifies; scenario identity,
+        tags, rows, and step text are unchanged.
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste: 6 scenarios (6 passed)
+        6 scenarios (6 passed), 60 steps (60 passed). The six stack asset files
+        already carry the bodies (`02126585`); this batch adds the assertions
+        only, and each row is served with no change context (a stack id is a
+        policy id).
         ```
-  - [ ] REFACTOR: keep the row table in one place per row; no duplication of the
+  - [x] REFACTOR: keep the row table in one place per row; no duplication of the
         absence predicates (reuse `STUB_FORMS`, `STRICT_MECHANISMS`,
         `RUN_COMMANDS`, `BINDING_BULLETS`).
         ```
-        paste
+        One `STUB_FORMS`/`BINDING_BULLETS` chain in
+        `previous_steps_carries_no_stack_body`; no per-row duplication. fmt and
+        clippy clean; re-run 6 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `stack-bodies`
+  - [x] COMMIT: `6280a1f2` -- Batch: `stack-bodies`
 
-- [ ] Batch verification: the `--exact` command; fmt; clippy.
+- [x] Batch verification: the `--exact` command; fmt; clippy.
       ```
-      paste
+      --exact run: 6 scenarios (6 passed), 60 steps
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ### Batch 5: `core-absence`
@@ -869,7 +904,7 @@ in the assets today.
 **Files modified:** `tests/steps/serve_extended_rules_steps.rs`.
 **Production:** none.
 
-- [ ] Scenario: `Core step guidance carries no stack body`
+- [x] Scenario: `Core step guidance carries no stack body`
   - Design constraints:
     - When: request `steps` for the active change.
     - Then: no `STEP_PATHS` member; no `STUB_FORMS` member; no
@@ -883,25 +918,30 @@ in the assets today.
       the bullet labels and the runner-specific forms, never the bare tokens.
     - Evidence: existing behavior protected.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS.
+  - [x] TESTS.
         ```
-        probe: paste the `- Binding form: `#[given(` …` bullet from
-        assets/instructions/steps-rust.md into assets/instructions/steps.md, run,
-        observe the absence failure, restore.
-        paste: probe failure and the restored green run
+        probe: inserted the stack file's "- Binding form: `#[given(`, ...`"
+        bullet into assets/instructions/steps.md and ran the scenario:
+          ✘ And the served text carries no per-runner binding instruction
+            "the served text carries the per-runner binding bullet
+             \"Binding form:\""
+        restored the file; green run: 1 scenario (1 passed), 7 steps.
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste: the runner summary for the scenario (1 scenario passed) and its
-        step count
+        1 scenario (1 passed), 7 steps (7 passed).
+        The archive token list is asserted token by token (23 tokens) beside
+        the "Archive reads these"/"binding tokens:" sentence, so the narrowed
+        claim ("no per-runner binding instruction") never fires on it.
         ```
-  - [ ] REFACTOR.
+  - [x] REFACTOR.
         ```
-        paste
+        STEP_PATHS/STUB_FORMS/BINDING_BULLETS are each declared once and shared;
+        no per-assertion copies. fmt/clippy clean; re-run 1 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `core-absence`
+  - [x] COMMIT: `951cce63` -- Batch: `core-absence`
 
-- [ ] Scenario: `Specs and review guidance carry no stack body`
+- [x] Scenario: `Specs and review guidance carry no stack body`
   - Design constraints:
     - When: new `the author requests the specs and review instructions through
       the Givn CLI`: request both artifact ids with `--change`, keep both
@@ -917,25 +957,33 @@ in the assets today.
       general "no technology word" test.
     - Evidence: existing behavior protected.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS.
+  - [x] TESTS.
         ```
-        probe: append `steps-rust` to assets/instructions/review.md, run,
-        observe the failure, restore.
-        paste
+        probe: appended "See `steps-rust` for the Rust mechanics." to
+        assets/instructions/review.md and ran the scenario:
+          ✘ Then neither served text names a stack instruction
+            "the served review text names the stack instruction \"steps-rust\""
+        restored the file; green run: 1 scenario (1 passed), 4 steps.
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste
+        1 scenario (1 passed), 4 steps (4 passed): specs and review each carry
+        no STACK_IDS member and no RUNNERS/STUB_FORMS/STRICT_MECHANISMS/
+        RUN_COMMANDS/BINDING_BULLETS member.
         ```
-  - [ ] REFACTOR.
+  - [x] REFACTOR.
         ```
-        paste
+        one `specs_and_review_texts` accessor feeds both absence assertions; no
+        duplicated label handling. fmt/clippy clean; re-run 1 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `core-absence`
+  - [x] COMMIT: `951cce63` -- Batch: `core-absence`
 
-- [ ] Batch verification: both `--exact` commands; fmt; clippy.
+- [x] Batch verification: both `--exact` commands; fmt; clippy.
       ```
-      paste
+      Core step guidance carries no stack body:  1 scenario (1 passed), 7 steps
+      Specs and review guidance carry no stack body: 1 scenario (1 passed)
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ### Batch 6: `tasks-guidance`
@@ -946,7 +994,7 @@ mapping and carry no stack body (`02126585`).
 **Files modified:** `tests/steps/serve_extended_rules_steps.rs`.
 **Production:** none.
 
-- [ ] Scenario: `The tasks guidance points at the stack mapping and carries no stack body`
+- [x] Scenario: `The tasks guidance points at the stack mapping and carries no stack body`
   - Design constraints:
     - When: new `the author requests the tasks and reverse-engineering tasks
       instructions through the Givn CLI`: both artifact ids with `--change`.
@@ -962,25 +1010,40 @@ mapping and carry no stack body (`02126585`).
       empty-body rule, not per-runner stubs; the predicate above excludes them.
     - Evidence: existing behavior protected.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS.
+  - [x] TESTS.
         ```
-        probe: remove the `givn instructions steps` sentence from
-        assets/instructions/tasks-reverse.md, run, observe the failure, restore.
-        paste
+        probe: removed the sentence "`givn instructions steps` maps the
+        project's runner to the stack instruction that carries the stub and the
+        strict mechanism." from assets/instructions/tasks-reverse.md and ran the
+        scenario:
+          ✘ Then the tasks text names "steps" as the stack mapping
+            "the served tasks-reverse text does not name `steps` as the stack
+             mapping"
+        restored the file; green run: 1 scenario (1 passed), 5 steps.
+        The Then asserts the mapping sentence in both served texts: the
+        requirement is that `tasks` and `tasks-reverse` both point at `steps`,
+        and the sentence is identical in both assets.
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste
+        1 scenario (1 passed), 5 steps (5 passed): `tasks` and `tasks-reverse`
+        each carry the mapping sentence and the proof-of-strictness
+        requirement, and neither carries a STEP_PATHS/STUB_FORMS/
+        STRICT_MECHANISMS/RUN_COMMANDS/BINDING_BULLETS member.
         ```
-  - [ ] REFACTOR.
+  - [x] REFACTOR.
         ```
-        paste
+        `specs_and_review_texts` generalized to `served_pair(world, first,
+        second)` and reused by the specs/review and tasks/tasks-reverse
+        scenarios (no second pair accessor). fmt/clippy clean; re-run 1 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `tasks-guidance`
+  - [x] COMMIT: `ce46d09a` -- Batch: `tasks-guidance`
 
-- [ ] Batch verification: the `--exact` command; fmt; clippy.
+- [x] Batch verification: the `--exact` command; fmt; clippy.
       ```
-      paste
+      --exact run: 1 scenario (1 passed), 5 steps
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ### Batch 7: `stack-id-registration`
@@ -993,7 +1056,7 @@ the known-id list and makes each stack id a first-class policy id.
 `steps-java`, `steps-go`, `steps-ruby`, appended after `ise`; nothing else in
 the resolver changes), `tests/steps/serve_extended_rules_steps.rs`.
 
-- [ ] Scenario: `An unknown stack instruction id is refused by name with the known list`
+- [x] Scenario: `An unknown stack instruction id is refused by name with the known list`
   - Design constraints:
     - When: new `the author requests "steps-rustt"`:
       `givn instructions steps-rustt`.
@@ -1009,22 +1072,41 @@ the resolver changes), `tests/steps/serve_extended_rules_steps.rs`.
       architecture-principles, review-reverse, specs-reverse, tasks-reverse,
       ise` and no stack id.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS: bind the When and the last Then; reuse the two shared Thens.
+  - [x] TESTS: bind the When and the last Then; reuse the two shared Thens.
         ```
-        RED: <single-scenario command>
-        → paste: the stale known list showing `steps-rust` absent
+        command: GIVN_FEATURES=givn/changes/split-stack-instructions/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "obtain-effective-guidance/serve-extended-rules.feature::An unknown
+           stack instruction id is refused by name with the known list"
+        RED (observed before the production edit):
+          ✘ And stderr lists the known instruction ids including "steps-rust"
+            "the known-id list does not carry `steps-rust`: [\"proposal\",
+             \"specs\", \"design\", \"design-review\", \"tasks\", \"review\",
+             \"arc42-docs\", \"start\", \"dialog\", \"dialog-examples\",
+             \"challenge\", \"dev-principles\", \"domain-modeling\",
+             \"architecture-principles\", \"review-reverse\",
+             \"specs-reverse\", \"tasks-reverse\", \"ise\"]"
+          1 scenario (1 failed), 5 steps (4 passed, 1 failed)
         ```
-  - [ ] IMPLEMENTATION + GREEN: the six ids in `POLICY_INSTRUCTION_IDS`.
+  - [x] IMPLEMENTATION + GREEN: the six ids in `POLICY_INSTRUCTION_IDS`.
         ```
-        paste: exit 0, and stderr listing `steps-rust`
+        src/cli/instructions.rs:19-25 appends steps-rust, steps-python,
+        steps-node, steps-java, steps-go, steps-ruby after `ise`.
+        1 scenario (1 passed). Observed refusal:
+          "unknown artifact 'steps-rustt'. Known artifacts: proposal, specs,
+           design, design-review, tasks, review, arc42-docs, start, dialog,
+           dialog-examples, challenge, dev-principles, domain-modeling,
+           architecture-principles, review-reverse, specs-reverse,
+           tasks-reverse, ise, steps-rust, steps-python, steps-node,
+           steps-java, steps-go, steps-ruby"
         ```
-  - [ ] REFACTOR: none expected; the id order is the list order.
+  - [x] REFACTOR: none expected; the id order is the list order.
         ```
-        paste
+        none. fmt/clippy clean; re-run 1 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `stack-id-registration`
+  - [x] COMMIT: `8f324c0c` -- Batch: `stack-id-registration`
 
-- [ ] Scenario: `The machine-readable stack path carries the same content as the text path`
+- [x] Scenario: `The machine-readable stack path carries the same content as the text path`
   - Design constraints:
     - When: new `the author requests "steps-rust" as machine-readable output`:
       `givn instructions steps-rust --json`.
@@ -1039,25 +1121,44 @@ the resolver changes), `tests/steps/serve_extended_rules_steps.rs`.
       registration); probe by requesting `steps` in the JSON call instead of
       `steps-rust` and confirm the equality assertion fails.
     - Step file: `tests/steps/serve_extended_rules_steps.rs`.
-  - [ ] TESTS.
+  - [x] TESTS.
         ```
-        RED: not available, protected. Probe as above; paste the failure and
-        the restored green run.
+        RED: not available, existing behavior protected (the cascade serves the
+        id before the registration). Probe: sent the JSON request for `steps`
+        instead of `steps-rust`:
+          ✘ And the machine-readable instruction field equals the served text
+            "assertion `left == right` failed: the machine-readable instruction
+             differs from the served text"
+          1 scenario (1 failed)
+        restored; green run: 1 scenario (1 passed), 4 steps.
+        D4's `id`/`generates`/`requires` shape has no Then in the delta feature,
+        so it is not asserted here; the parity Then covers the contract the
+        scenario states.
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste: 1 scenario (1 passed), and the parity comparison's byte counts
+        1 scenario (1 passed), 4 steps (4 passed): the text request and the
+        `--json` request for `steps-rust` exit 0 and their instruction bodies
+        match after the skill route is stripped (the existing
+        `the machine-readable instruction field equals the served text`
+        contract).
         ```
-  - [ ] REFACTOR.
+  - [x] REFACTOR.
         ```
-        paste
+        none; the When records the text request in `previous_output` and the
+        JSON request in `last_output`, the field pair the shared Then reads.
+        fmt/clippy clean; re-run 1 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `stack-id-registration`
+  - [x] COMMIT: `8f324c0c` -- Batch: `stack-id-registration`
 
-- [ ] Batch verification: both `--exact` commands; fmt; clippy; and
+- [x] Batch verification: both `--exact` commands; fmt; clippy; and
       `./target/debug/givn instructions steps-rust` exits 0 in this checkout.
       ```
-      paste
+      unknown-id scenario:  1 scenario (1 passed)
+      machine-readable:     1 scenario (1 passed)
+      ./target/debug/givn instructions steps-rust -> exit 0
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ### Batch 8: `ise-mapping`
@@ -1068,7 +1169,7 @@ served text landed in `02126585`; this batch proves it with the new check.
 **Files modified:** `tests/steps/instruction_integrity_steps.rs`.
 **Production:** none.
 
-- [ ] Scenario: `The ise instruction names only instruction ids that resolve`
+- [x] Scenario: `The ise instruction names only instruction ids that resolve`
   - Design constraints:
     - Fixture: new `a Givn project with the ise addon enabled and the guidance
       reference check available`: `make_init_root`, `givn addons enable ise`
@@ -1088,25 +1189,40 @@ served text landed in `02126585`; this batch proves it with the new check.
       2's rule). The asset text is `assets/instructions/ise.md:34-52`.
     - Evidence: existing behavior protected.
     - Step file: `tests/steps/instruction_integrity_steps.rs`.
-  - [ ] TESTS.
+  - [x] TESTS.
         ```
-        probe: change `steps-rust` to `steps-rustt` in
-        assets/instructions/ise.md, run, observe the failure naming it, restore.
-        paste
+        probe: changed "`steps-rust` is one worked id" to "`steps-rustt` is one
+        worked id" in assets/instructions/ise.md and ran the scenario:
+          ✘ And the served text names "steps-rust" as one stack instruction
+            example
+            "the served ise text names no worked stack instruction example"
+        restored the file; green run: 1 scenario (1 passed), 6 steps.
+        The worked example is also proven to serve (`givn instructions
+        steps-rust` must exit 0), so the example is a live instruction and not
+        a bare word. It is not a `givn instructions` direction, so the
+        extractor does not grade it as one.
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste: 1 scenario (1 passed), and the resolved direction list
+        1 scenario (1 passed), 6 steps (6 passed). Directions graded in the
+        served ise text: `givn instructions steps` (policy, no context),
+        `givn instructions design --change <id>` and
+        `givn instructions proposal --change <id>` (artifacts, placeholder
+        substituted with the fixture's `ise-guidance` change). No finding.
         ```
-  - [ ] REFACTOR.
+  - [x] REFACTOR.
         ```
-        paste
+        reuses `reference_check_context`/`record_reference_check`/
+        `findings_report` from the reference-check batch; no second resolution
+        path. fmt/clippy clean; re-run 1 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `ise-mapping`
+  - [x] COMMIT: `2dab715d` -- Batch: `ise-mapping`
 
-- [ ] Batch verification: the `--exact` command; fmt; clippy.
+- [x] Batch verification: the `--exact` command; fmt; clippy.
       ```
-      paste
+      --exact run: 1 scenario (1 passed), 6 steps
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ### Batch 9: `review-obligations`
@@ -1118,7 +1234,7 @@ The review guidance keeps every surviving obligation, one stable marker each.
 **Files modified:** `tests/steps/instruction_integrity_steps.rs`.
 **Production:** none.
 
-- [ ] Scenario: `The review guidance keeps every surviving obligation`
+- [x] Scenario: `The review guidance keeps every surviving obligation`
   - Design constraints:
     - When: new `the maintainer requests the review instructions through the
       Givn CLI`: `givn instructions review --change <active change>`.
@@ -1134,28 +1250,39 @@ The review guidance keeps every surviving obligation, one stable marker each.
       consolidation stays withdrawn; no marker is replaced by a count.
     - Evidence: existing behavior protected.
     - Step file: `tests/steps/instruction_integrity_steps.rs`.
-  - [ ] TESTS.
+  - [x] TESTS.
         ```
-        probe: delete the `local run command` sentence from
-        assets/instructions/review.md, run, observe the failure naming that
-        marker, restore.
-        paste
+        probe: removed "- The local run command starts the full stack
+        (including digital twins)" from assets/instructions/review.md and ran
+        the scenario:
+          ✘ And the served text carries "local run command"
+            "the served text does not carry \"local run command\""
+        restored the file; green run: 1 scenario (1 passed), 11 steps.
         ```
-  - [ ] IMPLEMENTATION + GREEN.
+  - [x] IMPLEMENTATION + GREEN.
         ```
-        paste: the runner summary for the scenario (1 scenario passed) and its
-        step count
+        1 scenario (1 passed), 11 steps (11 passed): all nine markers are
+        served from the default fixture, so every one sits outside an addon
+        conditional block. (`@e2e` tag integrity, explicit E2E scope selection,
+        receipt reading, opposite classification, local run command, second
+        `@e2e` file, Design match:, Interaction coverage maps, no fourth
+        bucket.)
         ```
-  - [ ] REFACTOR: parameterize the nine markers as one table with the obligation
+  - [x] REFACTOR: parameterize the nine markers as one table with the obligation
         each names; no duplicate assertion bodies.
         ```
-        paste
+        The nine Thens already share one binding
+        (`^the served text carries "(.+)"$`), so no per-marker assertion body
+        exists to table-drive; only the When was needed. fmt/clippy clean;
+        re-run 1 passed.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `review-obligations`
+  - [x] COMMIT: `43b21724` -- Batch: `review-obligations`
 
-- [ ] Batch verification: the `--exact` command; fmt; clippy.
+- [x] Batch verification: the `--exact` command; fmt; clippy.
       ```
-      paste
+      --exact run: 1 scenario (1 passed), 11 steps
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ### Batch 10: `adr-register-count`
@@ -1173,7 +1300,7 @@ register has 28 accepted decisions and no proposed decisions` binding at
 29, so the permanent scenario matches the delta exactly and the permanent suite
 stays green).
 
-- [ ] Scenario: `The migration preserves independent architecture history across three proposed decisions`
+- [x] Scenario: `The migration preserves independent architecture history across three proposed decisions`
   - Design constraints:
     - Given: the existing `the remediation case carries the distinguishing
       marker "harness jib mandrel nozzle oboe yacht yarn zither"` and
@@ -1200,37 +1327,53 @@ stays green).
       observation: the permanent `--exact` run failed with `left: 29 right: 28`
       before the reconciliation.
     - Step file: `tests/steps/adr_qualification_gate_steps.rs`.
-  - [ ] TESTS: add the 29 binding, delete the 28 binding, move the permanent
+  - [x] TESTS: add the 29 binding, delete the 28 binding, move the permanent
         feature to 29.
         ```
-        RED: not available, protected. Probe: temporarily assert 30 in the new
-        binding, run, observe `left: 29 right: 30`, restore 29.
-        paste: the pre-batch permanent failure (`left: 29 right: 28`) and the
-        probe failure
+        The 29 binding and the permanent-feature move to 29 landed in c6b9eb6b;
+        the pre-batch red state was the correction's observation,
+        `left: 29 right: 28` on the permanent run.
+        probe (run now): set the binding's expectation to 30 in
+        tests/steps/adr_qualification_gate_steps.rs and ran the permanent
+        scenario:
+          ✘ Then the final register has 29 accepted decisions and no proposed
+            decisions
+            "left: 29" (assertion left == right failed)
+          1 scenario (1 failed)
+        restored 29; both scopes green.
         ```
-  - [ ] IMPLEMENTATION + GREEN: run the delta scenario and the permanent one.
+  - [x] IMPLEMENTATION + GREEN: run the delta scenario and the permanent one.
         ```
-        paste: both `--exact` runs, 1 scenario (1 passed) each; the delta
-        scenario runs against the new binding
+        delta scope (GIVN_FEATURES=givn/changes/split-stack-instructions/specs):
+          1 scenario (1 passed), 11 steps
+        permanent scope (GIVN_FEATURES=givn/specs): 1 scenario (1 passed),
+          11 steps
+        The batch adds the one assertion the design states and the count alone
+        does not prove: the register's `[ADR-077]` row is itself accepted
+        (docs/arc42/adr/README.md:64), so the 29 counted rows include the
+        decision this change accepted.
         ```
-  - [ ] REFACTOR: none; the assertion bodies stay per count because each names a
+  - [x] REFACTOR: none; the assertion bodies stay per count because each names a
         different register state.
         ```
-        paste
+        none; fmt/clippy clean; both scopes re-ran 1 passed each.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `adr-register-count`
+  - [x] COMMIT: `cc72c251` -- Batch: `adr-register-count`
 
-- [ ] Batch verification: the delta `--exact` command, the permanent `--exact`
+- [x] Batch verification: the delta `--exact` command, the permanent `--exact`
       command with `GIVN_FEATURES=givn/specs`; fmt; clippy.
       ```
-      paste
+      delta:     1 scenario (1 passed)
+      permanent: 1 scenario (1 passed)
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --locked --all-targets -- -D warnings -> exit 0
       ```
 
 ---
 
 ## Closeout
 
-- [ ] Every delta phrase is bound in a permanent per-capability step file and no
+- [x] Every delta phrase is bound in a permanent per-capability step file and no
       delta step copy exists:
       `find givn/changes/split-stack-instructions/specs -name '*steps*'` prints
       nothing; the bindings live in
@@ -1240,21 +1383,47 @@ stays green).
       `tests/common/instruction_references.rs` carries no
       `#[given]`/`#[when]`/`#[then]`.
       ```
-      paste: the find output and the binding counts per file
+      $ find givn/changes/split-stack-instructions/specs -name '*steps*'
+        (no output)
+      bindings: serve_extended_rules_steps.rs given=18 when=19 then=82;
+        instruction_integrity_steps.rs given=28 when=38 then=185;
+        adr_qualification_gate_steps.rs given=10 when=23 then=132.
+      tests/common/instruction_references.rs carries 0 `#[given(`/`#[when(`/
+      `#[then(`.
       ```
 
-- [ ] No empty, no-op, or stubbed step body remains in the files this change
+- [x] No empty, no-op, or stubbed step body remains in the files this change
       touched, and no phrase is bound twice.
       ```
-      paste: grep for `unimplemented!()|todo!()` and for duplicate phrases
-      across tests/steps/
+      $ grep -n 'unimplemented!()|todo!()' <the four touched files>
+        serve_extended_rules_steps.rs:1695-1696 — the two STUB_FORMS constant
+        members (`"unimplemented!()"`, `"todo!()"`), string data, not step
+        bodies. No call site anywhere.
+      duplicate check: extracted all 2970 bindings; the four duplicate pairs are
+      pre-existing and outside these files (archive_proof_steps.rs,
+      enforce_post_merge_e2e_gate_steps.rs, init_agent_target_selection_steps.rs,
+      mod.rs, outline_report_steps.rs). Every one of the 90 delta phrases now
+      matches exactly one binding (unbound=0, each `bound [1]`).
+      The full suite (1709 tests) passes, so no exercised phrase is ambiguous.
       ```
 
-- [ ] No delta scenario still carries `@wip`, and no `@e2e` tag was added or
+- [x] No delta scenario still carries `@wip`, and no `@e2e` tag was added or
       removed: `grep -rn '@wip' givn/changes/split-stack-instructions/specs/`
       prints nothing, and the delta declares no `@e2e` scenario.
       ```
-      paste
+      $ grep -rn '@wip' givn/changes/split-stack-instructions/specs/ | wc -l
+        0
+      $ grep -rn '@e2e' givn/changes/split-stack-instructions/specs/
+        instruction-integrity.feature:44  Then the served text carries
+                                          "`@e2e` tag integrity"
+        instruction-integrity.feature:49  And the served text carries
+                                          "second `@e2e` file"
+        Both are step text asserting review markers, not tag lines; no scenario
+        or feature carries an `@e2e` tag.
+      Sequencing deviation, recorded rather than hidden: the tags were removed
+      in one closeout commit, not per batch as the batch rule asks. Every
+      scenario those tags covered was green before removal (the delta scope ran
+      14/14 units, 29 rows), so no tag was dropped ahead of its test.
       ```
 
 - [ ] Contradictions 1 to 3 are dispositioned: Contradiction 1 is closed by the
@@ -1264,7 +1433,19 @@ stays green).
       Contradiction 3 by the `without_skill_route` comparison. None was fixed
       silently.
       ```
-      paste: the disposition of each, and the reference-check finding list
+      1. narrowed context rule (f2637b3f): closed. The reference check resolves
+         the six artifact directions without `--change` through the fixture's
+         single active change; the probe that makes them findings fails the
+         scenario, so the shipped assets stay unchanged.
+      2. permanent ADR register 29: closed by c6b9eb6b plus this batch's
+         `[ADR-077]` row assertion; both scopes pass.
+      3. machine-readable comparison: closed by the existing
+         `without_skill_route` contract (`the machine-readable instruction field
+         equals the served text`), asserted for `steps-rust`.
+      reference-check finding list: empty. `Every instruction id a served
+      instruction names resolves` reports "the reference check graded no
+      unresolved instruction ids"; the graded set is 7 artifact instructions,
+      21 served policy instructions, and 2 effective addon instructions.
       ```
 
 - [ ] Whole-change verification, in this order, each exiting 0 with zero
@@ -1280,17 +1461,31 @@ stays green).
       givn lint --change split-stack-instructions
       ```
       ```
-      paste: each command and its exit, the scenario counts per scope, and the
-      delta's 30 executed scenarios (15 declarations, three 6-row Outlines)
+      cargo fmt --all -- --check                     -> exit 0
+      cargo clippy --workspace --all-targets -- -D warnings -> exit 0
+      cargo nextest run        -> 1709 tests run: 1709 passed, 0 skipped
+      ./run-tests.sh --non-e2e -> 1041 tests run: 1041 passed, 113 skipped
+      ./run-tests.sh --e2e     -> 113 tests run: 113 passed, 1041 skipped
+      GIVN_FEATURES=givn/changes/split-stack-instructions/specs \
+        ./run-tests.sh --non-e2e -> 14 units: 14 passed (29 scenario rows,
+        three 6-row Outlines; the delta declares 14 scenarios, 13 @givn.added
+        and one @givn.modified, none @givn.removed)
+      givn lint --change split-stack-instructions -> 3 file(s) checked — clean
       ```
 
 - [ ] `givn check tasks --change split-stack-instructions` exits 0 and records
       the change verification receipt; `@wip` is gone, so the receipt covers the
       whole delta.
       ```
-      paste: the summary, the scenario and step counts, and the receipt line
+      givn check tasks --change split-stack-instructions -> see the recorded
+      run below (scenario and step counts, receipt line, exit 0)
       ```
 
-**Done when:** every box is checked with its batch revision, all 30 delta
+**Done when:** every box is checked with its batch revision, all 29 delta
 scenario rows pass in the change and permanent scopes, every contradiction is
 dispositioned, and the whole-change checks exit 0.
+
+Count correction: this section said "30 executed scenarios (15 declarations)"
+and "all 30 delta scenario rows". The delta holds 14 declarations and 29
+executed rows (three 6-row Outlines plus 11 single scenarios); the `## Batch
+map` above already had 14/29, so the closeout text was the stale one.
