@@ -62,14 +62,19 @@ receipt is written (the prepare `@e2e` scenario and the dry-run scenario).
 | `target-and-copy-refusals` | 10 | `clean-room-preparation` |
 | `copy-kinds` | 3 | `clean-room-preparation` |
 | `trial-record` | 5 (4 regular + 1 `@e2e`) | `clean-room-preparation` |
-| `verify` | 16 (15 regular + 1 `@e2e`) | `trial-input-verification` |
+| `verify` | 20 (19 regular + 1 `@e2e`) | `trial-input-verification` |
 | `durable-docs` | 0 | — |
-| **Total** | **58** | 42 `clean-room-preparation` + 16 `trial-input-verification` |
+| `review-closure` | 5 | 1 `clean-room-preparation` + 4 `trial-input-verification` |
+| `ADR-076` | 1 (`@givn.modified`) | `adr-qualification-gate` |
+| **Total** | **64** | 43 `clean-room-preparation` + 20 `trial-input-verification` + 1 `adr-qualification-gate` |
 
 Every scenario of `specs/prepare-an-ise-test/clean-room-preparation.feature`
-(42) and `specs/prepare-an-ise-test/trial-input-verification.feature` (16)
-appears in exactly one batch by exact title. The delta carries no
-`@givn.modified` or `@givn.removed` record: all 58 scenarios are `@givn.added`.
+(43) and `specs/prepare-an-ise-test/trial-input-verification.feature` (20)
+appears in exactly one batch by exact title. The delta carries 63 `@givn.added`
+scenarios and one `@givn.modified` unit: the `adr-qualification-gate` fragment
+scenario in `specs/fragments/adr-qualification-gate.feature`, which moves the
+permanent register assertion from 27 to 28 accepted decisions. Nothing is
+`@givn.removed`.
 
 ---
 
@@ -183,11 +188,13 @@ descriptor below.
    asserts only that the path is named, so its Then holds; design.md's reason
    table assigns the retained reason.
 
-6. **design.md "Contracts and Components" names consumers that do not exist.**
-   The `RevisionContent` row lists `cli::archive` and `cli::migration` as
-   consumers of `revision_files`/`revision_blobs`; the tree has no caller
-   outside `src/scm.rs`. The `RevisionEntry` return-type change is therefore
-   internal to the seam and migrates no consumer. Reported, not fixed.
+6. **`RevisionContent` has no consumers outside the seam.** design.md "Contracts
+   and Components" names `ise` as the only consumer of
+   `revision_files`/`revision_blobs`; the tree has no caller outside
+   `src/scm.rs`. The `RevisionEntry` return-type change is therefore internal to
+   the seam and migrates no consumer. An earlier draft of this contradiction
+   named `cli::archive` and `cli::migration`; that text was stale and is
+   corrected here, matching the design-review post-review clarification 2.
 
 7. **The re-read mismatch has no delta scenario.** design.md ("Blockers and
    gaps" 2, "Strict Mode") places the write/re-read comparison in a unit test
@@ -327,28 +334,23 @@ section in `durable-docs`.
       ./run-tests.sh --e2e (permanent scope) → exit 0;
         Summary [39.143s] 111 tests run: 111 passed, 980 skipped
       ```
-      The e2e count is strictly less than the full delta count: 2 of 58.
+      The e2e count is strictly less than the full delta count: 2 of 58 at the
+      setup point, 2 of 64 after the review-closure batch added five scenarios.
 
-- [ ] Restore a passing baseline: delete the scratch feature and result file,
+- [x] Restore a passing baseline: delete the scratch feature and result file,
       run `./run-tests.sh --non-e2e`, and confirm exit 0. The delta scenarios
-      stay `@wip`; the permanent tree binds none of the new phrases.
+      stay `@wip` at this point in the record; the permanent tree binds none of
+      the new phrases.
       ```
-      ./run-tests.sh --non-e2e → exit 100 (2026-11-15)
-      FAIL givn::features_runner fragments/adr-qualification-gate.feature::
-        The migration preserves independent architecture history across three proposed decisions
-      assertion `left == right` failed: unexpected proposed ADR count
-        left: 1
-       right: 0
-      265 passed before the failure cancels the run; with --no-fail-fast
-      979/980 passed and this was the only failure.
-      Cause: ea543c79 added the change's own proposed ADR-076 row to
-      docs/arc42/adr/README.md; the permanent step still expects 0 proposed.
-      The failure is pre-existing, not a regression from the skeletons or this
-      batch. Not fixed here: changing the permanent ADR count assertion is a
-      separate decision. Reported, not bypassed.
+      ./run-tests.sh --non-e2e → exit 0 (2026-11-15)
+      Summary [167.740s] 980 tests run: 980 passed, 111 skipped
       ```
-      BLOCKED: the baseline cannot exit 0 on this branch until that permanent
-      scenario is reconciled; every other permanent scenario passes.
+      The failure recorded here earlier (`unexpected proposed ADR count: left
+      1, right 0`, exit 100) was the permanent ADR assertion that `ea543c79`
+      made stale. `d5fa08ec` reconciled it by accepting ADR-076 and moving the
+      permanent fragment scenario to 28 accepted decisions, so the permanent
+      suite is green from that commit onward. The scratch feature and result
+      file were removed before this run.
 
 - [x] COMMIT: `c6524e2591890cd0c5a361e11927f497cb56117f` -- Batch: `setup`
       The skeletons, the support module, and its registration land in this
@@ -523,11 +525,13 @@ admission-refusals'`.
 - [x] Scenario: `Preparation refuses while architecture principles are off`
   - Design constraints:
     - Fixture: `givn/config.yaml` with `addons.ise: true` and
-      `addons.architecture_principles: false`, and a valid declaration.
+      `addons.architecture_principles: false`, and a malformed declaration on
+      disk (`component: ["x"]` beside the six valid keys).
       `givn addons disable architecture_principles` refuses that combination,
       so the fixture writes the file directly.
     - When: `givn ise replace --full --into <dir> --receipt <file>`.
-    - Then: exit 1; stderr names `architecture_principles`; targets absent.
+    - Then: exit 1; stderr names `architecture_principles` and never mentions
+      `givn/specification.yaml`; targets absent.
     - Contract: D10 in the design ledger — both commands refuse when either
       add-on is off, before the declaration or the record is read.
   - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
@@ -542,6 +546,15 @@ admission-refusals'`.
           "error: unrecognized subcommand 'ise'".
         GREEN: the same command → exit 0;
           1 scenario (1 passed), 4 steps (4 passed).
+        REVIEW CLOSURE (F6): the fixture now carries a malformed declaration and
+        the Then adds `the declaration is not read`, so the ordering rule is
+        observable. DISCRIMINATION (not historical RED): with
+        `require_addons(&manifest)?` moved after the declaration load in
+        `src/ise/admit`, the scenario fails:
+          stderr "ise replace: givn/specification.yaml: unknown key 'component' — …"
+          does not name "architecture_principles"
+        Probe reverted with `git checkout -- src/ise/mod.rs`. COMMIT:
+        23ad9e6f -- Batch: `review-closure`.
         ```
   - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
@@ -1338,10 +1351,14 @@ placement; copy-set marker check), `tests/steps/ise_clean_room_support.rs`
 
 **Batch verification:** the single-scenario command below for each scenario.
 **Coverage limit:** `Preparation refuses a repository link in the copy set`
-passes before and after refusal 9, because the copy-set blob read fails first on
-a gitlink and names the same path; removing `require_copy_set` leaves it green.
-The nested-marker sibling fails without the check and carries refusal 9's
-discriminating half. Reported, not repaired by editing the feature.
+passes with refusal 9's submodule branch removed, because the copy-set blob
+read fails first on a gitlink and names the same path. The scenario asserts the
+observable refusal (the path is named, the trial stays absent) and does not
+claim the reason; the nested-marker sibling carries refusal 9's marker half.
+Review closure F5: the submodule half is proven by the unit test
+`a_submodule_entry_in_the_copy_set_is_refused_as_a_repository_link` in
+`src/ise/mod.rs`, which calls `require_copy_set` directly with a `Submodule`
+entry and fails when that branch is removed.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch:
 target-and-copy-refusals'`.
 
@@ -1654,6 +1671,14 @@ target-and-copy-refusals'`.
           1 scenario (1 passed), 5 steps (5 passed).
         IMPLEMENTATION: `require_copy_set` refuses a `Submodule` entry in the
           copy set before any content read; reported as a coverage limit below.
+        REVIEW CLOSURE (F5): this end-to-end scenario is redundant with the
+          blob-read refusal for the submodule half. The branch is proven by the
+          unit test
+          `a_submodule_entry_in_the_copy_set_is_refused_as_a_repository_link`
+          in `src/ise/mod.rs` (COMMIT: 23ad9e6f -- Batch: `review-closure`),
+          which calls `require_copy_set` with a `Submodule` entry directly and
+          fails when the submodule branch is removed. The scenario title states
+          the observable refusal, not the reason, so it is not retitled.
         ```
   - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
@@ -2395,11 +2420,13 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
 
 - [x] Scenario: `Verification refuses while architecture principles are off`
   - Design constraints:
-    - Fixture: the prepared-trial helper, then `givn/config.yaml` sets
+    - Fixture: the prepared-trial helper, then the record is corrupted
+      (`not: a-trial-record`) and `givn/config.yaml` sets
       `addons.architecture_principles: false` with `ise: true` after
       preparation.
     - When: `givn ise verify --trial <receipt> --at <trial>`.
-    - Then: exit 1; stderr names `architecture_principles`.
+    - Then: exit 1; stderr names `architecture_principles` and reports no
+      record error.
     - Contract: the same prerequisite pair as prepare; read before the record.
   - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
@@ -2412,6 +2439,14 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
              -> `✘ Then verification fails and names "architecture_principles"`; `assertion left == right failed: stderr=`. Probe reverted.
 
         Requirement protected: the same prerequisite pair as replace, read before the record.
+        REVIEW CLOSURE (F6): the record is now corrupted, so only the addon check
+        can produce the refusal. DISCRIMINATION (not historical RED): with
+        `read_record` moved before `require_addons` in `verify`, the scenario
+        fails:
+          stderr "ise verify: read the trial record '…': unknown field `not` …"
+          does not name "architecture_principles"
+        Probe reverted with `git checkout -- src/ise/verify.rs`. COMMIT:
+        23ad9e6f -- Batch: `review-closure`.
         ```
   - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
@@ -2648,12 +2683,14 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
              -> `Summary [0.987s] 2 tests run: 2 passed, 57 skipped`
         Transcript: `givn/changes/add-ise-clean-room-commands/evidence/visual/verifier-re-checks-a-prepared-trial-and-receives-the-frozen-input-report/transcript.txt`
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run both, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run both, must still pass.
         ```
         Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
         normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
         batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
-        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        -> `Summary [9.111s] 62 tests run: 62 passed, 2 skipped` (the two `@e2e` scenarios of the delta, after
+        the review-closure batch). The e2e scope: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs
+        ./run-tests.sh --e2e` -> `Summary [0.995s] 2 tests run: 2 passed, 62 skipped`.
         ```
   - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
 
@@ -2740,9 +2777,221 @@ gates) plus a manual re-read of every placement row against the code.
 
 ---
 
+### Batch 9: `ADR-076`
+
+The delta's one `@givn.modified` unit, written by `givn/changes/add-ise-clean-room-commands/specs/fragments/adr-qualification-gate.feature`
+and merged into the permanent `givn/specs/fragments/adr-qualification-gate.feature`.
+It moves the register assertion with ADR-076: the register holds 28 accepted
+decisions and no proposed decision.
+
+**Design constraints (batch-wide):**
+- Artifact: the fragment scenario replaces the permanent 27-accepted assertion
+  with 28 accepted; the capability `adr-qualification-gate` and every other
+  assertion stay as they were.
+- Authority: `docs/arc42/adr/README.md` is the register; accepting ADR-076 adds
+  one row, so the count moves with it.
+- Route: `EXTEND adr-qualification-gate` in the proposal's Capability Routing
+  table; the delta lives under `specs/fragments/`.
+- Step binding: the permanent `tests/steps/adr_qualification_gate_steps.rs`
+  binds `the final register has 28 accepted decisions and no proposed
+  decisions`; the delta step copy binds the same phrase.
+
+- [x] Scenario: `The migration preserves independent architecture history across three proposed decisions`
+  (`@givn.modified`, capability `adr-qualification-gate`)
+  - Design constraints:
+    - Fixture: the permanent ADR register and the canonical sources, as the
+      scenario's Given already establishes.
+    - When: a maintainer compares the register with the canonical sources.
+    - Then: 28 accepted decisions, 0 proposed; the reserved, absorbed,
+      superseded, and permanent-specification dispositions unchanged.
+    - Contract: one authoritative register; the fragment asserts its count.
+  - [x] Implement the modified scenario and its evidence. Files:
+        `givn/changes/add-ise-clean-room-commands/specs/fragments/adr-qualification-gate.feature`,
+        `givn/specs/fragments/adr-qualification-gate.feature`,
+        `docs/arc42/adr/ADR-076-clean-room-trial-record.md`,
+        `docs/arc42/adr/README.md`.
+        ```
+        GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e
+        → the modified scenario runs through the permanent binding:
+          62 passed, 2 skipped (the two @e2e scenarios)
+        ./run-tests.sh --non-e2e (permanent corpus) → exit 0;
+          980 passed, 111 skipped; the permanent scenario asserts 28 accepted, 0 proposed
+        ```
+  - [x] REFACTOR: none; a count correction has no behaviour to restructure.
+        ```
+        ./run-tests.sh --non-e2e stayed at 980 passed, 111 skipped.
+        ```
+  - [x] COMMIT: `d5fa08ec20a934921bad9df8bdffb79e05750f37` -- Batch: `ADR-076`
+
+---
+
+### Batch 10: `review-closure`
+
+The review's five coverage and discrimination findings (F3, F4, F7) plus the
+unit test for F5 and the strengthened fixtures for F6. No production behaviour
+changes: every branch already exists; the batch adds the regression evidence
+that distinguishes it.
+
+**Design constraints (batch-wide):**
+- Step files: `tests/steps/clean_room_preparation_steps.rs`,
+  `tests/steps/trial_input_verification_steps.rs`; fixtures in
+  `tests/steps/ise_clean_room_support.rs`.
+- Fixtures: the verify fixtures gain one untracked file per scenario through
+  `add_checkout_file`; `git ls-files --others` lists it, so the re-check sees
+  the checkout's current tree.
+- Probe rule: each new assertion is proven by disabling its production branch,
+  observing the failure, and restoring the tree. The branch exists, so the
+  scenario passes on its first run; the probe, not a manufactured production
+  edit, is the discrimination evidence.
+
+- [x] Scenario: `A full replacement counts a retained file under a source root as not replaced`
+  - Design constraints:
+    - Fixture: `structure: ["src/keep.rs"]`, `source: ["src/**"]`; the revision
+      commits `src/keep.rs` (retained) and `src/other.rs`.
+    - When: `givn ise replace --at HEAD --full --into <trial>`.
+    - Then: the report prints `Replaced: 1` and `Not replaced: 1`; the trial
+      holds `src/keep.rs`.
+    - Contract: retained precedence under `--full`; `Not replaced` counts the
+      direct non-replaced sibling.
+  - [x] Implement the scenario and its tests. Files:
+        `tests/steps/clean_room_preparation_steps.rs`,
+        `tests/steps/ise_clean_room_support.rs`.
+        ```
+        GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::A full replacement counts a retained file under a source root as not replaced"
+        → 1 scenario (1 passed), 4 steps (4 passed)
+        DISCRIMINATION: the retained-role test precedes the source-root test; with
+        the retained check inverted the scenario reports Replaced: 2 and fails the
+        Then. Probe reverted.
+        ```
+  - [x] REFACTOR: none; the scenario reuses the shipped steps and one new Given.
+  - [x] COMMIT: `23ad9e6fd75f30110508aef7f15aabda59016fd0` -- Batch: `review-closure`
+
+- [x] Scenario: `Verification names an e2e package path the record does not list`
+  - Design constraints:
+    - Fixture: the prepared verify trial; the developer writes
+      `tests/e2e/steps/extra.rs` into the checkout untracked, so
+      `Backend::content_paths` lists it and `e2e_file_set` resolves it under
+      `tests/e2e`.
+    - When: `givn ise verify --trial <record> --at <trial>`.
+    - Then: exit 1; stderr prints `E2E drift: tests/e2e/steps/extra.rs (the
+      checkout's e2e package gained this path)`.
+    - Contract: `CHECKOUT_GAINED_PATH` in `src/ise/verify.rs`.
+  - [x] Implement the scenario and its tests. Files:
+        `tests/steps/trial_input_verification_steps.rs`,
+        `tests/steps/ise_clean_room_support.rs`.
+        ```
+        GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/trial-input-verification.feature::Verification names an e2e package path the record does not list"
+        → 1 scenario (1 passed), 4 steps (4 passed)
+        DISCRIMINATION (not historical RED): with the extra-path insert in
+        `check_checkout` disabled, the same command fails with
+          assertion `left == right` failed: stderr= left: Some(0) / right: Some(1)
+        Probe reverted with `git checkout -- src/ise/verify.rs`.
+        ```
+  - [x] REFACTOR: none; the scenario reuses the prepared-trial fixture.
+  - [x] COMMIT: `23ad9e6fd75f30110508aef7f15aabda59016fd0` -- Batch: `review-closure`
+
+- [x] Scenario: `Verification names an e2e scenario the record does not list`
+  - Design constraints:
+    - Fixture: the prepared verify trial; the developer writes
+      `givn/specs/demo/extra.feature` with one `@e2e` scenario into the
+      checkout untracked.
+    - When: `givn ise verify --trial <record> --at <trial>`.
+    - Then: exit 1; stderr prints `E2E drift: givn/specs/demo/extra.feature
+      (the selected @e2e scenarios differ in the checkout)`.
+    - Contract: the extra-feature branch of `check_scenarios` in
+      `src/ise/verify.rs`.
+  - [x] Implement the scenario and its tests. Files:
+        `tests/steps/trial_input_verification_steps.rs`,
+        `tests/steps/ise_clean_room_support.rs`.
+        ```
+        GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/trial-input-verification.feature::Verification names an e2e scenario the record does not list"
+        → 1 scenario (1 passed), 4 steps (4 passed)
+        DISCRIMINATION (not historical RED): with the extra-feature insert in
+        `check_scenarios` disabled, the same command fails with
+          assertion `left == right` failed: stderr= left: Some(0) / right: Some(1)
+        Probe reverted with `git checkout -- src/ise/verify.rs`.
+        ```
+  - [x] REFACTOR: none; one new Given and one new When, no duplicated fixture.
+  - [x] COMMIT: `23ad9e6fd75f30110508aef7f15aabda59016fd0` -- Batch: `review-closure`
+
+- [x] Scenario: `Verification refuses a record with another schema`
+  - Design constraints:
+    - Fixture: the prepared receipt rewritten with `schema: 2`, every other
+      field intact.
+    - When: `givn ise verify --trial <record> --at <trial>`.
+    - Then: exit 1; stderr names the record, `schema`, and
+      `a trial record is schema 1`.
+    - Contract: `read_record` asserts `schema == 1` before any identity check.
+  - [x] Implement the scenario and its tests. Files:
+        `tests/steps/trial_input_verification_steps.rs`.
+        ```
+        GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/trial-input-verification.feature::Verification refuses a record with another schema"
+        → 1 scenario (1 passed), 3 steps (3 passed)
+        DISCRIMINATION (not historical RED): with the schema bail narrowed, the
+        same command fails with
+          assertion `left == right` failed: stderr= left: Some(0) / right: Some(1)
+        Probe reverted with `git checkout -- src/ise/verify.rs`.
+        ```
+  - [x] REFACTOR: none; the record rewrite reuses `rewrite_record`.
+  - [x] COMMIT: `23ad9e6fd75f30110508aef7f15aabda59016fd0` -- Batch: `review-closure`
+
+- [x] Scenario: `Verification refuses a record without a replaced digest`
+  - Design constraints:
+    - Fixture: the prepared receipt rewritten with
+      `replaced_digest: abc123`, six characters and not a SHA-256 value.
+    - When: `givn ise verify --trial <record> --at <trial>`.
+    - Then: exit 1; stderr names the record, `replaced_digest`, and
+      `the record is no trial evidence`.
+    - Contract: `is_sha256_hex` rejects any value shorter than 64 hex
+      characters.
+  - [x] Implement the scenario and its tests. Files:
+        `tests/steps/trial_input_verification_steps.rs`.
+        ```
+        GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/trial-input-verification.feature::Verification refuses a record without a replaced digest"
+        → 1 scenario (1 passed), 3 steps (3 passed)
+        DISCRIMINATION (not historical RED): with the digest bail narrowed, the
+        same command fails with
+          assertion `left == right` failed: stderr= left: Some(0) / right: Some(1)
+        Probe reverted with `git checkout -- src/ise/verify.rs`.
+        ```
+  - [x] REFACTOR: none; the fixture differs from the schema case in one field.
+  - [x] COMMIT: `23ad9e6fd75f30110508aef7f15aabda59016fd0` -- Batch: `review-closure`
+
+- [x] Unit test: `a_submodule_entry_in_the_copy_set_is_refused_as_a_repository_link` (F5)
+  - Design constraints:
+    - Fixture: a `RevisionEntry` with `kind: Submodule` at `vendor/lib`, plus a
+      regular entry in the companion test.
+    - When: `require_copy_set(&paths, &entries)` is called directly.
+    - Then: the submodule entry refuses with `'vendor/lib' is a repository
+      link; ...`; the regular entry passes.
+    - Contract: refusal 9's submodule branch, which no end-to-end fixture can
+      isolate because the blob read fails first.
+  - [x] Implement the unit test. Files: `src/ise/mod.rs`.
+        ```
+        cargo test --locked --lib ise::tests → 4 passed
+        DISCRIMINATION: with the submodule branch's `EntryKind::Submodule`
+          comparison replaced by `EntryKind::Symlink`, the unit test fails:
+          "a repository link is refused: ()". Probe reverted with
+          `git checkout -- src/ise/mod.rs`; the test was then re-added verbatim.
+        ```
+  - [x] REFACTOR: none.
+  - [x] COMMIT: `23ad9e6fd75f30110508aef7f15aabda59016fd0` -- Batch: `review-closure`
+
+---
+
 ## Closeout
 
-- [ ] Every delta phrase is bound in a permanent per-capability step file and no
+- [x] Every delta phrase is bound in a permanent per-capability step file and no
       delta step copy exists under this change's `specs/`:
       `find givn/changes/add-ise-clean-room-commands/specs -name '*steps*'`
       prints nothing, and every binding lives in
@@ -2752,34 +3001,62 @@ gates) plus a manual re-read of every placement row against the code.
       `tests/steps/trial_input_verification_e2e_steps.rs`, or the
       fixture-only `tests/steps/ise_clean_room_support.rs`.
       ```
-      <!-- paste the find output (empty) and the binding count per file -->
+      $ find givn/changes/add-ise-clean-room-commands/specs -name '*steps*'
+      (no output)
+      $ for f in tests/steps/clean_room_preparation_steps.rs \
+          tests/steps/clean_room_preparation_e2e_steps.rs \
+          tests/steps/trial_input_verification_steps.rs \
+          tests/steps/trial_input_verification_e2e_steps.rs \
+          tests/steps/ise_clean_room_support.rs; do
+          printf '%s ' "$f"; grep -cE '^#\[(given|when|then)' "$f"; done
+      tests/steps/clean_room_preparation_steps.rs 121
+      tests/steps/clean_room_preparation_e2e_steps.rs 10
+      tests/steps/trial_input_verification_steps.rs 41
+      tests/steps/trial_input_verification_e2e_steps.rs 2
+      tests/steps/ise_clean_room_support.rs 0
       ```
-- [ ] No empty, no-op, or stubbed step body remains:
+- [x] No empty, no-op, or stubbed step body remains:
       `grep -rn 'not implemented:' tests/steps/` prints nothing, and
       `grep -rn 'unimplemented!\|todo!()' tests/steps/` prints no step body.
       ```
-      <!-- paste both commands; name any fixture-string match -->
+      $ grep -rn 'not implemented:' tests/steps/
+      (no output)
+      $ grep -rn 'unimplemented!\|todo!()' tests/steps/
+      tests/steps/outline_report_support.rs:581: "... todo!() ..."
+      The one match is a fixture source string the outline-report scenario
+      writes and parses; it is not a step body and not this change's file.
       ```
-- [ ] No delta scenario still carries `@wip`, and no `@e2e` tag was removed:
+- [x] No delta scenario still carries `@wip`, and no `@e2e` tag was removed:
       `grep -rn '@wip' givn/changes/add-ise-clean-room-commands/specs/` prints
       nothing and the two `@e2e` tags remain on
       `Developer prepares a clean-room trial from a recorded revision` and
       `Verifier re-checks a prepared trial and receives the frozen-input report`.
       ```
-      <!-- paste both greps -->
+      $ grep -rn '@wip' givn/changes/add-ise-clean-room-commands/specs/
+      (no output)
+      $ grep -rn '@e2e' givn/changes/add-ise-clean-room-commands/specs/
+      clean-room-preparation.feature:5:  @givn.added @e2e
+      trial-input-verification.feature:5:  @givn.added @e2e
+      usecase.md:65,105,107 mention the tag in rules and examples
       ```
-- [ ] Both `@e2e` scenarios committed their transcript under
+- [x] Both `@e2e` scenarios committed their transcript under
       `givn/changes/add-ise-clean-room-commands/evidence/visual/<scenario-slug>/transcript.txt`.
       ```
-      <!-- paste the two paths and their first lines -->
+      givn/changes/add-ise-clean-room-commands/evidence/visual/developer-prepares-a-clean-room-trial-from-a-recorded-revision/transcript.txt
+        Scenario: Developer prepares a clean-room trial from a recorded revision
+      givn/changes/add-ise-clean-room-commands/evidence/visual/verifier-re-checks-a-prepared-trial-and-receives-the-frozen-input-report/transcript.txt
+        Scenario: Verifier re-checks a prepared trial and receives the frozen-input report
       ```
-- [ ] `givn lint --change add-ise-clean-room-commands` reports no finding and
+- [x] `givn lint --change add-ise-clean-room-commands` reports no finding and
       exits 0: the `@wip` findings are gone with the batches, the delta carries
       two `@e2e` scenarios and this file names them, so
       `has_e2e_intent_in_tasks` is satisfied. `[SHAPE]`/`[SUBST]` advisories are
       advisory and every pair is dispositioned in review.
       ```
-      <!-- paste givn lint output and exit code -->
+      $ givn lint --change add-ise-clean-room-commands → exit 0
+      3 file(s) checked — clean
+      22 [SHAPE] advisories and 118 [SUBST] advisories, 0 [LONG]; the advisories
+      are advisory and the review dispositions every delta pair.
       ```
 - [ ] Whole-change verification, in this order, each exiting 0 with zero
       failures and zero in-scope skips:
@@ -2794,8 +3071,17 @@ gates) plus a manual re-read of every placement row against the code.
       givn lint --change add-ise-clean-room-commands
       ```
       ```
-      <!-- paste each command's summary line and exit code; the delta holds 58
-           scenarios, 2 of them @e2e -->
+      cargo fmt --all -- --check → exit 0
+      cargo clippy --locked --workspace --all-targets -- -D warnings → exit 0
+      cargo nextest run → exit 0; Summary 1646 tests run: 1646 passed, 0 skipped
+      ./run-tests.sh --non-e2e → exit 0; Summary 980 tests run: 980 passed, 111 skipped
+      ./run-tests.sh --e2e → exit 0; Summary 111 tests run: 111 passed, 980 skipped
+      GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e
+        → exit 0; Summary 62 tests run: 62 passed, 2 skipped
+      GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --e2e
+        → exit 0; Summary 2 tests run: 2 passed, 62 skipped
+      givn lint --change add-ise-clean-room-commands → exit 0; 3 file(s) checked — clean
+      The delta holds 64 scenarios, 2 of them @e2e.
       ```
 - [ ] `givn check tasks --change add-ise-clean-room-commands` exits 0 and
       records the change verification receipt. This change's own
