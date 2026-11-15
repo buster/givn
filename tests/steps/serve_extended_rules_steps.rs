@@ -1566,3 +1566,124 @@ fn project_with_explore_override(world: &mut GivnWorld) {
         .expect("write explore override");
     world.env = Some(env);
 }
+
+// --- stack-instruction load conditions --------------------------------------
+
+/// The stack instruction ids the core instructions name.
+pub(crate) const STACK_IDS: [&str; 6] = [
+    "steps-rust",
+    "steps-python",
+    "steps-node",
+    "steps-java",
+    "steps-go",
+    "steps-ruby",
+];
+
+/// The runners the stack instructions serve, in `STACK_IDS` order.
+pub(crate) const RUNNERS: [&str; 6] = [
+    "cucumber-rs",
+    "behave",
+    "cucumber-js",
+    "cucumber-jvm",
+    "godog",
+    "cucumber-ruby",
+];
+
+/// Per-runner strict-mode mechanisms: a stack body, never core text.
+pub(crate) const STRICT_MECHANISMS: [&str; 5] = [
+    ".fail_on_skipped()",
+    "--strict",
+    "godog.ErrPending",
+    "fail on pending",
+    "PendingException",
+];
+
+/// Per-stack single-scenario run commands: a stack body, never core text.
+pub(crate) const RUN_COMMANDS: [&str; 6] = [
+    "cargo test <name> -- --exact",
+    "behave -n",
+    "cucumber-js --name",
+    "mvn test -Dcucumber.filter.name",
+    "go test ./... -run TestFeatures",
+    "cucumber --name",
+];
+
+/// The served text of the last request, asserting it succeeded.
+fn served_text(world: &GivnWorld) -> String {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("no instruction was requested");
+    assert!(
+        output.status.success(),
+        "the instruction request failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[when("the author requests the steps instructions through the Givn CLI")]
+fn author_requests_steps_instructions(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(common::run_givn(env, &["instructions", "steps"]));
+}
+
+#[then(regex = r#"^the served text names "(.+)" when the change's runner is "(.+)"$"#)]
+fn served_text_names_stack_for_runner(world: &mut GivnWorld, id: String, runner: String) {
+    let content = served_text(world);
+    let sentence = format!("`{id}` when the change's runner is `{runner}`");
+    assert!(
+        content.contains(&sentence),
+        "the served text does not name {sentence:?}: {content}"
+    );
+}
+
+#[then(regex = r#"^the served text carries no bare "(.+)" direction without that condition$"#)]
+fn served_text_carries_no_bare_id(world: &mut GivnWorld, id: String) {
+    let content = served_text(world);
+    let runner = STACK_IDS
+        .iter()
+        .position(|candidate| *candidate == id)
+        .map(|index| RUNNERS[index])
+        .unwrap_or_else(|| panic!("`{id}` is not a stack instruction id"));
+    for line in content.lines().filter(|line| line.contains(&id)) {
+        assert!(
+            line.contains(runner),
+            "the served text names `{id}` without its load condition (`{runner}`) on the same line: {line}"
+        );
+    }
+}
+
+#[then("the served text carries no per-runner strict-mode mechanism")]
+fn served_text_carries_no_strict_mechanism(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for mechanism in STRICT_MECHANISMS {
+        assert!(
+            !content.contains(mechanism),
+            "the served text carries the per-runner strict-mode mechanism {mechanism:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text carries no per-stack single-scenario run command")]
+fn served_text_carries_no_run_command(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for command in RUN_COMMANDS {
+        assert!(
+            !content.contains(command),
+            "the served text carries the per-stack run command {command:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text still requires the runner's strict-mode proof")]
+fn served_text_requires_strict_proof(world: &mut GivnWorld) {
+    let content = served_text(world);
+    assert!(
+        content.contains("strict-mode config must be proven"),
+        "the served text dropped the requirement to prove the runner's strict-mode config: {content}"
+    );
+}
