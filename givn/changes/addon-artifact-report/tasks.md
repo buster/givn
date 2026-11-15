@@ -18,6 +18,7 @@ its observed filesystem effect. Generated skill directories live at
 ### Task 1.1: Contract and report core
 
 - [x] Implement `AddonSpec::materialization` and the `src/cli/addon_report.rs` contract.
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 
 **Design constraints**
 - Registry table is authoritative; declare exactly these values:
@@ -37,9 +38,13 @@ Scenarios: none directly; enables Task 1.2.
 ### Task 1.2: Report an enabled addon's materialized files
 
 - [x] Scenario: "Consumer lists addons and sees each addon's materialized files reported"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "An enabled addon with missing files is reported and the exit status is non-zero"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "An enabled addon whose effect is a managed block reports the block state"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "A damaged managed block for an enabled addon fails the command"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 
 **Design constraints**
 - Step file: `tests/steps/addon_artifact_report_steps.rs` (permanent home; the delta adds no separate copy).
@@ -48,16 +53,18 @@ Scenarios: none directly; enables Task 1.2.
 - Every finding prints `suggestion:` on the next line; the literal commands are `givn addons enable <id>` for an enabled addon with `missing` artifacts.
 - Exit 1 only for an enabled addon that is `missing` or `partial`.
 
-COMMIT: de8706da -- Batch: listing-reports-materialization
-
 ---
 
 ### Task 1.3: Report differences in the other direction
 
 - [x] Scenario: "Files present for a disabled addon are reported without failing the command"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "An enabled skill addon missing its skill from a selected target is reported as partial"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "A retired addon key in the configuration is refused with its replacement"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "Disabling domain_modeling keeps the shared glossary from a partial report"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 
 **Design constraints**
 - Disabled addon whose declared files exist: `artifacts: present`, `suggestion: givn addons disable <id>`, exit 0.
@@ -65,28 +72,28 @@ COMMIT: de8706da -- Batch: listing-reports-materialization
 - Retired keys are read from `givn/config.yaml` `addons:` and matched against `Addons::RETIRED`; print `  [retired ]  <key>  (replaced by <replacement>)` and `              suggestion: replace `addons.<key>` with `addons.<replacement>` in givn/config.yaml`; exit 0; no config write.
 - `domain_modeling` declares only `docs/domain-model.md`, so a retained `docs/glossary.md` never makes it `partial`.
 
-COMMIT: de8706da -- Batch: listing-reports-materialization
-
 ---
 
 ### Task 1.4: Report writes nothing, respects the lock, and handles a bare project
 
 - [x] Scenario: "The listing writes nothing to the project"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "A locked change adds the lock to each suggestion"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 - [x] Scenario: "An addon-free project listing reports every addon explicitly disabled"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 
 **Design constraints**
 - `addon_report.rs` contains no `std::fs::write`, `remove_*`, or `set_addon` call; a unit test greps the module source for those symbols.
 - Lock suffix: when `config::lock::locked_active_changes` returns entries, append `  (refused while change <ids> holds the add-on lock)` to every suggestion line. The report never refuses and never writes the lock.
 - Addon-free project: every registered addon prints `[disabled]` and `artifacts: none` where nothing was ever scaffolded; exit 0.
 
-COMMIT: de8706da -- Batch: listing-reports-materialization
-
 ---
 
 ## E2E setup task
 
 - [x] Prove strict mode and record the e2e scope selection.
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 
 **Design constraints**
 - Runner: existing `tests/features_runner.rs` with `.fail_on_skipped()`.
@@ -115,15 +122,14 @@ $ GIVN_TEST_RUNNER=cargo GIVN_FEATURES=givn/changes/addon-artifact-report/specs 
 
 E2E scenario count (1) is strictly less than the full count (11).
 
-COMMIT: de8706da -- Batch: listing-reports-materialization
-
 ---
 
 ## Batch 2 — `@e2e` smoke
 
 ### Task 2.1: Consumer runs `givn addons list`
 
-- [x] Scenario: "Consumer lists addons and sees each addon's materialized files reported" (`@e2e`)
+- [x] Scenario: "Consumer lists addons and sees each addon's materialized files reported"
+- [x] COMMIT: de8706da -- Batch: listing-reports-materialization
 
 **Design constraints**
 - Real interface: `common::run_givn(env, &["addons", "list"])`, asserting stdout and the exit code.
