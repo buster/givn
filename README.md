@@ -83,7 +83,7 @@ You don't need to write tests for every legacy feature up front. Run an initial 
 
 ## Projects using Givn
 
-- [`duty2cal`](https://github.com/duty2cal/duty2cal) — Converts a cabin-crew duty plan PDF into a calendar file.
+- [`duty2cal`](https://github.com/duty2cal/duty2cal) — Converts a crew duty plan PDF into a calendar file.
 - [`passuff`](https://github.com/buster/passuff) — Multi-account GitHub PR inbox and desktop notifier for the terminal.
 - [`watn`](https://github.com/buster/watn) — Turns plain-language questions into shell commands or text.
 
