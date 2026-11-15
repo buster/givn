@@ -1776,3 +1776,151 @@ fn previous_served_text(world: &GivnWorld) -> String {
     );
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
+
+// --- core-instruction absence -----------------------------------------------
+
+/// Per-runner step-definition paths: a stack body, never core text.
+pub(crate) const STEP_PATHS: [&str; 3] = ["tests/steps/", "features/steps/", "src/test/java"];
+
+/// The archive binding tokens `steps` keeps for every runner.
+const ARCHIVE_BINDING_TOKENS: [&str; 23] = [
+    "#[given(", "#[when(", "#[then(", "@given(", "@when(", "@then(", "@step(", "@Given(", "@When(",
+    "@Then(", "@And(", "@But(", "@Step(", "Given(", "When(", "Then(", "And(", "But(", "Step(",
+    ".Given(", ".When(", ".Then(", ".Step(",
+];
+
+/// The served `specs` text and the served `review` text of one request pair.
+fn specs_and_review_texts(world: &GivnWorld) -> [(&'static str, String); 2] {
+    let specs = world
+        .additional_output
+        .as_deref()
+        .expect("the specs guidance was not requested");
+    let review = world
+        .last_output
+        .as_ref()
+        .expect("the review guidance was not requested");
+    assert!(
+        review.status.success(),
+        "the review request failed: {}",
+        String::from_utf8_lossy(&review.stderr)
+    );
+    [
+        ("specs", specs.to_string()),
+        (
+            "review",
+            String::from_utf8_lossy(&review.stdout).into_owned(),
+        ),
+    ]
+}
+
+#[then("the served text carries no per-runner step-definition path")]
+fn served_text_carries_no_step_path(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for path in STEP_PATHS {
+        assert!(
+            !content.contains(path),
+            "the served text carries the per-runner step-definition path {path:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text carries no empty-body stub form")]
+fn served_text_carries_no_stub_form(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for stub in STUB_FORMS {
+        assert!(
+            !content.contains(stub),
+            "the served text carries the per-runner stub form {stub:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text carries no per-runner binding instruction")]
+fn served_text_carries_no_binding_instruction(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for bullet in BINDING_BULLETS {
+        assert!(
+            !content.contains(bullet),
+            "the served text carries the per-runner binding bullet {bullet:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text still requires one step definition file per capability")]
+fn served_text_requires_one_file_per_capability(world: &mut GivnWorld) {
+    let content = served_text(world);
+    assert!(
+        content.contains("One file per capability"),
+        "the served text dropped the one-file-per-capability rule: {content}"
+    );
+}
+
+#[then("the served text keeps the archive binding-token list for every runner")]
+fn served_text_keeps_archive_tokens(world: &mut GivnWorld) {
+    let content = served_text(world);
+    assert!(
+        content.contains("Archive reads these") && content.contains("binding tokens:"),
+        "the served text dropped the archive binding-token paragraph: {content}"
+    );
+    for token in ARCHIVE_BINDING_TOKENS {
+        assert!(
+            content.contains(token),
+            "the served text dropped the archive binding token {token:?}: {content}"
+        );
+    }
+}
+
+#[when("the author requests the specs and review instructions through the Givn CLI")]
+fn author_requests_specs_and_review(world: &mut GivnWorld) {
+    let specs = request_change_guidance(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+        "specs",
+    );
+    assert!(
+        specs.status.success(),
+        "the specs request failed: {}",
+        String::from_utf8_lossy(&specs.stderr)
+    );
+    world.additional_output = Some(String::from_utf8_lossy(&specs.stdout).into_owned());
+    let review = request_change_guidance(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+        "review",
+    );
+    world.last_output = Some(review);
+}
+
+#[then("neither served text names a stack instruction")]
+fn neither_text_names_stack_instruction(world: &mut GivnWorld) {
+    for (label, content) in specs_and_review_texts(world) {
+        for id in STACK_IDS {
+            assert!(
+                !content.contains(id),
+                "the served {label} text names the stack instruction {id:?}: {content}"
+            );
+        }
+    }
+}
+
+#[then("neither served text carries a per-runner mechanism")]
+fn neither_text_carries_per_runner_mechanism(world: &mut GivnWorld) {
+    for (label, content) in specs_and_review_texts(world) {
+        for token in RUNNERS
+            .iter()
+            .chain(STUB_FORMS.iter())
+            .chain(STRICT_MECHANISMS.iter())
+            .chain(RUN_COMMANDS.iter())
+            .chain(BINDING_BULLETS.iter())
+        {
+            assert!(
+                !content.contains(token),
+                "the served {label} text carries the per-runner mechanism {token:?}: {content}"
+            );
+        }
+    }
+}
