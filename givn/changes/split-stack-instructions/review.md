@@ -479,3 +479,73 @@ F2 are followed by a re-review that flips the verdict.
 - [x] No deferrals.
 
 REVIEW: FAIL
+
+## Finding closure
+
+Both blockers are fixed by the author. The verdict line above is unchanged; the
+re-review decides it.
+
+### F1 — the delta support fragment restated the rejected `ise` rule
+
+- **Fix.** `specs/fragments/fragment.md:89` now reads: "The `ise` instruction
+  names `steps` as the mapping for the change's stack mechanics, names one stack
+  instruction id as a worked example, and keeps `design` and `proposal` as the
+  record owners; every id it names is served while `ise` is effective." The
+  wording matches `usecase.md:66`, `design.md:198-206` (D6),
+  `design-review.md` decision 3, and `assets/instructions/ise.md:34-36`; the
+  delta scenario `The ise instruction names only instruction ids that resolve`
+  asserts the same mapping.
+- **Header.** The `gvn:base-sha256` line is unchanged:
+  `givn/specs/fragments/fragment.md` still hashes to `743c12e6…`, so the
+  permanent fragment did not move.
+- **Verification.** Delta `fragments/instruction-integrity.feature::The ise
+  instruction names only instruction ids that resolve` -> 1 scenario (1 passed),
+  6 steps (6 passed). Permanent scope `GIVN_FEATURES=givn/specs/fragments cargo
+  test --locked --test features_runner` -> 21 features, 256 scenarios
+  (256 passed), 1379 steps (1379 passed).
+- **Commit.** `c5719a40` — `fix(spec): name the ise stack mapping instead of a
+  project runner`.
+
+### F2 — the `steps-go` stub row was not discriminated
+
+- **Fix.** The `steps-go` Examples stub cell is now
+  `` `return godog.ErrPending` ``, a token only the stub row carries
+  (`assets/instructions/steps-go.md:6`). The previous `` `godog.ErrPending` ``
+  also matched the strict row (`:7`), which is why deleting the stub row stayed
+  green.
+- **Verification** (Outline `--exact` command, each run of `Every stack
+  instruction is served only on its own request with its runner body`):
+  - after the cell change: 6 scenarios (6 passed), 60 steps (60 passed);
+  - stub row deleted: ✘ `the served text carries "`return godog.ErrPending`"` —
+    `the served text does not carry "`return godog.ErrPending`"`, 6 scenarios
+    (5 passed, 1 failed);
+  - strict row deleted: ✘ `the served text carries "fails by default"` —
+    `the served text does not carry "fails by default"`, 6 scenarios
+    (5 passed, 1 failed).
+  - `assets/instructions/steps-go.md` was restored after each probe; `git diff`
+    on it is empty. No asset or step-definition edit remains.
+- **Commit.** `0cc81208` — `fix(spec): discriminate the steps-go stub row from
+  its strict row`.
+
+### Closure verification
+
+```text
+GIVN_FEATURES=givn/changes/split-stack-instructions/specs ./run-tests.sh --non-e2e
+  -> 14 tests run: 14 passed, 0 skipped (29 scenario rows)
+./run-tests.sh --non-e2e -> 1041 tests run: 1041 passed, 113 skipped
+./run-tests.sh --e2e      -> 113 tests run: 113 passed, 1041 skipped
+cargo nextest run         -> 1709 tests run: 1709 passed, 0 skipped
+cargo fmt --all -- --check -> exit 0
+cargo clippy --workspace --all-targets --locked -- -D warnings -> exit 0
+givn check tasks --change split-stack-instructions
+  -> 29 scenarios (29 passed), 190 steps (190 passed)
+     ✓ change verification receipt: 29 scenario(s), 0 failed, 0 skipped at
+       0cc81208e8b2ec484ceb29a0644f8be1d8fe3706
+     ✓ verify passed
+  exit 0
+```
+
+The changed features re-run the receipt: the F1 and F2 edits change the delta
+feature digest, so the previous receipt at `4eb829d9` no longer covered the
+candidate. The refreshed receipt tests `0cc81208` with 29 rows, 0 failed, and
+0 skipped.
