@@ -1417,6 +1417,12 @@ not a change artifact.
 | `written_path` | The absolute trial directory |
 | `givn_version` | The running Givn version |
 
+`retained_files` always includes `givn/specification.yaml` as an implicit
+entry, and `counts.retained` equals that map's entry count, so a retained role
+that also matches the declaration adds no second entry; `retained_digest`
+covers it. A record written before this entry existed still verifies against
+the paths it lists, and the verifier never synthesizes the missing entry.
+
 The per-path digest rule includes the path, the entry kind (`f` regular, `x`
 executable regular, `l` symlink), the executable marker, and the bytes or
 symlink target. The rollups hash the sorted `path NUL digest` pairs. The

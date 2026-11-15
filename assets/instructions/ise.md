@@ -20,7 +20,11 @@ off.
   retained path must survive `givn archive`: a change's artifacts move from
   `givn/changes/<id>/` to `givn/archive/<id>/`, so a retained role names the
   archived path or another durable path, never an active change's artifact.
-  `givn archive` refuses such a declaration before moving the change.
+  `givn archive` refuses such a declaration before moving the change. The trial
+  always carries the declaration itself: `givn/specification.yaml` is an
+  implicit retained entry, not a sixth role, so a project need not list it and
+  a builder reads the declared roles from the copy the selected revision
+  records.
 - **two-layer test boundary** — `@e2e` scenarios run from the declared `e2e`
   package and survive a rebuild. Component scenarios stay in the Specification
   unchanged; only their step definitions and fakes are implementation and may

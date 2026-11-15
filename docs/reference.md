@@ -339,8 +339,16 @@ repeatable and accepts a tracked file or a directory: a file contributes
 itself, a directory contributes every tracked file beneath it at the revision,
 a value that resolves to no tracked file removes nothing, and a glob is never
 expanded. `--full` contributes every tracked file under every declared
-`source:` root. A retained role is tested first, so a retained file under a
-source root stays in the trial under both forms.
+`source:` root. The declaration and then a retained role are tested first, so a
+retained file under a source root stays in the trial under both forms.
+
+**Declaration.** `givn/specification.yaml` is an implicit retained entry, not a
+sixth role. Every trial holds the copy recorded at the selected revision, the
+partition reads that same copy, and the retained set is a union, so a role that
+also matches the declaration counts it once. Naming the declaration with
+`--path`, or naming a directory whose tracked files include it, refuses; a
+selected revision that does not record the declaration refuses before any write,
+naming the path and the revision.
 
 **Placement.** The trial is a plain directory outside the checkout with no
 version-control metadata, no ignored file, and no untracked file. Every path is
@@ -353,7 +361,7 @@ record; without it the record is printed to stdout after the report.
 ```text
 Backend: git
 Revision: 8c1f2ab5e7d0c9a4b3f2e1d0c9b8a7f6e5d4c3b2
-Retained: 214
+Retained: 215
 Kept source: 72
 Replaced: 2
 Outside the declaration: 3
@@ -373,19 +381,22 @@ leaves the checkout and the target unchanged.
 
 | # | Condition | Named output |
 | --- | --- | --- |
-| 1 | Declaration absent or unreadable | `givn/specification.yaml` and the loader reason |
+| 1 | A declaration recorded at the revision is malformed or unreadable | `givn/specification.yaml` and the loader reason |
 | 2 | `ise` off, or `architecture_principles` off | the add-on and its enable command |
 | 3 | Dirty checkout | every dirty path |
 | 4 | Missing, mixed, or nested backend | the selector's message |
-| 5 | A declared retained entry matches nothing | the entry and the revision |
+| 5 | A declared retained entry matches nothing, or the revision does not record the declaration | the entry and the revision, or `givn/specification.yaml` and the revision |
 | 6 | A `--path` value outside every source root | the path |
-| 7 | A `--path` value or tracked file under a named directory matched by a retained role | the path and the role |
+| 7 | A `--path` value or tracked file under a named directory is the declaration or is matched by a retained role | the path and the declaration, or the path and the role |
 | 8 | A target inside the checkout, existing, inside the trial, an ancestor of the trial, or an existing receipt | the target or receipt path |
 | 9 | A repository link or nested marker in the copy set | the file |
 
 **Record.** `ise-trial/v1` is strict: an unreadable file, a schema other than
 `1`, a content scope other than `ise-trial/v1`, an unknown field, or a missing
-field refuses with the record path and the reason.
+field refuses with the record path and the reason. `retained_files` always
+includes `givn/specification.yaml`; `Retained` equals its entry count, and a
+record written before this entry existed still verifies against the paths it
+lists.
 
 | Field | Content |
 | --- | --- |
@@ -442,6 +453,15 @@ Verification failed: 3 drifting path(s)
 | `the checkout's e2e package gained this path` | The current package holds a file the record does not. |
 | `the checkout differs from the record` | The current `e2e` file digest differs. |
 | `the selected @e2e scenarios differ in the checkout` | A per-feature scenario digest differs, or the feature path is missing. |
+
+**Declaration in verification.** A trial's `givn/specification.yaml` is
+re-checked against the record like every other retained path, so a changed or
+deleted declaration is retained drift naming the path. The checkout's
+declaration is not a retained identity: it is read only to derive the frozen
+`e2e` package and the `behavior` feature selection, so an edit that moves `e2e:`
+or `behavior:` is drift and an edit that moves only `structure:` or `limits:` is
+not. A checkout without a declaration refuses with `givn/specification.yaml is
+missing; the clean-room trial requires a declared Specification`.
 
 Only the `e2e` package and the selected `@e2e` scenarios are frozen: a changed
 file under a `source:` root produces no drift, and verification never writes to
