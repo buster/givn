@@ -142,7 +142,7 @@ pub(super) fn partition(
 /// the files whose selected `@e2e` scenarios the record digests.
 pub(super) fn behavior_features(
     declaration: &SpecificationDeclaration,
-    entries: &[RevisionEntry],
+    paths: &[&str],
 ) -> Vec<String> {
     let globs: Vec<Glob> = declaration
         .roles()
@@ -150,15 +150,14 @@ pub(super) fn behavior_features(
         .filter(|(role, _)| *role == Role::Behavior)
         .flat_map(|(_, patterns)| patterns.iter().map(|pattern| Glob::compile(pattern)))
         .collect();
-    let mut paths: Vec<String> = entries
+    let mut features: Vec<String> = paths
         .iter()
-        .map(|entry| &entry.path)
         .filter(|path| path.ends_with(".feature") && path_or_parent_matches(&globs, path))
-        .cloned()
+        .map(|path| (*path).to_string())
         .collect();
-    paths.sort();
-    paths.dedup();
-    paths
+    features.sort();
+    features.dedup();
+    features
 }
 
 /// The retained role patterns in declaration order, each with its declared

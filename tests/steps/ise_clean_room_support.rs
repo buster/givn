@@ -495,6 +495,94 @@ pub(crate) fn commit_e2e_trial_revision(env: &common::TestEnv) -> String {
     )
 }
 
+/// The e2e package's manifest file the verify fixtures freeze.
+pub(crate) const VERIFY_E2E_MANIFEST_PATH: &str = "tests/e2e/Cargo.toml";
+/// The e2e package's step file the verify fixtures freeze.
+pub(crate) const VERIFY_E2E_STEP_PATH: &str = "tests/e2e/steps/keys.rs";
+/// The kept source file the verify fixtures commit: inside `src/**` and
+/// outside every frozen input.
+pub(crate) const VERIFY_KEPT_PATH: &str = "src/keys/steps.rs";
+
+/// A Git project with `ise` enabled and the verify scenarios' declaration:
+/// `givn/specs/**` behavior, `docs/**` contracts, `tests/e2e` as the e2e
+/// package, and `src/**` source. The config and the declaration are excluded
+/// through `.git/info/exclude`, so the revision holds only the committed
+/// fixture files.
+pub(crate) fn verify_trial_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::write(
+        env.path(".git/info/exclude"),
+        "givn/config.yaml\ngivn/specification.yaml\n",
+    )
+    .expect("write the Git exclude fixture");
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
+        .expect("write the fixture config");
+    std::fs::write(env.path("givn/specification.yaml"), verify_declaration())
+        .expect("write the fixture declaration");
+    env
+}
+
+fn verify_declaration() -> String {
+    "behavior: [\"givn/specs/**\"]\n\
+     structure: []\n\
+     contracts: [\"docs/**\"]\n\
+     limits: []\n\
+     e2e: [\"tests/e2e\"]\n\
+     source: [\"src/**\"]\n"
+        .to_string()
+}
+
+/// Commit the six files the verify fixtures freeze: the `@e2e` feature, the
+/// contract document, the two e2e package files, one kept source file, and
+/// the replaced source file. Returns the revision identifier.
+pub(crate) fn commit_verify_trial_revision(env: &common::TestEnv) -> String {
+    commit_files(
+        env,
+        &[
+            (FOSSIL_FEATURE_PATH, FOSSIL_FEATURE_CONTENT),
+            (REFERENCE_PATH, "reference\n"),
+            (VERIFY_E2E_MANIFEST_PATH, "[package]\nname = \"e2e\"\n"),
+            (VERIFY_E2E_STEP_PATH, "// e2e steps\n"),
+            (VERIFY_KEPT_PATH, "pub fn steps() {}\n"),
+            (REPLACED_SOURCE_PATH, "pub fn parse() {}\n"),
+        ],
+        "fixture: verify trial revision",
+    )
+}
+
+/// The record parsed into a mapping a scenario can rewrite before the
+/// re-check, so one prepared trial proves every record refusal.
+pub(crate) fn record_mapping(path: &Path) -> serde_yaml_ng::Mapping {
+    let text = std::fs::read_to_string(path)
+        .unwrap_or_else(|error| panic!("read the record {}: {error}", path.display()));
+    let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text)
+        .unwrap_or_else(|error| panic!("parse the record {}: {error}", path.display()));
+    match document {
+        serde_yaml_ng::Value::Mapping(mapping) => mapping,
+        other => panic!("the record is not a mapping: {other:?}"),
+    }
+}
+
+/// Replace the record with a mutated mapping.
+pub(crate) fn write_record_mapping(path: &Path, mapping: serde_yaml_ng::Mapping) {
+    let text = serde_yaml_ng::to_string(&serde_yaml_ng::Value::Mapping(mapping))
+        .expect("serialize the rewritten record");
+    std::fs::write(path, text).expect("rewrite the record");
+}
+
+/// Append bytes to one file, so its identity changes while its entry kind
+/// stays the same.
+pub(crate) fn append_bytes(path: &Path) {
+    use std::io::Write as _;
+    let mut file = std::fs::OpenOptions::new()
+        .append(true)
+        .open(path)
+        .unwrap_or_else(|error| panic!("open {} to append: {error}", path.display()));
+    file.write_all(b"\n").expect("append to the fixture file");
+}
+
 /// Point the receipt at `<container>/blocker/record.yaml`, where `blocker` is
 /// a regular file, so the record write fails after the trial exists.
 pub(crate) fn blocked_receipt(state: &mut IseCleanRoomState) {

@@ -22,7 +22,7 @@ mod record;
 mod verify;
 
 pub(crate) use record::abbreviate;
-pub use verify::verify;
+pub use verify::{DriftLine, VerifyReport, verify};
 
 /// `givn ise replace`'s parsed request.
 #[derive(Debug, Clone)]
@@ -89,8 +89,13 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
     require_copy_set(&placement.copy_paths(), &admission.entries)?;
 
     let copy_paths = placement.copy_paths();
+    let revision_paths: Vec<&str> = admission
+        .entries
+        .iter()
+        .map(|entry| entry.path.as_str())
+        .collect();
     let e2e_paths: Vec<String> =
-        crate::e2e_boundary::e2e_file_set(&admission.declaration, &admission.entries)
+        crate::e2e_boundary::e2e_file_set(&admission.declaration, &revision_paths)
             .into_iter()
             .collect();
     let replaced_paths = placement.replaced_paths().to_vec();

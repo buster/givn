@@ -7,7 +7,7 @@
 
 use std::path::Path;
 
-use crate::ise::{ReplaceRequest, Report, abbreviate};
+use crate::ise::{DriftLine, ReplaceRequest, Report, abbreviate};
 
 /// Run `ise replace` and return its process exit code.
 pub fn replace(project_root: &Path, request: &ReplaceRequest) -> i32 {
@@ -26,7 +26,28 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> i32 {
 /// Run `ise verify` and return its process exit code.
 pub fn verify(project_root: &Path, trial: &Path, at: &Path) -> i32 {
     match crate::ise::verify(project_root, trial, at) {
-        Ok(()) => 0,
+        Ok(report) => {
+            if report.drift.is_empty() {
+                print!(
+                    "Trial: {}\nRetained: clean\nE2E: clean\n",
+                    report.trial.display()
+                );
+                return 0;
+            }
+            eprintln!("Trial: {}", report.trial.display());
+            for ((line, path), reason) in &report.drift {
+                let label = match line {
+                    DriftLine::Retained => "Retained drift",
+                    DriftLine::E2e => "E2E drift",
+                };
+                eprintln!("{label}: {path} ({reason})");
+            }
+            eprintln!(
+                "Verification failed: {} drifting path(s)",
+                report.drift.len()
+            );
+            1
+        }
         Err(error) => {
             eprintln!("ise verify: {error:#}");
             1

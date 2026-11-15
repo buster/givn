@@ -97,8 +97,9 @@ pub(super) fn scenario_digests(
     entries: &[RevisionEntry],
     blobs: &BTreeMap<String, Vec<u8>>,
 ) -> Result<BTreeMap<String, String>> {
+    let paths: Vec<&str> = entries.iter().map(|entry| entry.path.as_str()).collect();
     let mut digests = BTreeMap::new();
-    for path in super::partition::behavior_features(declaration, entries) {
+    for path in super::partition::behavior_features(declaration, &paths) {
         let content = blobs
             .get(&path)
             .ok_or_else(|| anyhow::anyhow!("the revision returned no content for '{path}'"))?;

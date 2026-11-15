@@ -17,7 +17,6 @@ pub(crate) use hash::hash_entry;
 pub(crate) use paths::{Glob, ProjectPath, walk_project};
 
 use crate::config::declaration::{Role, SpecificationDeclaration, normalize_project_path};
-use crate::scm::RevisionEntry;
 use imports::import_edges;
 use manifest::{
     CargoPackage, dependency_edges, is_cargo_manifest, nearest_manifest, parent_directory,
@@ -298,7 +297,7 @@ impl E2eBoundary {
 /// the set. A matched path that resolves no manifest is its own root.
 pub(crate) fn e2e_file_set(
     declaration: &SpecificationDeclaration,
-    entries: &[RevisionEntry],
+    paths: &[&str],
 ) -> BTreeSet<String> {
     let declared = declaration
         .roles()
@@ -313,10 +312,10 @@ pub(crate) fn e2e_file_set(
         .iter()
         .map(|pattern| Glob::compile(pattern))
         .collect();
-    let manifest_directories: BTreeSet<String> = entries
+    let manifest_directories: BTreeSet<String> = paths
         .iter()
-        .filter(|entry| is_cargo_manifest(&entry.path))
-        .map(|entry| parent_directory(&entry.path))
+        .filter(|path| is_cargo_manifest(path))
+        .map(|path| parent_directory(path))
         .collect();
 
     let mut candidates: BTreeSet<(String, bool)> = BTreeSet::new();
@@ -324,12 +323,12 @@ pub(crate) fn e2e_file_set(
         candidates.insert((String::new(), true));
     }
     let mut directories: BTreeSet<String> = BTreeSet::new();
-    for entry in entries {
-        if globs.iter().any(|glob| glob.matches(&entry.path)) {
-            candidates.insert((entry.path.clone(), false));
+    for path in paths {
+        if globs.iter().any(|glob| glob.matches(path)) {
+            candidates.insert((path.to_string(), false));
         }
-        for (index, _) in entry.path.match_indices('/') {
-            directories.insert(entry.path[..index].to_string());
+        for (index, _) in path.match_indices('/') {
+            directories.insert(path[..index].to_string());
         }
     }
     for directory in directories {
@@ -357,10 +356,10 @@ pub(crate) fn e2e_file_set(
             }
         }
     }
-    entries
+    paths
         .iter()
-        .filter(|entry| roots.iter().any(|root| is_under(&entry.path, root)))
-        .map(|entry| entry.path.clone())
+        .filter(|path| roots.iter().any(|root| is_under(path, root)))
+        .map(|path| (*path).to_string())
         .collect()
 }
 
