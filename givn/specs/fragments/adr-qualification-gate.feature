@@ -115,6 +115,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And  the output does not demand a duplicate qualification worksheet
     And  the output distinguishes authoring policy from runtime enforcement
 
+  @adr-qualification-gate
   Scenario: The migration preserves independent architecture history across three proposed decisions
     Given  the remediation case carries the distinguishing marker "harness jib mandrel nozzle oboe yacht yarn zither"
     Given  the consolidated ADR register and canonical sources are available

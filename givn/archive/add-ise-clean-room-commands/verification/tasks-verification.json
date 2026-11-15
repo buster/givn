@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "add-ise-clean-room-commands",
+  "status": "passed",
+  "head": "ae0cbe917f7c5fe8620c7269641b4813c9dadd50",
+  "features_path": "givn/changes/add-ise-clean-room-commands/specs",
+  "features_digest": "fb13119d1c873b4aa452830a196a73932b83cd4c31c99c7a34d4276b7f12e7d8",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "58ac0a39a0a8362fcd425ed63078d649f6c95f99636cadfd0400a77177c7498c",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 62,
+    "passed": 62,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1794728712
+}
