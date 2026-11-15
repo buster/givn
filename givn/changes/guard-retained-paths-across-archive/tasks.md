@@ -415,6 +415,27 @@ recapture their archived evidence). They were restored with
 `git checkout -- givn/archive/development-timeline/evidence`, so the change's
 diff contains no rewritten evidence.
 
+## Review gate
+
+- [x] Final review gate: `givn check review --change
+      guard-retained-paths-across-archive` exits 0 at the review PASS revision
+      `faf2cf06`, with the receipt reused across the documentation-only
+      revision. Shape and subset matches are advisory; their dispositions are
+      recorded in `review.md`.
+      ```
+      $ givn check review --change guard-retained-paths-across-archive
+        ✓ integrity checks passed
+        ✓ run declaration passed
+        givn lint: 2 file(s) checked — clean
+        net delta: 7 added, 0 modified, 0 removed
+        ✓ overlap dispositions passed
+        ✓ scenario commits passed (7 scenario(s))
+        ✓ change verification receipt reused across documentation-only revision
+          faf2cf06099cc696dc2c4ee9153c4054f7221655 (tested at 9be16da3f534be0e
+          04736a83273622cff7d8e30f, 7 scenario(s))
+      exit 0
+      ```
+
 ---
 
 ## Done when
