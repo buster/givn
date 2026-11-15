@@ -10,7 +10,7 @@ Reviewer context: addon-artifact-report author
 |---|---|
 | `verify.command` (`./run-tests.sh --non-e2e`, `GIVN_TEST_RUNNER=cargo`) | 1178 scenarios, 1139 passed, 39 failed. All 39 are environmental: `fossil` is not installed on this machine and the development-report browser scenarios need Playwright. The same 39 fail on the tree without this change (stashed comparison: 40 failed before, 39 after the register-count fix). No failure names this capability. |
 | `verify.e2e_command` (`./run-tests.sh --e2e`) | 111 scenarios, 95 passed, 16 failed. Same environmental classes (Fossil, browser). The change's `@e2e` scenario passes under the delta scope: `GIVN_FEATURES=… ./run-tests.sh --e2e` -> 1 scenario, 1 passed. |
-| `givn check tasks --change` | `verify passed`, receipt `10 scenario(s), 0 failed, 0 skipped at 65db302e`. |
+| `givn check tasks --change` | `verify passed`, receipt `10 scenario(s), 0 failed, 0 skipped at 362c9edc`. |
 | `givn lint --change` | Exit 2. Every finding is `[WIP]` noise from the change-scoped run before `@wip` was removed, plus `[SUBST]` advisories comparing unrelated permanent scenarios. No syntax, delta-tag, or interaction-inventory finding. |
 | `cargo clippy --locked --all-targets -- -D warnings` | Clean. |
 | Coverage command | `./measure-coverage.sh` requires the archive candidate; recorded as environmental, not run at review. |
@@ -22,9 +22,9 @@ Reviewer context: addon-artifact-report author
 |---|---|
 | 0. `@e2e` tag integrity | The delta keeps exactly one `@e2e` scenario, as planned. No tag was removed. |
 | 1. Empty or trivial step bodies | None. Every step asserts a value or performs a real reuse call; the only `let _ = world;` was removed before commit. |
-| 2. `COMMIT:` evidence | 12 scenarios, each with `- [x] COMMIT: de8706da -- Batch: listing-reports-materialization`; `givn check tasks` reports `scenario commits passed (12 scenario(s))`. |
+| 2. `COMMIT:` evidence | 12 scenarios, each with `- [x] COMMIT: b6d46f75 -- Batch: listing-reports-materialization`; `givn check tasks` reports `scenario commits passed (12 scenario(s))`. |
 | 2b. Discrimination proof | The `partial` state has one: before the `absent.len() == targets.len()` reordering, a skill removed from the `agents` target only also produced `missing` for `opencode`; the scenario failed with `left: Some(0), right: Some(1)` until the branch was reordered. |
-| 3. Promised components | `src/cli/addon_report.rs` exists and is the only surface `cli::addons` uses. `AddonSpec::materialization` exists. The promised registry-uniqueness test and no-write test were missing when review started; both were added in `b7d9a48` and pass. |
+| 3. Promised components | `src/cli/addon_report.rs` exists and is the only surface `cli::addons` uses. `AddonSpec::materialization` exists. The promised registry-uniqueness test and no-write test were missing when review started; both were added in `6bcc32fc` and pass. |
 | 4. Strict-mode proof | Present in `tasks.md` with the command, the failing output, and the counts. |
 | 5. `@e2e` Then steps | Assert the subprocess stdout and exit code, not repository state alone. |
 | 6. Browser-UI step bodies | Not applicable: CLI capability, subprocess driver. |

@@ -2,8 +2,8 @@
   "schema": 1,
   "change": "addon-artifact-report",
   "status": "proven",
-  "candidate_revision": "d8593a587315513eb02bfe2b049cf43575e6e5f0",
-  "tested_revision": "d8593a587315513eb02bfe2b049cf43575e6e5f0",
+  "candidate_revision": "4be11d0a3270b3066410a31edc1cc97a570138a2",
+  "tested_revision": "4be11d0a3270b3066410a31edc1cc97a570138a2",
   "scopes": {
     "e2e": {
       "status": "passed",
@@ -31,7 +31,7 @@
   "scope_evidence": {
     "e2e": {
       "inputs": {
-        "revision": "d8593a587315513eb02bfe2b049cf43575e6e5f0",
+        "revision": "4be11d0a3270b3066410a31edc1cc97a570138a2",
         "features_digest": "87201856a0f8a1709adcc04a1fe71c91e880004e56c79cfc0ab5f3181c182c50",
         "command_digest": "d81a6a674480a9b649087ff98e5e170dd9d92d8506b870fbb17fc5eff5999398",
         "content_digest": "8c2624fe42a5f72998573ac1b22dae1ae2b5e034318fd7002d0294d33464fb3f",
@@ -41,7 +41,7 @@
     },
     "regular": {
       "inputs": {
-        "revision": "d8593a587315513eb02bfe2b049cf43575e6e5f0",
+        "revision": "4be11d0a3270b3066410a31edc1cc97a570138a2",
         "features_digest": "87201856a0f8a1709adcc04a1fe71c91e880004e56c79cfc0ab5f3181c182c50",
         "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
         "content_digest": "8c2624fe42a5f72998573ac1b22dae1ae2b5e034318fd7002d0294d33464fb3f",
@@ -51,7 +51,7 @@
     }
   },
   "coverage_inputs": {
-    "revision": "d8593a587315513eb02bfe2b049cf43575e6e5f0",
+    "revision": "4be11d0a3270b3066410a31edc1cc97a570138a2",
     "features_digest": "87201856a0f8a1709adcc04a1fe71c91e880004e56c79cfc0ab5f3181c182c50",
     "command_digest": "16b6296c6b3d3f329e8b035453b00bf9212254940aef50d3404ae7f509a74424",
     "content_digest": "8c2624fe42a5f72998573ac1b22dae1ae2b5e034318fd7002d0294d33464fb3f",
