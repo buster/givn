@@ -73,7 +73,7 @@ Feature: Clean-room preparation
     Then preparation fails and names the ambiguous version control
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a retained path missing at the revision
     Given a Git project with ise enabled and a declaration whose "contracts" role names "docs/contract.md"
     And a committed revision without "docs/contract.md"
@@ -81,21 +81,21 @@ Feature: Clean-room preparation
     Then preparation fails and names "docs/contract.md" and the revision
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a path outside every source root
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     When the developer prepares a trial from "HEAD" with the path "docs/reference.md"
     Then preparation fails and names "docs/reference.md"
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a path matched by a retained role
     Given a Git project with ise enabled and a declaration that retains "givn/specs/**"
     When the developer prepares a trial from "HEAD" with the path "givn/specs/demo.feature"
     Then preparation fails and names "givn/specs/demo.feature" and the "behavior" role
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a directory path that contains a retained path
     Given a Git project with ise enabled, a declaration that retains "givn/specs/**", and one source root "givn/**"
     And a committed revision with "givn/specs/demo.feature"
@@ -103,7 +103,7 @@ Feature: Clean-room preparation
     Then preparation fails and names "givn/specs/demo.feature" and the "behavior" role
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses when neither replacement form is given
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial from "HEAD" with neither a full replacement nor a path
@@ -111,7 +111,7 @@ Feature: Clean-room preparation
     And the command exits 2
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses when both replacement forms are given
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial from "HEAD" with both a full replacement and a path
@@ -119,7 +119,7 @@ Feature: Clean-room preparation
     And the command exits 2
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an omitted target
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial from "HEAD" with a full replacement and no target

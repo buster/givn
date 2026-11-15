@@ -1056,7 +1056,7 @@ The partition-time refusals and the usage errors of the replacement form.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch:
 replacement-refusals'`.
 
-- [ ] Scenario: `Preparation refuses a retained path missing at the revision`
+- [x] Scenario: `Preparation refuses a retained path missing at the revision`
   - Design constraints:
     - Fixture: `contracts: ["docs/contract.md"]`, `source: ["src/**"]`; a
       committed revision **without** `docs/contract.md`.
@@ -1065,20 +1065,34 @@ replacement-refusals'`.
       targets absent.
     - Contract: refusal 5 tests every non-empty declared role entry against the
       revision's tracked files and derived directories.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a retained path missing at the revision"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: refusal 5 in `src/ise/mod.rs`
+          (`require_declared_retained_entries`) tests every declared retained
+          entry against the revision's tracked paths and derived directories
+          before the trial is created.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: `retained_roles` now carries each declared pattern text
+        beside its compiled glob, so refusal 5 reuses the compiled roles
+        instead of compiling every pattern twice. Re-run stayed green;
+        cargo fmt --check and clippy -D warnings are clean.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `replacement-refusals`
+  - [x] COMMIT: `9cd9c0af04bc2c8dae5305311cfb1b274c29e937` -- Batch: `replacement-refusals`
 
-- [ ] Scenario: `Preparation refuses a path outside every source root`
+- [x] Scenario: `Preparation refuses a path outside every source root`
   - Design constraints:
     - Fixture (Contradictions 2): `source: ["src/**"]`, empty retained roles;
       the revision **commits `docs/reference.md`** so the value resolves to a
@@ -1088,20 +1102,34 @@ replacement-refusals'`.
     - Then: exit 1; stderr names `docs/reference.md`; both targets absent.
     - Contract: refusal 6 applies to a value that resolves to tracked files; an
       unresolvable value would remove nothing instead (D1).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a path outside every source root"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
+        IMPLEMENTATION: `require_replaceable_paths` rejects a candidate outside
+          every source root; `named_candidates` is fallible, so a value the
+          declaration normalizer rejects refuses instead of silently removing
+          nothing.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: `retained_roles` now carries each declared pattern text
+        beside its compiled glob, so refusal 5 reuses the compiled roles
+        instead of compiling every pattern twice. Re-run stayed green;
+        cargo fmt --check and clippy -D warnings are clean.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `replacement-refusals`
+  - [x] COMMIT: `9cd9c0af04bc2c8dae5305311cfb1b274c29e937` -- Batch: `replacement-refusals`
 
-- [ ] Scenario: `Preparation refuses a path matched by a retained role`
+- [x] Scenario: `Preparation refuses a path matched by a retained role`
   - Design constraints:
     - Fixture (Contradictions 2 and 3): `behavior: ["givn/specs/**"]`,
       `source: ["src/**"]` (a source root that does not cover the retained
@@ -1112,20 +1140,33 @@ replacement-refusals'`.
       targets absent.
     - Contract: refusal 7 names the path and the role; the retained test runs
       before the source-root test, so the role is the reported condition.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a path matched by a retained role"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
+        IMPLEMENTATION: `require_replaceable_paths` runs the retained-role test
+          over the whole candidate set before the source-root test and names the
+          path and the role.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: `retained_roles` now carries each declared pattern text
+        beside its compiled glob, so refusal 5 reuses the compiled roles
+        instead of compiling every pattern twice. Re-run stayed green;
+        cargo fmt --check and clippy -D warnings are clean.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `replacement-refusals`
+  - [x] COMMIT: `9cd9c0af04bc2c8dae5305311cfb1b274c29e937` -- Batch: `replacement-refusals`
 
-- [ ] Scenario: `Preparation refuses a directory path that contains a retained path`
+- [x] Scenario: `Preparation refuses a directory path that contains a retained path`
   - Design constraints:
     - Fixture: `behavior: ["givn/specs/**"]`, `source: ["givn/**"]`; the
       revision commits `givn/specs/demo.feature`.
@@ -1135,20 +1176,33 @@ replacement-refusals'`.
     - Contract: the directory expansion happens first and the retained test
       runs over every expanded file, so the refusal names the retained file,
       not the directory.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/cli/ise.rs`, `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a directory path that contains a retained path"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: `named_candidates` expands the directory before the
+          retained test, so the refusal names the expanded retained file and
+          its role, never the directory value.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: `retained_roles` now carries each declared pattern text
+        beside its compiled glob, so refusal 5 reuses the compiled roles
+        instead of compiling every pattern twice. Re-run stayed green;
+        cargo fmt --check and clippy -D warnings are clean.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `replacement-refusals`
+  - [x] COMMIT: `9cd9c0af04bc2c8dae5305311cfb1b274c29e937` -- Batch: `replacement-refusals`
 
-- [ ] Scenario: `Preparation refuses when neither replacement form is given`
+- [x] Scenario: `Preparation refuses when neither replacement form is given`
   - Design constraints:
     - Fixture: a clean Git project with both add-ons on and a valid
       declaration; the trial and receipt paths the scenario watches are created
@@ -1157,20 +1211,33 @@ replacement-refusals'`.
     - Then: exit 2; stderr names `--full` and `--path`; both targets absent.
     - Contract: the clap `replacement` `ArgGroup` is `required(true)`; the
       message is clap's, and the command body never runs.
-  - [ ] Implement the scenario and its tests. Files: `src/main.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/main.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses when neither replacement form is given"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(2)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: the clap `replacement` `ArgGroup` in `src/main.rs` is
+          `required(true)` over `--full` and `--path`; the parser refuses before
+          the command body runs.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: `retained_roles` now carries each declared pattern text
+        beside its compiled glob, so refusal 5 reuses the compiled roles
+        instead of compiling every pattern twice. Re-run stayed green;
+        cargo fmt --check and clippy -D warnings are clean.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `replacement-refusals`
+  - [x] COMMIT: `9cd9c0af04bc2c8dae5305311cfb1b274c29e937` -- Batch: `replacement-refusals`
 
-- [ ] Scenario: `Preparation refuses when both replacement forms are given`
+- [x] Scenario: `Preparation refuses when both replacement forms are given`
   - Design constraints:
     - Fixture: as the previous scenario, plus a committed `src/one.rs`.
     - When: `givn ise replace --full --path src/one.rs --into <dir> --receipt
@@ -1178,20 +1245,32 @@ replacement-refusals'`.
     - Then: exit 2; stderr names `--full` and `--path` as mutually exclusive;
       both targets absent.
     - Contract: `multiple(false)` on the same group; no partial execution.
-  - [ ] Implement the scenario and its tests. Files: `src/main.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/main.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses when both replacement forms are given"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(2)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: the same `replacement` group is `multiple(false)`, so
+          clap refuses `--full` beside `--path` before any read or write.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: `retained_roles` now carries each declared pattern text
+        beside its compiled glob, so refusal 5 reuses the compiled roles
+        instead of compiling every pattern twice. Re-run stayed green;
+        cargo fmt --check and clippy -D warnings are clean.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `replacement-refusals`
+  - [x] COMMIT: `9cd9c0af04bc2c8dae5305311cfb1b274c29e937` -- Batch: `replacement-refusals`
 
-- [ ] Scenario: `Preparation refuses an omitted target`
+- [x] Scenario: `Preparation refuses an omitted target`
   - Design constraints:
     - Fixture: a clean Git project with both add-ons on and a valid
       declaration; the Given records the candidate trial and receipt paths.
@@ -1200,18 +1279,36 @@ replacement-refusals'`.
       paths remain absent.
     - Contract: `--into` is required at the parser; the refusal precedes every
       read and write.
-  - [ ] Implement the scenario and its tests. Files: `src/main.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/main.rs`,
         `tests/steps/clean_room_preparation_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an omitted target"
+        → exit 101: assertion `left == right` failed: stderr=error: the
+          following required arguments were not provided:
+          left: Some(2)
+         right: Some(1)
+        The failure was the shared `preparation fails and names "..."` step
+        hard-coding exit 1 for a clap usage error, not a production gap: the
+        parser already required `--into` and exited 2. The step now derives the
+        expected code from the failure class (clap `error:` is 2, a refusal is
+        1), so neither branch can borrow the other's code.
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: existing behavior protected; no production edit for
+          this requirement.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: `retained_roles` now carries each declared pattern text
+        beside its compiled glob, so refusal 5 reuses the compiled roles
+        instead of compiling every pattern twice. Re-run stayed green;
+        cargo fmt --check and clippy -D warnings are clean.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `replacement-refusals`
+  - [x] COMMIT: `9cd9c0af04bc2c8dae5305311cfb1b274c29e937` -- Batch: `replacement-refusals`
 
 ---
 
