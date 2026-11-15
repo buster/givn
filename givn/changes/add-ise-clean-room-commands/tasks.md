@@ -3058,7 +3058,7 @@ that distinguishes it.
       22 [SHAPE] advisories and 118 [SUBST] advisories, 0 [LONG]; the advisories
       are advisory and the review dispositions every delta pair.
       ```
-- [ ] Whole-change verification, in this order, each exiting 0 with zero
+- [x] Whole-change verification, in this order, each exiting 0 with zero
       failures and zero in-scope skips:
       ```
       cargo fmt --all -- --check

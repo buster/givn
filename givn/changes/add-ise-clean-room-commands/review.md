@@ -413,13 +413,9 @@ inputs. `variant` is a different input or refusal form of the same action;
 
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
-| Preparation refuses when the declaration is missing | Preparation refuses while architecture principles are off | variant |
 | Preparation refuses when the declaration is missing | Preparation refuses a path outside every source root | variant |
 | Preparation refuses when the declaration is missing | Preparation refuses a repository link in the copy set | variant |
 | Preparation refuses when the declaration is missing | Preparation refuses a nested repository marker in the copy set | variant |
-| Preparation refuses while architecture principles are off | Preparation refuses a path outside every source root | variant |
-| Preparation refuses while architecture principles are off | Preparation refuses a repository link in the copy set | variant |
-| Preparation refuses while architecture principles are off | Preparation refuses a nested repository marker in the copy set | variant |
 | Preparation refuses a path outside every source root | Preparation refuses a repository link in the copy set | variant |
 | Preparation refuses a path outside every source root | Preparation refuses a nested repository marker in the copy set | variant |
 | Preparation refuses a path matched by a retained role | Preparation refuses a directory path that contains a retained path | variant |
@@ -431,17 +427,12 @@ inputs. `variant` is a different input or refusal form of the same action;
 | Verification names a retained file changed in the trial | Verification names an e2e package file changed in the checkout | boundary |
 | Verification names a retained file changed in the trial | Verification names an e2e scenario changed in the checkout | boundary |
 | Verification names a retained file changed in the trial | Verification names a recorded path missing from the trial | variant |
-| Verification names a retained file changed in the trial | Verification refuses while architecture principles are off | boundary |
 | Verification names an e2e package file changed in the trial | Verification names an e2e package file changed in the checkout | boundary |
 | Verification names an e2e package file changed in the trial | Verification names an e2e scenario changed in the checkout | boundary |
 | Verification names an e2e package file changed in the trial | Verification names a recorded path missing from the trial | variant |
-| Verification names an e2e package file changed in the trial | Verification refuses while architecture principles are off | boundary |
 | Verification names an e2e package file changed in the checkout | Verification names an e2e scenario changed in the checkout | boundary |
 | Verification names an e2e package file changed in the checkout | Verification names a recorded path missing from the trial | variant |
-| Verification names an e2e package file changed in the checkout | Verification refuses while architecture principles are off | boundary |
 | Verification names an e2e scenario changed in the checkout | Verification names a recorded path missing from the trial | variant |
-| Verification names an e2e scenario changed in the checkout | Verification refuses while architecture principles are off | boundary |
-| Verification names a recorded path missing from the trial | Verification refuses while architecture principles are off | boundary |
 
 ## Split-or-keep
 
@@ -620,5 +611,55 @@ above; `givn lint` exits 0. The review's blockers are F1-F8; F9 and F10 are
 bookkeeping findings. The code behavior is green, but the change is not
 signable while the routing, design, coverage, spec-wording, and README
 findings are open.
+
+
+## Finding closure
+
+Every finding below is closed by the implementation author after the review
+above. This section changes no verdict: `REVIEW: FAIL` stays the reviewer's
+line until the reviewer re-checks and flips it. Commits: `6bfbd4d5` (artifacts),
+`23ad9e6f` (tests and fixtures), `14973c13` and `ab36632a` (tasks), plus the
+pre-existing `d5fa08ec` for the ADR register.
+
+| ID | Fix | Test | Commit |
+|---|---|---|---|
+| F1 | `proposal.md`'s Capability Routing table gains `adr-qualification-gate` with `EXTEND adr-qualification-gate`, and the prose names `specs/fragments/adr-qualification-gate.feature` and its `@givn.modified` scenario. | `givn check review` now prints `capability 'adr-qualification-gate' already owned by .../givn/specs/fragments` and reports no routing error; it previously failed on the undeclared capability. | `6bfbd4d5` |
+| F2 | `design.md` Architecture Impact now names `src/ise/partition.rs` for `Partition`, refusals 5 to 7, the counts, and `behavior_features`; `src/ise/mod.rs` keeps `replace`, the preflight, the write and re-read, and the report. D1's realization points at `partition.rs`. `design-review.md` records the split as post-review deviation 4 (2026-11-15, `src/ise/mod.rs` exceeded 500 code lines). | Static read of `design.md:103-110,221` against the tree; `givn check review` reports no design-conformance error. | `6bfbd4d5` |
+| F3 | Two delta scenarios: `Verification names an e2e package path the record does not list` (`CHECKOUT_GAINED_PATH`, untracked `tests/e2e/steps/extra.rs`) and `Verification names an e2e scenario the record does not list` (extra `e2e_scenarios` branch, untracked `givn/specs/demo/extra.feature` with one `@e2e` scenario). Each Then asserts the named path and its reason. | Both scenarios pass. Discrimination probes: disabling the gained-path insert makes the first fail (`left: Some(0)`, `right: Some(1)`); disabling the extra-feature insert makes the second fail the same way. Both probes reverted with `git checkout -- src/ise/verify.rs`. | `23ad9e6f` |
+| F4 | Two delta scenarios: `Verification refuses a record with another schema` (`schema: 2`) and `Verification refuses a record without a replaced digest` (`replaced_digest: abc123`). Thens assert the record name plus `schema`/`a trial record is schema 1`, and `replaced_digest`/`the record is no trial evidence`. | Both scenarios pass. Discrimination probes: narrowing the schema bail and the digest bail each make their scenario fail with exit 0 instead of 1. Probes reverted. | `23ad9e6f` |
+| F5 | The gitlink scenario is kept; its end-to-end assertion is redundant with the blob-read refusal, recorded in the batch note and the scenario entry. The submodule half is now proven directly: `a_submodule_entry_in_the_copy_set_is_refused_as_a_repository_link` calls `require_copy_set` with a `Submodule` entry; companion test `a_regular_entry_in_the_copy_set_passes_the_link_check` proves the check is not a blanket refusal. The title is not retitled: it states the observable refusal, not the reason. | `cargo test --locked --lib ise::tests` → 4 passed. Probe: replacing the `EntryKind::Submodule` comparison with `EntryKind::Symlink` fails the unit test (`a repository link is refused: ()`); reverted, test re-added verbatim. | `23ad9e6f` |
+| F6 | Prepare: `architecture_principles_off_project()` now commits a malformed declaration (`component: ["x"]`), the Given says `and a malformed declaration`, and the scenario adds `the declaration is not read`. Verify: the scenario's Given is `a prepared Git trial with a corrupted record` and the Then adds `verification reports no record error`. | Both scenarios pass. Discrimination probes: moving `require_addons` after the declaration load in `admit` makes prepare fail naming `givn/specification.yaml`; moving `read_record` before `require_addons` in `verify` makes the re-check fail with the record parse error. Probes reverted. | `23ad9e6f` |
+| F7 | `usecase.md:62` and `design.md`'s `Not replaced` bullet now say `--full` reports `0` when no retained path sits under a source root and counts a retained file under one. New scenario `A full replacement counts a retained file under a source root as not replaced` (`structure: ["src/keep.rs"]`, `source: ["src/**"]`) asserts `Replaced: 1`, `Not replaced: 1`, and the trial holds `src/keep.rs`. The `0` case is the existing scenario `A full replacement removes every tracked file under the source roots` (retained role `givn/specs/**` outside the source root, asserts `Not replaced: 0`); no duplicate scenario was added. | The new scenario passes; the existing `0` scenario still passes. | `6bfbd4d5` (wording), `23ad9e6f` (scenario) |
+| F8 | `README.md` Configuration table gains `givn ise replace` and `givn ise verify` rows, one sentence each, naming the Ise Test and the frozen retained files and `e2e` package. `README-IMPACT: updated - Configuration` is unchanged and now true. | Static read of `README.md:104-105`. | `6bfbd4d5` |
+| F9 | Setup baseline box records the current green run (`980 passed, 111 skipped`, exit 0) and the history of the stale ADR failure; the `@e2e` REFACTOR box is ticked with the fresh delta and e2e summaries; the seven Closeout boxes carry the command output: phrase bindings (121/10/41/2/0), no stub bodies, no `@wip`, both transcripts, lint clean (22 SHAPE, 118 SUBST, 0 LONG), the whole-change suite, and the receipt. `givn status` reports 276/277 tasks; the one open box is the reviewer's `givn check review`. | `givn status --change add-ise-clean-room-commands`. | `14973c13`, `ab36632a` |
+| F10 | The ADR fragment is its own batch row `ADR-076` (one `@givn.modified` scenario) with `COMMIT: d5fa08ec`; the batch map totals 64 units (63 added, 1 modified): 43 `clean-room-preparation`, 20 `trial-input-verification`, 1 `adr-qualification-gate`. | `givn check tasks` reports 64 scenario commits; the ADR entry's commit message contains `ADR-076`, so the batch label resolves. | `14973c13` |
+| F11 | Confirmed; no code action. The batch-6 trial-record entries keep their `RED replay (not chronological; the implementation preceded the first run)` wording, which the steps instruction permits. This closure does not present them as historical RED. | Read of `tasks.md` batch 6. | — |
+| F12 | Contradiction 6 no longer claims `cli::archive`/`cli::migration` are consumers; it records that `ise` is the only `RevisionContent` consumer and that the earlier text was stale, matching design-review clarification 2. | Read of `tasks.md` Contradictions 6. | `14973c13` |
+
+### Runner results
+
+```text
+cargo fmt --all -- --check                                        exit 0
+cargo clippy --locked --workspace --all-targets -- -D warnings    exit 0
+cargo nextest run          1646 passed, 0 skipped                 exit 0
+./run-tests.sh --non-e2e    980 passed, 111 skipped               exit 0
+./run-tests.sh --e2e        111 passed, 980 skipped               exit 0
+GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e
+                             62 passed, 2 skipped                 exit 0
+GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --e2e
+                              2 passed, 62 skipped                exit 0
+givn lint --change add-ise-clean-room-commands                     exit 0 (clean)
+givn check tasks --change add-ise-clean-room-commands             exit 0
+  62 scenarios / 296 steps; receipt 62 scenario(s), 0 failed, 0 skipped at 14973c13
+```
+
+The receipt is reused for the documentation-only revision `ab36632a`; both
+`verify` runs rewrote the verify transcript with new `/tmp` paths and the
+permanent e2e run rewrote three archived screenshot pairs, so those files were
+restored with `git checkout --` before the tasks commit. `givn check review`
+now fails only on `review.md actual verdict is FAIL`; the routing, overlap,
+scenario-commit, and receipt checks pass. The disposition table dropped nine
+rows whose pairs no longer shape-match after the added scenarios; the gate
+reports no undispositioned pair.
 
 REVIEW: FAIL
