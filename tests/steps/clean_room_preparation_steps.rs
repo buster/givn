@@ -32,6 +32,27 @@ fn assert_exit_two(world: &GivnWorld) {
     assert_eq!(out.status.code(), Some(2), "stderr={}", stderr(world));
 }
 
+fn assert_failure_names_path(world: &GivnWorld, path: &std::path::Path) {
+    assert_exit_one(world);
+    let name = path.to_string_lossy();
+    let text = stderr(world);
+    assert!(
+        text.contains(name.as_ref()),
+        "stderr {text:?} does not name {name:?}"
+    );
+}
+
+/// The named absence refusal, not a write failure that merely mentions the
+/// path: create-new semantics are what the scenario protects.
+fn assert_failure_refuses_existing(world: &GivnWorld, path: &std::path::Path) {
+    assert_failure_names_path(world, path);
+    let text = stderr(world);
+    assert!(
+        text.contains("already exists"),
+        "stderr {text:?} does not report the existing path"
+    );
+}
+
 fn assert_success(world: &GivnWorld) {
     let out = output(world);
     assert_eq!(out.status.code(), Some(0), "stderr={}", stderr(world));
@@ -107,6 +128,39 @@ fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form: &[&str]) {
         .as_ref()
         .expect("a project root is required first");
     let out = common::run_givn_with_envs(env, &args, &[]);
+    world.last_output = Some(out);
+}
+
+fn receipt_path(world: &GivnWorld) -> std::path::PathBuf {
+    world.ise_clean_room.receipt_path().to_path_buf()
+}
+
+/// Run a full replacement against the state's trial target, with the state's
+/// receipt target only when the scenario supplies one.
+fn prepare_with_target(world: &mut GivnWorld, with_receipt: bool) {
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let mut args: Vec<String> = [
+        "ise",
+        "replace",
+        "--at",
+        "HEAD",
+        "--full",
+        "--into",
+        trial.as_str(),
+    ]
+    .iter()
+    .map(|argument| (*argument).to_string())
+    .collect();
+    if with_receipt {
+        args.push("--receipt".to_string());
+        args.push(receipt_path(world).to_string_lossy().into_owned());
+    }
+    let argv: Vec<&str> = args.iter().map(String::as_str).collect();
+    let env = project_env(world);
+    let out = match world.cwd_override.clone() {
+        Some(cwd) => common::run_givn_with_envs_in(env, &cwd, &argv, &[]),
+        None => common::run_givn_with_envs(env, &argv, &[]),
+    };
     world.last_output = Some(out);
 }
 
@@ -339,17 +393,13 @@ fn git_project_retaining_the_specs(world: &mut GivnWorld) {
 #[given(
     regex = r#"^a Git project with ise enabled and a declaration that retains "nested/_FOSSIL_"$"#
 )]
-fn not_implemented_0003(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Git project with ise enabled and a declaration that retains "nested/_FOSSIL_""#
-    ))
+fn git_project_retaining_the_nested_marker(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::nested_marker_project());
 }
 
 #[given(regex = r#"^a Git project with ise enabled and a declaration that retains "vendor/lib"$"#)]
-fn not_implemented_0004(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Git project with ise enabled and a declaration that retains "vendor/lib""#
-    ))
+fn git_project_retaining_the_vendor_link(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::repository_link_project());
 }
 
 #[given(
@@ -411,10 +461,8 @@ fn commit_revision_with_demo_feature(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^a committed revision with "nested/_FOSSIL_"$"#)]
-fn not_implemented_0012(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "nested/_FOSSIL_""#
-    ))
+fn commit_revision_with_the_nested_marker(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_nested_marker(project_env(world));
 }
 
 #[given(regex = r#"^a committed revision with "src/kept\.rs"$"#)]
@@ -521,10 +569,8 @@ fn commit_revision_with_source_and_retained(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^a committed revision with a repository link at "vendor/lib"$"#)]
-fn not_implemented_0020(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with a repository link at "vendor/lib""#
-    ))
+fn commit_revision_with_the_repository_link(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_repository_link(project_env(world));
 }
 
 #[given(
@@ -551,10 +597,8 @@ fn commit_revision_without_the_contract(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^a receipt file that already exists$"#)]
-fn not_implemented_0024(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a receipt file that already exists"#
-    ))
+fn a_receipt_file_that_already_exists(world: &mut GivnWorld) {
+    ise_clean_room_support::existing_receipt(&mut world.ise_clean_room);
 }
 
 #[given(regex = r#"^a receipt path whose parent directory is a regular file$"#)]
@@ -565,24 +609,19 @@ fn not_implemented_0025(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[given(regex = r#"^a symlink outside the checkout that points into the checkout$"#)]
-fn not_implemented_0026(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a symlink outside the checkout that points into the checkout"#
-    ))
+fn a_symlink_pointing_into_the_checkout(world: &mut GivnWorld) {
+    let checkout = project_env(world).root();
+    ise_clean_room_support::symlinked_target(&mut world.ise_clean_room, &checkout);
 }
 
 #[given(regex = r#"^a target directory that already exists$"#)]
-fn not_implemented_0027(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a target directory that already exists"#
-    ))
+fn a_target_directory_that_already_exists(world: &mut GivnWorld) {
+    ise_clean_room_support::existing_target_directory(&mut world.ise_clean_room);
 }
 
 #[given(regex = r#"^a target path that exists as a regular file$"#)]
-fn not_implemented_0028(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a target path that exists as a regular file"#
-    ))
+fn a_target_path_that_exists_as_a_regular_file(world: &mut GivnWorld) {
+    ise_clean_room_support::existing_target_file(&mut world.ise_clean_room);
 }
 
 #[given(regex = r#"^an ignored file in the working tree$"#)]
@@ -649,24 +688,18 @@ fn preparation_fails_and_names_the_retained_feature(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^preparation fails and names the existing receipt$"#)]
-fn not_implemented_0035(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names the existing receipt"#
-    ))
+fn preparation_fails_and_names_the_existing_receipt(world: &mut GivnWorld) {
+    assert_failure_refuses_existing(world, &receipt_path(world));
 }
 
 #[then(regex = r#"^preparation fails and names the existing target$"#)]
-fn not_implemented_0036(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names the existing target"#
-    ))
+fn preparation_fails_and_names_the_existing_target(world: &mut GivnWorld) {
+    assert_failure_refuses_existing(world, &trial_path(world));
 }
 
 #[then(regex = r#"^preparation fails and names the receipt$"#)]
-fn not_implemented_0037(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names the receipt"#
-    ))
+fn preparation_fails_and_names_the_receipt(world: &mut GivnWorld) {
+    assert_failure_names_path(world, &receipt_path(world));
 }
 
 #[then(regex = r#"^preparation fails and names the receipt path$"#)]
@@ -677,10 +710,8 @@ fn not_implemented_0038(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^preparation fails and names the target$"#)]
-fn not_implemented_0039(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names the target"#
-    ))
+fn preparation_fails_and_names_the_target(world: &mut GivnWorld) {
+    assert_failure_names_path(world, &trial_path(world));
 }
 
 #[then(regex = r#"^preparation fails and names the unreadable path and the revision$"#)]
@@ -768,24 +799,39 @@ fn not_implemented_0049(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^the checkout holds no receipt$"#)]
-fn not_implemented_0050(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the checkout holds no receipt"#
-    ))
+fn the_checkout_holds_no_receipt(world: &mut GivnWorld) {
+    let receipt = project_env(world).path("record.yaml");
+    assert!(
+        !receipt.exists(),
+        "the checkout holds a receipt at {}",
+        receipt.display()
+    );
 }
 
 #[then(regex = r#"^the checkout holds no trial directory$"#)]
-fn not_implemented_0051(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the checkout holds no trial directory"#
-    ))
+fn the_checkout_holds_no_trial_directory(world: &mut GivnWorld) {
+    let trial = project_env(world).path("trial");
+    assert!(
+        !trial.exists(),
+        "the checkout holds a trial directory at {}",
+        trial.display()
+    );
 }
 
 #[then(regex = r#"^the checkout holds no trial directory and no receipt$"#)]
-fn not_implemented_0052(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the checkout holds no trial directory and no receipt"#
-    ))
+fn the_checkout_holds_no_trial_directory_and_no_receipt(world: &mut GivnWorld) {
+    let trial = project_env(world).path("trial");
+    let receipt = project_env(world).path("record.yaml");
+    assert!(
+        !trial.exists(),
+        "the checkout holds a trial directory at {}",
+        trial.display()
+    );
+    assert!(
+        !receipt.exists(),
+        "the checkout holds a receipt at {}",
+        receipt.display()
+    );
 }
 
 #[when(
@@ -904,54 +950,61 @@ fn prepare_from_the_first_revision(world: &mut GivnWorld) {
 }
 
 #[when(regex = r#"^the developer prepares a trial into a directory inside the checkout$"#)]
-fn not_implemented_0068(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial into a directory inside the checkout"#
-    ))
+fn prepare_into_the_checkout(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let checkout = project_env(world).root().to_path_buf();
+    world.ise_clean_room.trial_path = Some(checkout.join("trial"));
+    world.ise_clean_room.receipt_path = Some(checkout.join("record.yaml"));
+    prepare_with_target(world, false);
 }
 
 #[when(regex = r#"^the developer prepares a trial into that target$"#)]
-fn not_implemented_0069(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial into that target"#
-    ))
+fn prepare_into_the_recorded_target(world: &mut GivnWorld) {
+    prepare_with_target(world, false);
 }
 
 #[when(regex = r#"^the developer prepares a trial through the symlinked target$"#)]
-fn not_implemented_0070(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial through the symlinked target"#
-    ))
+fn prepare_through_the_symlinked_target(world: &mut GivnWorld) {
+    prepare_with_target(world, false);
 }
 
 #[when(
     regex = r#"^the developer prepares a trial whose receipt path is an ancestor of the trial directory$"#
 )]
-fn not_implemented_0071(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial whose receipt path is an ancestor of the trial directory"#
-    ))
+fn prepare_with_an_ancestor_receipt(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let container = world
+        .ise_clean_room
+        .targets
+        .as_ref()
+        .expect("the targets exist")
+        .path()
+        .to_path_buf();
+    let parent = container.join("parent");
+    world.ise_clean_room.trial_path = Some(parent.join("trial"));
+    world.ise_clean_room.receipt_path = Some(parent);
+    prepare_with_target(world, true);
 }
 
 #[when(regex = r#"^the developer prepares a trial with a receipt inside the checkout$"#)]
-fn not_implemented_0072(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial with a receipt inside the checkout"#
-    ))
+fn prepare_with_a_receipt_inside_the_checkout(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let checkout = project_env(world).root().to_path_buf();
+    world.ise_clean_room.receipt_path = Some(checkout.join("record.yaml"));
+    prepare_with_target(world, true);
 }
 
 #[when(regex = r#"^the developer prepares a trial with a receipt inside the trial directory$"#)]
-fn not_implemented_0073(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial with a receipt inside the trial directory"#
-    ))
+fn prepare_with_a_receipt_inside_the_trial(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world);
+    world.ise_clean_room.receipt_path = Some(trial.join("record.yaml"));
+    prepare_with_target(world, true);
 }
 
 #[when(regex = r#"^the developer prepares a trial with that receipt$"#)]
-fn not_implemented_0074(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial with that receipt"#
-    ))
+fn prepare_with_that_receipt(world: &mut GivnWorld) {
+    prepare_with_target(world, true);
 }
 
 #[when(
@@ -973,24 +1026,49 @@ fn not_implemented_0076(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
 }
 
 #[then(regex = r#"^the existing directory is left unchanged$"#)]
-fn not_implemented_0077(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the existing directory is left unchanged"#
-    ))
+fn the_existing_directory_is_left_unchanged(world: &mut GivnWorld) {
+    let trial = trial_path(world);
+    assert!(
+        trial.is_dir(),
+        "the existing target directory {} is gone",
+        trial.display()
+    );
+    let mut entries = std::fs::read_dir(&trial).expect("read the existing target directory");
+    assert!(
+        entries.next().is_none(),
+        "the existing target directory {} gained an entry",
+        trial.display()
+    );
 }
 
 #[then(regex = r#"^the existing file is left unchanged$"#)]
-fn not_implemented_0078(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the existing file is left unchanged"#
-    ))
+fn the_existing_file_is_left_unchanged(world: &mut GivnWorld) {
+    let target = trial_path(world);
+    let bytes = std::fs::read(&target).expect("read the existing target file");
+    assert_eq!(
+        bytes,
+        ise_clean_room_support::TARGET_FILE_CONTENT.as_bytes(),
+        "the existing target file {} changed",
+        target.display()
+    );
 }
 
 #[then(regex = r#"^the existing receipt is left unchanged$"#)]
-fn not_implemented_0079(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the existing receipt is left unchanged"#
-    ))
+fn the_existing_receipt_is_left_unchanged(world: &mut GivnWorld) {
+    let receipt = receipt_path(world);
+    let bytes = std::fs::read(&receipt).expect("read the existing receipt");
+    assert_eq!(
+        bytes,
+        ise_clean_room_support::RECEIPT_CONTENT.as_bytes(),
+        "the existing receipt {} changed",
+        receipt.display()
+    );
+    let trial = trial_path(world);
+    assert!(
+        !trial.exists(),
+        "the trial path exists: {}",
+        trial.display()
+    );
 }
 
 #[then(regex = r#"^the receipt records one named path and one replaced path$"#)]

@@ -38,6 +38,14 @@ pub(crate) const DEMO_FEATURE_CONTENT: &str =
 pub(crate) const SOURCE_PATH: &str = "src/one.rs";
 /// The tracked source file's committed content.
 pub(crate) const SOURCE_CONTENT: &str = "pub fn one() {}\n";
+/// The bytes the existing-target-file fixture writes.
+pub(crate) const TARGET_FILE_CONTENT: &str = "existing target\n";
+/// The bytes the existing-receipt fixture writes.
+pub(crate) const RECEIPT_CONTENT: &str = "schema: 1\n";
+/// The declared `structure` entry a repository-link revision carries.
+pub(crate) const VENDOR_LINK_PATH: &str = "vendor/lib";
+/// The nested repository marker a revision can carry.
+pub(crate) const NESTED_MARKER_PATH: &str = "nested/_FOSSIL_";
 
 /// Per-scenario state for the `clean-room-preparation` fixtures.
 #[derive(Debug, Default)]
@@ -158,9 +166,22 @@ pub(crate) fn malformed_declaration() -> String {
 }
 
 /// An initialized Git project with `ise` enabled and a committed valid
-/// declaration.
+/// declaration, plus one tracked file per declared retained role so every
+/// entry matches at the revision.
 pub(crate) fn ise_project() -> common::TestEnv {
-    ise_project_with_declaration(&default_declaration())
+    let env = ise_project_with_declaration(&default_declaration());
+    commit_files(
+        &env,
+        &[
+            (DEMO_FEATURE_PATH, DEMO_FEATURE_CONTENT),
+            ("docs/glossary.md", "glossary\n"),
+            (REFERENCE_PATH, "reference\n"),
+            ("docs/arc42/02-architecture-constraints.md", "constraints\n"),
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+        ],
+        "fixture: retained roles",
+    );
+    env
 }
 
 /// An initialized Git project with `ise` enabled and the supplied committed
@@ -228,6 +249,92 @@ pub(crate) fn commit_revision_without_contract(env: &common::TestEnv) {
         env,
         &[(SOURCE_PATH, SOURCE_CONTENT)],
         "fixture: revision without the contract",
+    );
+}
+
+/// Create the trial target as an existing empty directory.
+pub(crate) fn existing_target_directory(state: &mut IseCleanRoomState) {
+    state.ensure_targets();
+    std::fs::create_dir(state.trial_path()).expect("create the existing target directory");
+}
+
+/// Create the trial target as an existing regular file holding known bytes.
+pub(crate) fn existing_target_file(state: &mut IseCleanRoomState) {
+    state.ensure_targets();
+    std::fs::write(state.trial_path(), TARGET_FILE_CONTENT)
+        .expect("write the existing target file");
+}
+
+/// Create the receipt as an existing regular file holding known bytes.
+pub(crate) fn existing_receipt(state: &mut IseCleanRoomState) {
+    state.ensure_targets();
+    std::fs::write(state.receipt_path(), RECEIPT_CONTENT).expect("write the existing receipt");
+}
+
+/// Point the trial at `<container>/link/trial`, where `link` is a symlink to
+/// the checkout root, so a prefix check over the supplied path would pass.
+#[cfg(unix)]
+pub(crate) fn symlinked_target(state: &mut IseCleanRoomState, checkout: &Path) {
+    state.ensure_targets();
+    let container = state
+        .targets
+        .as_ref()
+        .expect("the targets exist")
+        .path()
+        .to_path_buf();
+    let link = container.join("link");
+    std::os::unix::fs::symlink(checkout, &link).expect("create the symlink into the checkout");
+    state.trial_path = Some(link.join("trial"));
+}
+
+/// The symlinked-target fixture needs symlink support; refuse on a host
+/// without it rather than assert a path the fixture could not build.
+#[cfg(not(unix))]
+pub(crate) fn symlinked_target(_state: &mut IseCleanRoomState, _checkout: &Path) {
+    panic!("the symlinked-target fixture requires symlink support");
+}
+
+/// A project whose `structure` role retains the repository-link path.
+pub(crate) fn repository_link_project() -> common::TestEnv {
+    ise_project_with_declaration(&structure_declaration(
+        &format!("{VENDOR_LINK_PATH:?}"),
+        "\"src/**\"",
+    ))
+}
+
+/// Record a `160000` index entry at the repository-link path and commit it,
+/// without cloning a second repository.
+pub(crate) fn commit_repository_link(env: &common::TestEnv) {
+    let target = head_revision(env);
+    let info = format!("160000,{target},{VENDOR_LINK_PATH}");
+    let index = common::git(env, &["update-index", "--add", "--cacheinfo", &info]);
+    assert!(
+        index.status.success(),
+        "git update-index for the repository link failed: {}",
+        String::from_utf8_lossy(&index.stderr)
+    );
+    let commit = common::git(env, &["commit", "-q", "-m", "fixture: repository link"]);
+    assert!(
+        commit.status.success(),
+        "git commit of the repository link failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
+}
+
+/// A project whose `structure` role retains the nested repository marker.
+pub(crate) fn nested_marker_project() -> common::TestEnv {
+    ise_project_with_declaration(&structure_declaration(
+        &format!("{NESTED_MARKER_PATH:?}"),
+        "\"src/**\"",
+    ))
+}
+
+/// Commit the nested marker as a regular file.
+pub(crate) fn commit_nested_marker(env: &common::TestEnv) {
+    commit_files(
+        env,
+        &[(NESTED_MARKER_PATH, "nested marker fixture\n")],
+        "fixture: nested marker",
     );
 }
 

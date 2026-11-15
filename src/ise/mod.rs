@@ -5,18 +5,18 @@
 //! write that a verifier inspects. The CLI adapter in `crate::cli::ise`
 //! formats the outcome; only the adapter knows about exit codes.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use crate::config::declaration::{
-    DECLARATION_PATH, Role, SpecificationDeclaration, normalize_project_path,
-};
+use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
 use crate::config::manifest::Manifest;
 use crate::config::overlay::load_effective_at;
-use crate::e2e_boundary::Glob;
 use crate::scm::{Backend, EntryKind, RevisionEntry};
+
+mod partition;
 
 /// `givn ise replace`'s parsed request.
 #[derive(Debug, Clone)]
@@ -62,46 +62,10 @@ pub struct Counts {
     pub not_replaced: usize,
 }
 
-/// Every tracked path at the revision, placed by the declaration.
-#[derive(Debug, Default, PartialEq, Eq)]
-struct Partition {
-    retained: Vec<String>,
-    kept_source: Vec<String>,
-    replaced: Vec<String>,
-    outside: Vec<String>,
-    not_replaced: usize,
-}
-
-impl Partition {
-    fn counts(&self) -> Counts {
-        Counts {
-            retained: self.retained.len(),
-            kept_source: self.kept_source.len(),
-            replaced: self.replaced.len(),
-            outside_declaration: self.outside.len(),
-            not_replaced: self.not_replaced,
-        }
-    }
-
-    /// The sorted union of retained and kept source paths: every file the
-    /// trial copies from the revision.
-    fn copy_paths(&self) -> Vec<String> {
-        let mut paths: Vec<String> = self
-            .retained
-            .iter()
-            .chain(&self.kept_source)
-            .cloned()
-            .collect();
-        paths.sort();
-        paths.dedup();
-        paths
-    }
-}
-
 /// Materialize a trial from one recorded revision and report its placement.
 pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> {
     let admission = admit(project_root, request.at.as_deref())?;
-    let partition = partition(
+    let partition = partition::partition(
         &admission.declaration,
         &admission.entries,
         request,
@@ -112,6 +76,8 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
         revision: admission.revision.clone(),
         counts: partition.counts(),
     };
+    require_write_targets(project_root, request)?;
+    require_copy_set(&partition.copy_paths(), &admission.entries)?;
     if request.dry_run {
         return Ok(report);
     }
@@ -200,6 +166,121 @@ fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
     })
 }
 
+/// Refusal 8: both write targets lie outside the checkout and are created new.
+/// The trial must not exist; the receipt must not exist, lie inside the trial,
+/// or be an ancestor of it. Every path is resolved through its deepest
+/// existing ancestor, so a symlinked parent cannot alias a checkout path.
+fn require_write_targets(project_root: &Path, request: &ReplaceRequest) -> Result<()> {
+    let checkout = project_root
+        .canonicalize()
+        .with_context(|| format!("resolve the checkout '{}'", project_root.display()))?;
+    let trial = resolved_target(&request.into, &checkout)?;
+    if trial.starts_with(&checkout) {
+        bail!(
+            "the target '{}' is inside the checkout '{}'",
+            request.into.display(),
+            checkout.display()
+        );
+    }
+    if trial.exists() {
+        bail!(
+            "the target '{}' already exists; a trial is written only into a new path",
+            request.into.display()
+        );
+    }
+    let Some(receipt_request) = request.receipt.as_deref() else {
+        return Ok(());
+    };
+    let receipt = resolved_target(receipt_request, &checkout)?;
+    if receipt.starts_with(&checkout) {
+        bail!(
+            "the receipt '{}' is inside the checkout '{}'",
+            receipt_request.display(),
+            checkout.display()
+        );
+    }
+    if receipt.exists() {
+        bail!(
+            "the receipt '{}' already exists; a record is never overwritten",
+            receipt_request.display()
+        );
+    }
+    if receipt.starts_with(&trial) {
+        bail!(
+            "the receipt '{}' lies inside the trial '{}'",
+            receipt_request.display(),
+            trial.display()
+        );
+    }
+    if trial.starts_with(&receipt) {
+        bail!(
+            "the receipt '{}' is an ancestor of the trial '{}'",
+            receipt_request.display(),
+            trial.display()
+        );
+    }
+    Ok(())
+}
+
+/// The absolute form of a write target: every existing ancestor is
+/// canonicalized and the missing components are appended.
+fn resolved_target(path: &Path, checkout: &Path) -> Result<PathBuf> {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        checkout.join(path)
+    };
+    let mut missing: Vec<OsString> = Vec::new();
+    let mut current = absolute.as_path();
+    let existing = loop {
+        match current.canonicalize() {
+            Ok(canonical) => break canonical,
+            Err(error) => {
+                let name = current.file_name().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "the path '{}' has no existing ancestor: {error}",
+                        path.display()
+                    )
+                })?;
+                missing.push(name.to_os_string());
+                current = current.parent().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "the path '{}' has no existing ancestor: {error}",
+                        path.display()
+                    )
+                })?;
+            }
+        }
+    };
+    let mut resolved = existing;
+    for name in missing.iter().rev() {
+        resolved.push(name);
+    }
+    Ok(resolved)
+}
+
+/// Refusal 9: the copy set carries no repository link and no version-control
+/// marker at any depth. The check runs before any content is read or written.
+fn require_copy_set(paths: &[String], entries: &[RevisionEntry]) -> Result<()> {
+    for path in paths {
+        if path
+            .split('/')
+            .any(|component| matches!(component, ".git" | ".fslckout" | "_FOSSIL_"))
+        {
+            bail!(
+                "'{path}' is a version-control marker; a clean-room trial copies no repository metadata"
+            );
+        }
+        let is_link = entries
+            .iter()
+            .any(|entry| entry.path == *path && entry.kind == EntryKind::Submodule);
+        if is_link {
+            bail!("'{path}' is a repository link; a clean-room trial copies no repository link");
+        }
+    }
+    Ok(())
+}
+
 /// `ise` and its `architecture_principles` prerequisite gate both commands.
 fn require_addons(manifest: &Manifest) -> Result<()> {
     if !manifest.addons.ise {
@@ -211,223 +292,6 @@ fn require_addons(manifest: &Manifest) -> Result<()> {
         );
     }
     Ok(())
-}
-
-/// Place every tracked path at the revision. A retained role is tested first,
-/// so a retained file under a source root stays in the trial under every form.
-/// Every replacement refusal runs before the trial is created.
-fn partition(
-    declaration: &SpecificationDeclaration,
-    entries: &[RevisionEntry],
-    request: &ReplaceRequest,
-    revision: &str,
-) -> Result<Partition> {
-    let roles = retained_roles(declaration);
-    require_declared_retained_entries(&roles, entries, revision)?;
-    let source_roots: Vec<Glob> = declaration
-        .source_roots()
-        .iter()
-        .map(|root| Glob::compile(root))
-        .collect();
-    let tracked: BTreeSet<&str> = entries.iter().map(|entry| entry.path.as_str()).collect();
-
-    let mut retained: Vec<String> = entries
-        .iter()
-        .filter(|entry| retained_role(&entry.path, &roles).is_some())
-        .map(|entry| entry.path.clone())
-        .collect();
-    retained.sort();
-
-    let candidates: BTreeSet<String> = if request.full {
-        entries
-            .iter()
-            .filter(|entry| path_or_parent_matches(&source_roots, &entry.path))
-            .map(|entry| entry.path.clone())
-            .collect()
-    } else {
-        let candidates = named_candidates(&tracked, &request.paths)?;
-        require_replaceable_paths(&candidates, &roles, &source_roots, revision)?;
-        candidates
-    };
-    let retained_set: BTreeSet<&str> = retained.iter().map(String::as_str).collect();
-    let mut replaced: Vec<String> = candidates
-        .into_iter()
-        .filter(|path| !retained_set.contains(path.as_str()))
-        .collect();
-    replaced.sort();
-    let replaced_set: BTreeSet<&str> = replaced.iter().map(String::as_str).collect();
-
-    let mut kept_source: Vec<String> = entries
-        .iter()
-        .map(|entry| &entry.path)
-        .filter(|path| {
-            !retained_set.contains(path.as_str())
-                && !replaced_set.contains(path.as_str())
-                && path_or_parent_matches(&source_roots, path)
-        })
-        .cloned()
-        .collect();
-    kept_source.sort();
-
-    let mut outside: Vec<String> = entries
-        .iter()
-        .map(|entry| &entry.path)
-        .filter(|path| {
-            !retained_set.contains(path.as_str())
-                && !replaced_set.contains(path.as_str())
-                && !path_or_parent_matches(&source_roots, path)
-        })
-        .cloned()
-        .collect();
-    outside.sort();
-
-    let not_replaced = direct_siblings(&tracked, &replaced_set);
-    Ok(Partition {
-        retained,
-        kept_source,
-        replaced,
-        outside,
-        not_replaced,
-    })
-}
-
-/// The retained role patterns in declaration order, each with its declared
-/// text. The first matching role wins, so the order is part of the contract.
-fn retained_roles(declaration: &SpecificationDeclaration) -> Vec<(Role, &str, Glob)> {
-    declaration
-        .roles()
-        .into_iter()
-        .flat_map(|(role, patterns)| {
-            patterns
-                .iter()
-                .map(move |pattern| (role, pattern.as_str(), Glob::compile(pattern)))
-        })
-        .collect()
-}
-
-fn retained_role(path: &str, roles: &[(Role, &str, Glob)]) -> Option<Role> {
-    roles
-        .iter()
-        .find(|(_, _, glob)| glob_matches_path_or_parent(glob, path))
-        .map(|(role, _, _)| *role)
-}
-
-/// The `--path` values that resolve to tracked content. A tracked file
-/// contributes itself, a directory contributes every tracked file beneath it,
-/// a glob-shaped value contributes nothing, and repeats collapse. A value the
-/// declaration's normalizer rejects is outside the project and refuses.
-fn named_candidates(tracked: &BTreeSet<&str>, values: &[String]) -> Result<BTreeSet<String>> {
-    let mut directories = BTreeSet::new();
-    for path in tracked {
-        for (index, _) in path.match_indices('/') {
-            directories.insert(path[..index].to_string());
-        }
-    }
-
-    let mut candidates = BTreeSet::new();
-    for value in values {
-        let Some(value) = normalize_project_path(value) else {
-            bail!(
-                "'{value}' is outside the project; a replacement path is a project-relative tracked file or directory"
-            );
-        };
-        if tracked.contains(value.as_str()) {
-            candidates.insert(value);
-            continue;
-        }
-        if directories.contains(&value) {
-            let prefix = format!("{value}/");
-            candidates.extend(
-                tracked
-                    .iter()
-                    .filter(|path| path.starts_with(&prefix))
-                    .map(|path| (*path).to_string()),
-            );
-        }
-    }
-    Ok(candidates)
-}
-
-/// Refusal 5: every declared retained entry must match a tracked path or a
-/// derived directory at the revision; an entry that matches nothing names
-/// itself and the revision.
-fn require_declared_retained_entries(
-    roles: &[(Role, &str, Glob)],
-    entries: &[RevisionEntry],
-    revision: &str,
-) -> Result<()> {
-    for (role, pattern, glob) in roles {
-        let matches = entries
-            .iter()
-            .any(|entry| glob_matches_path_or_parent(glob, &entry.path));
-        if !matches {
-            bail!(
-                "the declared {} entry '{pattern}' matches nothing at revision '{revision}'",
-                role.as_str()
-            );
-        }
-    }
-    Ok(())
-}
-
-/// Refusals 6 and 7: no candidate may be retained, and every candidate must
-/// lie under a declared source root. The retained test runs first over the
-/// whole candidate set, so the reported condition is the role, not the root.
-fn require_replaceable_paths(
-    candidates: &BTreeSet<String>,
-    roles: &[(Role, &str, Glob)],
-    source_roots: &[Glob],
-    revision: &str,
-) -> Result<()> {
-    for path in candidates {
-        if let Some(role) = retained_role(path, roles) {
-            bail!(
-                "'{path}' is retained by the {} role at revision '{revision}'; a retained path is never replaced",
-                role.as_str()
-            );
-        }
-    }
-    for path in candidates {
-        if !path_or_parent_matches(source_roots, path) {
-            bail!("'{path}' is outside every declared source root at revision '{revision}'");
-        }
-    }
-    Ok(())
-}
-
-/// Whether a role or source pattern matches the path or every tracked file
-/// under a directory it matches.
-fn path_or_parent_matches(globs: &[Glob], path: &str) -> bool {
-    globs
-        .iter()
-        .any(|glob| glob_matches_path_or_parent(glob, path))
-}
-
-fn glob_matches_path_or_parent(glob: &Glob, path: &str) -> bool {
-    glob.matches(path)
-        || path
-            .match_indices('/')
-            .any(|(index, _)| glob.matches(&path[..index]))
-}
-
-/// The direct tracked files in the replaced files' parent directories that
-/// were not themselves replaced.
-fn direct_siblings(tracked: &BTreeSet<&str>, replaced: &BTreeSet<&str>) -> usize {
-    let mut parents = BTreeSet::new();
-    for path in replaced {
-        if let Some((parent, _)) = path.rsplit_once('/') {
-            parents.insert(parent);
-        }
-    }
-    tracked
-        .iter()
-        .filter(|path| {
-            !replaced.contains(**path)
-                && path
-                    .rsplit_once('/')
-                    .is_some_and(|(parent, _)| parents.contains(parent))
-        })
-        .count()
 }
 
 /// One file the trial copies from the revision.
