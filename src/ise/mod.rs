@@ -602,4 +602,30 @@ mod tests {
             one_file().bytes
         );
     }
+
+    #[test]
+    fn a_submodule_entry_in_the_copy_set_is_refused_as_a_repository_link() {
+        let entries = [RevisionEntry {
+            path: "vendor/lib".to_string(),
+            kind: EntryKind::Submodule,
+            executable: false,
+        }];
+        let error = require_copy_set(&["vendor/lib".to_string()], &entries)
+            .expect_err("a repository link is refused");
+        assert_eq!(
+            error.to_string(),
+            "'vendor/lib' is a repository link; a clean-room trial copies no repository link"
+        );
+    }
+
+    #[test]
+    fn a_regular_entry_in_the_copy_set_passes_the_link_check() {
+        let entries = [RevisionEntry {
+            path: "src/kept.rs".to_string(),
+            kind: EntryKind::Regular,
+            executable: false,
+        }];
+        require_copy_set(&["src/kept.rs".to_string()], &entries)
+            .expect("a regular file is copied, not refused");
+    }
 }

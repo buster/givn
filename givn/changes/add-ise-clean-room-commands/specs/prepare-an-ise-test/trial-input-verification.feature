@@ -31,11 +31,27 @@ Feature: Trial input verification
     Then verification fails and names "tests/e2e/steps/keys.rs"
 
   @givn.added
+  Scenario: Verification names an e2e package path the record does not list
+    Given a prepared Git trial with a receipt
+    When the developer adds the e2e file "tests/e2e/steps/extra.rs" to the checkout
+    And the verifier re-checks the trial against the record
+    Then verification fails and names "tests/e2e/steps/extra.rs"
+    And verification reports the e2e package gained the path
+
+  @givn.added
   Scenario: Verification names an e2e scenario changed in the checkout
     Given a prepared Git trial with a receipt
     When the developer changes a scenario tagged "e2e" in "givn/specs/demo/spec.feature"
     And the verifier re-checks the trial against the record
     Then verification fails and names "givn/specs/demo/spec.feature"
+
+  @givn.added
+  Scenario: Verification names an e2e scenario the record does not list
+    Given a prepared Git trial with a receipt
+    When the developer adds the e2e scenario file "givn/specs/demo/extra.feature" to the checkout
+    And the verifier re-checks the trial against the record
+    Then verification fails and names "givn/specs/demo/extra.feature"
+    And verification reports the selected e2e scenarios differ
 
   @givn.added
   Scenario: Verification reports no drift after a kept source file changes
@@ -62,10 +78,11 @@ Feature: Trial input verification
 
   @givn.added
   Scenario: Verification refuses while architecture principles are off
-    Given a prepared Git trial with a receipt
+    Given a prepared Git trial with a corrupted record
     And the project disables architecture principles after preparation
     When the verifier re-checks the trial against the record
     Then verification fails and names "architecture_principles"
+    And verification reports no record error
 
   @givn.added
   Scenario: Verification refuses a record it cannot read
@@ -73,6 +90,20 @@ Feature: Trial input verification
     When the verifier re-checks the trial against the record
     Then verification fails and names the record
     And verification names the expected record scope
+
+  @givn.added
+  Scenario: Verification refuses a record with another schema
+    Given a prepared Git trial with a receipt carrying the schema 2
+    When the verifier re-checks the trial against the record
+    Then verification fails and names the record and the schema
+    And verification reports the expected record schema
+
+  @givn.added
+  Scenario: Verification refuses a record without a replaced digest
+    Given a prepared Git trial with a receipt whose replaced digest is not a SHA-256 value
+    When the verifier re-checks the trial against the record
+    Then verification fails and names the record and the replaced digest
+    And verification reports the record is no trial evidence
 
   @givn.added
   Scenario: Verification refuses a record with an unknown field

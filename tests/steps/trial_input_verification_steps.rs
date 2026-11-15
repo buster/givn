@@ -13,7 +13,8 @@ use cucumber::{given, then, when};
 use crate::common;
 use crate::steps::clean_room_preparation_steps::{prepare_trial, project_env};
 use crate::steps::ise_clean_room_support::{
-    self, FOSSIL_FEATURE_PATH, REFERENCE_PATH, REPLACED_SOURCE_PATH, VERIFY_E2E_STEP_PATH,
+    self, ADDED_E2E_FEATURE_CONTENT, ADDED_E2E_FEATURE_PATH, ADDED_E2E_STEP_PATH,
+    FOSSIL_FEATURE_PATH, REFERENCE_PATH, REPLACED_SOURCE_PATH, VERIFY_E2E_STEP_PATH,
     VERIFY_KEPT_PATH,
 };
 use crate::steps::{GivnWorld, output, stderr};
@@ -122,6 +123,30 @@ fn prepared_git_trial_with_a_foreign_record(world: &mut GivnWorld) {
     });
 }
 
+#[given(regex = r#"^a prepared Git trial with a receipt carrying the schema 2$"#)]
+fn prepared_git_trial_with_another_schema(world: &mut GivnWorld) {
+    prepare(world);
+    rewrite_record(world, |mapping| {
+        mapping.insert(
+            serde_yaml_ng::Value::String("schema".to_string()),
+            serde_yaml_ng::Value::Number(2.into()),
+        );
+    });
+}
+
+#[given(
+    regex = r#"^a prepared Git trial with a receipt whose replaced digest is not a SHA-256 value$"#
+)]
+fn prepared_git_trial_with_a_short_replaced_digest(world: &mut GivnWorld) {
+    prepare(world);
+    rewrite_record(world, |mapping| {
+        mapping.insert(
+            serde_yaml_ng::Value::String("replaced_digest".to_string()),
+            serde_yaml_ng::Value::String("abc123".to_string()),
+        );
+    });
+}
+
 #[given(regex = r#"^the project disables ise after preparation$"#)]
 fn project_disables_ise(world: &mut GivnWorld) {
     ise_clean_room_support::set_addon(project_env(world), "ise", false);
@@ -182,6 +207,26 @@ fn developer_changes_the_e2e_scenario(world: &mut GivnWorld) {
     let changed = text.replace("Given nothing", "Given something else");
     assert_ne!(changed, text, "the fixture feature has no step to change");
     std::fs::write(&path, changed).expect("rewrite the checkout feature");
+}
+
+#[when(regex = r#"^the developer adds the e2e file "tests/e2e/steps/extra\.rs" to the checkout$"#)]
+fn developer_adds_the_e2e_file(world: &mut GivnWorld) {
+    ise_clean_room_support::add_checkout_file(
+        project_env(world),
+        ADDED_E2E_STEP_PATH,
+        "// extra e2e steps\n",
+    );
+}
+
+#[when(
+    regex = r#"^the developer adds the e2e scenario file "givn/specs/demo/extra\.feature" to the checkout$"#
+)]
+fn developer_adds_the_e2e_feature(world: &mut GivnWorld) {
+    ise_clean_room_support::add_checkout_file(
+        project_env(world),
+        ADDED_E2E_FEATURE_PATH,
+        ADDED_E2E_FEATURE_CONTENT,
+    );
 }
 
 #[when(regex = r#"^the verifier re-checks the trial against the record$"#)]
@@ -327,5 +372,53 @@ fn verification_reports_the_written_path_mismatch(world: &mut GivnWorld) {
     assert!(
         text.contains("written path"),
         "stderr {text:?} does not report the written-path mismatch"
+    );
+}
+
+#[then(regex = r#"^verification reports the e2e package gained the path$"#)]
+fn verification_reports_the_gained_path(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        text.contains("e2e package gained this path"),
+        "stderr {text:?} does not report the gained e2e package path"
+    );
+}
+
+#[then(regex = r#"^verification reports the selected e2e scenarios differ$"#)]
+fn verification_reports_the_selected_scenarios_differ(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        text.contains("selected @e2e scenarios differ"),
+        "stderr {text:?} does not report the selected-scenario drift"
+    );
+}
+
+#[then(regex = r#"^verification fails and names the record and the schema$"#)]
+fn verification_fails_and_names_the_record_and_the_schema(world: &mut GivnWorld) {
+    let record = record(world).to_string_lossy().into_owned();
+    assert_failed_naming(world, &[record.as_str(), "schema"]);
+}
+
+#[then(regex = r#"^verification reports the expected record schema$"#)]
+fn verification_reports_the_expected_record_schema(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        text.contains("a trial record is schema 1"),
+        "stderr {text:?} does not name the expected record schema"
+    );
+}
+
+#[then(regex = r#"^verification fails and names the record and the replaced digest$"#)]
+fn verification_fails_and_names_the_record_and_the_digest(world: &mut GivnWorld) {
+    let record = record(world).to_string_lossy().into_owned();
+    assert_failed_naming(world, &[record.as_str(), "replaced_digest"]);
+}
+
+#[then(regex = r#"^verification reports the record is no trial evidence$"#)]
+fn verification_reports_the_record_is_no_trial_evidence(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        text.contains("no trial evidence"),
+        "stderr {text:?} does not report that the record is no trial evidence"
     );
 }

@@ -40,9 +40,10 @@ Feature: Clean-room preparation
 
   @givn.added
   Scenario: Preparation refuses while architecture principles are off
-    Given a Git project with ise on, architecture principles off, and a declaration
+    Given a Git project with ise on, architecture principles off, and a malformed declaration
     When the developer prepares a trial from "HEAD" with a full replacement
     Then preparation fails and names "architecture_principles"
+    And the declaration is not read
     And the trial path and the receipt path remain absent
 
   @givn.added
@@ -228,6 +229,14 @@ Feature: Clean-room preparation
     Then preparation succeeds and prints "Replaced: 2" and "Not replaced: 0"
     And the trial holds "givn/specs/demo.feature"
     And the trial holds no file under "src"
+
+  @givn.added
+  Scenario: A full replacement counts a retained file under a source root as not replaced
+    Given a Git project with ise enabled, a declaration that retains "src/keep.rs", and one source root "src/**"
+    And a committed revision with "src/keep.rs" and "src/other.rs"
+    When the developer prepares a trial from "HEAD" with a full replacement
+    Then preparation succeeds and prints "Replaced: 1" and "Not replaced: 1"
+    And the trial holds "src/keep.rs"
 
   @givn.added
   Scenario: Preparation collapses a repeated path

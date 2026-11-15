@@ -281,7 +281,9 @@ fn git_project_with_ise_off(world: &mut GivnWorld) {
     world.env = Some(ise_clean_room_support::ise_off_project());
 }
 
-#[given(regex = r#"^a Git project with ise on, architecture principles off, and a declaration$"#)]
+#[given(
+    regex = r#"^a Git project with ise on, architecture principles off, and a malformed declaration$"#
+)]
 fn git_project_with_architecture_principles_off(world: &mut GivnWorld) {
     world.env = Some(ise_clean_room_support::architecture_principles_off_project());
 }
@@ -532,6 +534,33 @@ fn git_project_with_retained_behavior(world: &mut GivnWorld) {
     world.env = Some(ise_clean_room_support::ise_project_with_declaration(
         &ise_clean_room_support::behavior_declaration("\"givn/specs/**\"", "\"src/**\""),
     ));
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled, a declaration that retains "src/keep\.rs", and one source root "src/\*\*"$"#
+)]
+fn git_project_retaining_a_source_file(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::structure_declaration("\"src/keep.rs\"", "\"src/**\""),
+    ));
+}
+
+#[given(regex = r#"^a committed revision with "src/keep\.rs" and "src/other\.rs"$"#)]
+fn commit_retained_and_replaced_source(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            (
+                ise_clean_room_support::RETAINED_SOURCE_PATH,
+                "pub fn keep() {}\n",
+            ),
+            (
+                ise_clean_room_support::KEPT_SOURCE_PATH,
+                "pub fn other() {}\n",
+            ),
+        ],
+        "fixture: retained and replaced source files",
+    );
 }
 
 #[given(
@@ -844,6 +873,13 @@ fn preparation_fails_and_names_the_unreadable_blob(world: &mut GivnWorld) {
 #[then(regex = r#"^preparation succeeds$"#)]
 fn preparation_succeeds(world: &mut GivnWorld) {
     assert_success(world);
+}
+
+#[then(regex = r#"^preparation succeeds and prints "Replaced: 1" and "Not replaced: 1"$"#)]
+fn preparation_succeeds_with_a_retained_sibling(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Replaced: 1");
+    assert_report_line(world, "Not replaced: 1");
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Backend: fossil"$"#)]
@@ -1328,6 +1364,11 @@ fn the_trial_holds_the_nested_source(world: &mut GivnWorld) {
 #[then(regex = r#"^the trial holds "src/other\.rs"$"#)]
 fn the_trial_holds_other(world: &mut GivnWorld) {
     assert_trial_holds(world, &["src/other.rs"]);
+}
+
+#[then(regex = r#"^the trial holds "src/keep\.rs"$"#)]
+fn the_trial_holds_the_retained_source_file(world: &mut GivnWorld) {
+    assert_trial_holds(world, &[ise_clean_room_support::RETAINED_SOURCE_PATH]);
 }
 
 #[then(regex = r#"^the trial holds no "\.git" entry and no "\.fslckout" entry$"#)]

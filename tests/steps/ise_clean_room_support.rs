@@ -499,6 +499,17 @@ pub(crate) fn commit_e2e_trial_revision(env: &common::TestEnv) -> String {
 pub(crate) const VERIFY_E2E_MANIFEST_PATH: &str = "tests/e2e/Cargo.toml";
 /// The e2e package's step file the verify fixtures freeze.
 pub(crate) const VERIFY_E2E_STEP_PATH: &str = "tests/e2e/steps/keys.rs";
+/// An e2e package file the checkout gains after preparation.
+pub(crate) const ADDED_E2E_STEP_PATH: &str = "tests/e2e/steps/extra.rs";
+/// A behavior feature the checkout gains after preparation; one scenario is
+/// tagged `@e2e`.
+pub(crate) const ADDED_E2E_FEATURE_PATH: &str = "givn/specs/demo/extra.feature";
+/// The gained feature's content: one `@e2e` scenario.
+pub(crate) const ADDED_E2E_FEATURE_CONTENT: &str =
+    "Feature: added demo\n\n  @e2e\n  Scenario: added demo\n    Given nothing\n";
+/// The retained source file the new `--full` count fixture commits inside a
+/// source root.
+pub(crate) const RETAINED_SOURCE_PATH: &str = "src/keep.rs";
 /// The kept source file the verify fixtures commit: inside `src/**` and
 /// outside every frozen input.
 pub(crate) const VERIFY_KEPT_PATH: &str = "src/keys/steps.rs";
@@ -581,6 +592,16 @@ pub(crate) fn append_bytes(path: &Path) {
         .open(path)
         .unwrap_or_else(|error| panic!("open {} to append: {error}", path.display()));
     file.write_all(b"\n").expect("append to the fixture file");
+}
+
+/// Write a file the checkout gained after preparation. The file stays
+/// untracked; `git ls-files --others` still lists it, so the re-check sees it.
+pub(crate) fn add_checkout_file(env: &common::TestEnv, path: &str, content: &str) {
+    let target = env.path(path);
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent).expect("create the added file's parent directory");
+    }
+    std::fs::write(&target, content).expect("write the added file");
 }
 
 /// Point the receipt at `<container>/blocker/record.yaml`, where `blocker` is
@@ -682,12 +703,13 @@ pub(crate) fn ise_off_project() -> common::TestEnv {
     env
 }
 
-/// A Git project with `ise` on and its `architecture_principles`
-/// prerequisite off (the CLI refuses that combination, so the config is
-/// written directly).
+/// A Git project with `ise` on, its `architecture_principles` prerequisite
+/// off, and a malformed declaration on disk, so a reader that loads the
+/// declaration before the add-on check would report the wrong refusal.
 pub(crate) fn architecture_principles_off_project() -> common::TestEnv {
     let env = ise_project();
     set_addon(&env, "architecture_principles", false);
+    write_declaration(&env, &malformed_declaration());
     common::git_commit_all(&env, "fixture: architecture principles off");
     env
 }
