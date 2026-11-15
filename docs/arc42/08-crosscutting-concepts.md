@@ -58,6 +58,22 @@ effective and the file is absent. An existing declaration is never written or
 staged. It is read only while `ise` is effective, so a project without the addon
 never reads a file that happens to be present.
 
+One command reads the declaration for a different reason: `givn archive`. On
+its fresh move, and only while `ise` is effective, it loads the declaration
+through the same strict loader and reads the project's content paths once
+(tracked plus untracked non-ignored, the listing `givn ise verify` reads). A
+retained role entry that matches content under `givn/changes/<id>/` must also
+match a content path that stays or the `givn/archive/<id>/` form of a content
+path it matches, or the archive refuses before mutation. The refusal names the
+role, the entry, the moved path, and the archived path to declare instead, and
+its advice keeps the entry's shape (a wildcard entry gets the same pattern under
+`givn/archive`), so a project cannot archive itself into a declaration that
+matches nothing. Entry matching uses the shared declared-path glob with parent
+matching; an entry that also survives the move, such as `givn/**` or a directory
+that still holds another active change, is unaffected. A declaration the loader
+refuses blocks the archive by name, and a project with `ise` off reads no
+declaration here either.
+
 ## 8.3 The Gherkin Delta Model
 
 The `.feature` file is the behavior specification. Active change features use:

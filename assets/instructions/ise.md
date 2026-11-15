@@ -16,7 +16,11 @@ off.
 
 - **Specification completeness** — every behavior, contract, limit, and
   acceptance test the rebuild relies on is declared in
-  `givn/specification.yaml` and reachable from the declared paths.
+  `givn/specification.yaml` and reachable from the declared paths. A declared
+  retained path must survive `givn archive`: a change's artifacts move from
+  `givn/changes/<id>/` to `givn/archive/<id>/`, so a retained role names the
+  archived path or another durable path, never an active change's artifact.
+  `givn archive` refuses such a declaration before moving the change.
 - **two-layer test boundary** — `@e2e` scenarios run from the declared `e2e`
   package and survive a rebuild. Component scenarios stay in the Specification
   unchanged; only their step definitions and fakes are implementation and may

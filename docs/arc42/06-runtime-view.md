@@ -373,7 +373,7 @@ sequenceDiagram
     D->>A: givn archive --change id
     A->>S: select backend + clean-state witness
     alt fresh archive
-        A->>A: structural gates (artifacts, step-definition comparison, hooks, run declaration, README, merge preconditions)
+        A->>A: structural gates (declared retained paths, artifacts, step-definition comparison, hooks, run declaration, README, merge preconditions)
         A->>A: write pending verification.json (merge_completed: false)
         A->>A: move givn/changes/id to givn/archive/id with one rename
         A->>A: merge use-case docs and deltas from the archived candidate
@@ -413,7 +413,13 @@ Stages:
    `apply.requires` completeness, the delta step-definition comparison,
    configured archive hooks, the run-declaration gate, the README completeness
    gate, use-case and delta prevalidation, the e2e-runner configuration check,
-   and the shared change-receipt freshness check (section 6.7.1). The
+   and the shared change-receipt freshness check (section 6.7.1). Before the
+   artifact gates, an `ise`-effective project's declaration is checked: every
+   retained role entry that matches a content path under `givn/changes/<id>/`
+   must also match a content path that stays or the archived
+   `givn/archive/<id>/` form of a content path it matches, or the archive is
+   refused by name before the pending receipt is written. A project with `ise`
+   off reads no declaration. The
    step-definition comparison reads the change's `specs/**` step files, collects
    the phrases bound by their binding expressions, compares them with the
    permanent test tree (the project root minus the change, archive, history,

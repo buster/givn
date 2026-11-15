@@ -463,6 +463,16 @@ result-file digest/status, and tested revision. On resume:
   confined to `verify.command` invalidates regular only.
 - Formatting-only settings changes preserve canonical equality.
 
+With `ise` effective, the fresh move also refuses before any mutation when a
+retained role entry in `givn/specification.yaml` matches a content path under
+`givn/changes/<id>/` and survives neither through a content path outside the
+move nor through the `givn/archive/<id>/` form of the content path it matches.
+The refusal names the role, the entry, the moved path, and the archived path to
+declare instead; a literal entry is answered with its archived literal path and
+a wildcard entry with the same pattern under `givn/archive`. An entry such as
+`givn/**` that still resolves after the move is unaffected, and a project with
+`ise` off reads no declaration.
+
 A failed or incomplete candidate remains in `givn/archive/<id>/` with a pending
 receipt. Repair the committed state and rerun archive; the merge is idempotent
 and finalized scopes are not re-run. There is no rollback or history rewrite.

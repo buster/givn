@@ -1,0 +1,77 @@
+Scenario: Archive is blocked when a declared retained path moves with the change
+Pre-fix reproduction: the current binary has no retained-path guard, so this
+transcript records the defect state the change must prevent.
+argv: givn archive --change repro
+argv: givn ise replace --at HEAD --full --into /tmp/guard-repro-out.BWWHiU/trial
+cwd (fixture project root): /tmp/guard-repro-out.BWWHiU/project
+binary: target/debug/givn (the repository binary built from 23ba7139)
+fixture revision (before archive): 7632e593d1ba24be1b763551c2d0a9b2ea80aa5d
+candidate revision (HEAD when ise replace runs): ad7e276e827b8224d5cd973362dbc2468d6ceec0
+
+context commands (all in that project):
+  git init -q
+  git config user.email fixture@example.com
+  git config user.name "Givn Fixture"
+  git config commit.gpgsign false
+  givn init --agents opencode
+  givn addons enable ise
+  givn/config.yaml: addons coverage false, readme false
+  givn/commands.yaml: verify.command "./emit-result.sh regular", verify.e2e_command "./emit-result.sh e2e", run declaration product_type cli
+  givn/changes/repro/.givn-skip: specs
+  givn/changes/repro/proposal.md: Behavior change: none
+  givn/specification.yaml: limits: ["givn/changes/repro/design.md"]
+  git add -A && git commit -m "fixture: archivable no-behavior change and ise declaration"
+  committed: givn/config.yaml, givn/commands.yaml, givn/specification.yaml, givn/changes/repro/**, emit-result.sh, tests/steps/archive_proof_steps.rs
+
+--- givn archive --change repro (stdout, raw) ---
+  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)
+[21:44:31] Archiving change 'repro'...
+[21:44:31] Running archive gate hooks...
+[21:44:31] ✓ Gate hooks passed
+[21:44:31] ✓ run declaration passed
+[21:44:31] Running static review gates...
+net delta: 0 added, 0 modified, 0 removed
+net delta json: {"added":0,"modified":0,"removed":0}
+  ✓ overlap dispositions passed
+[21:44:31] ✓ Static review gates passed
+[21:44:31] ✓ Candidate committed
+Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks.
+[21:44:31] Running regular verification: ./emit-result.sh regular
+[21:44:31] ✓ Archived 'repro' to /tmp/guard-repro-out.BWWHiU/project/givn/archive/repro
+Verification receipt: /tmp/guard-repro-out.BWWHiU/project/givn/archive/repro/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+
+--- givn archive --change repro (stderr, raw) ---
+
+--- archive exit: 0 ---
+
+The declaration was not rewritten: limits: ["givn/changes/repro/design.md"]
+The change directory moved to givn/archive/repro/:
+
+--- tree after archive ---
+givn/archive/repro/.givn-skip
+givn/archive/repro/proposal.md
+givn/archive/repro/design.md
+givn/archive/repro/design-review.md
+givn/archive/repro/tasks.md
+givn/archive/repro/review.md
+givn/archive/repro/arc42.md
+givn/archive/repro/verification.json
+givn/config.yaml
+givn/commands.yaml
+givn/history/events.jsonl
+givn/specification.yaml
+
+--- givn ise replace --at HEAD --full --into /tmp/guard-repro-out.BWWHiU/trial (stdout, raw) ---
+
+--- givn ise replace --at HEAD --full --into /tmp/guard-repro-out.BWWHiU/trial (stderr, raw) ---
+ise replace: the declared limits entry 'givn/changes/repro/design.md' matches nothing at revision 'ad7e276e827b8224d5cd973362dbc2468d6ceec0'
+
+--- ise replace exit: 1 ---
+
+Observed defect: archive accepted the declaration and moved the change, so the
+declared limits entry matched nothing at the next revision; the rebuild arm
+cannot start. The guard this change specifies refuses the archive before the
+pending receipt is written and names the archived path to declare instead.

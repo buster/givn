@@ -50,6 +50,10 @@ Current architecture facts that recur in the chapters:
 - Clean-room trials are materialized by `givn ise replace` from one revision and
   re-checked by `givn ise verify`; the `ise-trial/v1` record carries per-path
   retained and `e2e` identities and lives outside the trial and the checkout.
+- With `ise` effective, `givn archive` refuses before mutation when a declared
+  retained path in `givn/specification.yaml` would be isolated by the change
+  move, naming the entry and the archived path to declare instead; the served
+  `ise` guidance states that retained paths must survive archiving.
 - The outline report is advisory. There is no outline review gate, verdict,
   waiver, baseline, or forced reviewer context.
 - The supported migration baseline is 1.0. The shipped migration catalog is
