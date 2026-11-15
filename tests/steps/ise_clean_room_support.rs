@@ -47,6 +47,22 @@ pub(crate) const VENDOR_LINK_PATH: &str = "vendor/lib";
 /// The nested repository marker a revision can carry.
 pub(crate) const NESTED_MARKER_PATH: &str = "nested/_FOSSIL_";
 
+/// The executable script the entry-kind fixtures commit.
+pub(crate) const RUN_SCRIPT_PATH: &str = "src/run.sh";
+/// The symlink the entry-kind fixtures commit.
+pub(crate) const SYMLINK_PATH: &str = "src/link";
+/// The symlink's recorded target, relative to its directory.
+pub(crate) const SYMLINK_TARGET: &str = "run.sh";
+/// The behavior feature the Fossil entry-kind fixture retains.
+pub(crate) const FOSSIL_FEATURE_PATH: &str = "givn/specs/demo/spec.feature";
+/// The behavior feature's content; one scenario is tagged `@e2e`.
+pub(crate) const FOSSIL_FEATURE_CONTENT: &str =
+    "Feature: demo\n\n  @e2e\n  Scenario: demo\n    Given nothing\n";
+/// The kept source file the Fossil entry-kind fixture commits.
+pub(crate) const KEPT_SOURCE_PATH: &str = "src/other.rs";
+/// The replaced source file the Fossil entry-kind fixture commits.
+pub(crate) const REPLACED_SOURCE_PATH: &str = "src/keys/parser.rs";
+
 /// Per-scenario state for the `clean-room-preparation` fixtures.
 #[derive(Debug, Default)]
 pub(crate) struct IseCleanRoomState {
@@ -336,6 +352,87 @@ pub(crate) fn commit_nested_marker(env: &common::TestEnv) {
         &[(NESTED_MARKER_PATH, "nested marker fixture\n")],
         "fixture: nested marker",
     );
+}
+
+/// Commit an executable script and a symlink to it, so one Git revision
+/// carries both entry kinds.
+#[cfg(unix)]
+pub(crate) fn commit_executable_and_symlink(env: &common::TestEnv) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let script = env.path(RUN_SCRIPT_PATH);
+    std::fs::create_dir_all(script.parent().expect("the script has a parent"))
+        .expect("create the script directory");
+    std::fs::write(&script, "#!/bin/sh\necho fixture\n").expect("write the executable script");
+    let mut permissions = std::fs::metadata(&script)
+        .expect("read the script mode")
+        .permissions();
+    permissions.set_mode(0o755);
+    std::fs::set_permissions(&script, permissions).expect("set the executable bit");
+    std::os::unix::fs::symlink(SYMLINK_TARGET, env.path(SYMLINK_PATH))
+        .expect("create the fixture symlink");
+    common::git_commit_all(env, "fixture: executable and symlink");
+}
+
+/// The entry-kind fixture needs symlink support; refuse on a host without it
+/// rather than assert a kind the fixture could not build.
+#[cfg(not(unix))]
+pub(crate) fn commit_executable_and_symlink(_env: &common::TestEnv) {
+    panic!("the entry-kind fixture requires symlink support");
+}
+
+/// A Fossil checkout with `ise` enabled, `allow-symlinks on`, and a
+/// declaration that retains `givn/specs/**` and sources `src/**`. The
+/// setting runs before any symlink is added, so Fossil records the `l` flag.
+pub(crate) fn fossil_kind_project() -> common::TestEnv {
+    let env = common::make_fossil_root();
+    enable_ise(&env);
+    write_declaration(
+        &env,
+        &behavior_declaration("\"givn/specs/**\"", "\"src/**\""),
+    );
+    let settings = common::fossil(&env, &["settings", "allow-symlinks", "on"]);
+    assert!(
+        settings.status.success(),
+        "fossil settings allow-symlinks on failed: {}",
+        String::from_utf8_lossy(&settings.stderr)
+    );
+    common::fossil_commit_all(&env, "fixture: fossil declaration");
+    env
+}
+
+/// Commit the retained feature, kept source, replaced source, executable
+/// script, and symlink the Fossil entry-kind scenario reads.
+#[cfg(unix)]
+pub(crate) fn commit_fossil_kinds(env: &common::TestEnv) {
+    use std::os::unix::fs::PermissionsExt;
+
+    for (path, content) in [
+        (FOSSIL_FEATURE_PATH, FOSSIL_FEATURE_CONTENT),
+        (KEPT_SOURCE_PATH, "pub fn other() {}\n"),
+        (REPLACED_SOURCE_PATH, "pub fn parse() {}\n"),
+    ] {
+        let target = env.path(path);
+        std::fs::create_dir_all(target.parent().expect("the file has a parent"))
+            .expect("create the fixture parent directory");
+        std::fs::write(&target, content).expect("write the fixture file");
+    }
+    let script = env.path(RUN_SCRIPT_PATH);
+    std::fs::write(&script, "#!/bin/sh\necho fossil\n").expect("write the executable script");
+    let mut permissions = std::fs::metadata(&script)
+        .expect("read the script mode")
+        .permissions();
+    permissions.set_mode(0o755);
+    std::fs::set_permissions(&script, permissions).expect("set the executable bit");
+    std::os::unix::fs::symlink(SYMLINK_TARGET, env.path(SYMLINK_PATH))
+        .expect("create the fixture symlink");
+    common::fossil_commit_all(env, "fixture: fossil kinds");
+}
+
+/// The entry-kind fixture needs symlink support; refuse on a host without it.
+#[cfg(not(unix))]
+pub(crate) fn commit_fossil_kinds(_env: &common::TestEnv) {
+    panic!("the entry-kind fixture requires symlink support");
 }
 
 /// Write each file (creating its parent directories) and commit the whole

@@ -94,6 +94,76 @@ fn assert_trial_omits(world: &GivnWorld, paths: &[&str]) {
     }
 }
 
+#[cfg(unix)]
+fn assert_trial_executable(world: &GivnWorld, path: &str) {
+    use std::os::unix::fs::PermissionsExt;
+
+    let target = trial_path(world).join(path);
+    let metadata =
+        std::fs::symlink_metadata(&target).unwrap_or_else(|error| panic!("stat {path}: {error}"));
+    assert!(
+        metadata.is_file(),
+        "the trial's {path} is not a regular file"
+    );
+    assert!(
+        metadata.permissions().mode() & 0o111 != 0,
+        "the trial's {path} is not executable (mode {:o})",
+        metadata.permissions().mode() & 0o777
+    );
+}
+
+#[cfg(not(unix))]
+fn assert_trial_executable(world: &GivnWorld, path: &str) {
+    let target = trial_path(world).join(path);
+    assert!(
+        target.is_file(),
+        "the trial at {} does not hold {path}",
+        target.display()
+    );
+}
+
+fn assert_trial_symlink(world: &GivnWorld, path: &str, expected_target: &str) {
+    let target = trial_path(world).join(path);
+    let metadata =
+        std::fs::symlink_metadata(&target).unwrap_or_else(|error| panic!("stat {path}: {error}"));
+    assert!(
+        metadata.file_type().is_symlink(),
+        "the trial's {path} is not a symlink"
+    );
+    let link = std::fs::read_link(&target).expect("read the trial symlink");
+    assert_eq!(
+        link,
+        std::path::Path::new(expected_target),
+        "the trial's {path} points at {}",
+        link.display()
+    );
+}
+
+/// Walk the trial without following links and refuse any version-control
+/// metadata entry, at any depth.
+fn assert_trial_has_no_vcs_entries(world: &GivnWorld) {
+    let trial = trial_path(world);
+    let mut directories = vec![trial.clone()];
+    while let Some(directory) = directories.pop() {
+        for entry in std::fs::read_dir(&directory).expect("read the trial directory") {
+            let path = entry.expect("read the trial entry").path();
+            let name = path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or_default();
+            assert!(
+                name != ".git" && name != ".fslckout",
+                "the trial at {} holds the version-control entry {}",
+                trial.display(),
+                path.display()
+            );
+            if path.is_dir() {
+                directories.push(path);
+            }
+        }
+    }
+}
+
 /// Run one replacement form against the standard trial and receipt targets.
 fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form: &[&str]) {
     world.ise_clean_room.ensure_targets();
@@ -377,10 +447,8 @@ fn the_trial_and_the_receipt_remain_absent(world: &mut GivnWorld) {
 #[given(
     regex = r#"^a Fossil checkout with ise enabled, allow-symlinks on, and a declaration with one source root "src/\*\*"$"#
 )]
-fn not_implemented_0001(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a Fossil checkout with ise enabled, allow-symlinks on, and a declaration with one source root "src/**""#
-    ))
+fn fossil_checkout_with_allow_symlinks(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::fossil_kind_project());
 }
 
 #[given(
@@ -576,19 +644,23 @@ fn commit_revision_with_the_repository_link(world: &mut GivnWorld) {
 #[given(
     regex = r#"^a committed revision with a retained file, a kept source file, a replaced source file, an executable script, and a symlink to it$"#
 )]
-fn not_implemented_0021(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with a retained file, a kept source file, a replaced source file, an executable script, and a symlink to it"#
-    ))
+fn commit_fossil_kinds(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_fossil_kinds(project_env(world));
 }
 
 #[given(
     regex = r#"^a committed revision with an executable script "src/run\.sh" and a symlink "src/link" to "run\.sh"$"#
 )]
-fn not_implemented_0022(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with an executable script "src/run.sh" and a symlink "src/link" to "run.sh""#
-    ))
+fn commit_executable_and_symlink(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration(
+            "\"src/run.sh\", \"src/link\"",
+            "\"src/**\"",
+        ),
+    );
+    ise_clean_room_support::commit_executable_and_symlink(env);
 }
 
 #[given(regex = r#"^a committed revision without "docs/contract\.md"$"#)]
@@ -739,10 +811,9 @@ fn preparation_succeeds(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Backend: fossil"$"#)]
-fn not_implemented_0042(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation succeeds and prints "Backend: fossil""#
-    ))
+fn preparation_succeeds_with_the_fossil_backend(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Backend: fossil");
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Not replaced: 2"$"#)]
@@ -1133,10 +1204,8 @@ fn the_trial_holds_other(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^the trial holds no "\.git" entry and no "\.fslckout" entry$"#)]
-fn not_implemented_0091(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds no ".git" entry and no ".fslckout" entry"#
-    ))
+fn trial_holds_no_version_control_metadata(world: &mut GivnWorld) {
+    assert_trial_has_no_vcs_entries(world);
 }
 
 #[then(regex = r#"^the trial holds no file under "src"$"#)]
@@ -1162,10 +1231,14 @@ fn the_trial_holds_no_source_file(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^the trial holds the retained file and the kept source file$"#)]
-fn not_implemented_0093(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial holds the retained file and the kept source file"#
-    ))
+fn trial_holds_the_fossil_retained_and_kept_files(world: &mut GivnWorld) {
+    assert_trial_holds(
+        world,
+        &[
+            ise_clean_room_support::FOSSIL_FEATURE_PATH,
+            ise_clean_room_support::KEPT_SOURCE_PATH,
+        ],
+    );
 }
 
 #[then(regex = r#"^the trial omits "src/keys/parser\.rs" and "src/keys/mod\.rs"$"#)]
@@ -1174,36 +1247,34 @@ fn the_trial_omits_the_replaced_keys_files(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^the trial omits the replaced source file$"#)]
-fn not_implemented_0095(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial omits the replaced source file"#
-    ))
+fn trial_omits_the_fossil_replaced_source(world: &mut GivnWorld) {
+    assert_trial_omits(world, &[ise_clean_room_support::REPLACED_SOURCE_PATH]);
 }
 
 #[then(regex = r#"^the trial's "src/link" is a symlink to "run\.sh"$"#)]
-fn not_implemented_0096(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial's "src/link" is a symlink to "run.sh""#
-    ))
+fn trial_symlink_points_at_the_script(world: &mut GivnWorld) {
+    assert_trial_symlink(
+        world,
+        ise_clean_room_support::SYMLINK_PATH,
+        ise_clean_room_support::SYMLINK_TARGET,
+    );
 }
 
 #[then(regex = r#"^the trial's "src/run\.sh" is executable$"#)]
-fn not_implemented_0097(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial's "src/run.sh" is executable"#
-    ))
+fn trial_script_is_executable(world: &mut GivnWorld) {
+    assert_trial_executable(world, ise_clean_room_support::RUN_SCRIPT_PATH);
 }
 
 #[then(regex = r#"^the trial's executable script is executable$"#)]
-fn not_implemented_0098(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial's executable script is executable"#
-    ))
+fn trial_fossil_script_is_executable(world: &mut GivnWorld) {
+    assert_trial_executable(world, ise_clean_room_support::RUN_SCRIPT_PATH);
 }
 
 #[then(regex = r#"^the trial's symlink is a symlink to its target$"#)]
-fn not_implemented_0099(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial's symlink is a symlink to its target"#
-    ))
+fn trial_fossil_symlink_points_at_its_target(world: &mut GivnWorld) {
+    assert_trial_symlink(
+        world,
+        ise_clean_room_support::SYMLINK_PATH,
+        ise_clean_room_support::SYMLINK_TARGET,
+    );
 }

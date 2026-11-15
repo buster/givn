@@ -255,7 +255,7 @@ Feature: Clean-room preparation
     And the trial holds "src/kept.rs"
     And the trial does not hold the ignored file
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation preserves the executable bit and the symlink target
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with an executable script "src/run.sh" and a symlink "src/link" to "run.sh"
@@ -264,7 +264,7 @@ Feature: Clean-room preparation
     And the trial's "src/run.sh" is executable
     And the trial's "src/link" is a symlink to "run.sh"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation writes no version-control metadata into the trial
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with "src/kept.rs"
@@ -328,7 +328,7 @@ Feature: Clean-room preparation
     Then preparation fails and names the receipt path
     And the trial directory it created is removed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation reads a Fossil revision and preserves an executable file and a symlink
     Given a Fossil checkout with ise enabled, allow-symlinks on, and a declaration with one source root "src/**"
     And a committed revision with a retained file, a kept source file, a replaced source file, an executable script, and a symlink to it
