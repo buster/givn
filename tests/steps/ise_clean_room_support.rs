@@ -480,6 +480,74 @@ pub(crate) fn contracts_wildcard_project() -> common::TestEnv {
     env
 }
 
+/// A Git project whose first revision predates the declaration and whose
+/// `HEAD` records it, so the working tree is clean while the selected revision
+/// has no declaration. Returns the project and the first revision identifier.
+pub(crate) fn declaration_late_project() -> (common::TestEnv, String) {
+    let env = common::make_init_root();
+    enable_ise(&env);
+    // The add-on scaffold writes a declaration; the first revision must
+    // predate it, so remove the scaffold before that commit.
+    std::fs::remove_file(env.path(DECLARATION_PATH)).expect("remove the scaffolded declaration");
+    let first = commit_files(
+        &env,
+        &[(KEPT_PATH, KEPT_CONTENT)],
+        "fixture: revision predating the declaration",
+    );
+    write_declaration(&env, &source_only_declaration("\"src/**\""));
+    common::git_commit_all(&env, "fixture: declaration");
+    (env, first)
+}
+
+/// A Git project whose first revision declares the malformed declaration and
+/// whose `HEAD` declares the valid one, so the working tree is clean while the
+/// selected revision's declaration is malformed. Returns the project and the
+/// first revision identifier.
+pub(crate) fn malformed_first_revision_project() -> (common::TestEnv, String) {
+    let env = common::make_init_root();
+    enable_ise(&env);
+    write_declaration(&env, &malformed_declaration());
+    let first = commit_files(
+        &env,
+        &[(KEPT_PATH, KEPT_CONTENT)],
+        "fixture: malformed declaration",
+    );
+    write_declaration(&env, &source_only_declaration("\"src/**\""));
+    common::git_commit_all(&env, "fixture: valid declaration");
+    (env, first)
+}
+
+/// Rewrite one role line of the checkout's declaration in place. The caller
+/// leaves the file uncommitted: `ise verify` reads the working tree for the
+/// `e2e` set and the `behavior` selection.
+pub(crate) fn rewrite_checkout_role(env: &common::TestEnv, role: &str, value: &str) {
+    let path = env.path(DECLARATION_PATH);
+    let content = std::fs::read_to_string(&path).expect("read the checkout declaration");
+    let key = format!("{role}:");
+    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+    let position = lines
+        .iter()
+        .position(|line| line.starts_with(&key))
+        .unwrap_or_else(|| panic!("the checkout declaration has no '{key}' line"));
+    lines[position] = format!("{role}: {value}");
+    std::fs::write(&path, lines.join("\n") + "\n").expect("rewrite the checkout declaration");
+}
+
+/// The bytes of one path at one revision, read with `git show`.
+pub(crate) fn revision_content(env: &common::TestEnv, revision: &str, path: &str) -> Vec<u8> {
+    let output = Command::new("git")
+        .args(["show", &format!("{revision}:{path}")])
+        .current_dir(env.root())
+        .output()
+        .expect("spawn git show");
+    assert!(
+        output.status.success(),
+        "git show {revision}:{path} failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    output.stdout
+}
+
 /// A minimal Git project with `ise` enabled and the prepare scenario's
 /// declaration. The config and the declaration are excluded through
 /// `.git/info/exclude`, so the revision tree holds only the seven committed
@@ -527,6 +595,8 @@ pub(crate) const VERIFY_E2E_MANIFEST_PATH: &str = "tests/e2e/Cargo.toml";
 pub(crate) const VERIFY_E2E_STEP_PATH: &str = "tests/e2e/steps/keys.rs";
 /// An e2e package file the checkout gains after preparation.
 pub(crate) const ADDED_E2E_STEP_PATH: &str = "tests/e2e/steps/extra.rs";
+/// The manifest a checkout declaration's added `e2e` root brings.
+pub(crate) const ADDED_E2E_ROOT_MANIFEST_PATH: &str = "tests/extra-e2e/Cargo.toml";
 /// A behavior feature the checkout gains after preparation; one scenario is
 /// tagged `@e2e`.
 pub(crate) const ADDED_E2E_FEATURE_PATH: &str = "givn/specs/demo/extra.feature";
@@ -542,17 +612,14 @@ pub(crate) const VERIFY_KEPT_PATH: &str = "src/keys/steps.rs";
 
 /// A Git project with `ise` enabled and the verify scenarios' declaration:
 /// `givn/specs/**` behavior, `docs/**` contracts, `tests/e2e` as the e2e
-/// package, and `src/**` source. The config and the declaration are excluded
-/// through `.git/info/exclude`, so the revision holds only the committed
-/// fixture files.
+/// package, and `src/**` source. The config is excluded through
+/// `.git/info/exclude`; the declaration is committed with the revision, so the
+/// trial and its record always carry it.
 pub(crate) fn verify_trial_project() -> common::TestEnv {
     let env = common::make_bare_root();
     common::git_init(&env);
-    std::fs::write(
-        env.path(".git/info/exclude"),
-        "givn/config.yaml\ngivn/specification.yaml\n",
-    )
-    .expect("write the Git exclude fixture");
+    std::fs::write(env.path(".git/info/exclude"), "givn/config.yaml\n")
+        .expect("write the Git exclude fixture");
     std::fs::create_dir_all(env.path("givn")).expect("create givn/");
     std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
         .expect("write the fixture config");
@@ -578,6 +645,7 @@ pub(crate) fn commit_verify_trial_revision(env: &common::TestEnv) -> String {
     commit_files(
         env,
         &[
+            (DECLARATION_PATH, &verify_declaration()),
             (FOSSIL_FEATURE_PATH, FOSSIL_FEATURE_CONTENT),
             (REFERENCE_PATH, "reference\n"),
             (VERIFY_E2E_MANIFEST_PATH, "[package]\nname = \"e2e\"\n"),

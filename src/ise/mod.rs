@@ -194,8 +194,9 @@ fn identity_paths(copy: &[String], e2e: &[String], replaced: &[String]) -> Vec<S
     paths
 }
 
-/// The ordered admission checks: add-ons, declaration, backend, dirty
-/// checkout, revision. Every check precedes the first write and none writes.
+/// The ordered admission checks: add-ons, backend, dirty checkout, revision,
+/// then the declaration recorded at that revision. Every check precedes the
+/// first write and none writes.
 fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
     let manifest = load_effective_at(project_root).with_context(|| {
         format!(
@@ -204,14 +205,6 @@ fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
         )
     })?;
     require_addons(&manifest)?;
-
-    let declaration = SpecificationDeclaration::load(project_root)
-        .map_err(|error| anyhow::anyhow!("{error}"))?
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "{DECLARATION_PATH} is missing; the clean-room trial requires a declared Specification"
-            )
-        })?;
 
     let backend = crate::scm::select(project_root)?;
 
@@ -238,6 +231,7 @@ fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
     let entries = backend
         .revision_files(&revision, "")
         .with_context(|| format!("read revision '{revision}'"))?;
+    let declaration = revision_declaration(&backend, &revision, &entries)?;
 
     Ok(Admission {
         backend,
@@ -245,6 +239,31 @@ fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
         declaration,
         entries,
     })
+}
+
+/// The declaration recorded at the selected revision: the revision must record
+/// it, and its bytes are parsed by the one strict loader. The working tree is
+/// never consulted, so the partition and the trial use the roles and the
+/// content the revision declared.
+fn revision_declaration(
+    backend: &Backend,
+    revision: &str,
+    entries: &[RevisionEntry],
+) -> Result<SpecificationDeclaration> {
+    if !entries.iter().any(|entry| entry.path == DECLARATION_PATH) {
+        bail!(
+            "the revision '{revision}' does not record '{DECLARATION_PATH}'; a clean-room trial always carries the declaration"
+        );
+    }
+    let mut blobs = backend
+        .revision_blobs(revision, &[DECLARATION_PATH.to_string()])
+        .with_context(|| format!("read '{DECLARATION_PATH}' at revision '{revision}'"))?;
+    let Some((_, bytes)) = blobs.pop() else {
+        bail!("the revision '{revision}' returned no content for '{DECLARATION_PATH}'");
+    };
+    let content = std::str::from_utf8(&bytes)
+        .map_err(|error| anyhow::anyhow!("{DECLARATION_PATH}: {error}"))?;
+    SpecificationDeclaration::from_content(content).map_err(|error| anyhow::anyhow!("{error}"))
 }
 
 /// Refusal 8: both write targets lie outside the checkout and are created new.

@@ -47,7 +47,7 @@ Feature: Clean-room preparation
     Then  preparation fails and names "givn/specification.yaml" as retained
     And  the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation partitions with the declaration recorded at the selected revision
     Given  a Git project with ise enabled and a declaration whose "structure" role names "docs/glossary.md"
     And  a committed revision with "docs/glossary.md" and "src/one.rs"
@@ -57,14 +57,14 @@ Feature: Clean-room preparation
     And  the trial holds "docs/glossary.md"
     And  the trial's "givn/specification.yaml" is the declaration committed at the selected revision
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a revision that does not record the declaration
     Given  a Git project with ise enabled whose first revision predates the declaration
     When  the developer prepares a trial from the first revision with a full replacement
     Then  preparation fails and names "givn/specification.yaml" and the revision
     And  the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a malformed declaration at the selected revision
     Given  a Git project with ise enabled, a malformed declaration in its first revision, and a valid declaration at "HEAD"
     When  the developer prepares a trial from the first revision with a full replacement

@@ -1561,6 +1561,11 @@ fn receipt_lists_the_declaration_in_its_retained_set(world: &mut GivnWorld) {
     );
 }
 
+#[then(regex = r#"^the trial holds "docs/glossary\.md"$"#)]
+fn the_trial_holds_the_glossary(world: &mut GivnWorld) {
+    assert_trial_holds(world, &["docs/glossary.md"]);
+}
+
 #[then(regex = r#"^the trial holds "givn/specification\.yaml"$"#)]
 fn the_trial_holds_the_declaration(world: &mut GivnWorld) {
     assert_trial_holds(world, &[ise_clean_room_support::DECLARATION_PATH]);
@@ -1569,4 +1574,101 @@ fn the_trial_holds_the_declaration(world: &mut GivnWorld) {
 #[then(regex = r#"^the trial omits "givn/notes\.md"$"#)]
 fn the_trial_omits_the_notes(world: &mut GivnWorld) {
     assert_trial_omits(world, &["givn/notes.md"]);
+}
+
+// --- retain-declaration-in-trial: revision-declaration-authority ----------
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "structure" role names "docs/glossary\.md"$"#
+)]
+fn git_project_with_a_glossary_structure_role(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::structure_declaration("\"docs/glossary.md\"", "\"src/**\""),
+    ));
+}
+
+#[given(regex = r#"^a committed revision with "docs/glossary\.md" and "src/one\.rs"$"#)]
+fn commit_revision_with_a_glossary_and_a_source_file(world: &mut GivnWorld) {
+    let revision = ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("docs/glossary.md", "glossary\n"),
+            ("src/one.rs", "pub fn one() {}\n"),
+        ],
+        "fixture: glossary and source",
+    );
+    world.ise_clean_room.first_revision = Some(revision);
+}
+
+#[given(
+    regex = r#"^a later revision that rewrites the declaration without the "structure" entry$"#
+)]
+fn commit_a_later_declaration_without_the_structure_entry(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::source_only_declaration("\"src/**\""),
+    );
+    common::git_commit_all(env, "fixture: declaration without the structure entry");
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled whose first revision predates the declaration$"#
+)]
+fn git_project_whose_first_revision_predates_the_declaration(world: &mut GivnWorld) {
+    let (env, first) = ise_clean_room_support::declaration_late_project();
+    world.ise_clean_room.first_revision = Some(first);
+    world.env = Some(env);
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled, a malformed declaration in its first revision, and a valid declaration at "HEAD"$"#
+)]
+fn git_project_with_a_malformed_first_revision(world: &mut GivnWorld) {
+    let (env, first) = ise_clean_room_support::malformed_first_revision_project();
+    world.ise_clean_room.first_revision = Some(first);
+    world.env = Some(env);
+}
+
+#[then(regex = r#"^preparation fails and names "givn/specification\.yaml" and the revision$"#)]
+fn preparation_fails_and_names_the_declaration_and_the_revision(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    let revision = world
+        .ise_clean_room
+        .first_revision
+        .clone()
+        .expect("the Given recorded the first revision");
+    let text = stderr(world);
+    for needle in [
+        ise_clean_room_support::DECLARATION_PATH,
+        revision.as_str(),
+        "does not record",
+    ] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not carry {needle:?}"
+        );
+    }
+}
+
+#[then(
+    regex = r#"^the trial's "givn/specification\.yaml" is the declaration committed at the selected revision$"#
+)]
+fn trial_declaration_is_the_selected_revisions_copy(world: &mut GivnWorld) {
+    let revision = world
+        .ise_clean_room
+        .requested_revision
+        .clone()
+        .expect("the When recorded the selected revision");
+    let expected = ise_clean_room_support::revision_content(
+        project_env(world),
+        &revision,
+        ise_clean_room_support::DECLARATION_PATH,
+    );
+    let actual = std::fs::read(trial_path(world).join(ise_clean_room_support::DECLARATION_PATH))
+        .unwrap_or_else(|error| panic!("read the trial declaration: {error}"));
+    assert_eq!(
+        actual, expected,
+        "the trial's declaration is not the copy recorded at revision {revision}"
+    );
 }

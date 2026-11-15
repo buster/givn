@@ -134,7 +134,7 @@ impl SpecificationDeclaration {
                 });
             }
         };
-        Self::parse(&content).map(Some)
+        Self::from_content(&content).map(Some)
     }
 
     /// The declared paths of each role, in declaration order.
@@ -159,7 +159,10 @@ impl SpecificationDeclaration {
         manifest.addons.ise
     }
 
-    fn parse(content: &str) -> Result<Self, DeclarationError> {
+    /// Parse a declaration document. The one strict entry point for bytes: a
+    /// revision's recorded declaration and a working-tree file share the key
+    /// scan, the role order, the normalizer, and every error variant.
+    pub(crate) fn from_content(content: &str) -> Result<Self, DeclarationError> {
         let declared = scan_top_level_keys(content)?;
         for role in Role::ALL {
             if !declared.iter().any(|key| *key == role.as_str()) {
@@ -320,7 +323,7 @@ mod tests {
         for index in 0..6 {
             let mut entries = valid();
             let (key, _) = entries.remove(index);
-            let error = SpecificationDeclaration::parse(&declaration(&entries))
+            let error = SpecificationDeclaration::from_content(&declaration(&entries))
                 .expect_err("a missing key is refused");
             if key == SOURCE_KEY {
                 assert_eq!(error, DeclarationError::MissingSource);
@@ -338,7 +341,7 @@ mod tests {
                 .map(|(key, value)| format!("{key}: {value}"))
                 .collect();
             lines[5] = format!("source: [\"{escape}\"]");
-            let error = SpecificationDeclaration::parse(&lines.join("\n"))
+            let error = SpecificationDeclaration::from_content(&lines.join("\n"))
                 .expect_err("an outside-project value is refused");
             match error {
                 DeclarationError::OutsideProject { path } => assert_eq!(path, escape),
@@ -368,7 +371,7 @@ mod tests {
     fn the_loader_stores_the_normalized_path() {
         let mut entries = valid();
         entries[1] = ("structure", r#"["docs/../docs/glossary.md"]"#);
-        let declaration = SpecificationDeclaration::parse(&declaration(&entries))
+        let declaration = SpecificationDeclaration::from_content(&declaration(&entries))
             .expect("an inner parent segment stays inside the project");
         assert_eq!(
             declaration.roles()[1].1,
