@@ -584,6 +584,26 @@ Every delta phrase is bound in these permanent files; no delta step copy is
 introduced. The fixture builders live in
 `tests/steps/ise_clean_room_support.rs` and carry no `#[given]`/`#[when]`/`#[then]`.
 
+Test runner command (from `givn/commands.yaml`):
+
+```text
+./run-tests.sh --non-e2e
+```
+
+E2E runner command:
+
+```text
+./run-tests.sh --e2e
+```
+
+Single-scenario run command:
+
+```text
+GIVN_FEATURES=givn/changes/retain-declaration-in-trial/specs cargo test --locked --test features_runner -- --exact "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a revision that does not record the declaration"
+```
+
+## Bindings and Fixtures
+
 New bindings, by file:
 
 | File | Phrase |
@@ -635,24 +655,6 @@ Fixture changes in `tests/steps/ise_clean_room_support.rs`:
 | new | A project whose first revision declares the malformed declaration and whose `HEAD` declares the valid one, so the working tree is clean at `HEAD` |
 | new | A project whose first revision predates the declaration and whose `HEAD` records it |
 | new | A later revision that rewrites the declaration without the `structure` entry: it records the current `HEAD` as the first revision, then commits `source_only_declaration` over it |
-
-Test runner command (from `givn/commands.yaml`):
-
-```text
-./run-tests.sh --non-e2e
-```
-
-E2E runner command:
-
-```text
-./run-tests.sh --e2e
-```
-
-Single-scenario run command:
-
-```text
-GIVN_FEATURES=givn/changes/retain-declaration-in-trial/specs cargo test --locked --test features_runner -- --exact "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a revision that does not record the declaration"
-```
 
 ## Strict Mode
 
