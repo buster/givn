@@ -1250,6 +1250,15 @@ fn every_named_id_resolves(world: &mut GivnWorld) {
     );
 }
 
+#[when("the maintainer requests the review instructions through the Givn CLI")]
+fn maintainer_requests_review_instructions(world: &mut GivnWorld) {
+    let change = single_active_change(world);
+    world.last_output = Some(crate::common::run_givn(
+        env(world),
+        &["instructions", "review", "--change", change.as_str()],
+    ));
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {
