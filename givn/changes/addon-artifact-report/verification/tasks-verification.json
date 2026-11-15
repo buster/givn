@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "addon-artifact-report",
+  "status": "passed",
+  "head": "65db302e433a6ed080ca58350f61f91c51f26ad9",
+  "features_path": "givn/changes/addon-artifact-report/specs",
+  "features_digest": "9215bdbf8fd9d7e47f3216c41810b84c78c81efb34019eebb04d6a64f63309c3",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "f35cded8444be51ba1f0f70f3d0fba6c0e484f58b93655bb2c71b881cf74e37a",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1794729710
+}
