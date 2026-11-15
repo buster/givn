@@ -48,6 +48,16 @@ impl Partition {
         paths.dedup();
         paths
     }
+
+    /// The sorted retained paths: the trial's recorded retained set.
+    pub(super) fn retained_paths(&self) -> &[String] {
+        &self.retained
+    }
+
+    /// The sorted tracked paths this replacement removes.
+    pub(super) fn replaced_paths(&self) -> &[String] {
+        &self.replaced
+    }
 }
 
 /// Place every tracked path at the revision. A retained role is tested first,
@@ -126,6 +136,29 @@ pub(super) fn partition(
         outside,
         not_replaced,
     })
+}
+
+/// The `.feature` paths the `behavior` role matches at the revision, sorted:
+/// the files whose selected `@e2e` scenarios the record digests.
+pub(super) fn behavior_features(
+    declaration: &SpecificationDeclaration,
+    entries: &[RevisionEntry],
+) -> Vec<String> {
+    let globs: Vec<Glob> = declaration
+        .roles()
+        .into_iter()
+        .filter(|(role, _)| *role == Role::Behavior)
+        .flat_map(|(_, patterns)| patterns.iter().map(|pattern| Glob::compile(pattern)))
+        .collect();
+    let mut paths: Vec<String> = entries
+        .iter()
+        .map(|entry| &entry.path)
+        .filter(|path| path.ends_with(".feature") && path_or_parent_matches(&globs, path))
+        .cloned()
+        .collect();
+    paths.sort();
+    paths.dedup();
+    paths
 }
 
 /// The retained role patterns in declaration order, each with its declared

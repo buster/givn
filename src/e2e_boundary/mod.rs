@@ -16,7 +16,8 @@ pub(crate) use conditions::BoundaryCondition;
 pub(crate) use hash::hash_entry;
 pub(crate) use paths::{Glob, ProjectPath, walk_project};
 
-use crate::config::declaration::{Role, SpecificationDeclaration};
+use crate::config::declaration::{Role, SpecificationDeclaration, normalize_project_path};
+use crate::scm::RevisionEntry;
 use imports::import_edges;
 use manifest::{
     CargoPackage, dependency_edges, is_cargo_manifest, nearest_manifest, parent_directory,
@@ -287,6 +288,90 @@ impl E2eBoundary {
         }
         conditions
     }
+}
+
+/// The tracked files of the declared `e2e` packages, resolved over a revision
+/// tree instead of the working tree.
+///
+/// Each path the `e2e` role matches resolves to its nearest `Cargo.toml`
+/// directory at or above it; every tracked file under a resolved root is in
+/// the set. A matched path that resolves no manifest is its own root.
+pub(crate) fn e2e_file_set(
+    declaration: &SpecificationDeclaration,
+    entries: &[RevisionEntry],
+) -> BTreeSet<String> {
+    let declared = declaration
+        .roles()
+        .into_iter()
+        .find(|(role, _)| *role == Role::E2e)
+        .map(|(_, patterns)| patterns)
+        .unwrap_or(&[]);
+    if declared.is_empty() {
+        return BTreeSet::new();
+    }
+    let globs: Vec<Glob> = declared
+        .iter()
+        .map(|pattern| Glob::compile(pattern))
+        .collect();
+    let manifest_directories: BTreeSet<String> = entries
+        .iter()
+        .filter(|entry| is_cargo_manifest(&entry.path))
+        .map(|entry| parent_directory(&entry.path))
+        .collect();
+
+    let mut candidates: BTreeSet<(String, bool)> = BTreeSet::new();
+    if globs.iter().any(|glob| glob.matches("")) {
+        candidates.insert((String::new(), true));
+    }
+    let mut directories: BTreeSet<String> = BTreeSet::new();
+    for entry in entries {
+        if globs.iter().any(|glob| glob.matches(&entry.path)) {
+            candidates.insert((entry.path.clone(), false));
+        }
+        for (index, _) in entry.path.match_indices('/') {
+            directories.insert(entry.path[..index].to_string());
+        }
+    }
+    for directory in directories {
+        if globs.iter().any(|glob| glob.matches(&directory)) {
+            candidates.insert((directory, true));
+        }
+    }
+
+    let mut roots: BTreeSet<String> = BTreeSet::new();
+    for (path, is_dir) in candidates {
+        let candidate = if is_dir {
+            path.clone()
+        } else {
+            parent_directory(&path)
+        };
+        let Some(candidate) = candidate_path(&candidate) else {
+            continue;
+        };
+        match nearest_manifest(&manifest_directories, &candidate) {
+            Some(directory) => {
+                roots.insert(directory);
+            }
+            None => {
+                roots.insert(path);
+            }
+        }
+    }
+    entries
+        .iter()
+        .filter(|entry| roots.iter().any(|root| is_under(&entry.path, root)))
+        .map(|entry| entry.path.clone())
+        .collect()
+}
+
+/// The project-relative form of a candidate directory. The empty string is
+/// the project root, which the declaration normalizer rejects but the E2E
+/// boundary uses as its root package.
+fn candidate_path(candidate: &str) -> Option<String> {
+    if candidate.is_empty() {
+        return Some(String::new());
+    }
+    normalize_project_path(candidate)
 }
 
 /// The `source` root a dependency target reaches. An edge is compared by

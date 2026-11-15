@@ -15,7 +15,7 @@ use crate::common;
 use crate::steps::ise_clean_room_support;
 use crate::steps::{output, stderr, stdout};
 
-fn project_env(world: &GivnWorld) -> &common::TestEnv {
+pub(crate) fn project_env(world: &GivnWorld) -> &common::TestEnv {
     world
         .env
         .as_ref()
@@ -53,12 +53,12 @@ fn assert_failure_refuses_existing(world: &GivnWorld, path: &std::path::Path) {
     );
 }
 
-fn assert_success(world: &GivnWorld) {
+pub(crate) fn assert_success(world: &GivnWorld) {
     let out = output(world);
     assert_eq!(out.status.code(), Some(0), "stderr={}", stderr(world));
 }
 
-fn assert_report_line(world: &GivnWorld, line: &str) {
+pub(crate) fn assert_report_line(world: &GivnWorld, line: &str) {
     let text = stdout(world);
     assert!(
         text.lines().any(|printed| printed == line),
@@ -66,11 +66,43 @@ fn assert_report_line(world: &GivnWorld, line: &str) {
     );
 }
 
-fn trial_path(world: &GivnWorld) -> std::path::PathBuf {
+/// The written record parsed as YAML; the receipt path must exist.
+pub(crate) fn record_document(world: &GivnWorld) -> serde_yaml_ng::Value {
+    let path = receipt_path(world);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the record {}: {error}", path.display()));
+    serde_yaml_ng::from_str(&text)
+        .unwrap_or_else(|error| panic!("parse the record {}: {error}", path.display()))
+}
+
+pub(crate) fn record_list(record: &serde_yaml_ng::Value, key: &str) -> Vec<String> {
+    record
+        .get(key)
+        .and_then(|value| value.as_sequence())
+        .unwrap_or_else(|| panic!("the record has no '{key}' list"))
+        .iter()
+        .map(|value| {
+            value
+                .as_str()
+                .unwrap_or_else(|| panic!("'{key}' holds a non-string entry"))
+                .to_string()
+        })
+        .collect()
+}
+
+pub(crate) fn record_number(record: &serde_yaml_ng::Value, key: &str) -> u64 {
+    record
+        .get("counts")
+        .and_then(|counts| counts.get(key))
+        .and_then(serde_yaml_ng::Value::as_u64)
+        .unwrap_or_else(|| panic!("the record has no counts.{key}"))
+}
+
+pub(crate) fn trial_path(world: &GivnWorld) -> std::path::PathBuf {
     world.ise_clean_room.trial_path().to_path_buf()
 }
 
-fn assert_trial_holds(world: &GivnWorld, paths: &[&str]) {
+pub(crate) fn assert_trial_holds(world: &GivnWorld, paths: &[&str]) {
     let trial = trial_path(world);
     for path in paths {
         let target = trial.join(path);
@@ -82,7 +114,7 @@ fn assert_trial_holds(world: &GivnWorld, paths: &[&str]) {
     }
 }
 
-fn assert_trial_omits(world: &GivnWorld, paths: &[&str]) {
+pub(crate) fn assert_trial_omits(world: &GivnWorld, paths: &[&str]) {
     let trial = trial_path(world);
     for path in paths {
         let target = trial.join(path);
@@ -165,7 +197,7 @@ fn assert_trial_has_no_vcs_entries(world: &GivnWorld) {
 }
 
 /// Run one replacement form against the standard trial and receipt targets.
-fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form: &[&str]) {
+pub(crate) fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form: &[&str]) {
     world.ise_clean_room.ensure_targets();
     let trial = world
         .ise_clean_room
@@ -201,7 +233,7 @@ fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form: &[&str]) {
     world.last_output = Some(out);
 }
 
-fn receipt_path(world: &GivnWorld) -> std::path::PathBuf {
+pub(crate) fn receipt_path(world: &GivnWorld) -> std::path::PathBuf {
     world.ise_clean_room.receipt_path().to_path_buf()
 }
 
@@ -612,10 +644,15 @@ fn commit_revision_with_nested_source(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^a committed revision with "src/one\.rs" and "src/two\.rs"$"#)]
-fn not_implemented_0018(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a committed revision with "src/one.rs" and "src/two.rs""#
-    ))
+fn commit_revision_with_two_source_files(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("src/one.rs", "pub fn one() {}\n"),
+            ("src/two.rs", "pub fn two() {}\n"),
+        ],
+        "fixture: two source files",
+    );
 }
 
 #[given(
@@ -674,10 +711,8 @@ fn a_receipt_file_that_already_exists(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^a receipt path whose parent directory is a regular file$"#)]
-fn not_implemented_0025(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: a receipt path whose parent directory is a regular file"#
-    ))
+fn a_receipt_path_whose_parent_is_a_file(world: &mut GivnWorld) {
+    ise_clean_room_support::blocked_receipt(&mut world.ise_clean_room);
 }
 
 #[given(regex = r#"^a symlink outside the checkout that points into the checkout$"#)]
@@ -702,10 +737,13 @@ fn an_ignored_file_in_the_working_tree(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^no record file is written$"#)]
-fn not_implemented_0030(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: no record file is written"#
-    ))
+fn no_record_file_is_written(world: &mut GivnWorld) {
+    let receipt = receipt_path(world);
+    assert!(
+        !receipt.exists(),
+        "a record file exists at {}",
+        receipt.display()
+    );
 }
 
 #[then(regex = r#"^preparation fails and names "--full" and "--path"$"#)]
@@ -775,10 +813,8 @@ fn preparation_fails_and_names_the_receipt(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^preparation fails and names the receipt path$"#)]
-fn not_implemented_0038(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation fails and names the receipt path"#
-    ))
+fn preparation_fails_and_names_the_record_path(world: &mut GivnWorld) {
+    assert_failure_names_path(world, &receipt_path(world));
 }
 
 #[then(regex = r#"^preparation fails and names the target$"#)]
@@ -829,10 +865,9 @@ fn preparation_succeeds_with_nothing_replaced(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Replaced: 1"$"#)]
-fn not_implemented_0045(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation succeeds and prints "Replaced: 1""#
-    ))
+fn preparation_succeeds_with_one_replacement(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Replaced: 1");
 }
 
 #[then(regex = r#"^preparation succeeds and prints "Replaced: 2" and "Not replaced: 0"$"#)]
@@ -856,17 +891,54 @@ fn preparation_succeeds_and_reports_the_first_revision(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^preparation succeeds and prints the trial record to stdout$"#)]
-fn not_implemented_0048(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: preparation succeeds and prints the trial record to stdout"#
-    ))
+fn preparation_prints_the_record_to_stdout(world: &mut GivnWorld) {
+    assert_success(world);
+    let text = stdout(world);
+    for line in ["schema: 1", "content_scope: ise-trial/v1"] {
+        assert!(
+            text.lines().any(|printed| printed == line),
+            "stdout {text:?} does not carry the record line {line:?}"
+        );
+    }
 }
 
+/// The `Would write:` entries the default fixture's `--full` trial holds: its
+/// five retained files, with no tracked source file kept.
+const DEFAULT_TRIAL_PATHS: [&str; 5] = [
+    "docs/arc42/02-architecture-constraints.md",
+    "docs/glossary.md",
+    "docs/reference.md",
+    "givn/specs/demo.feature",
+    "tests/e2e/Cargo.toml",
+];
+
 #[then(regex = r#"^the "Would write:" block lists the sorted paths the trial would hold$"#)]
-fn not_implemented_0049(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the "Would write:" block lists the sorted paths the trial would hold"#
-    ))
+fn would_write_block_lists_the_sorted_paths(world: &mut GivnWorld) {
+    let text = stdout(world);
+    let mut lines = text.lines();
+    let mut entries: Vec<String> = Vec::new();
+    let mut in_block = false;
+    for line in lines.by_ref() {
+        if line == "Would write:" {
+            in_block = true;
+            continue;
+        }
+        if in_block {
+            let Some(path) = line.strip_prefix("  ") else {
+                break;
+            };
+            entries.push(path.to_string());
+        }
+    }
+    assert!(in_block, "stdout {text:?} has no 'Would write:' block");
+    let expected: Vec<String> = DEFAULT_TRIAL_PATHS
+        .iter()
+        .map(|path| path.to_string())
+        .collect();
+    assert_eq!(
+        entries, expected,
+        "the Would write block does not list the sorted trial paths"
+    );
 }
 
 #[then(regex = r#"^the checkout holds no receipt$"#)]
@@ -908,10 +980,9 @@ fn the_checkout_holds_no_trial_directory_and_no_receipt(world: &mut GivnWorld) {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with a full replacement and no receipt$"#
 )]
-fn not_implemented_0054(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with a full replacement and no receipt"#
-    ))
+fn prepare_without_a_receipt(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    prepare_with_target(world, false);
 }
 
 #[when(
@@ -932,10 +1003,8 @@ fn prepare_without_a_target(world: &mut GivnWorld) {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with a full replacement and that receipt$"#
 )]
-fn not_implemented_0056(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with a full replacement and that receipt"#
-    ))
+fn prepare_with_the_named_receipt(world: &mut GivnWorld) {
+    prepare_with_target(world, true);
 }
 
 #[when(
@@ -1002,10 +1071,12 @@ fn prepare_with_an_absent_path(world: &mut GivnWorld) {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the paths "src/one\.rs" and "src/one\.rs"$"#
 )]
-fn not_implemented_0066(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer prepares a trial from "HEAD" with the paths "src/one.rs" and "src/one.rs""#
-    ))
+fn prepare_with_a_repeated_path(world: &mut GivnWorld) {
+    prepare_trial(
+        world,
+        Some("HEAD"),
+        &["--path", "src/one.rs", "--path", "src/one.rs"],
+    );
 }
 
 #[when(
@@ -1081,19 +1152,59 @@ fn prepare_with_that_receipt(world: &mut GivnWorld) {
 #[when(
     regex = r#"^the developer runs a dry run from "HEAD" with a full replacement and a receipt$"#
 )]
-fn not_implemented_0075(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the developer runs a dry run from "HEAD" with a full replacement and a receipt"#
-    ))
+fn run_a_dry_run(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let receipt = receipt_path(world).to_string_lossy().into_owned();
+    let args = [
+        "ise",
+        "replace",
+        "--at",
+        "HEAD",
+        "--full",
+        "--into",
+        trial.as_str(),
+        "--receipt",
+        receipt.as_str(),
+        "--dry-run",
+    ];
+    let env = project_env(world);
+    let out = match world.cwd_override.clone() {
+        Some(cwd) => common::run_givn_with_envs_in(env, &cwd, &args, &[]),
+        None => common::run_givn_with_envs(env, &args, &[]),
+    };
+    world.last_output = Some(out);
 }
+
+/// The ten fixed report lines, in order, plus the named receipt line.
+const FIXED_REPORT_LINES: [&str; 10] = [
+    "Backend:",
+    "Revision:",
+    "Retained:",
+    "Kept source:",
+    "Replaced:",
+    "Outside the declaration:",
+    "Not replaced:",
+    "Retained digest:",
+    "E2E digest:",
+    "Written path:",
+];
 
 #[then(
     regex = r#"^the dry run prints the ten fixed report lines, the receipt path line, and a "Would write:" block$"#
 )]
-fn not_implemented_0076(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the dry run prints the ten fixed report lines, the receipt path line, and a "Would write:" block"#
-    ))
+fn dry_run_prints_the_fixed_lines(world: &mut GivnWorld) {
+    assert_success(world);
+    let text = stdout(world);
+    for prefix in FIXED_REPORT_LINES {
+        assert!(
+            text.lines().any(|line| line.starts_with(prefix)),
+            "stdout {text:?} does not print the {prefix:?} line"
+        );
+    }
+    let receipt = receipt_path(world);
+    assert_report_line(world, &format!("Receipt path: {}", receipt.display()));
+    assert_report_line(world, "Would write:");
 }
 
 #[then(regex = r#"^the existing directory is left unchanged$"#)]
@@ -1143,24 +1254,40 @@ fn the_existing_receipt_is_left_unchanged(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^the receipt records one named path and one replaced path$"#)]
-fn not_implemented_0080(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the receipt records one named path and one replaced path"#
-    ))
+fn receipt_records_one_named_and_one_replaced_path(world: &mut GivnWorld) {
+    let record = record_document(world);
+    let named = record_list(&record, "named_paths");
+    assert_eq!(
+        named,
+        vec!["src/one.rs".to_string()],
+        "named_paths={named:?}"
+    );
+    let replaced = record_list(&record, "replaced_paths");
+    assert_eq!(
+        replaced,
+        vec!["src/one.rs".to_string()],
+        "replaced_paths={replaced:?}"
+    );
+    assert_eq!(record_number(&record, "replaced"), 1);
 }
 
 #[then(regex = r#"^the report holds no "Receipt path" line$"#)]
-fn not_implemented_0081(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the report holds no "Receipt path" line"#
-    ))
+fn report_holds_no_receipt_path_line(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(
+        !text.lines().any(|line| line.starts_with("Receipt path:")),
+        "stdout {text:?} holds a Receipt path line"
+    );
 }
 
 #[then(regex = r#"^the trial directory it created is removed$"#)]
-fn not_implemented_0082(_world: &mut GivnWorld) -> Result<(), anyhow::Error> {
-    Err(anyhow::anyhow!(
-        r#"not implemented: the trial directory it created is removed"#
-    ))
+fn the_created_trial_is_removed(world: &mut GivnWorld) {
+    let trial = trial_path(world);
+    assert!(
+        !trial.exists(),
+        "the trial directory {} was left behind",
+        trial.display()
+    );
 }
 
 #[then(regex = r#"^the trial does not hold "src/later\.rs"$"#)]

@@ -10,6 +10,7 @@ use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+use serde::{Deserialize, Serialize};
 
 use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
 use crate::config::manifest::Manifest;
@@ -17,6 +18,11 @@ use crate::config::overlay::load_effective_at;
 use crate::scm::{Backend, EntryKind, RevisionEntry};
 
 mod partition;
+mod record;
+mod verify;
+
+pub(crate) use record::abbreviate;
+pub use verify::verify;
 
 /// `givn ise replace`'s parsed request.
 #[derive(Debug, Clone)]
@@ -43,17 +49,25 @@ pub struct Admission {
     pub entries: Vec<RevisionEntry>,
 }
 
-/// One successful preparation's fixed report lines, before the record
-/// identities and the written path.
+/// One successful preparation's report: the fixed lines, the two digest
+/// rollups, the write targets, and the record when it went to stdout.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
     pub backend: &'static str,
     pub revision: String,
     pub counts: Counts,
+    pub retained_digest: String,
+    pub e2e_digest: String,
+    pub written_path: PathBuf,
+    pub receipt: Option<PathBuf>,
+    /// The sorted paths a dry run would write; `None` outside a dry run.
+    pub would_write: Option<Vec<String>>,
+    /// The YAML record when no receipt path was given.
+    pub record: Option<String>,
 }
 
 /// The five placement counts the report prints.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Counts {
     pub retained: usize,
     pub kept_source: usize,
@@ -65,30 +79,70 @@ pub struct Counts {
 /// Materialize a trial from one recorded revision and report its placement.
 pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> {
     let admission = admit(project_root, request.at.as_deref())?;
-    let partition = partition::partition(
+    let placement = partition::partition(
         &admission.declaration,
         &admission.entries,
         request,
         &admission.revision,
     )?;
-    let report = Report {
+    let trial = require_write_targets(project_root, request)?;
+    require_copy_set(&placement.copy_paths(), &admission.entries)?;
+
+    let copy_paths = placement.copy_paths();
+    let e2e_paths: Vec<String> =
+        crate::e2e_boundary::e2e_file_set(&admission.declaration, &admission.entries)
+            .into_iter()
+            .collect();
+    let replaced_paths = placement.replaced_paths().to_vec();
+    let read_paths = identity_paths(&copy_paths, &e2e_paths, &replaced_paths);
+    let blobs: BTreeMap<String, Vec<u8>> = admission
+        .backend
+        .revision_blobs(&admission.revision, &read_paths)
+        .with_context(|| format!("read the trial inputs at revision '{}'", admission.revision))?
+        .into_iter()
+        .collect();
+
+    let counts = placement.counts();
+    let retained_files =
+        record::identities(placement.retained_paths(), &admission.entries, &blobs)?;
+    let e2e_files = record::identities(&e2e_paths, &admission.entries, &blobs)?;
+    let e2e_scenarios =
+        record::scenario_digests(&admission.declaration, &admission.entries, &blobs)?;
+    let replaced_files = record::identities(&replaced_paths, &admission.entries, &blobs)?;
+    let record = record::TrialRecord {
+        schema: record::SCHEMA,
+        content_scope: record::CONTENT_SCOPE.to_string(),
+        backend: admission.backend.name().to_string(),
+        revision: admission.revision.clone(),
+        named_paths: named_paths(request),
+        replaced_paths,
+        counts,
+        retained_digest: record::rollup(&retained_files),
+        e2e_digest: record::e2e_rollup(&e2e_files, &e2e_scenarios),
+        replaced_digest: record::rollup(&replaced_files),
+        retained_files,
+        e2e_files,
+        e2e_scenarios,
+        written_path: trial.to_string_lossy().into_owned(),
+        givn_version: env!("CARGO_PKG_VERSION").to_string(),
+    };
+    let mut report = Report {
         backend: admission.backend.name(),
         revision: admission.revision.clone(),
-        counts: partition.counts(),
+        counts,
+        retained_digest: record.retained_digest.clone(),
+        e2e_digest: record.e2e_digest.clone(),
+        written_path: trial.clone(),
+        receipt: request.receipt.clone(),
+        would_write: request.dry_run.then(|| copy_paths.clone()),
+        record: None,
     };
-    require_write_targets(project_root, request)?;
-    require_copy_set(&partition.copy_paths(), &admission.entries)?;
     if request.dry_run {
         return Ok(report);
     }
 
-    let copy_paths = partition.copy_paths();
-    let blobs = admission
-        .backend
-        .revision_blobs(&admission.revision, &copy_paths)
-        .with_context(|| format!("read the copy set at revision '{}'", admission.revision))?;
-    let files = trial_files(&admission.entries, &copy_paths, blobs)?;
-    let outcome = write_trial(&request.into, &files, &FileWriter)
+    let files = trial_files(&admission.entries, &copy_paths, &blobs)?;
+    let outcome = write_trial(&trial, &files, &FileWriter)
         .with_context(|| format!("write revision '{}'", admission.revision))?;
     if let WriteOutcome::Mismatched { paths } = outcome {
         bail!(
@@ -97,20 +151,42 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
             paths.join(", ")
         );
     }
+    match request.receipt.as_deref() {
+        Some(receipt) => {
+            if let Err(error) = record.write(receipt) {
+                std::fs::remove_dir_all(&trial)
+                    .with_context(|| format!("remove the trial at '{}'", trial.display()))?;
+                return Err(error);
+            }
+        }
+        None => report.record = Some(record.yaml()?),
+    }
     Ok(report)
 }
 
-/// Re-check a prepared trial. The add-on precondition is implemented; the
-/// record trust anchor and the per-path checks land in the verify batch.
-pub fn verify(project_root: &Path, _trial: &Path, _at: &Path) -> Result<()> {
-    let manifest = load_effective_at(project_root).with_context(|| {
-        format!(
-            "read the effective manifest at '{}'",
-            project_root.display()
-        )
-    })?;
-    require_addons(&manifest)?;
-    bail!("the trial re-check is not implemented yet")
+/// The `--path` values the record keeps: normalized, sorted, deduplicated.
+/// A value the normalizer rejects already refused in the partition.
+fn named_paths(request: &ReplaceRequest) -> Vec<String> {
+    if request.full {
+        return Vec::new();
+    }
+    let mut paths: Vec<String> = request
+        .paths
+        .iter()
+        .filter_map(|value| crate::config::declaration::normalize_project_path(value))
+        .collect();
+    paths.sort();
+    paths.dedup();
+    paths
+}
+
+/// The union of the copy set, the `e2e` package files, and the replaced
+/// paths: every revision entry an identity or a digest needs.
+fn identity_paths(copy: &[String], e2e: &[String], replaced: &[String]) -> Vec<String> {
+    let mut paths: Vec<String> = copy.iter().chain(e2e).chain(replaced).cloned().collect();
+    paths.sort();
+    paths.dedup();
+    paths
 }
 
 /// The ordered admission checks: add-ons, declaration, backend, dirty
@@ -170,7 +246,8 @@ fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
 /// The trial must not exist; the receipt must not exist, lie inside the trial,
 /// or be an ancestor of it. Every path is resolved through its deepest
 /// existing ancestor, so a symlinked parent cannot alias a checkout path.
-fn require_write_targets(project_root: &Path, request: &ReplaceRequest) -> Result<()> {
+/// Returns the absolute trial path the report and the record name.
+fn require_write_targets(project_root: &Path, request: &ReplaceRequest) -> Result<PathBuf> {
     let checkout = project_root
         .canonicalize()
         .with_context(|| format!("resolve the checkout '{}'", project_root.display()))?;
@@ -189,7 +266,7 @@ fn require_write_targets(project_root: &Path, request: &ReplaceRequest) -> Resul
         );
     }
     let Some(receipt_request) = request.receipt.as_deref() else {
-        return Ok(());
+        return Ok(trial);
     };
     let receipt = resolved_target(receipt_request, &checkout)?;
     if receipt.starts_with(&checkout) {
@@ -219,7 +296,7 @@ fn require_write_targets(project_root: &Path, request: &ReplaceRequest) -> Resul
             trial.display()
         );
     }
-    Ok(())
+    Ok(trial)
 }
 
 /// The absolute form of a write target: every existing ancestor is
@@ -307,22 +384,22 @@ struct TrialFile {
 fn trial_files(
     entries: &[RevisionEntry],
     paths: &[String],
-    blobs: Vec<(String, Vec<u8>)>,
+    blobs: &BTreeMap<String, Vec<u8>>,
 ) -> Result<Vec<TrialFile>> {
     let by_path: BTreeMap<&str, &RevisionEntry> = entries
         .iter()
         .map(|entry| (entry.path.as_str(), entry))
         .collect();
-    let mut bytes: BTreeMap<String, Vec<u8>> = blobs.into_iter().collect();
     paths
         .iter()
         .map(|path| {
             let entry = by_path.get(path.as_str()).copied().ok_or_else(|| {
                 anyhow::anyhow!("the revision does not list '{path}', so the trial cannot write it")
             })?;
-            let bytes = bytes
-                .remove(path)
-                .ok_or_else(|| anyhow::anyhow!("the revision returned no content for '{path}'"))?;
+            let bytes = blobs
+                .get(path)
+                .ok_or_else(|| anyhow::anyhow!("the revision returned no content for '{path}'"))?
+                .clone();
             Ok(TrialFile {
                 path: path.clone(),
                 kind: entry.kind,

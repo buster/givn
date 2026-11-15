@@ -435,6 +435,81 @@ pub(crate) fn commit_fossil_kinds(_env: &common::TestEnv) {
     panic!("the entry-kind fixture requires symlink support");
 }
 
+/// The behavior feature the prepare `@e2e` fixture retains.
+pub(crate) const E2E_FEATURE_PATH: &str = "givn/specs/demo.feature";
+/// The behavior feature's content; its scenario is tagged `@e2e`.
+pub(crate) const E2E_FEATURE_CONTENT: &str =
+    "Feature: demo\n\n  @e2e\n  Scenario: demo\n    Given nothing\n";
+
+/// A declaration with the named `behavior` and `e2e` roles and one source
+/// root, so no other declared entry can match nothing at the revision.
+pub(crate) fn behavior_e2e_declaration(behavior: &str, e2e: &str, source: &str) -> String {
+    format!(
+        "behavior: [{behavior}]\n\
+         structure: []\n\
+         contracts: []\n\
+         limits: []\n\
+         e2e: [{e2e}]\n\
+         source: [{source}]\n"
+    )
+}
+
+/// A minimal Git project with `ise` enabled and the prepare scenario's
+/// declaration. The config and the declaration are excluded through
+/// `.git/info/exclude`, so the revision tree holds only the seven committed
+/// fixture files the counts name.
+pub(crate) fn e2e_trial_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::write(
+        env.path(".git/info/exclude"),
+        "givn/config.yaml\ngivn/specification.yaml\n",
+    )
+    .expect("write the Git exclude fixture");
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
+        .expect("write the fixture config");
+    std::fs::write(
+        env.path("givn/specification.yaml"),
+        behavior_e2e_declaration("\"givn/specs/**\"", "\"tests/e2e\"", "\"src/**\""),
+    )
+    .expect("write the fixture declaration");
+    env
+}
+
+/// Commit the seven files the prepare `@e2e` scenario counts. Returns the
+/// revision identifier.
+pub(crate) fn commit_e2e_trial_revision(env: &common::TestEnv) -> String {
+    commit_files(
+        env,
+        &[
+            (E2E_FEATURE_PATH, E2E_FEATURE_CONTENT),
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+            ("tests/e2e/steps/demo.rs", "// e2e steps\n"),
+            ("src/keys/parser.rs", "pub fn parse() {}\n"),
+            ("src/keys/mod.rs", "pub mod parser;\n"),
+            ("src/other.rs", "pub fn other() {}\n"),
+            ("notes.md", "notes\n"),
+        ],
+        "fixture: e2e trial revision",
+    )
+}
+
+/// Point the receipt at `<container>/blocker/record.yaml`, where `blocker` is
+/// a regular file, so the record write fails after the trial exists.
+pub(crate) fn blocked_receipt(state: &mut IseCleanRoomState) {
+    state.ensure_targets();
+    let container = state
+        .targets
+        .as_ref()
+        .expect("the targets exist")
+        .path()
+        .to_path_buf();
+    let blocker = container.join("blocker");
+    std::fs::write(&blocker, "not a directory\n").expect("write the receipt blocker");
+    state.receipt_path = Some(blocker.join("record.yaml"));
+}
+
 /// Write each file (creating its parent directories) and commit the whole
 /// tree. Returns the new revision identifier.
 pub(crate) fn commit_files(env: &common::TestEnv, files: &[(&str, &str)], message: &str) -> String {

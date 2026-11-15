@@ -1,0 +1,67 @@
+Scenario: Developer prepares a clean-room trial from a recorded revision
+argv: givn ise replace --at HEAD --path src/keys/parser.rs --into /tmp/ise-trial-transcript-68afrioj/trial --receipt /tmp/ise-trial-transcript-68afrioj/record.yaml
+cwd (fixture project root): /tmp/ise-trial-transcript-68afrioj/project
+binary: target/debug/givn (the compiled binary the scenario spawns via CARGO_BIN_EXE_givn)
+revision: 01425f28570593a9ac97e56c980fe17648cf4a7e
+exit: 0
+
+context commands (all in that project):
+  git init -q
+  git config user.email fixture@example.com
+  git config user.name "Givn Fixture"
+  git config commit.gpgsign false
+  .git/info/exclude: givn/config.yaml, givn/specification.yaml
+  givn/config.yaml: addons: ise: true
+  git add -A && git commit -m "fixture: e2e trial revision"
+  committed: givn/specs/demo.feature, tests/e2e/Cargo.toml, tests/e2e/steps/demo.rs, src/keys/parser.rs, src/keys/mod.rs, src/other.rs, notes.md
+
+--- stdout (raw) ---
+Backend: git
+Revision: 01425f28570593a9ac97e56c980fe17648cf4a7e
+Retained: 3
+Kept source: 2
+Replaced: 1
+Outside the declaration: 1
+Not replaced: 1
+Retained digest: 25902fe155f6…
+E2E digest: f41d020038de…
+Written path: /tmp/ise-trial-transcript-68afrioj/trial
+Receipt path: /tmp/ise-trial-transcript-68afrioj/record.yaml
+
+--- stderr (raw) ---
+
+--- trial (raw) ---
+givn/specs/demo.feature
+src/keys/mod.rs
+src/other.rs
+tests/e2e/Cargo.toml
+tests/e2e/steps/demo.rs
+--- record (/tmp/ise-trial-transcript-68afrioj/record.yaml) ---
+schema: 1
+content_scope: ise-trial/v1
+backend: git
+revision: 01425f28570593a9ac97e56c980fe17648cf4a7e
+named_paths:
+- src/keys/parser.rs
+replaced_paths:
+- src/keys/parser.rs
+counts:
+  retained: 3
+  kept_source: 2
+  replaced: 1
+  outside_declaration: 1
+  not_replaced: 1
+retained_digest: 25902fe155f683d858c2b6cb93781ebf1758324d8f37e14e91bd30f78b1db3aa
+e2e_digest: f41d020038defe35f3eb44fdea0dd50b1ba5954254568ed529f6e0030a3ead58
+replaced_digest: d5352ba56e1db8b037d9ddf015df1c5397cea41fee0f86d53a2367724f8fb0ce
+retained_files:
+  givn/specs/demo.feature: 95b647b4f91f9ceb15887db09ecfa08caaff14d5fb5228b25cf1aeab2889a540
+  tests/e2e/Cargo.toml: 7fb79f1e5eaf0e42fd94ebcd1044ac2fb64412680ea8ebbd0fb4fb443a7aea18
+  tests/e2e/steps/demo.rs: d456908bc4fa7d7f9511c710591a0c6ec64f8abf09aaf860b5faa1505ce38ad8
+e2e_files:
+  tests/e2e/Cargo.toml: 7fb79f1e5eaf0e42fd94ebcd1044ac2fb64412680ea8ebbd0fb4fb443a7aea18
+  tests/e2e/steps/demo.rs: d456908bc4fa7d7f9511c710591a0c6ec64f8abf09aaf860b5faa1505ce38ad8
+e2e_scenarios:
+  givn/specs/demo.feature: 791f7b34866c710ad541e06fb1d354d3ed4fedd7c46404465183d0a68d88006c
+written_path: /tmp/ise-trial-transcript-68afrioj/trial
+givn_version: 0.9.20

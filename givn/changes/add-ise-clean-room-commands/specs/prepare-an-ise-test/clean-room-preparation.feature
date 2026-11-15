@@ -2,7 +2,7 @@
 
 Feature: Clean-room preparation
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer prepares a clean-room trial from a recorded revision
     Given a Git project with ise enabled and a declaration that retains "givn/specs/**", declares "tests/e2e", and replaces "src/**"
     And a committed revision with "givn/specs/demo.feature", "tests/e2e/Cargo.toml", "tests/e2e/steps/demo.rs", "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", and "notes.md"
@@ -229,7 +229,7 @@ Feature: Clean-room preparation
     And the trial holds "givn/specs/demo.feature"
     And the trial holds no file under "src"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation collapses a repeated path
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with "src/one.rs" and "src/two.rs"
@@ -272,7 +272,7 @@ Feature: Clean-room preparation
     Then preparation succeeds
     And the trial holds no ".git" entry and no ".fslckout" entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation prints the trial record to stdout when no receipt path is given
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial from "HEAD" with a full replacement and no receipt
@@ -280,7 +280,7 @@ Feature: Clean-room preparation
     And no record file is written
     And the report holds no "Receipt path" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dry run performs every read and writes no trial or record
     Given a Git project with ise enabled and a declaration
     When the developer runs a dry run from "HEAD" with a full replacement and a receipt
@@ -320,7 +320,7 @@ Feature: Clean-room preparation
     Then preparation fails and names the unreadable path and the revision
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses when the record cannot be written
     Given a Git project with ise enabled and a declaration
     And a receipt path whose parent directory is a regular file
