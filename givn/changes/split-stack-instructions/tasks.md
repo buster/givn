@@ -1558,6 +1558,23 @@ stays green).
       exit 0
       ```
 
+- [x] Final review gate: `givn check review --change split-stack-instructions`
+      exits 0 at the review PASS revision `af35cf9d`, with the receipt reused
+      across the documentation-only revision.
+      ```
+      $ givn check review --change split-stack-instructions
+        ✓ integrity checks passed
+        ✓ run declaration passed
+        givn lint: 3 file(s) checked — clean
+        net delta: 13 added, 1 modified, 0 removed
+        ✓ overlap dispositions passed
+        ✓ scenario commits passed (14 scenario(s))
+        ✓ change verification receipt reused across documentation-only revision
+          af35cf9ddb9dadb5709c074aec059e3b8826b94d (tested at 0cc81208e8b2ec48
+          4ceb29a0644f8be1d8fe3706, 29 scenario(s))
+      exit 0
+      ```
+
 **Done when:** every box is checked with its batch revision, all 29 delta
 scenario rows pass in the change and permanent scopes, every contradiction is
 dispositioned, and the whole-change checks exit 0.
