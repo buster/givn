@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "split-stack-instructions",
+  "status": "passed",
+  "head": "4eb829d9fb20a35b2025023246c37efc0b362861",
+  "features_path": "givn/changes/split-stack-instructions/specs",
+  "features_digest": "47d092a70a8e78f8dcad4e8c98d5c05ffd91685a1eebdd650aef969c513e5565",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "06813272014217c308ffe6571dd95aea612acff7119b7b697ed5d72ae081165f",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 29,
+    "passed": 29,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1794738154
+}
