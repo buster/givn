@@ -2692,13 +2692,51 @@ implementation contradicts (each correction named in the commit).
 gates) plus a manual re-read of every placement row against the code.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: durable-docs'`.
 
-- [ ] Write the `docs/reference.md` command reference and verify every
+- [x] Write the `docs/reference.md` command reference and verify every
       placement-table statement against the implemented behavior.
       ```
-      <!-- paste the added reference section and the per-row verification result,
-           naming every statement corrected -->
+      Added: two `## CLI commands` rows (`givn ise replace`, `givn ise verify`) and a `### Clean-room trial`
+      subsection under `## Verification and recovery`: the two invocations, the replacement form (`--at`
+      defaulting to `HEAD`, exactly one of `--full` and repeated `--path`, exit 2 on a usage error), trial and
+      receipt placement, the ten report lines plus the conditional `Receipt path`, the dry-run `Would write:`
+      block, the nine refusals in condition order, the `ise-trial/v1` field table, the per-path identity rule
+      and rollup abbreviation, the Git `ls-tree` and Fossil `F`-line entry-kind sources (a Fossil symlink only
+      with `allow-symlinks on`), the verify clean and drift lines with the six reasons, the trust anchor, and
+      the `0`/`1`/`2` exit codes. Every statement was read back from the implemented command, not copied from
+      design.md.
+
+      Rows of `## Durable documentation placement` re-read against the code; none corrected:
+      - `docs/glossary.md:73-76` (Trial directory, Trial record, Trial E2E digest, the scoped `E2E identity`
+        anti-term): the record fields, the printed `E2E digest` line, and the alias-free identity all match.
+      - `docs/arc42/02-architecture-constraints.md:54-55` (TC-46, TC-47): the preflight order, both readers,
+        the drift check, and the add-on pair match `src/ise/{mod,partition,record,verify}.rs`.
+      - `docs/arc42/03-context-and-scope.md:32,62-63`: both CLI rows and the independent-verifier entity match
+        the clap surface and the re-check.
+      - `docs/arc42/04-solution-strategy.md:24`: the clean-room trial row matches the revision read and the
+        plain-directory write.
+      - `docs/arc42/05-building-block-view.md:62-63,90`: the `cli::ise` and `ise` rows match the module split;
+        the `e2e_file_set` row's "supplied path tree" matches the path-slice signature the verify batch reads
+        from `Backend::content_paths`.
+      - `docs/arc42/06-runtime-view.md:982` (6.21): the replace steps 1-10 and the verify steps 1-7 match the
+        implemented order, including the placement-before-backend trust anchor.
+      - `docs/arc42/08-crosscutting-concepts.md:1464` (8.29): the record table, the identity rule, the
+        two-target placement rule, the trust anchor, and the revision-resolved e2e set match.
+      - `docs/arc42/11-risks-and-technical-debt.md:129-133` (R-142..R-146), with R-143, R-144, and R-146
+        implemented in this batch's sibling batches, match the recorded-set limit, the target containment
+        check, and the `Rule:`-nested selection.
+      - `docs/arc42/adr/ADR-076-clean-room-trial-record.md` and `docs/arc42/adr/README.md:63,80`: status
+        `accepted`, the register row present, and the qualification block unchanged.
+      - `docs/arc42/README.md`: both commands are named in the current-state list.
+
+      `docs/domain-model.md` and `assets/instructions/ise.md` stay unchanged: the model scopes itself to
+      domain units and excludes command parsing and file formats, and the five served `ise` obligations
+      already name the Specification boundary and the frozen package. Both are unmodified in this commit.
+
+      Batch verification: `./run-tests.sh --non-e2e` -> `Summary [168.045s] 980 tests run: 980 passed,
+      111 skipped`; `./run-tests.sh --e2e` -> `Summary [39.669s] 111 tests run: 111 passed, 980 skipped`;
+      `cargo nextest run` -> `Summary [191.072s] 1644 tests run: 1644 passed, 0 skipped`.
       ```
-- [ ] COMMIT: `<hash>` -- Batch: `durable-docs`
+- [x] COMMIT: `b9e577fa0d97be734ff9494d0a05288fa3bdb0f9` -- Batch: `durable-docs`
 
 ---
 
