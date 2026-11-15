@@ -344,88 +344,6 @@ removed only when its bytes are recognizable as Givn output; custom content at
 the same path is preserved with a manual transition notice. `givn-start` is the
 default entry skill; `givn-explore` is no longer generated and has no alias.
 
-A project extends one instruction's built-in rules through the `extensions:`
-map in `givn/config.yaml`: an instruction id maps to project-owned rule
-strings, appended to the served content under a marked `## Project extension`
-section. The extension is additive — it never overrides, suppresses, or
-reorders the built-in rules and never changes steps, order, or gates. It is
-read on every request, never written into generated files, and never part of
-the managed upgrade revision; an unknown instruction id or a malformed entry
-warns and is dropped, and the built-in rules are served alone. When a
-project-owned replacement of the instruction facet exists for the same id, the
-replacement is the base the extension extends; the replacement file itself is
-never modified.
-
-A target that owns a shell integration also receives its attribution
-integration: `.opencode/plugins/givn-attribution.js`,
-`.claude/hooks/givn-attribution.sh` with `.claude/settings.local.json`, and
-`.omp/hooks/pre/givn-attribution.js`.
-
-The target selection is stored in `skills.targets` in `givn/config.yaml`; an
-absent, empty, or unknown-only list falls back to opencode when `givn skills
-sync` runs, so projects initialized by older versions keep syncing.
-Initialization itself requires a selection: the interactive prompt opens with
-`.opencode` marked and re-asks — with an error naming the requirement — until a
-target is marked, while an empty or unknown-only answer and EOF without the
-`--agents` flag refuse with a non-zero exit before the first write, naming
-`.opencode`, `.agents`, `.claude`, `.omp`, and `.maki` plus the `--agents` flag.
-
-The implementation guidance states the revision-message rule: every revision a
-change records carries the change's release note (authored in its proposal) as
-its message subject, with the batch name and, for a single-scenario batch, the
-scenario title in the message body. The rule
-lives in the `tasks` instruction; the project-start block renders its resident
-rules (the task-checkoff and commit obligations) from that same
-`instructions/tasks.md` asset, so the block's text and the served instruction
-cannot disagree. The rule is guidance only — `givn commit` neither composes nor
-validates the subject.
-
-Generated guidance is written for the consumer project. Every file reference
-it carries must resolve in the project that receives it: a file the project
-has, a location a named creation step creates, a project-owned destination
-the guidance itself defines, or a skill resolved by name across the
-configured agent targets. Every instruction id a direction names must resolve
-through the CLI in the same Givn version or a later one, in the context the
-direction names: an artifact direction carries a resolvable change context,
-and a policy or step direction resolves without one (an artifact request
-without a resolvable change context refuses by name). A reference into the
-Givn distribution (`assets/…`, a repository-only document) is a defect; the
-acceptance suite grades every generated skill and printed instruction against
-both rules.
-
-`AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
-create or replace the unconditional `givn-project` block and, when enabled, the
-`communication-policy` block; it removes the retired `absolute-mode` block. It
-does not rewrite surrounding user content. The project block carries the
-direction to `givn instructions`, the mandatory dialog-policy obligation, and
-its resident task-checkoff and commit obligations rendered from the canonical
-`instructions/tasks.md` asset. The communication-policy addon controls only
-presentation and documentation; it does not gate or own question content. Givn never stages
-`AGENTS.md` under either rules policy; committing it is the developer's explicit
-act.
-
-The generated-rules policy is a flat scalar in `givn/config.yaml`:
-`rules: local-only` (the default when absent) or `rules: versioned`. An
-unrecognized value warns and continues as `local-only`. Under `local-only` the
-strict rules — every generated rule except the `AGENTS.md` fence — are kept out
-of the repository through a fenced block in the tracked ignore file
-(`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
-(`.git/info/exclude`, the Fossil `ignore-glob` setting). The block carries
-prefix patterns for the reserved namespaces (`.opencode/skills/givn-*/`,
-`.agents/skills/givn-*/`, `.claude/skills/givn-*/`, `.omp/skills/givn-*/`,
-`.maki/skills/givn-*/`, and the fixed integration files), never individual rule
-names; tracked rules are discovered by a path predicate instead. A tracked strict rule
-becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
-stays on disk, and the staged removals join the upgrade's managed revision or
-wait for the developer after `givn init`. Under `versioned` the fenced blocks
-are removed and the rules are repository content. Every command that touches
-rules reports tracked and reachable-history occurrences; `givn check rules`
-exits non-zero on a violation, while init, sync, and upgrade never block.
-Givn itself never rewrites history: historical occurrences are reported, never
-repaired — a project that must purge them does so with its own SCM tooling
-outside Givn, and the reachable local refs boundary (remotes and forks are
-outside the guarantee) is named, not acted on.
-
 ## 8.8 Error Handling and Exit Codes
 
 Library-specific errors use typed errors and application paths add context.
@@ -1519,5 +1437,121 @@ manifest's `F` lines (`x` executable, `l` symlink), read through
 64-hex blob hash is accepted. Fossil writes an `l` entry only with
 `allow-symlinks on`. A manifest read or parse failure refuses before any
 write.
+
+## 8.30 Stack Instruction Composition and the Guidance Budget
+
+A core step instruction carries the universal rules of its step and names each
+on-demand stack instruction with the condition that selects it; it carries no
+per-runner body. Six stack instructions hold the rows the core instructions used
+to carry — `steps-rust` (`cucumber-rs`), `steps-python` (`behave`), `steps-node`
+(`cucumber-js`), `steps-java` (`cucumber-jvm`), `steps-go` (`godog`), and
+`steps-ruby` (`cucumber-ruby`) — each carrying that runner's step definition
+file, binding form, empty-body stub, strict-mode mechanism, and single-scenario
+command where the core instruction carried one. `steps` and `design` name the
+ids; `specs` and `review` carry no stack body and name none. A stack instruction
+is a policy instruction id: it resolves through the same cascade with no change
+context, a project may override it per id, and its body reaches the caller only
+on a request for its own id. The relation is the id convention `steps` to
+`steps-rust`, the same pairing `dialog` to `dialog-examples` established.
+
+The corpus is bounded: the four core step instructions (`specs`, `steps`,
+`design`, `review`) stay at or below their recorded post-split total, and every
+file under `assets/instructions/` stays at or below 4,500 lines with the stack
+instructions counted. The measured post-split corpus is 4,481 lines and the
+four core files total 1,544. Both numbers are asserted by the acceptance suite
+against the checkout's shipped assets, because the budget describes Givn's own
+guidance rather than a consumer project's overrides. A future stack adds a
+file, and the cap makes that cost visible instead of silent (ADR-077, `Q-126`,
+`R-148`).
+
+The instruction-id part of the guidance reference check reads served text, not
+the asset: every `givn instructions <id>` direction that a served instruction
+or an effective addon instruction names must resolve in the context it names,
+an artifact id with a change context and a policy id without one. An unresolved
+or mis-contexted id is a finding naming the id, its source line, and the line
+text. An addon-bound id is checked only while its addon is effective in the
+project.
+
+A project extends one instruction's built-in rules through the `extensions:`
+map in `givn/config.yaml`: an instruction id maps to project-owned rule
+strings, appended to the served content under a marked `## Project extension`
+section. The extension is additive — it never overrides, suppresses, or
+reorders the built-in rules and never changes steps, order, or gates. It is
+read on every request, never written into generated files, and never part of
+the managed upgrade revision; an unknown instruction id or a malformed entry
+warns and is dropped, and the built-in rules are served alone. When a
+project-owned replacement of the instruction facet exists for the same id, the
+replacement is the base the extension extends; the replacement file itself is
+never modified.
+
+A target that owns a shell integration also receives its attribution
+integration: `.opencode/plugins/givn-attribution.js`,
+`.claude/hooks/givn-attribution.sh` with `.claude/settings.local.json`, and
+`.omp/hooks/pre/givn-attribution.js`.
+
+The target selection is stored in `skills.targets` in `givn/config.yaml`; an
+absent, empty, or unknown-only list falls back to opencode when `givn skills
+sync` runs, so projects initialized by older versions keep syncing.
+Initialization itself requires a selection: the interactive prompt opens with
+`.opencode` marked and re-asks — with an error naming the requirement — until a
+target is marked, while an empty or unknown-only answer and EOF without the
+`--agents` flag refuse with a non-zero exit before the first write, naming
+`.opencode`, `.agents`, `.claude`, `.omp`, and `.maki` plus the `--agents` flag.
+
+The implementation guidance states the revision-message rule: every revision a
+change records carries the change's release note (authored in its proposal) as
+its message subject, with the batch name and, for a single-scenario batch, the
+scenario title in the message body. The rule
+lives in the `tasks` instruction; the project-start block renders its resident
+rules (the task-checkoff and commit obligations) from that same
+`instructions/tasks.md` asset, so the block's text and the served instruction
+cannot disagree. The rule is guidance only — `givn commit` neither composes nor
+validates the subject.
+
+Generated guidance is written for the consumer project. Every file reference
+it carries must resolve in the project that receives it: a file the project
+has, a location a named creation step creates, a project-owned destination
+the guidance itself defines, or a skill resolved by name across the
+configured agent targets. Every instruction id a direction names must resolve
+through the CLI in the same Givn version or a later one, in the context the
+direction names: an artifact direction carries a resolvable change context,
+and a policy or step direction resolves without one (an artifact request
+without a resolvable change context refuses by name). A reference into the
+Givn distribution (`assets/…`, a repository-only document) is a defect; the
+acceptance suite grades every generated skill and printed instruction against
+both rules.
+
+`AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
+create or replace the unconditional `givn-project` block and, when enabled, the
+`communication-policy` block; it removes the retired `absolute-mode` block. It
+does not rewrite surrounding user content. The project block carries the
+direction to `givn instructions`, the mandatory dialog-policy obligation, and
+its resident task-checkoff and commit obligations rendered from the canonical
+`instructions/tasks.md` asset. The communication-policy addon controls only
+presentation and documentation; it does not gate or own question content. Givn never stages
+`AGENTS.md` under either rules policy; committing it is the developer's explicit
+act.
+
+The generated-rules policy is a flat scalar in `givn/config.yaml`:
+`rules: local-only` (the default when absent) or `rules: versioned`. An
+unrecognized value warns and continues as `local-only`. Under `local-only` the
+strict rules — every generated rule except the `AGENTS.md` fence — are kept out
+of the repository through a fenced block in the tracked ignore file
+(`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
+(`.git/info/exclude`, the Fossil `ignore-glob` setting). The block carries
+prefix patterns for the reserved namespaces (`.opencode/skills/givn-*/`,
+`.agents/skills/givn-*/`, `.claude/skills/givn-*/`, `.omp/skills/givn-*/`,
+`.maki/skills/givn-*/`, and the fixed integration files), never individual rule
+names; tracked rules are discovered by a path predicate instead. A tracked strict rule
+becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
+stays on disk, and the staged removals join the upgrade's managed revision or
+wait for the developer after `givn init`. Under `versioned` the fenced blocks
+are removed and the rules are repository content. Every command that touches
+rules reports tracked and reachable-history occurrences; `givn check rules`
+exits non-zero on a violation, while init, sync, and upgrade never block.
+Givn itself never rewrites history: historical occurrences are reported, never
+repaired — a project that must purge them does so with its own SCM tooling
+outside Givn, and the reachable local refs boundary (remotes and forks are
+outside the guarantee) is named, not acted on.
 
 *[Architecture documentation index](README.md)*

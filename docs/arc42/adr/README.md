@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-28 accepted records and no proposed records. The fifteen semantic-engine
+29 accepted records and no proposed records. The fifteen semantic-engine
 records were superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and
 moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -61,6 +61,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-074](ADR-074-neutral-source-analyzer-port.md) | accepted | Analyze source code behind a neutral `SourceAnalyzer` port with a `syn` adapter | dependency-direction and engine-replacement boundary |
 | [ADR-075](ADR-075-projected-interaction-integrity.md) | accepted | Enforce the projected interaction inventory before accepting a change | pre-mutation gate boundary; component split and dependency direction |
 | [ADR-076](ADR-076-clean-room-trial-record.md) | accepted | Bind a clean-room trial to a versioned, per-path record outside the trial | durable evidence scope; builder-versus-verifier boundary |
+| [ADR-077](ADR-077-stack-instructions-and-corpus-budget.md) | accepted | Serve stack mechanics on demand from per-stack instructions under a recorded corpus budget | durable guidance composition contract and a measured size boundary |
 
 ## Relationships
 

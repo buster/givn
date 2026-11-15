@@ -24,10 +24,15 @@ scenario.
 One file per capability — never a single file for the whole change. A
 giant all-in-one step file is a red flag: it hides empty/no-op stubs.
 
-- Rust (`cucumber-rs`): `tests/steps/<capability>.rs`.
-- Python (`behave`): `features/steps/<capability>_steps.py`.
-- Node (`cucumber-js`): `features/steps/<capability>.steps.js`.
-- Java (`cucumber-jvm`): `src/test/java/.../steps/<Capability>Steps.java`.
+The stack instruction for the change's runner carries that runner's step
+definition path, binding form, empty-body stub, strict mechanism, and
+single-scenario command; this instruction carries no stack body:
+`steps-rust` when the change's runner is `cucumber-rs`;
+`steps-python` when the change's runner is `behave`;
+`steps-node` when the change's runner is `cucumber-js`;
+`steps-java` when the change's runner is `cucumber-jvm`;
+`steps-go` when the change's runner is `godog`;
+`steps-ruby` when the change's runner is `cucumber-ruby`.
 
 `@e2e` scenarios use separate step definitions and the same one-file-per-
 capability rule. Read the canonical E2E policy with
@@ -105,18 +110,9 @@ as-is — its assertions are already proven. New: write fresh.
 
 ## Rule: step body is never empty
 
-`{}`, bare `pass`, bare `return`, whitespace-only — all indistinguishable
-from PASS in most Cucumber runners. Banned at every phase, not just RED.
-Unimplemented steps use:
-
-| Language / framework | Stub |
-|---|---|
-| Rust (`cucumber-rs`) | `unimplemented!()` or `todo!()` |
-| Java (`cucumber-jvm`) | `throw new io.cucumber.java.PendingException("TODO");` |
-| Python (`behave`) | `raise NotImplementedError("TODO")` |
-| JS/TS (`cucumber-js`) | `return "pending";` or `throw new Error("TODO")` |
-| Go (`godog`) | `return godog.ErrPending` |
-| Ruby (`cucumber-ruby`) | `pending("TODO")` |
+Unimplemented steps use the empty-body stub the stack instruction names for
+the change's runner; never `{}`, bare `pass`, bare `return`, or a
+whitespace-only body.
 
 Exempt only once a step has a real assertion (GREEN) or performs a real
 reused action. Before trusting any PASS, confirm the runner is strict; the

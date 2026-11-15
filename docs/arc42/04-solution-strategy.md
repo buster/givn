@@ -16,7 +16,7 @@ is in the [ADR register](adr/README.md); mechanics are in
 | Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
-| Guidance | Skills only. Selected targets receive `<target>/skills/<name>/SKILL.md`; served instructions own the rules; project extensions are appended at request time. `givn-start` is the proportionate entry skill; `givn instructions` reports state without authorizing unrelated work. |
+| Guidance | Skills only. Selected targets receive `<target>/skills/<name>/SKILL.md`; served instructions own the rules; project extensions are appended at request time. Core step instructions name each on-demand stack instruction id and the condition that selects it instead of carrying per-runner mechanics, and the shipped corpus stays within its recorded line budget (ADR-077). `givn-start` is the proportionate entry skill; `givn instructions` reports state without authorizing unrelated work. |
 | Agent targets | `opencode`, `agents`, `claude`, `omp`, and `maki`. Invocation is harness-owned; no generated command files. |
 | Commit attribution | `givn commit` is the SCM-neutral explicit-path commit path; on Git a checked-in message hook additionally stamps raw commits, while a Fossil checkout relies on `givn commit`. OpenCode, Claude, omp, and Maki adapters provide best-effort runtime values without making human commits a gate. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |

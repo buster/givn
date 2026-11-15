@@ -41,35 +41,25 @@ context between artifacts.
 
 Empty/undefined steps silently reporting PASS is the failure mode that makes
 GREEN meaningless. Prove the runner rejects them before writing any scenario:
+`givn instructions steps` maps the project's runner to the stack instruction
+that carries the stub and the strict mechanism.
 
-1. Write one step using the not-implemented stub (table below) or leave it
-   undefined.
+1. Write one step using the not-implemented stub the stack instruction names,
+   or leave it undefined.
 2. Run the runner.
 3. Confirm non-zero exit.
-4. If it exits 0, enable the runner's strict flag:
-   - `cucumber-rs`: `.fail_on_skipped()` on the builder.
-   - `cucumber-js`: `--strict` (pin explicitly; do not rely on defaults).
-   - `cucumber-jvm` CLI: `--strict`.
-   - `cucumber-jvm` JUnit Platform Suite: no native strict flag — enforcement
-     is 100% step-body discipline (never empty) plus a listener/plugin that
-     fails the build on UNDEFINED/PENDING results.
-   - `behave`: steps must `raise` explicitly; a bare `pass` is a silent PASS.
-   - `godog`: `godog.ErrPending` fails by default.
+4. If it exits 0, enable the strict flag or mechanism the stack instruction
+   names for the project's runner. If that runner cannot fail on
+   undefined/pending via config alone, the step-body discipline below is the
+   enforcement mechanism and a mechanical check catches empty bodies.
 5. Paste the command and non-zero-exit output into the setup task.
 
 ## Rule: step body is never empty
 
 `{}`, bare `pass`, bare `return` — all indistinguishable from PASS. Banned
-at every phase, not just RED. Unimplemented steps use:
-
-| Language / framework | Stub |
-|---|---|
-| Rust (`cucumber-rs`) | `unimplemented!()` or `todo!()` |
-| Java (`cucumber-jvm`) | `throw new io.cucumber.java.PendingException("TODO");` |
-| Python (`behave`) | `raise NotImplementedError("TODO")` |
-| JS/TS (`cucumber-js`) | `return "pending";` or `throw new Error("TODO")` |
-| Go (`godog`) | `return godog.ErrPending` |
-| Ruby (`cucumber-ruby`) | `pending("TODO")` |
+at every phase, not just RED. Unimplemented steps use the stub the stack
+instruction names for the project's runner; never `{}`, a bare `pass`, or a
+bare `return`.
 
 A step body is exempt only once it has a real assertion (GREEN) or performs
 a real reused setup action. Reuse is never an excuse for a new step to be empty.
@@ -151,10 +141,9 @@ Before the first `@e2e` scenario:
   "Rule: never silently deviate from design.md" below, not a shortcut to take.
 - Configure and prove strict mode for the e2e runner (same procedure as
   above), set `verify.e2e_command` using the exact command design.md names
-  in its "E2E Test Infrastructure" section (e.g. the base runner plus its
-  tag-filter flag/env var — `-- --tags @e2e`, `CUCUMBER_FILTER_TAGS`,
-  `--strict --tags @e2e`, etc., depending on the runner from
-  `design.md`/arc42 ch.4).
+  in its "E2E Test Infrastructure" section: the stack instruction's runner
+  command plus the e2e tag filter or env var (`--tags @e2e`,
+  `GIVN_CUCUMBER_TAGS`, etc., from `design.md`/arc42 ch.4).
 - **Rule: the E2E execution must select its scope explicitly.** When regular
   and E2E verification share one runner command, an explicit scope selection
   such as `GIVN_RESULT_SCOPE` must distinguish the executions. Equal test

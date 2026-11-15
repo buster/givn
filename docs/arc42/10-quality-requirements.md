@@ -119,6 +119,7 @@ graph TD
 | Q-123 | Archive verification reuse | A retry follows a failure after one scope succeeded. | The successful scope's evidence is reused only when its inputs/result still match; a shared source/spec/settings change invalidates both scopes; a single verify-command change invalidates only its own scope. |
 | Q-124 | Commit attribution | A Maki session with a focused model prepares and runs a Bash command that creates a revision. | The generated attribution layer returns the command with attribution exports for the model, reasoning mode, and Maki harness; a command creating no revision is unchanged, and a missing model yields `unavailable`. |
 | Q-125 | Specification integrity | A change's accepted delta would leave the permanent corpus with an unlisted `@e2e` scenario, a declared interaction whose scenario is missing, an undeclared feature, a feature directory with no document, or an unplaceable delta capability. | Review and change-scoped lint fail with a blocking finding naming the use case, capability, and scenario; archive refuses before mutation, and a merged candidate stays unproven and repairable. |
+| Q-126 | Maintainability | A maintainer adds guidance or a runner mechanic to the shipped corpus. | The four core step instructions stay at or below their recorded post-split total and every file under `assets/instructions/` stays at or below 4,500 lines with the stack instructions counted; the acceptance suite measures both against the checkout, so growth beyond either cap fails rather than accumulating. |
 
 ## 10.3 Verification Signals
 

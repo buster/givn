@@ -29,7 +29,11 @@ off.
   `Spec gap` outcome before any fix: `E2E test defect`, `implementation defect`,
   `specification defect`, or `acceptable undocumented change`.
 
-## Records
+## Stack mechanics
+
+`givn instructions steps` maps the runner to its stack instruction and
+carries the universal rules; `steps-rust` is one worked id. Request the stack
+instruction `steps` names for the runner in hand.
 
 An ise change carries two records:
 
