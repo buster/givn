@@ -1154,6 +1154,102 @@ fn no_finding_for(world: &mut GivnWorld, id: String) {
     );
 }
 
+#[given("a Givn project with the ise addon enabled and the guidance reference check available")]
+fn givn_project_with_ise_addon_and_reference_check(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let enabled = crate::common::run_givn(&env, &["addons", "enable", "ise"]);
+    assert!(
+        enabled.status.success(),
+        "enabling the ise addon failed: {}",
+        String::from_utf8_lossy(&enabled.stderr)
+    );
+    let created = crate::common::run_givn(&env, &["new", "ise-guidance"]);
+    assert!(
+        created.status.success(),
+        "create fixture change failed: {}",
+        String::from_utf8_lossy(&created.stderr)
+    );
+    let graph = crate::common::run_givn(&env, &["graph", "--json"]);
+    assert!(
+        graph.status.success(),
+        "givn graph --json failed in the fixture: {}",
+        String::from_utf8_lossy(&graph.stderr)
+    );
+    world.env = Some(env);
+}
+
+#[when("the maintainer requests the ise instruction and runs the reference check over it")]
+fn maintainer_requests_ise_and_runs_check(world: &mut GivnWorld) {
+    let output = crate::common::run_givn(env(world), &["instructions", "ise"]);
+    assert!(
+        output.status.success(),
+        "givn instructions ise failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let sources = vec![crate::common::instruction_references::InstructionSource {
+        label: "ise".to_string(),
+        text: String::from_utf8_lossy(&output.stdout).into_owned(),
+    }];
+    world.last_output = Some(output);
+    let (_, artifacts, change) = reference_check_context(world);
+    record_reference_check(world, sources, artifacts, change);
+}
+
+#[then("the served text names \"steps\" as the mapping for the change's stack mechanics")]
+fn ise_names_steps_mapping(world: &mut GivnWorld) {
+    let content = crate::steps::stdout(world);
+    assert!(
+        content.contains("`givn instructions steps`")
+            && content.contains("maps the runner to its stack instruction"),
+        "the served ise text does not name `steps` as the stack mapping: {content}"
+    );
+}
+
+#[then("the served text names \"steps-rust\" as one stack instruction example")]
+fn ise_names_one_stack_example(world: &mut GivnWorld) {
+    let content = crate::steps::stdout(world);
+    assert!(
+        content.contains("`steps-rust`") && content.contains("worked id"),
+        "the served ise text names no worked stack instruction example: {content}"
+    );
+    // The worked example is a live instruction, not a bare word: it must serve.
+    let worked = crate::common::run_givn(env(world), &["instructions", "steps-rust"]);
+    assert!(
+        worked.status.success(),
+        "the worked stack instruction example does not serve: {}",
+        String::from_utf8_lossy(&worked.stderr)
+    );
+}
+
+#[then(
+    "the served text names the artifact instruction that owns the change-strategy record and the one that owns the spec-gap record"
+)]
+fn ise_names_record_owners(world: &mut GivnWorld) {
+    let content = crate::steps::stdout(world);
+    for direction in [
+        "givn instructions design --change",
+        "givn instructions proposal --change",
+    ] {
+        assert!(
+            content.contains(direction),
+            "the served ise text does not name the record owner {direction:?}: {content}"
+        );
+    }
+}
+
+#[then("every named instruction id resolves")]
+fn every_named_id_resolves(world: &mut GivnWorld) {
+    assert!(
+        !world.instruction_sources.is_empty(),
+        "the reference check graded no served text"
+    );
+    assert!(
+        world.instruction_findings.is_empty(),
+        "the ise instruction names instruction ids that do not resolve:\n{}",
+        findings_report(world)
+    );
+}
+
 // --- dialog-question-quality: dialog policy steps --------------------------
 
 fn cli_stdout(world: &GivnWorld) -> String {
