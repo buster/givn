@@ -939,11 +939,13 @@ fn preparation_prints_the_record_to_stdout(world: &mut GivnWorld) {
 }
 
 /// The `Would write:` entries the default fixture's `--full` trial holds: its
-/// five retained files, with no tracked source file kept.
-const DEFAULT_TRIAL_PATHS: [&str; 5] = [
+/// five retained files and the declaration every trial retains, with no
+/// tracked source file kept.
+const DEFAULT_TRIAL_PATHS: [&str; 6] = [
     "docs/arc42/02-architecture-constraints.md",
     "docs/glossary.md",
     "docs/reference.md",
+    "givn/specification.yaml",
     "givn/specs/demo.feature",
     "tests/e2e/Cargo.toml",
 ];
@@ -1445,4 +1447,126 @@ fn trial_fossil_symlink_points_at_its_target(world: &mut GivnWorld) {
         ise_clean_room_support::SYMLINK_PATH,
         ise_clean_room_support::SYMLINK_TARGET,
     );
+}
+
+// --- retain-declaration-in-trial: declaration-retained-partition ----------
+
+#[given(regex = r#"^a Git project with ise enabled and a declaration that sources "givn/\*\*"$"#)]
+fn git_project_sourcing_givn(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::source_only_declaration("\"givn/**\""),
+    ));
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "contracts" role names "givn/\*\*"$"#
+)]
+fn git_project_with_a_wildcard_contract_role(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::contracts_wildcard_project());
+}
+
+#[given(regex = r#"^a committed revision with "givn/notes\.md"$"#)]
+fn commit_revision_with_notes(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[("givn/notes.md", "notes\n")],
+        "fixture: notes",
+    );
+}
+
+#[given(regex = r#"^a committed revision with "givn/specs/a\.md"$"#)]
+fn commit_revision_with_a_spec_document(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[("givn/specs/a.md", "spec\n")],
+        "fixture: spec document",
+    );
+}
+
+#[when(
+    regex = r#"^the developer prepares a trial from "HEAD" with a full replacement and a receipt$"#
+)]
+fn developer_prepares_a_full_trial_with_a_receipt(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    prepare_with_target(world, true);
+}
+
+#[when(
+    regex = r#"^the developer prepares a trial from "HEAD" with the path "givn/specification\.yaml"$"#
+)]
+fn prepare_with_the_declaration_path(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "givn/specification.yaml"]);
+}
+
+#[when(regex = r#"^the developer prepares a trial from "HEAD" with the directory path "givn"$"#)]
+fn prepare_with_the_givn_directory(world: &mut GivnWorld) {
+    prepare_trial(world, Some("HEAD"), &["--path", "givn"]);
+}
+
+#[then(regex = r#"^preparation fails and names "givn/specification\.yaml" as retained$"#)]
+fn preparation_fails_and_names_the_declaration_retained(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    let text = stderr(world);
+    for needle in [
+        "'givn/specification.yaml' is retained by the Specification declaration",
+        "a retained path is never replaced",
+    ] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not carry {needle:?}"
+        );
+    }
+}
+
+#[then(regex = r#"^preparation succeeds and prints "Replaced: 3"$"#)]
+fn preparation_succeeds_with_three_replacements(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Replaced: 3");
+}
+
+#[then(regex = r#"^preparation succeeds and prints "Retained: 2"$"#)]
+fn preparation_succeeds_with_two_retained_entries(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Retained: 2");
+}
+
+#[then(regex = r#"^the receipt lists "givn/specification\.yaml" in its retained set$"#)]
+fn receipt_lists_the_declaration_in_its_retained_set(world: &mut GivnWorld) {
+    let record = record_document(world);
+    let retained = record
+        .get("retained_files")
+        .and_then(serde_yaml_ng::Value::as_mapping)
+        .unwrap_or_else(|| panic!("the record has no 'retained_files' mapping"));
+    let digest = retained
+        .get("givn/specification.yaml")
+        .and_then(serde_yaml_ng::Value::as_str)
+        .unwrap_or_else(|| {
+            panic!("the record does not list givn/specification.yaml in retained_files")
+        });
+    assert_eq!(
+        digest.len(),
+        64,
+        "the declaration's recorded identity is not a SHA-256 value"
+    );
+    assert!(
+        digest
+            .chars()
+            .all(|character| character.is_ascii_hexdigit() && !character.is_ascii_uppercase()),
+        "the declaration's recorded identity is not lowercase hex"
+    );
+    assert_eq!(
+        record_number(&record, "retained") as usize,
+        retained.len(),
+        "counts.retained does not equal the recorded retained entries"
+    );
+}
+
+#[then(regex = r#"^the trial holds "givn/specification\.yaml"$"#)]
+fn the_trial_holds_the_declaration(world: &mut GivnWorld) {
+    assert_trial_holds(world, &[ise_clean_room_support::DECLARATION_PATH]);
+}
+
+#[then(regex = r#"^the trial omits "givn/notes\.md"$"#)]
+fn the_trial_omits_the_notes(world: &mut GivnWorld) {
+    assert_trial_omits(world, &["givn/notes.md"]);
 }

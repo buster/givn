@@ -25,6 +25,9 @@ pub(crate) const KEPT_CONTENT: &str = "pub fn kept() {}\n";
 /// The unknown top-level key the malformed declaration carries.
 pub(crate) const MALFORMED_KEY: &str = "component";
 
+/// The declaration every trial retains as an implicit entry.
+pub(crate) const DECLARATION_PATH: &str = "givn/specification.yaml";
+
 /// The declared `contracts` entry a revision can be missing.
 pub(crate) const CONTRACT_PATH: &str = "docs/contract.md";
 /// The tracked document a `--path` value can name outside the source roots.
@@ -452,6 +455,29 @@ pub(crate) fn behavior_e2e_declaration(behavior: &str, e2e: &str, source: &str) 
          e2e: [{e2e}]\n\
          source: [{source}]\n"
     )
+}
+
+/// A project whose `contracts` role names `givn/**`. The config and the
+/// command file are excluded from the repository, so the revision's `givn/`
+/// holds only the declaration and the document the role matches; the retained
+/// count therefore isolates the union of the declaration and the role.
+pub(crate) fn contracts_wildcard_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::write(
+        env.path(".git/info/exclude"),
+        "givn/config.yaml\ngivn/commands.yaml\n",
+    )
+    .expect("write the Git exclude fixture");
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
+        .expect("write the fixture config");
+    std::fs::write(
+        env.path(DECLARATION_PATH),
+        contracts_declaration("\"givn/**\"", "\"src/**\""),
+    )
+    .expect("write the fixture declaration");
+    env
 }
 
 /// A minimal Git project with `ise` enabled and the prepare scenario's

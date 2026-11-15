@@ -8,7 +8,9 @@ use std::collections::BTreeSet;
 
 use anyhow::{Result, bail};
 
-use crate::config::declaration::{Role, SpecificationDeclaration, normalize_project_path};
+use crate::config::declaration::{
+    DECLARATION_PATH, Role, SpecificationDeclaration, normalize_project_path,
+};
 use crate::e2e_boundary::{Glob, glob_matches_path_or_parent};
 use crate::scm::RevisionEntry;
 
@@ -78,12 +80,15 @@ pub(super) fn partition(
         .collect();
     let tracked: BTreeSet<&str> = entries.iter().map(|entry| entry.path.as_str()).collect();
 
-    let mut retained: Vec<String> = entries
-        .iter()
-        .filter(|entry| retained_role(&entry.path, &roles).is_some())
-        .map(|entry| entry.path.clone())
-        .collect();
-    retained.sort();
+    let mut retained_paths: BTreeSet<String> = BTreeSet::new();
+    retained_paths.insert(DECLARATION_PATH.to_string());
+    retained_paths.extend(
+        entries
+            .iter()
+            .filter(|entry| retained_role(&entry.path, &roles).is_some())
+            .map(|entry| entry.path.clone()),
+    );
+    let retained: Vec<String> = retained_paths.into_iter().collect();
 
     let candidates: BTreeSet<String> = if request.full {
         entries
@@ -249,6 +254,13 @@ fn require_replaceable_paths(
     revision: &str,
 ) -> Result<()> {
     for path in candidates {
+        if path == DECLARATION_PATH {
+            bail!(
+                "'{path}' is retained by the Specification declaration at revision '{revision}'; a retained path is never replaced"
+            );
+        }
+    }
+    for path in candidates {
         if let Some(role) = retained_role(path, roles) {
             bail!(
                 "'{path}' is retained by the {} role at revision '{revision}'; a retained path is never replaced",
@@ -290,4 +302,79 @@ fn direct_siblings(tracked: &BTreeSet<&str>, replaced: &BTreeSet<&str>) -> usize
                     .is_some_and(|(parent, _)| parents.contains(parent))
         })
         .count()
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+    use std::path::PathBuf;
+
+    use super::*;
+    use crate::scm::EntryKind;
+
+    fn declaration_in(root: &std::path::Path, content: &str) -> SpecificationDeclaration {
+        std::fs::create_dir_all(root.join("givn")).expect("create the fixture givn/");
+        std::fs::write(root.join(DECLARATION_PATH), content)
+            .expect("write the fixture declaration");
+        SpecificationDeclaration::load(root)
+            .expect("the fixture declaration loads")
+            .expect("the fixture declaration is present")
+    }
+
+    fn full_replacement() -> ReplaceRequest {
+        ReplaceRequest {
+            at: None,
+            full: true,
+            paths: Vec::new(),
+            into: PathBuf::from("/tmp/ise-trial"),
+            receipt: None,
+            dry_run: true,
+        }
+    }
+
+    /// A role matching the declaration must not count it twice: the retained
+    /// count, the retained path list, and the record's retained map agree.
+    #[test]
+    fn the_retained_count_equals_the_recorded_retained_entries() {
+        let container = tempfile::TempDir::new().expect("create the fixture project");
+        let declaration = declaration_in(
+            container.path(),
+            "behavior: []\nstructure: []\ncontracts: [\"givn/**\"]\nlimits: []\ne2e: []\nsource: [\"src/**\"]\n",
+        );
+        let entries = [
+            RevisionEntry {
+                path: DECLARATION_PATH.to_string(),
+                kind: EntryKind::Regular,
+                executable: false,
+            },
+            RevisionEntry {
+                path: "givn/specs/a.md".to_string(),
+                kind: EntryKind::Regular,
+                executable: false,
+            },
+        ];
+        let placement = partition(&declaration, &entries, &full_replacement(), "abc123")
+            .expect("the fixture revision partitions");
+        let counts = placement.counts();
+        assert_eq!(
+            counts.retained, 2,
+            "the declaration and its role match are two entries"
+        );
+        assert_eq!(counts.retained, placement.retained_paths().len());
+        assert!(
+            placement
+                .retained_paths()
+                .iter()
+                .any(|path| path == DECLARATION_PATH),
+            "the retained set does not hold the declaration"
+        );
+        let blobs: BTreeMap<String, Vec<u8>> = entries
+            .iter()
+            .map(|entry| (entry.path.clone(), Vec::new()))
+            .collect();
+        let identities =
+            super::super::record::identities(placement.retained_paths(), &entries, &blobs)
+                .expect("every retained path is listed at the revision");
+        assert_eq!(counts.retained, identities.len());
+    }
 }

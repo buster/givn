@@ -17,21 +17,21 @@ Feature: Clean-room preparation
     And  the trial omits "src/keys/parser.rs" and "notes.md"
     And  the receipt records the replacement revision, the backend, the replaced paths, the counts, the replaced digest, the written path, and the Givn version
 
-  @givn.added @wip
+  @givn.added
   Scenario: The trial carries the declaration when no role names it
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     When  the developer prepares a trial from "HEAD" with a full replacement
     Then  preparation succeeds
     And  the trial holds "givn/specification.yaml"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The trial record lists the declaration in its retained set
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     When  the developer prepares a trial from "HEAD" with a full replacement and a receipt
     Then  preparation succeeds
     And  the receipt lists "givn/specification.yaml" in its retained set
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a replacement path that names the declaration
     Given  a Git project with ise enabled and a declaration that sources "givn/**"
     And  a committed revision with "src/kept.rs"
@@ -39,7 +39,7 @@ Feature: Clean-room preparation
     Then  preparation fails and names "givn/specification.yaml" as retained
     And  the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a directory that contains the declaration
     Given  a Git project with ise enabled and a declaration that sources "givn/**"
     And  a committed revision with "givn/notes.md"
@@ -71,7 +71,7 @@ Feature: Clean-room preparation
     Then  preparation fails and names "givn/specification.yaml" and the loader's reason
     And  the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: A full replacement keeps the declaration under a source root
     Given  a Git project with ise enabled and a declaration that sources "givn/**"
     And  a committed revision with "givn/notes.md"
@@ -80,7 +80,7 @@ Feature: Clean-room preparation
     And  the trial holds "givn/specification.yaml"
     And  the trial omits "givn/notes.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A role that matches the declaration counts it once
     Given  a Git project with ise enabled and a declaration whose "contracts" role names "givn/**"
     And  a committed revision with "givn/specs/a.md"
