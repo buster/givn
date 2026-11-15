@@ -12,17 +12,16 @@ instruction-id reference check over served guidance. The delta holds 14
 declarations (13 `@givn.added`, one `@givn.modified`, none `@givn.removed`)
 and 29 executed rows.
 
-The implementation evidence is mostly sound: the six stack ids serve, the two
-core instructions name each id with its load condition and carry no stack
-body, the reference check resolves every shipped direction, and the review
-guidance keeps its full obligation set. Two findings block sign-off:
+The implementation evidence is sound: the six stack ids serve, the two core
+instructions name each id with its load condition and carry no stack body, the
+reference check resolves every shipped direction, and the review guidance
+keeps its full obligation set. The first pass recorded two blockers: the delta
+support fragment restated the rejected `ise` rule, and the `steps-go` body row
+did not discriminate its empty-body stub. Both were fixed and re-verified in
+the closure of 2026-11-15 (commits `c5719a40` and `0cc81208`). One minor is
+accepted with its reason: M1, a marker that also binds a section heading.
 
-1. the delta support fragment still states the rejected `ise` rule (the ise
-   instruction cannot name the project's runner's stack instruction);
-2. the `steps-go` body row does not discriminate its empty-body stub, because
-   the stub cell token also appears in the strict-mode row.
-
-The verdict is `REVIEW: FAIL`; both findings need the author.
+The verdict is `REVIEW: PASS`.
 
 ## Step 0 implementation evidence check
 
@@ -202,22 +201,23 @@ With the tree restored after each probe (`git status --short` empty):
 | Policy id carrying `--change` | append `givn instructions dialog --change <id>` to `steps.md` | fails naming `dialog` and the ignored context | failed: ``givn instructions dialog`: ... names `--change instruction-integrity`, which the CLI ignores` |
 | Artifact id without `--change` stays silent | run `A policy instruction named with a change context is a finding` (its second Given appends `givn instructions proposal`) | no finding for `proposal` | passed; `it reports no finding for "proposal"` |
 | Load-condition mapping | swap `steps-go`'s runner to `cucumber-js` in `steps.md`, run the load-condition outline | the `steps-go` row fails | failed on ``the served text names "steps-go" ... "godog"`` |
-| Stack-body assertion | delete the `Strict mode` row from `steps-go.md`, run the body outline | the row fails | failed on the missing backticked `godog.ErrPending` (the next assertion in the row) |
-| Stub-row discrimination | delete `Unimplemented body: return godog.ErrPending` from `steps-go.md`, run the body outline | the row fails | **6/6 rows passed** — finding F2 |
+| Stack-body assertion | delete the `Strict mode` row from `steps-go.md`, run the body outline | the row fails | failed on `the served text carries "fails by default"` (post-fix probe, 2026-11-15) |
+| Stub-row discrimination | delete `Unimplemented body: return godog.ErrPending` from `steps-go.md`, run the body outline | the row fails | failed on ``the served text carries "`return godog.ErrPending`"`` (post-fix probe, 2026-11-15) |
 | ADR register count | add a second accepted row to `docs/arc42/adr/README.md`, run both scopes | both fail `left: 30 right: 29` | delta: 30 vs 29; permanent: 30 vs 29 |
 | Register baseline | restore the register; delta receives 29/29, permanent row green | passes | receipt `4eb829d9` 29/29; resume probe green |
 
 ### 12. Step 0 findings
 
-- **F2 (bucket 2, missing test coverage).** The `steps-go` row of
-  `Every stack instruction is served only on its own request with its runner
-  body` does not assert the stub row. The Examples cell is
-  `` `godog.ErrPending` `` (`serve-extended-rules.feature:83`), and the only
-  backticked occurrence in `assets/instructions/steps-go.md` is the strict row
-  (`:7`); the stub row is `` `return godog.ErrPending` `` (`:6`). Deleting the
-  stub row leaves the row green. The fix is the Examples cell
-  `` `return godog.ErrPending` `` (or a separate unique stub token), followed by
-  a RED/GREEN run of the outline.
+- **F2 (bucket 2, missing test coverage) — closed 2026-11-15.** The first
+  pass found that the `steps-go` row of `Every stack instruction is served only
+  on its own request with its runner body` did not assert the stub row: the
+  Examples cell `` `godog.ErrPending` `` (`serve-extended-rules.feature:83`)
+  was satisfied by the strict row (`assets/instructions/steps-go.md:7`) and
+  deleting the stub row left the outline green. The stub cell is now
+  `` `return godog.ErrPending` ``; the reviewer re-ran both deletion probes:
+  deleting the stub row fails on ``the served text carries "`return godog.ErrPending`"``,
+  deleting the strict row fails on `the served text carries "fails by default"`.
+  Fix commit `0cc81208`.
 - No other Step 0 finding.
 
 ## Arc42 implementation conformance
@@ -261,12 +261,13 @@ Stack recipe`, and one domain sentence. The specs, design, `ise.md`, and the
 scenario titles reuse the term. The code symbol is the id set
 (`POLICY_INSTRUCTION_IDS`), not a new noun.
 
-Finding F1 (below) is a use-case-contract contradiction: the delta support
-fragment says the ise instruction names the stack instruction for the
-project's runner, while the use case, design D6, `ise.md`, and the delta
-scenario state that it names `steps` as the mapping and `steps-rust` as one
-worked example. That is one authoritative rule versus a second, false
-statement, and it will merge into the permanent fragment.
+The first pass found one use-case-contract contradiction: the delta support
+fragment restated the rejected rule that the ise instruction names the
+project's runner's stack instruction. The sentence is now the settled rule
+(`steps` as the mapping, one worked stack id as an example, `design` and
+`proposal` as the record owners; every named id resolves while `ise` is
+effective), matching `usecase.md:66`, design D6, `assets/instructions/ise.md`,
+and the delta scenario. Closed by `c5719a40` on 2026-11-15.
 
 ## Structural model
 
@@ -293,11 +294,12 @@ Static classification:
 | `tests/common/instruction_references.rs` | test support, outside the measured production population | exercised by the three `instruction-integrity` scenarios |
 | Six stack asset files | guidance corpus, outside the code population | body outline asserts binding, stub, strict, command per stack |
 | Redundant unit tests | none added | every new assertion drives the built binary through the black-box boundary |
-| `steps-go` stub row | **bucket 2, missing test coverage** (F2) | probe: deleting the stub row leaves the body outline green |
+| `steps-go` stub row | covered; the first-pass gap is closed | post-fix probes: deleting the stub row fails naming `` `return godog.ErrPending` ``; deleting the strict row fails naming `fails by default` (2026-11-15) |
 
-Coverage is not complete: the F2 gap is classified and unresolved. No gap is
-classified outside the three buckets, no branch instrumentation was removed,
-and no line-only report is used.
+No gap remains from static inspection. The measured line/branch result is not
+yet available; the archive receipt carries it against the committed candidate.
+No gap is classified outside the three buckets, no branch instrumentation was
+removed, and no line-only report is used.
 
 ## Visual Review
 
@@ -317,7 +319,7 @@ served output:
 |---|---|---|---|
 | `agent--technical-role` | load only its runner's mechanics | none: the core names the id and condition, the stack id serves the body | accepted |
 | `developer--primary-user` | read the rules without every stack's rows | none: the core text is complete for a change that touches no named stack | accepted |
-| `givn-maintainer--owner` | one owner per rule; a dangling id fails by name | none on the served surface; the stale delta-fragment rule is F1, recorded under use-case conformance | F1 blocks; served surface passes |
+| `givn-maintainer--owner` | one owner per rule; a dangling id fails by name | none: the core carries no stack body, each stack body has one owner, and the reference check names a dangling id | accepted; the first-pass fragment contradiction is closed |
 
 PERSONAS: agent--technical-role
 
@@ -327,20 +329,20 @@ VISUAL-REVIEW: PASS
 
 | Contract | Evidence | Pass? |
 |---|---|---|
-| Owning use-case guarantees and rules preserved | `obtain-effective-guidance` main flow 1-6, rules, success guarantee; `support` fragment | no: F1 (fragment rule contradicts the use case and implementation) |
+| Owning use-case guarantees and rules preserved | `obtain-effective-guidance` main flow 1-6, rules, success guarantee; `support` fragment; the corrected ise sentence | yes (F1 closed 2026-11-15) |
 | Capability ownership and typed relationships preserved | `serve-extended-rules`, `instruction-integrity`, `adr-qualification-gate` ownership unchanged; delta adds no capability | yes |
 | Confirmed Persona-relevant outcomes preserved | three Personas dispositioned above | yes |
 | Actors remain distinct from Persona biographies | Gherkin actors are the authoring agent/developer; Personas are review lenses | yes |
 | Migration ledger and coverage evidence complete, if applicable | register count 29; no data migration; coverage pending archive | yes |
 
-The failure is F1: `specs/fragments/fragment.md:89` reads "The `ise`
-instruction names the stack instruction for the project's runner and the two
-record owners". The owning use case (`usecase.md:66`) states it names `steps`
-as the mapping and one stack instruction id as a worked example; `design.md`
-D6 rejects the runner-specific claim because a static addon instruction cannot
-know the runner; `assets/instructions/ise.md:34-36` implements the mapping;
-the delta scenario asserts the same. The sentence merges into the permanent
-support fragment at archive.
+The first-pass failure is closed: `specs/fragments/fragment.md:89` now reads
+"The `ise` instruction names `steps` as the mapping for the change's stack
+mechanics, names one stack instruction id as a worked example, and keeps
+`design` and `proposal` as the record owners; every id it names is served
+while `ise` is effective." That matches the owning use case (`usecase.md:66`),
+`design.md` D6, `assets/instructions/ise.md`, and the delta scenario. The
+delta's `givn:base-sha256` still equals the permanent fragment's full-file
+sha256 (`743c12e6…`), so the base did not move.
 
 ## Deterministic gate dispositions
 
@@ -377,50 +379,47 @@ recorded in `design.md` and `design-review.md`.
 
 ## Findings
 
-### F1 — the delta support fragment restates the rejected ise rule (blocker)
+### F1 — the delta support fragment restated the rejected ise rule (closed 2026-11-15)
 
-- Location: `givn/changes/split-stack-instructions/specs/fragments/fragment.md:89`.
-- Evidence: the sentence claims the ise instruction names the stack
-  instruction for the project's runner; `usecase.md:66`,
-  `design.md:198-206` (D6), `design-review.md` decision 3, `assets/instructions/ise.md:34-36`,
-  and `instruction-integrity.feature:38-46` all state `steps` plus one worked
-  example. The sentence is not covered by a scenario and will merge into
-  `givn/specs/fragments/fragment.md`.
-- Required action: correct the sentence to the mapping-plus-worked-example
-  rule in a spec batch with its own commit, then rerun the affected delta and
-  permanent scenarios. This is a spec edit; the reviewer does not make it.
+- Fix commit: `c5719a40` — `fix(spec): name the ise stack mapping instead of a
+  project runner`.
+- The sentence at `specs/fragments/fragment.md:89` now names `steps` as the
+  mapping, one worked stack instruction id, and `design`/`proposal` as the
+  record owners, matching `usecase.md:66`, design D6, and
+  `assets/instructions/ise.md`.
+- Reviewer verification: the corrected sentence was read against all four
+  sources; the delta `ise` scenario passes (1 scenario, 6 steps); the full
+  delta scope is 29/29; and the delta's `givn:base-sha256` still equals the
+  permanent fragment's full-file sha256 (`743c12e6…`), so the base did not
+  move.
 
-### F2 — the steps-go body row does not assert its stub (blocker, bucket 2)
+### F2 — the steps-go body row did not assert its stub (closed 2026-11-15, bucket 2)
 
-- Location:
-  `givn/changes/split-stack-instructions/specs/obtain-effective-guidance/serve-extended-rules.feature:83`
-  (stub cell `` `godog.ErrPending` ``) against
-  `assets/instructions/steps-go.md:6-7`.
-- Evidence: the strict row contains the only backticked
-  `` `godog.ErrPending` ``; the stub row is `` `return godog.ErrPending` ``.
-  Deleting the stub row left all 6 rows green; deleting the strict row failed
-  on the stub assertion, proving the assertion was satisfied by the strict
-  row.
-- Required action: change the Examples stub cell to
-  `` `return godog.ErrPending` `` (or another stub-only token), rerun the
-  outline RED before the change and GREEN after, and record the commit on the
-  `stack-bodies` scenario.
+- Fix commit: `0cc81208` — `fix(spec): discriminate the steps-go stub row from
+  its strict row`.
+- The Examples stub cell is now `` `return godog.ErrPending` ``, a token only
+  the stub row carries (`assets/instructions/steps-go.md:6`).
+- Reviewer verification (re-run, not accepted from the report): baseline 6/6
+  green; deleting the stub row fails naming
+  ``the served text carries "`return godog.ErrPending`"``; deleting the strict
+  row fails naming `the served text carries "fails by default"`. Both asset
+  edits were restored and `git status --short` is empty.
 
-### M1 — marker `no fourth bucket` also matches a section heading (minor, no repair)
+### M1 — marker `no fourth bucket` also matches a section heading (accepted minor)
 
 - Location: `assets/instructions/review.md:349` (heading
   `## Classification (three buckets — no fourth bucket)`) and `:499`
   (sign-off bullet).
-- Effect: the marker would still pass if only the sign-off bullet were
-  deleted. The obligation itself remains at its canonical statement in the
-  classification section, so no review obligation is lost; the scenario is a
-  presence check, not a per-bullet discriminator. No artifact edit is required
-  for this change.
+- Accepted as a minor: the marker would still pass if only the sign-off bullet
+  were deleted, but the obligation remains at its canonical statement in the
+  classification section, so no review obligation is lost. No artifact edit is
+  required.
 
 ## Review gate
 
 ```text
 $ givn check review --change split-stack-instructions
+  ✓ integrity checks passed
   ✓ run declaration passed
   [SHAPE] advisory ... 'The machine-readable ise path carries the same content as the text path'
           and 'The machine-readable stack path carries the same content as the text path' share a shape
@@ -428,31 +427,30 @@ $ givn check review --change split-stack-instructions
   net delta: 13 added, 1 modified, 0 removed
   ✓ overlap dispositions passed
   ✓ scenario commits passed (14 scenario(s))
-  ✓ change verification receipt reused across documentation-only revision fb0520db (tested at 4eb829d9, 29 scenario(s))
-error: review checks failed:
-  integrity checks failed:
-  review.md actual verdict is FAIL
-exit 1
+  ✓ change verification receipt reused across documentation-only revision d3da0d62 (tested at 0cc81208, 29 scenario(s))
+  ✓ scenario commits passed (14 scenario(s))
+exit 0
 ```
 
-The only gate failure is the recorded verdict. The author's fixes for F1 and
-F2 are followed by a re-review that flips the verdict.
+The closure re-ran the gate after the verdict flip. The reuse line names the
+pre-commit HEAD; this review commit changes only documentation, so the receipt
+at `0cc81208` still covers the tested content.
 
 ## Sign-off
 
-- [ ] Fabrication audit clean: step bodies and commits verified, all promised
+- [x] Fabrication audit clean: step bodies and commits verified, all promised
       components exist, no downgraded `@e2e`, no delta `@e2e` driven by
-      HTTP/fetch — **F2 blocks** (the `steps-go` stub row is not
-      discriminated).
+      HTTP/fetch, no over-produced e2e scope. The `steps-go` stub row is
+      discriminated by the post-fix probe.
 - [x] Every checked task has a verified commit touching per-batch production
       code or its regression test.
 - [x] Every consumer uses only its declared contract.
 - [x] Strict-mode proof present and passing.
 - [x] Scenario execution evidence recorded in the change receipt; review did
       not rerun the suite.
-- [ ] Coverage classification complete: **F2 is an unresolved bucket-2 gap**;
+- [x] Coverage classification complete: no gap remains from static inspection;
       the archive receipt will carry the measured result.
-- [x] Dead code deleted / none added. Missing tests added except F2.
+- [x] Dead code deleted / none added. Missing tests added.
       Hard-to-test gaps: none claimed.
 - [x] Redundant unit tests removed / none added.
 - [x] No `@wip` tags remain. No implementation-layer detail in the delta spec.
@@ -472,18 +470,16 @@ F2 are followed by a re-review that flips the verdict.
 - [x] Interaction coverage maps every inventory entry to a matrix row, an
       existing `@e2e` scenario, and the promised driver.
 - [x] No finding is excused with a classification outside the three buckets.
-- [ ] Use-case conformance: **F1 remains** (the delta fragment contradicts the
-      use case and implementation).
+- [x] Use-case conformance: F1 is closed; the corrected delta sentence matches
+      the use case, design D6, and `ise.md`.
 - [x] Arc42 conformance: clean.
 - [x] README impact decision recorded: `none`.
 - [x] No deferrals.
 
-REVIEW: FAIL
+The first-pass verdict was FAIL. Both blockers are fixed by the author and
+re-verified by the reviewer on 2026-11-15; the evidence is below.
 
-## Finding closure
-
-Both blockers are fixed by the author. The verdict line above is unchanged; the
-re-review decides it.
+## Finding closure (2026-11-15)
 
 ### F1 — the delta support fragment restated the rejected `ise` rule
 
@@ -527,7 +523,23 @@ re-review decides it.
 - **Commit.** `0cc81208` — `fix(spec): discriminate the steps-go stub row from
   its strict row`.
 
-### Closure verification
+### Reviewer re-verification (2026-11-15)
+
+- **F1.** Read the corrected sentence against `usecase.md:66`, design D6,
+  `assets/instructions/ise.md`, and the delta scenario; the sentence states the
+  mapping, one worked id, and the two record owners. The delta ise scenario
+  passed 1/1 (6/6 steps). `sha256sum givn/specs/fragments/fragment.md` is
+  `743c12e6…`, equal to the delta's `givn:base-sha256`, so the base did not
+  move.
+- **F2.** Baseline body outline 6/6; deleting the stub row failed naming
+  ``the served text carries "`return godog.ErrPending`"``; deleting the strict
+  row failed naming `the served text carries "fails by default"`; the asset was
+  restored and `git status --short` is empty.
+- **Delta scope.** `cargo test --locked --test features_runner` with
+  `GIVN_FEATURES=givn/changes/split-stack-instructions/specs` -> 3 features,
+  29 scenarios (29 passed), 190 steps (190 passed).
+
+### Closure verification (author-recorded)
 
 ```text
 GIVN_FEATURES=givn/changes/split-stack-instructions/specs ./run-tests.sh --non-e2e
@@ -549,3 +561,5 @@ The changed features re-run the receipt: the F1 and F2 edits change the delta
 feature digest, so the previous receipt at `4eb829d9` no longer covered the
 candidate. The refreshed receipt tests `0cc81208` with 29 rows, 0 failed, and
 0 skipped.
+
+REVIEW: PASS
