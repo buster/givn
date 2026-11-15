@@ -205,39 +205,67 @@ a statement reality contradicts is corrected in that batch.
 
 ## Setup
 
-- [ ] Read the owning `specs/obtain-effective-guidance/usecase.md` (goal, main
+- [x] Read the owning `specs/obtain-effective-guidance/usecase.md` (goal, main
       flow, extensions, rules, success guarantee, Personas, Interactions), the
       `support` fragment, and the seed
       `givn/ideation/ise-rebuildability/changes/split-stack-instructions.md`
       before binding any step. Domain constraints are in `## Domain
       Constraints` above.
       ```
-      paste: the use-case sections read, and the constraint each batch carries
+      read: usecase.md Goal, Main flow 1-6, Extensions (9), Rules (all),
+        Success guarantee, Personas, Interactions, Includes, Out of scope;
+        specs/fragments/fragment.md `support`; seed Guarantee, Capabilities
+        delivered, Q15, and the open question "Which stack instructions ship".
+      constraint each batch carries:
+        serve-extended-rules: `steps`/`design` name each stack id with its
+          load condition and carry no stack body; `specs`/`review` name none;
+          `tasks`/`tasks-reverse` point at `steps`; a stack body is served only
+          on its own id; the unknown-id refusal lists the known ids including
+          the stack ids; text and JSON carry identical content.
+        instruction-integrity: every direction resolves in the context it
+          needs (artifact with a change, policy without one); one owner per
+          rule; `ise` names `steps`, one worked id, and the two record owners;
+          `review` keeps every obligation on one stable marker.
+        adr-qualification-gate: the register counts 29 accepted, 0 proposed.
       ```
 
-- [ ] Confirm the runner and both commands; change neither. No runner is
+- [x] Confirm the runner and both commands; change neither. No runner is
       installed and no dependency is added: cucumber-rs 0.23.0 as `Cargo.lock`
       pins it, already wired through `tests/features_runner.rs` with
       `.fail_on_skipped()` at both registration points.
       ```
       verify.command:     ./run-tests.sh --non-e2e
       verify.e2e_command: ./run-tests.sh --e2e
-      regular scope: not @e2e and not @givn.removed
-      e2e scope:     @e2e and not @givn.removed
-      paste: grep -n 'fail_on_skipped' tests/features_runner.rs  -> lines 55 and 155
+      regular scope: not @e2e and not @givn.removed   -> 1321 units
+      e2e scope:     @e2e and not @givn.removed       -> 118 units
+      $ grep -n 'fail_on_skipped' tests/features_runner.rs
+      55:        .fail_on_skipped()
+      155:        .fail_on_skipped()
       ```
 
-- [ ] Proof-of-strictness. Write one scratch feature outside the delta scope
+- [x] Proof-of-strictness. Write one scratch feature outside the delta scope
       with one unbound step and run it through both the change-scoped runner
       and the `--exact` path this file uses; confirm non-zero exit on each.
       Then delete the scratch feature and confirm the permanent suite still
       exits 0 apart from Contradiction 2.
       ```
-      paste: both commands, the non-zero exits, the skipped/failed counts,
-      and the two deltas' current scenario counts
+      scratch: target/strict-probe/probe.feature, one scenario, two unbound
+        steps (Given/Then).
+      A: GIVN_FEATURES=target/strict-probe cargo test --locked \
+           --test features_runner
+         -> 1 feature, 1 scenario (1 failed), 1 step (1 failed)
+            "Step doesn't match any function"; exit 1
+      B: GIVN_FEATURES=target/strict-probe cargo test --locked \
+           --test features_runner -- --exact \
+           "probe.feature::Probe strictness probe scenario"
+         -> 1 scenario (1 failed); panic "1 step failed"; exit 101
+      scratch deleted (rm -rf target/strict-probe) in this batch; no tracked
+      file changed, so the permanent and e2e counts above are unchanged
+      (Contradiction 2 landed in c6b9eb6b and is green).
+      delta scope: 29 executed rows from 14 declarations, three 6-row Outlines.
       ```
 
-- [ ] Confirm the binding inventory before writing steps. Reuse these existing
+- [x] Confirm the binding inventory before writing steps. Reuse these existing
       bindings and never rebind a phrase (a duplicate registration panics the
       runner):
       - `a Givn project with an active change`:
@@ -253,11 +281,80 @@ a statement reality contradicts is corrected in that batch.
       line-wrapped: assert a fragment that fits one line, or normalize
       whitespace before comparing.
       ```
-      paste: the phrase-to-binding map for the 60 unbound delta phrases, and
-      the duplicate check (each phrase bound exactly once)
+      90 delta phrases; 27 already bound, 63 need a binding. Reused exactly
+      once each (no duplicate registration):
+        a Givn project with an active change
+          -> instruction_integrity_e2e_steps.rs:21
+        the author requests the design instructions through the Givn CLI
+          -> instruction_integrity_steps.rs:1392 (--change instruction-integrity)
+        the command exits 0 / non-zero -> steps/mod.rs:630,669
+        stderr names "steps-rustt" -> archive_proof_steps.rs:742 (regex)
+        the machine-readable instruction field equals the served text
+          -> serve_extended_rules_steps.rs:1536 (previous_output vs last_output)
+        the ADR scenario's 10 phrases -> adr_qualification_gate_steps.rs
+      New bindings by owning file:
+        serve_extended_rules_steps.rs request/assert steps:
+          the author requests the steps instructions through the Givn CLI
+          the author has requested the steps instructions
+          the author requests "<id>"                        (regex, shared)
+          the author requests "steps-rust" as machine-readable output
+          the author requests the specs and review instructions ...
+          the author requests the tasks and reverse-engineering tasks ...
+          the served text names "<id>" when the change's runner is "<runner>"
+          the served text carries "<x>"                     (regex, shared by
+                                                             15 Thens)
+          the served text carries no bare "<id>" direction without that
+            condition
+          the previously served steps text carries none of the stub, strict
+            mechanism, or run command
+          the previously served steps text carries no per-runner binding
+            instruction
+          stderr lists the known instruction ids including "steps-rust"
+          absence Thens, one binding each: no per-runner step-definition path;
+          no empty-body stub form; no per-runner binding instruction; still
+          requires one step definition file per capability; keeps the archive
+          binding-token list; no per-runner strict-mode mechanism; no
+          per-stack single-scenario run command; still requires the runner's
+          strict-mode proof; neither served text names a stack instruction;
+          neither served text carries a per-runner mechanism; neither served
+          text carries a per-runner step path, stub, or strict mechanism; both
+          served texts still require the strict-mode proof; the tasks text
+          names "steps" as the stack mapping
+        instruction_integrity_steps.rs:
+          a Givn project with an active change and the guidance reference
+            check available
+          a Givn project with the ise addon enabled and the guidance
+            reference check available
+          a steps instruction override that names "steps-rustt"
+          a served instruction names "proposal" without a change context
+          a served instruction names "steps" with a change context
+          the maintainer runs the guidance reference check over every served
+            instruction
+          the maintainer runs the guidance reference check over the served
+            steps guidance
+          the maintainer runs the guidance reference check over the served
+            guidance
+          the maintainer requests the ise instruction and runs the reference
+            check over it
+          the maintainer requests the review instructions through the Givn CLI
+          the check fails; the check names no unresolved instruction id;
+          every named instruction id resolves
+          every instruction id a served instruction names resolves in the
+            context that instruction needs
+          every instruction id an effective addon instruction names resolves
+          it names "steps-rustt"; it names "steps" and the extra change
+            context; it reports no finding for "proposal"
+          the served text names "steps" as the mapping for the change's stack
+            mechanics; the served text names "steps-rust" as one stack
+            instruction example; the served text names the artifact
+            instruction that owns the change-strategy record and the one that
+            owns the spec-gap record
+      duplicate check: one binding per phrase; the two shared regexes
+      (`the author requests "<id>"`, `the served text carries "<x>"`) are
+      declared once and serve every Examples row.
       ```
 
-- [ ] Record the shared absence token sets in
+- [x] Record the shared absence token sets in
       `tests/steps/serve_extended_rules_steps.rs` as `pub(crate)` constants,
       exactly these members; batches `stack-load-conditions`, `stack-bodies`,
       `core-absence`, and `tasks-guidance` reuse them:
@@ -281,7 +378,15 @@ a statement reality contradicts is corrected in that batch.
       never fires on it. `bare pass`, `{}`, `return`, and "strict-mode" as
       prose are universal wording, not per-runner mechanisms.
       ```
-      paste: the constant block and the one place each set is asserted
+      placement correction: a setup-only constant block is dead code —
+      `cargo clippy --all-targets -- -D warnings` fails with 7 "never used"
+      errors and an `#[allow(dead_code)]` would only hide it. Each set is
+      therefore declared in the batch that first asserts it:
+        STRICT_MECHANISMS, RUN_COMMANDS  -> batch stack-load-conditions
+        STUB_FORMS, BINDING_BULLETS      -> batch stack-bodies
+        STEP_PATHS, STACK_IDS, RUNNERS   -> batch core-absence
+      Members are exactly the list above; every set is `pub(crate)` in
+      `tests/steps/serve_extended_rules_steps.rs` from its first use on.
       ```
 
 - [ ] COMMIT: `<hash>` -- Batch: `setup`
@@ -305,7 +410,7 @@ true.
 **Files modified:** `givn/changes/split-stack-instructions/design.md`,
 `givn/changes/split-stack-instructions/design-review.md`.
 
-- [ ] Correction 1, `design.md:14-17`. The overview claims registration is what
+- [x] Correction 1, `design.md:14-17`. The overview claims registration is what
       makes `givn instructions steps-rust` resolve. It is not:
       `crate::config::cascade::resolve_instruction` tries
       `givn/artifacts/<id>/instructions.md`, then the embedded
@@ -318,12 +423,29 @@ true.
       while resolution itself already comes from the embedded
       `instructions/<id>.md` fallback.
       ```
-      paste: the corrected paragraph, the before/after command evidence
-      (`givn instructions steps-rust` exit 0; `givn instructions steps-rustt`
-      known list without `steps-rust`), and the source lines cited
+      corrected item 2 (design.md:15-22): "registers the six stack ids as
+      policy instruction ids, so a stack id is a policy instruction id with no
+      change context and the unknown-id refusal lists it. Reachability is not
+      what registration buys: resolve_instruction (src/config/cascade.rs:55-80)
+      already falls back to the embedded instructions/<id>.md asset, so `givn
+      instructions steps-rust` serves before the ids are registered. The
+      registration adds the six ids to the known list the refusal builds
+      (src/cli/instructions.rs:83-95) and changes no resolution path."
+      evidence before the production change:
+        $ ./target/debug/givn instructions steps-rust  -> exit 0,
+          "# Instruction: steps-rust / `cucumber-rs` mechanics."
+        $ ./target/debug/givn instructions steps-rustt -> exit 1,
+          "unknown artifact 'steps-rustt'. Known artifacts: proposal, specs,
+           design, design-review, tasks, review, arc42-docs, start, dialog,
+           dialog-examples, challenge, dev-principles, domain-modeling,
+           architecture-principles, review-reverse, specs-reverse,
+           tasks-reverse, ise"   (no stack id)
+      source: src/config/cascade.rs:55-80 resolve_instruction (override,
+      embedded instructions/<id>.md, addon); src/cli/instructions.rs:83-95 the
+      known list = manifest ids + POLICY_INSTRUCTION_IDS.
       ```
 
-- [ ] Correction 2, `design.md` `## Operator decision: no corpus line cap` and
+- [x] Correction 2, `design.md` `## Operator decision: no corpus line cap` and
       `design-review.md` `## Operator decision`. Both enumerate the restored
       `review.md` items as "Step 0 items 0, 8, 9, 11, and 12". The restored
       text carries six items:
@@ -331,28 +453,41 @@ true.
       (10), `:191` (11), `:215` (12). Change both enumerations to
       "Step 0 items 0, 8, 9, 10, 11, and 12".
       ```
-      paste: both corrected sentences and the six `review.md` line numbers
+      design.md:229 "the corpus cap required deleting the Step 0 items 0, 8, 9,
+      10, 11, and 12, the ..."
+      design-review.md:181 "(the consolidation had deleted Step 0 items 0, 8, 9,
+      10, 11, and 12, the ..."
+      review.md: 92 = item 0, 161 = 8, 166 = 9, 174 = 10, 191 = 11, 215 = 12;
+      611 lines total.
       ```
 
-- [ ] Record the corrigenda in `design-review.md` under the operator-decision
+- [x] Record the corrigenda in `design-review.md` under the operator-decision
       note: two factual corrections, no decision, scenario, command, file path,
       or arc42 statement changed; the delta features and the arc42 chapter
       table are unaffected. If the implementer judges correction 1
       decision-bearing, stop and have `design-review` re-run before batch 2.
       It is not: it restates how an existing code path resolves.
       ```
-      paste: the added corrigendum paragraph
+      added: design-review.md `## Design corrigenda` (after
+      `## Operator correction`), stating both corrections, the before/after
+      evidence, and that no decision, scenario, command, file path, or arc42
+      statement changes, so `design-review` does not re-open.
       ```
 
-- [ ] Verify: `givn status --change split-stack-instructions` still reports
+- [x] Verify: `givn status --change split-stack-instructions` still reports
       `design` and `design-review` present, and
       `givn lint --change split-stack-instructions` still reports the 14 `@wip`
       findings with no parse or shape-blocking finding.
       ```
-      paste: both command outputs
+      `givn status --change split-stack-instructions`  -> exit 0, artifacts
+        proposal ✓ specs ✓ design ✓ arc42-docs ✓ design-review ✓, tasks 5/96;
+        `design` and `design-review` still present after the corrections.
+      `givn lint --change split-stack-instructions`   -> exit 0, "3 file(s)
+        checked, 14 finding(s)": the 14 @wip findings plus [SUBST] advisories,
+        no parse or shape-blocking finding.
       ```
 
-- [ ] COMMIT: `<hash>` -- Batch: `design-corrigenda`
+- [x] COMMIT: `508c76e8` -- Batch: `design-corrigenda`
 
 ### Batch 2: `reference-check`
 
@@ -425,26 +560,48 @@ Check"):**
       the plausible-wrong implementation this leg detects; report it instead
       of editing the assets.
     - Step file: `tests/steps/instruction_integrity_steps.rs`.
-  - [ ] TESTS: bind the three Thens and the new Given; record the observed
+  - [x] TESTS: bind the three Thens and the new Given; record the observed
         result.
         ```
-        RED: <single-scenario command>
-        → paste: the unbound-step failure (the module does not exist yet), and
-          after the rule lands, the finding list showing no finding for the six
-          artifact directions
+        command: GIVN_FEATURES=givn/changes/split-stack-instructions/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "fragments/instruction-integrity.feature::Every instruction id a
+           served instruction names resolves"
+        No pre-change RED exists: the component did not exist. The first run
+        of the new component failed on the check's own first result:
+          design:135 — `givn instructions specs`: is served in change `<id`,
+          but the request failed: error: change id must be kebab-case ... '<id'
+        (the direction's `--change <id>` placeholder was truncated to `<id` by
+        the moved `named_change`; it now returns the bracketed placeholder and
+        the caller substitutes the fixture's active change).
+        After the fix: 5 steps (5 passed); the finding list for the six corpus
+        directions is empty.
         ```
-  - [ ] IMPLEMENTATION + GREEN: files created/modified as listed above.
+  - [x] IMPLEMENTATION + GREEN: files created/modified as listed above.
         ```
-        paste: the same command; state plainly whether it passed, and which
-        findings remain
+        created: tests/common/instruction_references.rs (309 lines), registered
+        in tests/common/mod.rs; tests/common/mod.rs gains `run_givn_at` +
+        `givn_command` (the shared cwd/env invariant `run_givn_with_envs_in`
+        now reuses); tests/steps/instruction_integrity_steps.rs gains the
+        reference-check steps and projects the moved extractor to ids;
+        tests/steps/instruction_integrity_e2e_steps.rs makes the shared
+        `a Givn project with an active change` binding pub(crate).
+        same command: 1 scenario (1 passed), 5 steps (5 passed). No finding
+        remains; the artifact, policy, and addon legs all graded.
         ```
-  - [ ] REFACTOR: clean up, no behavior change; re-run.
+  - [x] REFACTOR: clean up, no behavior change; re-run.
         ```
-        paste: fmt/clippy and the re-run
+        cargo fmt --all                      -> clean
+        cargo clippy --locked --all-targets -- -D warnings -> exit 0
+        re-run: 1 scenario (1 passed)
+        also re-ran the two permanent consumers of the moved extractor:
+        "Every instruction id named by generated guidance resolves through the
+        Givn CLI" and "Every generated direction is invokable in its documented
+        context" -> 1 passed each.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `reference-check`
+  - [x] COMMIT: `4507387f` -- Batch: `reference-check`
 
-- [ ] Scenario: `A dangling stack instruction id fails the reference check by name`
+- [x] Scenario: `A dangling stack instruction id fails the reference check by name`
   - Design constraints:
     - Fixture: `write_override(env, "steps", "instructions.md", …)` writes
       `givn/artifacts/steps/instructions.md` (project override, resolution step
@@ -458,26 +615,37 @@ Check"):**
       inference) reports no finding, so the first bound run fails on this
       assertion.
     - Step file: `tests/steps/instruction_integrity_steps.rs`.
-  - [ ] TESTS: bind the Given and the two Thens; record the observed failure.
+  - [x] TESTS: bind the Given and the two Thens; record the observed failure.
         ```
-        RED: <single-scenario command>
-        → paste: the assertion message of the plausible-wrong resolver (no
-          finding for `steps-rustt`), labelled as the first run of a new
-          component, not as a pre-change historical RED
+        command: GIVN_FEATURES=givn/changes/split-stack-instructions/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "fragments/instruction-integrity.feature::A dangling stack
+           instruction id fails the reference check by name"
+        First run of a new component (not a pre-change historical RED): with
+        the step grading the ASSET text instead of the served override, the
+        run failed at:
+          ✘ Then the check fails
+          "the reference check reported no finding over 1 served text(s)"
+        i.e. the plausible-wrong implementation that reads
+        assets/instructions/<id>.md reports nothing for the override's
+        `steps-rustt` direction.
         ```
-  - [ ] IMPLEMENTATION + GREEN: resolve by running the binary, so an unknown id
+  - [x] IMPLEMENTATION + GREEN: resolve by running the binary, so an unknown id
         fails by name.
         ```
-        paste: green run, 1 scenario passed, and the finding text naming
-        `steps-rustt` with its source line
+        1 scenario (1 passed), 5 steps (5 passed).
+        finding: "steps:2 — `givn instructions steps-rustt`: is served with no
+        change context, but the request failed: error: unknown artifact
+        'steps-rustt'. Known artifacts: proposal, specs, ... (`Request `givn
+        instructions steps-rustt` for the Rust mechanics.`)"
         ```
-  - [ ] REFACTOR: clean up, no behavior change; re-run.
+  - [x] REFACTOR: clean up, no behavior change; re-run.
         ```
-        paste
+        no change; cargo fmt/clippy clean; re-run: 1 scenario (1 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `reference-check`
+  - [x] COMMIT: `4507387f` -- Batch: `reference-check`
 
-- [ ] Scenario: `A policy instruction named with a change context is a finding`
+- [x] Scenario: `A policy instruction named with a change context is a finding`
   - Design constraints:
     - Fixture: an override of a policy instruction
       (`write_override(env, "steps", "instructions.md", …)`) whose served text
@@ -498,35 +666,52 @@ Check"):**
       artifact id without `--change` fails the `proposal` assertion, so one
       scenario discriminates both plausible-wrong implementations.
     - Step file: `tests/steps/instruction_integrity_steps.rs`.
-  - [ ] TESTS: bind the phrase and the two Thens; record the failure against the
+  - [x] TESTS: bind the phrase and the two Thens; record the failure against the
         context rule absent.
         ```
-        RED: <single-scenario command>
-        → paste
+        command: GIVN_FEATURES=givn/changes/split-stack-instructions/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "fragments/instruction-integrity.feature::A policy instruction named
+           with a change context is a finding"
+        With the policy-with-context branch disabled (context-blind check):
+          ✔ Given ...; ✔ And a served instruction names "proposal" without a
+          change context; ✔ And ... "steps" with a change context; ✔ When ...
+          ✘ Then the check fails
+          "the reference check reported no finding over 1 served text(s)"
+        The `proposal` leg alone passes under a context-blind check; the
+        `steps --change` leg is what discriminates it.
         ```
-  - [ ] IMPLEMENTATION + GREEN: the one-sided context rule in
+  - [x] IMPLEMENTATION + GREEN: the one-sided context rule in
         `unresolved_instruction_ids`.
         ```
-        paste
+        1 scenario (1 passed), 7 steps (7 passed).
+        finding: "steps:3 — `givn instructions steps`: is a policy instruction
+        and takes no change context; the direction names `--change demo`, which
+        the CLI ignores (`... `givn instructions steps --change demo` ...`)"
+        no finding for `proposal`: it resolved in the fixture's single active
+        change, as `run_artifact` auto-selects one.
         ```
-  - [ ] REFACTOR: clean up; re-run.
+  - [x] REFACTOR: clean up; re-run.
         ```
-        paste
+        no change; cargo fmt/clippy clean; re-run: 1 scenario (1 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `reference-check`
+  - [x] COMMIT: `4507387f` -- Batch: `reference-check`
 
-- [ ] Batch verification: run all three `--exact` commands plus
+- [x] Batch verification: run all three `--exact` commands plus
       `cargo fmt --all -- --check` and
       `cargo clippy --locked --workspace --all-targets -- -D warnings`.
       ```
-      paste: each command and its exit
+      three delta --exact runs: 1 scenario (1 passed) each
+      cargo fmt --all -- --check                          -> exit 0
+      cargo clippy --locked --workspace --all-targets -- -D warnings -> exit 0
       ```
 
-The batch commit waits on the Contradiction 1 disposition. Implement the other
-three scenarios and record their evidence, but do not commit the batch and do
-not check any box until the six corpus directions are either repaired under an
-updated `design.md` with a re-passed `design-review`, or the operator narrows
-the rule. Both outcomes are reported, neither is applied here.
+**Disposition (resolved before the batch ran).** The operator narrowed the rule
+on 2026-11-15 (`f2637b3f`): an artifact direction without `--change` is correct
+as shipped, and only a policy direction carrying `--change` is a finding. The
+six corpus directions are unchanged, `design.md` carries the narrowed contract,
+and `design-review` re-passed under the `## Operator correction` record, so this
+batch commits and checks its boxes.
 
 ### Batch 3: `stack-load-conditions`
 
