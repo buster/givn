@@ -11,7 +11,7 @@ Scope: proposal, `specs/initialize-project/enable-optional-addons.feature`, `des
 | # | Branch | Outcome |
 |---|---|---|
 | G1 | Scope | No issue found. The spec covers the proposal's table exactly: setting, materialized files, per-difference suggestion, managed-block case, exit status. Nothing extra: no `--fix`, no new command, no binary-version comparison. |
-| G2 | Tech choices | No issue found with one correction recorded below: the proposal's `coverage` row assumed a scaffold. `coverage` writes no files (`src/cli/addons.rs:174`), so it declares `None`; the design carries the correction and no scenario depends on it. |
+| G2 | Tech choices | Two registry corrections, both established from source. `coverage` writes no files (`src/cli/addons.rs:174`), so it declares `None`. `architecture_principles` writes no project file either: it only gates the `architecture-principles` instruction (`src/cli/instructions.rs:15`), so it also declares `None`. No scenario depends on either. |
 | **G3** | Decision ledger / suggestions | **Finding.** `enable_scaffold` (`src/cli/addons.rs:129`) runs `set_addon(true)` before scaffolding, and `enable`/`disable`/`skills sync` all refuse under `guard_addon_mutation` (`src/cli/addons.rs:318`). The design printed suggestions with no mention of the lock, so a suggestion run during an active change fails. Resolved by the operator: suggestions name the holding change. Hardened in `design.md` and the scenario "A locked change adds the lock to each suggestion". |
 | **G4** | Shared paths | **Finding.** `docs/glossary.md` is scaffolded by both `arc42` (`src/cli/addons.rs:145`) and `domain_modeling` (`src/cli/addons.rs:155`). Declaring it under `domain_modeling` reports `partial` on every project that kept the glossary for `arc42` and dropped the domain-modeling skill. Resolved by the operator: a shared path is declared under exactly one addon, `docs/glossary.md` under `arc42`. Hardened in `design.md` (registry table, shared-path paragraph, registry uniqueness test) and the scenario "Disabling domain_modeling keeps the shared glossary from a partial report". |
 | G5 | Missing scenarios | Covered and now complete: missing path, present-but-disabled, partial across targets, retired key, intact and damaged managed block, no-write, addon-free listing, shared path, lock suffix. No further observable behaviour is implied by the proposal. |
@@ -37,8 +37,22 @@ Scope: proposal, `specs/initialize-project/enable-optional-addons.feature`, `des
 - `docs/glossary.md`, `docs/domain-model.md`, `docs/arc42/05,06,09`, `docs/arc42/adr/ADR-076`, `docs/arc42/adr/README.md`: written before this review and verified here.
 - No `@e2e` tag removed. No `tasks.md` written.
 
-## Remaining questions
+## Re-review after hardening (tasks phase)
 
-None.
+`design.md` changed during batch 1: `architecture_principles` moved from
+`ManagedBlock` to `None` after the registry was checked against
+`src/cli/instructions.rs:15`. Branches re-walked:
+
+- G2 (tech choices): the corrected registry now matches the source for all nine
+  entries. No scenario referenced the removed managed block.
+- G5 (missing scenarios): unaffected; no behaviour is added or removed.
+- G16 (ADR qualification): unaffected; the decision is still where materialization
+  is declared, not which addons have one.
+- G17 (arc42): chapter 05 names "a managed block" as one of the declaration
+  kinds, which remains true for `communication_policy`. No chapter text claims
+  `architecture_principles` owns a block.
+- G18 (ubiquitous language): unaffected.
+
+No new questions.
 
 DESIGN-REVIEW: PASS
