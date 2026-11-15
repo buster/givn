@@ -878,8 +878,8 @@ fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
     assert!(!marker.trim().is_empty());
 }
 
-#[then("the final register has 28 accepted decisions and no proposed decisions")]
-fn final_register_has_witness_publication_adr(world: &mut GivnWorld) {
+#[then("the final register has 29 accepted decisions and no proposed decisions")]
+fn final_register_has_stack_instructions_adr(world: &mut GivnWorld) {
     let register = guidance(world);
     let accepted = register
         .lines()
@@ -889,7 +889,7 @@ fn final_register_has_witness_publication_adr(world: &mut GivnWorld) {
         .lines()
         .filter(|line| line.contains("| proposed |"))
         .count();
-    assert_eq!(accepted, 28, "unexpected accepted ADR count");
+    assert_eq!(accepted, 29, "unexpected accepted ADR count");
     assert_eq!(proposed, 0, "unexpected proposed ADR count");
 }
 
