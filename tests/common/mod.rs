@@ -11,6 +11,7 @@ use std::process::{Command, Output};
 use tempfile::TempDir;
 
 pub mod browser;
+pub mod instruction_references;
 pub mod reference_check;
 
 /// The version-control fixture the project root emulates.
@@ -316,6 +317,27 @@ pub fn run_givn(env: &TestEnv, args: &[&str]) -> Output {
     run_givn_with_env(env, args, None)
 }
 
+/// Invoke the `givn` binary in a project root without a `TestEnv`, for checks
+/// that grade a path rather than hold a fixture.
+pub fn run_givn_at(project_root: &std::path::Path, args: &[&str]) -> Output {
+    let mut command = givn_command(project_root);
+    command.args(args).output().expect("spawn givn subprocess")
+}
+
+/// The compiled binary in a project root, before any fixture-specific
+/// environment is added.
+fn givn_command(project_root: &std::path::Path) -> Command {
+    let mut command = Command::new(env!("CARGO_BIN_EXE_givn"));
+    command
+        .current_dir(project_root)
+        // Runner-scoped variables describe the outer suite invocation and
+        // must never leak into fixture projects.
+        .env_remove("GIVN_FEATURES")
+        // Fossil refuses to commit without a user; Git fixtures ignore it.
+        .env("FOSSIL_USER", "fixture");
+    command
+}
+
 /// Resolve a repository-relative path independent of the process cwd.
 ///
 /// The in-process `givn run` scenario temporarily changes the process-wide
@@ -349,16 +371,8 @@ pub fn run_givn_with_envs_in(
     args: &[&str],
     environments: &[(&str, &str)],
 ) -> Output {
-    let bin = env!("CARGO_BIN_EXE_givn");
-    let mut command = Command::new(bin);
-    command
-        .args(args)
-        .current_dir(cwd)
-        // Runner-scoped variables describe the outer suite invocation and
-        // must never leak into fixture projects.
-        .env_remove("GIVN_FEATURES")
-        // Fossil refuses to commit without a user; Git fixtures ignore it.
-        .env("FOSSIL_USER", "fixture");
+    let mut command = givn_command(cwd);
+    command.args(args);
     if env.backend == BackendKind::Fossil {
         command.env("FOSSIL_HOME", env.fossil_home());
     }

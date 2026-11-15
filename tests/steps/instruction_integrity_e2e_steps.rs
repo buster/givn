@@ -19,7 +19,7 @@ fn active_project(world: &GivnWorld) -> &crate::common::TestEnv {
 }
 
 #[given("a Givn project with an active change")]
-fn givn_project_with_active_change(world: &mut GivnWorld) {
+pub(crate) fn givn_project_with_active_change(world: &mut GivnWorld) {
     let env = crate::common::make_init_root();
     let output = crate::common::run_givn(&env, &["new", "instruction-integrity"]);
     assert!(output.status.success(), "create fixture change failed");

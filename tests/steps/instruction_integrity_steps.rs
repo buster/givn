@@ -3,6 +3,7 @@
 //! RED scenarios intentionally remain undefined until each scenario enters its
 //! own RED -> GREEN -> REFACTOR cycle.
 
+use crate::common::instruction_references::{named_change, named_instruction_ids};
 use crate::steps::GivnWorld;
 use cucumber::{given, then, when};
 use givn::skills::targets::AgentTarget;
@@ -505,23 +506,13 @@ fn installed_guidance_files(world: &GivnWorld) -> Vec<std::path::PathBuf> {
 }
 
 /// Every instruction id named by a `givn instructions <id>` direction in
-/// `content`, in occurrence order.
-fn named_instruction_ids(content: &str) -> Vec<String> {
-    const NEEDLE: &str = "givn instructions ";
-    let mut ids = Vec::new();
-    let mut rest = content;
-    while let Some(position) = rest.find(NEEDLE) {
-        let after = &rest[position + NEEDLE.len()..];
-        let token: String = after
-            .chars()
-            .take_while(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-')
-            .collect();
-        if token.chars().next().is_some_and(|c| c.is_ascii_lowercase()) {
-            ids.push(token);
-        }
-        rest = after;
-    }
-    ids
+/// `content`, in occurrence order. The direction extractor is shared with the
+/// served-guidance reference check.
+fn named_ids(content: &str) -> Vec<String> {
+    named_instruction_ids(content)
+        .into_iter()
+        .map(|(_, _, id)| id)
+        .collect()
 }
 
 #[then("every generated skill names a served instruction")]
@@ -534,7 +525,7 @@ fn every_generated_file_names_instruction(world: &mut GivnWorld) {
     for path in &files {
         let content = std::fs::read_to_string(path)
             .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
-        let ids = named_instruction_ids(&content);
+        let ids = named_ids(&content);
         assert!(
             !ids.is_empty(),
             "{} names no served instruction (no `givn instructions <id>` direction)",
@@ -551,7 +542,7 @@ fn every_named_instruction_id_resolves(world: &mut GivnWorld) {
     for path in &files {
         let content = std::fs::read_to_string(path)
             .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
-        for id in named_instruction_ids(&content) {
+        for id in named_ids(&content) {
             if !checked.insert(id.clone()) {
                 continue;
             }
@@ -603,7 +594,7 @@ fn every_generated_file_carries_metadata_and_direction(world: &mut GivnWorld) {
             );
         }
         assert!(
-            !named_instruction_ids(&content).is_empty(),
+            !named_ids(&content).is_empty(),
             "{} names no served instruction (no `givn instructions <id>` direction)",
             path.display()
         );
@@ -654,28 +645,16 @@ struct NamedDirection {
 /// Every `givn instructions <id>` direction in every installed skill and
 /// command, with the line the direction appears on.
 fn all_directions(world: &GivnWorld) -> Vec<NamedDirection> {
-    const NEEDLE: &str = "givn instructions ";
     let mut directions = Vec::new();
     for path in installed_guidance_files(world) {
         let content = std::fs::read_to_string(&path)
             .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
-        for line in content.lines() {
-            let mut rest = line;
-            while let Some(position) = rest.find(NEEDLE) {
-                let after = &rest[position + NEEDLE.len()..];
-                let token: String = after
-                    .chars()
-                    .take_while(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == '-')
-                    .collect();
-                if token.chars().next().is_some_and(|c| c.is_ascii_lowercase()) {
-                    directions.push(NamedDirection {
-                        path: path.clone(),
-                        id: token,
-                        line: line.trim().to_string(),
-                    });
-                }
-                rest = after;
-            }
+        for (_, line, id) in named_instruction_ids(&content) {
+            directions.push(NamedDirection {
+                path: path.clone(),
+                id,
+                line,
+            });
         }
     }
     directions
@@ -725,16 +704,6 @@ fn single_active_change(world: &GivnWorld) -> String {
         "expected exactly one active change in the fixture, got {ids:?}"
     );
     ids.remove(0)
-}
-
-/// The `--change` token a direction line names, when it names one.
-fn named_change(line: &str) -> Option<String> {
-    let position = line.find("--change ")?;
-    let token: String = line[position + "--change ".len()..]
-        .chars()
-        .take_while(|c| !c.is_whitespace() && !matches!(c, '`' | ')' | '>'))
-        .collect();
-    if token.is_empty() { None } else { Some(token) }
 }
 
 #[then("every direction to an artifact instruction names the change context it needs")]
@@ -891,7 +860,7 @@ fn every_generated_file_directs_to_own_instruction(world: &mut GivnWorld) {
         if !content.contains(&needle) {
             missing.push(format!("{} does not name {needle:?}", path.display()));
         }
-        for id in named_instruction_ids(&content) {
+        for id in named_ids(&content) {
             let context = if artifacts.contains(&id) {
                 Some(active_change.clone())
             } else {
@@ -924,6 +893,264 @@ fn every_generated_file_directs_to_own_instruction(world: &mut GivnWorld) {
         unresolved.is_empty(),
         "named instruction ids do not resolve:\n{}",
         unresolved.join("\n")
+    );
+}
+
+// --- instruction-integrity: the guidance reference check over served text ---
+
+/// The fixture root, its manifest artifact ids, and its active change id.
+fn reference_check_context(
+    world: &GivnWorld,
+) -> (
+    std::path::PathBuf,
+    std::collections::BTreeSet<String>,
+    String,
+) {
+    (
+        env(world).root(),
+        artifact_ids(world),
+        single_active_change(world),
+    )
+}
+
+/// Grade `sources` and record the state the assertion steps read.
+fn record_reference_check(
+    world: &mut GivnWorld,
+    sources: Vec<crate::common::instruction_references::InstructionSource>,
+    artifacts: std::collections::BTreeSet<String>,
+    change: String,
+) {
+    let findings = crate::common::instruction_references::unresolved_instruction_ids(
+        env(world).root().as_path(),
+        &sources,
+        &artifacts,
+        &change,
+    );
+    world.instruction_sources = sources;
+    world.instruction_findings = findings;
+    world.instruction_artifacts = artifacts;
+    world.instruction_change = Some(change);
+}
+
+/// Grade the served text of one instruction id.
+fn check_served_instruction(world: &mut GivnWorld, id: &str) {
+    let output = crate::common::run_givn(env(world), &["instructions", id]);
+    assert!(
+        output.status.success(),
+        "givn instructions {id} failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let sources = vec![crate::common::instruction_references::InstructionSource {
+        label: id.to_string(),
+        text: String::from_utf8_lossy(&output.stdout).into_owned(),
+    }];
+    let (_, artifacts, change) = reference_check_context(world);
+    record_reference_check(world, sources, artifacts, change);
+}
+
+fn findings_report(world: &GivnWorld) -> String {
+    crate::common::instruction_references::describe(&world.instruction_findings)
+}
+
+#[given("a Givn project with an active change and the guidance reference check available")]
+fn givn_project_with_active_change_and_reference_check(world: &mut GivnWorld) {
+    crate::steps::instruction_integrity_e2e_steps::givn_project_with_active_change(world);
+    // The check reads the artifact set from the graph, so the fixture must
+    // serve it before any direction is graded.
+    let output = crate::common::run_givn(env(world), &["graph", "--json"]);
+    assert!(
+        output.status.success(),
+        "givn graph --json failed in the fixture: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[when("the maintainer runs the guidance reference check over every served instruction")]
+fn maintainer_runs_check_over_every_served_instruction(world: &mut GivnWorld) {
+    let (root, artifacts, change) = reference_check_context(world);
+    let sources = crate::common::instruction_references::served_instruction_sources(
+        root.as_path(),
+        &artifacts,
+        &change,
+    );
+    record_reference_check(world, sources, artifacts, change);
+}
+
+#[then(
+    "every instruction id a served instruction names resolves in the context that instruction needs"
+)]
+fn served_ids_resolve_in_context(world: &mut GivnWorld) {
+    assert!(
+        !world.instruction_sources.is_empty(),
+        "the reference check graded no served instruction"
+    );
+    for id in &world.instruction_artifacts {
+        assert!(
+            world
+                .instruction_sources
+                .iter()
+                .any(|source| &source.label == id),
+            "the reference check did not grade the artifact instruction `{id}`"
+        );
+    }
+    let findings: Vec<crate::common::instruction_references::IdFinding> = world
+        .instruction_findings
+        .iter()
+        .filter(|finding| !finding.source.starts_with("addons/"))
+        .cloned()
+        .collect();
+    assert!(
+        findings.is_empty(),
+        "served instruction directions do not resolve in their context:\n{}",
+        crate::common::instruction_references::describe(&findings)
+    );
+}
+
+#[then("every instruction id an effective addon instruction names resolves")]
+fn effective_addon_ids_resolve(world: &mut GivnWorld) {
+    let graded = world
+        .instruction_sources
+        .iter()
+        .filter(|source| source.label.starts_with("addons/"))
+        .count();
+    assert!(
+        graded > 0,
+        "the reference check graded no effective addon instruction"
+    );
+    let findings: Vec<crate::common::instruction_references::IdFinding> = world
+        .instruction_findings
+        .iter()
+        .filter(|finding| finding.source.starts_with("addons/"))
+        .cloned()
+        .collect();
+    assert!(
+        findings.is_empty(),
+        "an effective addon instruction names an instruction id that does not resolve:\n{}",
+        crate::common::instruction_references::describe(&findings)
+    );
+}
+
+#[then("the check names no unresolved instruction id")]
+fn check_names_no_unresolved_id(world: &mut GivnWorld) {
+    assert!(
+        world.instruction_findings.is_empty(),
+        "the reference check named unresolved instruction ids:\n{}",
+        findings_report(world)
+    );
+}
+
+#[given(regex = r#"^a steps instruction override that names "([^"]+)"$"#)]
+fn steps_override_names(world: &mut GivnWorld, id: String) {
+    crate::common::write_override(
+        env(world),
+        "steps",
+        "instructions.md",
+        &format!(
+            "# Instruction: steps\n\nRequest `givn instructions {id}` for the Rust mechanics.\n"
+        ),
+    );
+}
+
+#[when("the maintainer runs the guidance reference check over the served steps guidance")]
+fn maintainer_runs_check_over_served_steps(world: &mut GivnWorld) {
+    check_served_instruction(world, "steps");
+}
+
+#[when("the maintainer runs the guidance reference check over the served guidance")]
+fn maintainer_runs_check_over_served_guidance(world: &mut GivnWorld) {
+    check_served_instruction(world, "steps");
+}
+
+#[then("the check fails")]
+fn check_fails(world: &mut GivnWorld) {
+    assert!(
+        !world.instruction_findings.is_empty(),
+        "the reference check reported no finding over {} served text(s)",
+        world.instruction_sources.len()
+    );
+}
+
+#[then(regex = r#"^it names "([^"]+)"$"#)]
+fn finding_names_id(world: &mut GivnWorld, id: String) {
+    let finding = world
+        .instruction_findings
+        .iter()
+        .find(|finding| finding.id == id)
+        .unwrap_or_else(|| {
+            panic!(
+                "the reference check named no finding for `{id}`:\n{}",
+                findings_report(world)
+            )
+        });
+    let direction = format!("givn instructions {id}");
+    assert!(
+        finding.line_text.contains(&direction),
+        "the finding for `{id}` does not carry the direction's line text: {}",
+        finding.line_text
+    );
+}
+
+#[given(regex = r#"^a served instruction names "([^"]+)" without a change context$"#)]
+fn served_instruction_names_without_context(world: &mut GivnWorld, id: String) {
+    append_served_direction(
+        world,
+        &format!("`givn instructions {id}` is the artifact example."),
+    );
+}
+
+#[given(regex = r#"^a served instruction names "([^"]+)" with a change context$"#)]
+fn served_instruction_names_with_context(world: &mut GivnWorld, id: String) {
+    append_served_direction(
+        world,
+        &format!("`givn instructions {id} --change demo` is the policy example."),
+    );
+}
+
+/// Append one direction to the served `steps` override, so both Givens of a
+/// scenario grade one served text.
+fn append_served_direction(world: &GivnWorld, direction: &str) {
+    let path = env(world).path("givn/artifacts/steps/instructions.md");
+    let existing =
+        std::fs::read_to_string(&path).unwrap_or_else(|_| "# Instruction: steps\n".to_string());
+    crate::common::write_override(
+        env(world),
+        "steps",
+        "instructions.md",
+        &format!("{existing}\n{direction}\n"),
+    );
+}
+
+#[then(regex = r#"^it names "([^"]+)" and the extra change context$"#)]
+fn finding_names_policy_and_context(world: &mut GivnWorld, id: String) {
+    let finding = world
+        .instruction_findings
+        .iter()
+        .find(|finding| finding.id == id)
+        .unwrap_or_else(|| {
+            panic!(
+                "the reference check named no finding for `{id}`:\n{}",
+                findings_report(world)
+            )
+        });
+    assert!(
+        finding.expected.contains("takes no change context"),
+        "the finding for `{id}` does not state that a policy instruction takes no context: {}",
+        finding.expected
+    );
+}
+
+#[then(regex = r#"^it reports no finding for "([^"]+)"$"#)]
+fn no_finding_for(world: &mut GivnWorld, id: String) {
+    let findings: Vec<crate::common::instruction_references::IdFinding> = world
+        .instruction_findings
+        .iter()
+        .filter(|finding| finding.id == id)
+        .cloned()
+        .collect();
+    assert!(
+        findings.is_empty(),
+        "the reference check reported a finding for `{id}`:\n{}",
+        crate::common::instruction_references::describe(&findings)
     );
 }
 

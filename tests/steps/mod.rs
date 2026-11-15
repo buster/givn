@@ -148,6 +148,12 @@ pub struct GivnWorld {
     license_state: choose_project_license_steps::LicenseState,
     /// Combined output captured by a multi-command guidance scenario.
     pub(crate) additional_output: Option<String>,
+    /// Instruction-reference check state: the graded served texts, the
+    /// findings, the fixture's manifest artifact ids, and its active change.
+    pub(crate) instruction_sources: Vec<common::instruction_references::InstructionSource>,
+    pub(crate) instruction_findings: Vec<common::instruction_references::IdFinding>,
+    pub(crate) instruction_artifacts: std::collections::BTreeSet<String>,
+    pub(crate) instruction_change: Option<String>,
     /// Findings from the last run-declaration validation.
     pub(crate) run_findings: Vec<givn::cli::run_block::RunFinding>,
     /// Reserved fixed port written into the fixture's run declaration.
