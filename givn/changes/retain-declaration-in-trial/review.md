@@ -459,6 +459,70 @@ None. No mandatory check was deferred.
 - [x] Design match: no command, file-layout, framework, or driver deviation.
 - [x] Interaction coverage maps every inventory entry touched by the change.
 - [ ] The independent review context is recorded in both artifacts — B2 remains.
-- [ ] The `## Step Definitions` integrity check passes — B1 remains.
+- [x] The `## Step Definitions` integrity check passes — B1 closed (see Finding closure).
 
 REVIEW: FAIL
+
+## Finding closure
+
+Author-side closure for B1, F1, F2, and F3. B2 remains with the reviewer.
+
+### B1: `## Step Definitions` integrity check
+
+- Fix: moved the "New bindings, by file" and "Fixture changes" tables into a
+  new `## Bindings and Fixtures` section immediately after `## Step
+  Definitions`; the canonical file table is the only table in the checked
+  section.
+- Check: `givn check review --change retain-declaration-in-trial` reported 42
+  `[integrity] Step Definitions: file ... does not exist` errors before the
+  move and 0 after.
+- Commit: `5a32d2ba`.
+
+### F1: dead `blobs.pop()` arm
+
+- Fix: deleted the unreachable `else { bail!("... returned no content ...") }`
+  arm; the single requested blob is read with an invariant `expect`.
+- Evidence: with the declaration's loose blob removed from a fixture
+  repository, `givn ise replace` refuses with `read
+  'givn/specification.yaml' at revision '<r>': 'givn/specification.yaml'
+  cannot be read from revision '<r>'; the backend returned no blob for it`
+  and writes no trial. The seam message is the one a missing blob produces;
+  the deleted message never appeared. The permanent `Preparation refuses a
+  retained path missing at the revision` scenario keeps the same seam refusal
+  under test.
+- Commit: `0707f549`.
+
+### F2: non-UTF-8 declaration bytes
+
+- Fix: fixture `non_utf8_first_revision_project` commits
+  `NON_UTF8_DECLARATION_BYTES` in the first revision and the valid
+  declaration at `HEAD`; scenario `Preparation refuses a declaration that is
+  not UTF-8` asserts exit 1 and stderr carrying `givn/specification.yaml`
+  and `invalid utf-8`. The delta use case, design, and reference name the
+  decoding refusal.
+- Test: `GIVN_FEATURES=givn/changes/retain-declaration-in-trial/specs cargo
+  test --locked --test features_runner -- --exact
+  "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a
+  declaration that is not UTF-8"` passed 4/4 steps. Discrimination: replacing
+  `std::str::from_utf8` with `String::from_utf8_lossy` made the Then fail
+  with stderr `ise replace: givn/specification.yaml: missing role
+  'structure'`; the mutation was restored.
+- Commit: `4df99423`.
+
+### F3: glossary row
+
+- Fix: added `Specification declaration` to `docs/glossary.md` after
+  `Specification`, with the genus, the differentia, the `Run declaration` and
+  `Source root` contrasts, and anti-terms.
+- Test: documentation only.
+- Commit: `1858b335`.
+
+### Verification at closure
+
+- `cargo fmt --all -- --check`: exit 0.
+- `cargo clippy --locked --workspace --all-targets -- -D warnings`: exit 0.
+- `./run-tests.sh --non-e2e`: 1060 tests run, 1060 passed, 114 skipped.
+- `./run-tests.sh --e2e`: 114 tests run, 114 passed, 1060 skipped.
+- Delta scope: 16 scenarios, 83 steps, all passed.
+- `givn check review`: 0 integrity errors; the remaining failures are B2's
+  reviewer context and the reviewer-owned verdict.

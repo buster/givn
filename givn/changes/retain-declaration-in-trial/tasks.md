@@ -59,13 +59,13 @@ head -1 givn/changes/retain-declaration-in-trial/specs/prepare-an-ise-test/useca
 |---|---|---|---|
 | `setup` | 0 | 0 | none |
 | `declaration-retained-partition` | 6 | 6 | `clean-room-preparation` |
-| `revision-declaration-authority` | 3 | 3 | `clean-room-preparation` |
+| `revision-declaration-authority` | 4 | 4 | `clean-room-preparation` |
 | `verification-qualified-drift` | 4 | 4 | `trial-input-verification` |
 | `served-guidance-declaration-rule` | 1 | 1 | `prose-consolidation` |
 | `prepare-trial-declaration-e2e` | 1 (`@e2e`) | 1 | `clean-room-preparation` |
-| **Total** | **15** | **15** | 10 `clean-room-preparation` + 4 `trial-input-verification` + 1 `prose-consolidation` |
+| **Total** | **16** | **16** | 11 `clean-room-preparation` + 4 `trial-input-verification` + 1 `prose-consolidation` |
 
-The delta holds fifteen scenario declarations, each with one raw scenario (no
+The delta holds sixteen scenario declarations, each with one raw scenario (no
 Outline, no `Examples`). Every title appears in exactly one batch by exact
 title below.
 
@@ -278,7 +278,7 @@ refusal, unit test), `tests/steps/ise_clean_room_support.rs` (fixtures),
 
 Files: `src/config/declaration.rs` (`from_content`), `src/ise/mod.rs`
 (`admit` order, revision declaration read), `tests/steps/ise_clean_room_support.rs`
-(three fixtures), `tests/steps/clean_room_preparation_steps.rs` (bindings).
+(four fixtures), `tests/steps/clean_room_preparation_steps.rs` (bindings).
 
 - [x] Scenario: Preparation partitions with the declaration recorded at the selected revision
   - Design constraints: `admit` reads `revision_files(revision, "")` first,
@@ -331,6 +331,23 @@ Files: `src/config/declaration.rs` (`from_content`), `src/ise/mod.rs`
   - GREEN: exit 1; stderr carries the declaration and `unknown key 'component'`; both
     targets absent.
   - [x] COMMIT: 735498933db54b2ee38cecaf43154260dc88c54e -- Batch: revision-declaration-authority
+
+- [x] Scenario: Preparation refuses a declaration that is not UTF-8
+  - Design constraints: `admit` decodes the selected revision's declaration
+    bytes as UTF-8 before the strict loader; a decoding failure refuses as
+    refusal 1 and names `givn/specification.yaml` with the decoding error. The
+    fixture's first revision commits `NON_UTF8_DECLARATION_BYTES` while `HEAD`
+    records the valid declaration, so the working tree is clean and a
+    working-tree read would prepare the trial.
+  - RED: Probe (production restored after the run): replacing
+    `std::str::from_utf8(&bytes)` with `String::from_utf8_lossy(&bytes)` made
+    the scope fail at the Then with stderr `ise replace:
+    givn/specification.yaml: missing role 'structure'` (the lossy bytes reached
+    the loader) and no `invalid utf-8`; `git checkout -- src/ise/mod.rs`
+    restored the decoding refusal.
+  - GREEN: exit 1; stderr carries `givn/specification.yaml` and `invalid utf-8`;
+    both targets absent. The delta scope passed 16 scenarios / 83 steps.
+  - [x] COMMIT: 4df994238d8d6ee1be6896575a9119b65be33daf -- Batch: revision-declaration-authority
 
 ## Batch: verification-qualified-drift
 
@@ -464,7 +481,7 @@ the report, the trial, and the record.
           tests/steps/clean_room_preparation_e2e_steps.rs \
           tests/steps/trial_input_verification_steps.rs \
           tests/steps/prose_consolidation_steps.rs
-      tests/steps/clean_room_preparation_steps.rs:142
+      tests/steps/clean_room_preparation_steps.rs:144
       tests/steps/clean_room_preparation_e2e_steps.rs:11
       tests/steps/trial_input_verification_steps.rs:46
       tests/steps/prose_consolidation_steps.rs:69
