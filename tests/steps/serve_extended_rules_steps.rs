@@ -1687,3 +1687,92 @@ fn served_text_requires_strict_proof(world: &mut GivnWorld) {
         "the served text dropped the requirement to prove the runner's strict-mode config: {content}"
     );
 }
+
+// --- stack-instruction bodies -----------------------------------------------
+
+/// Per-runner not-implemented stub forms: a stack body, never core text.
+pub(crate) const STUB_FORMS: [&str; 7] = [
+    "unimplemented!()",
+    "todo!()",
+    "NotImplementedError",
+    "return \"pending\";",
+    "godog.ErrPending",
+    "pending(\"TODO\")",
+    "PendingException",
+];
+
+/// The stack-file bullet labels that carry a runner's binding mechanics.
+pub(crate) const BINDING_BULLETS: [&str; 3] = [
+    "Step definition file:",
+    "Binding form:",
+    "Unimplemented body:",
+];
+
+#[given("the author has requested the steps instructions")]
+fn author_has_requested_steps_instructions(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.previous_output = Some(common::run_givn(env, &["instructions", "steps"]));
+}
+
+#[when(regex = r#"^the author requests "(.+)"$"#)]
+fn author_requests_id(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(common::run_givn(env, &["instructions", &id]));
+}
+
+#[then(regex = r#"^the served text carries "(.+)"$"#)]
+fn served_text_carries(world: &mut GivnWorld, text: String) {
+    let content = served_text(world);
+    assert!(
+        content.contains(&text),
+        "the served text does not carry {text:?}: {content}"
+    );
+}
+
+#[then(
+    "the previously served steps text carries none of the stub, strict mechanism, or run command"
+)]
+fn previous_steps_carries_no_stack_body(world: &mut GivnWorld) {
+    let content = previous_served_text(world);
+    for text in STUB_FORMS
+        .iter()
+        .chain(STRICT_MECHANISMS.iter())
+        .chain(RUN_COMMANDS.iter())
+    {
+        assert!(
+            !content.contains(text),
+            "the served steps text carries the per-runner body token {text:?}: {content}"
+        );
+    }
+}
+
+#[then("the previously served steps text carries no per-runner binding instruction")]
+fn previous_steps_carries_no_binding_instruction(world: &mut GivnWorld) {
+    let content = previous_served_text(world);
+    for bullet in BINDING_BULLETS {
+        assert!(
+            !content.contains(bullet),
+            "the served steps text carries the per-runner binding bullet {bullet:?}: {content}"
+        );
+    }
+}
+
+/// The served text of the request recorded before the last one.
+fn previous_served_text(world: &GivnWorld) -> String {
+    let output = world
+        .previous_output
+        .as_ref()
+        .expect("the steps instructions were not requested first");
+    assert!(
+        output.status.success(),
+        "the preceding steps request failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}

@@ -79,9 +79,9 @@ Feature: The served instruction carries the built-in rules and the project's ext
       | steps-rust   | `#[given(`  | `unimplemented!()`                    | `.fail_on_skipped()`  | `cargo test <name> -- --exact`            |
       | steps-python | `@given(`   | `raise NotImplementedError("TODO")`   | `raise`               | `behave -n "<title>"`                     |
       | steps-node   | `.Given(`   | `return "pending";`                   | `--strict`            | `cucumber-js --name "<title>"`            |
-      | steps-java   | `@Given(`   | `PendingException("TODO")`            | `--strict`            | `mvn test -Dcucumber.filter.name="<title>"` |
-      | steps-go     | `ctx.Step(`  | `godog.ErrPending`                    | `fails by default`    | `go test ./... -run TestFeatures`         |
-      | steps-ruby   | `Given(`    | `pending("TODO")`                     | `fail on pending`     | `cucumber --name "<title>"`               |
+      | steps-java   | `@Given(`   | PendingException("TODO")              | `--strict`            | `mvn test -Dcucumber.filter.name="<title>"` |
+      | steps-go     | `ctx.Step(`  | `godog.ErrPending`                    | fails by default      | `go test ./... -run TestFeatures`         |
+      | steps-ruby   | `Given(`    | `pending("TODO")`                     | fail on pending       | `cucumber --name "<title>"`               |
 
   @givn.added @wip
   Scenario: The machine-readable stack path carries the same content as the text path
