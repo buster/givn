@@ -1739,7 +1739,7 @@ Fossil fixture and the kind fixtures),
 then `./run-tests.sh --non-e2e` for the `scm` change.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: copy-kinds'`.
 
-- [ ] Scenario: `Preparation preserves the executable bit and the symlink target`
+- [x] Scenario: `Preparation preserves the executable bit and the symlink target`
   - Design constraints:
     - Fixture (Contradictions 1): `structure: ["src/run.sh", "src/link"]`,
       `source: ["src/**"]`; the revision commits `src/run.sh` (mode `100755`)
@@ -1749,20 +1749,43 @@ then `./run-tests.sh --non-e2e` for the `scm` change.
       `<trial>/src/link` is a symlink whose target reads `run.sh`.
     - Contract: `RevisionEntry.kind` and `.executable` drive the write; the
       re-read compares both.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/git.rs`, `src/scm.rs`, `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        Observed first run: RED as the bound not-implemented Given,
+          "not implemented: a committed revision with an executable script
+          \"src/run.sh\" and a symlink \"src/link\" to \"run.sh\"" ;
+          1 scenario (1 failed), 2 steps (1 passed, 1 failed).
+        The first green attempt exposed a fixture contradiction: the shared
+          Given builds `source_root_project`, so `--full` replaced the kind
+          files. The kind Given now rewrites the declaration to
+          `structure: ["src/run.sh", "src/link"]` before committing them,
+          which is the design constraint's fixture.
+        GREEN: the same command -> exit 0;
+          1 scenario (1 passed), 6 steps (6 passed).
+        No production diff: the kind-aware write and the re-read landed in
+          bundle 1; this scenario protects that behavior.
+        DISCRIMINATION (not historical RED): with `set_executable` and
+          `executable_matches` made no-ops, the command fails at `the trial's
+          "src/run.sh" is executable` ("the trial's src/run.sh is not
+          executable (mode 644)"). With `EntryKind::Symlink` written as a
+          regular file and the re-read relaxed to match, it fails at `the
+          trial's "src/link" is a symlink to "run.sh"` ("the trial's src/link
+          is not a symlink"). Restored; green again.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No production edit. `cargo fmt` and
+        `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+        clean; ./run-tests.sh --non-e2e is 980/980 and ./run-tests.sh --e2e is
+        111/111. Re-ran the scenario: 1 scenario (1 passed), 6 steps (6
+        passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `copy-kinds`
+  - [x] COMMIT: `42def2eebb31612ea1052821c98ff50d76ef7198` -- Batch: `copy-kinds`
 
-- [ ] Scenario: `Preparation writes no version-control metadata into the trial`
+- [x] Scenario: `Preparation writes no version-control metadata into the trial`
   - Design constraints:
     - Fixture: `behavior: ["givn/specs/demo.feature"]`, `source: ["src/**"]`;
       the revision commits `givn/specs/demo.feature` and `src/kept.rs`. The
@@ -1772,20 +1795,32 @@ then `./run-tests.sh --non-e2e` for the `scm` change.
       and none named `.fslckout`.
     - Contract: the copy set is built from `revision_files`; no SCM command
       creates the target and no metadata is copied.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        First run after binding: exit 0; 1 scenario (1 passed), 5 steps
+          (5 passed). Existing behavior protected; no production diff. The
+          fixture's `structure: ["src/kept.rs"]` keeps the trial non-empty
+          under `--full`, and the Then walks the trial without following
+          links.
+        DISCRIMINATION (not historical RED): with `write_trial` creating
+          `<trial>/.git` after the file writes, the command fails at the same
+          Then: "the trial at .../trial holds the version-control entry
+          .../trial/.git". Restored; green again.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No production edit. `cargo fmt` and
+        `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+        clean; ./run-tests.sh --non-e2e is 980/980 and ./run-tests.sh --e2e is
+        111/111. Re-ran the scenario: 1 scenario (1 passed), 5 steps (5
+        passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `copy-kinds`
+  - [x] COMMIT: `42def2eebb31612ea1052821c98ff50d76ef7198` -- Batch: `copy-kinds`
 
-- [ ] Scenario: `Preparation reads a Fossil revision and preserves an executable file and a symlink`
+- [x] Scenario: `Preparation reads a Fossil revision and preserves an executable file and a symlink`
   - Design constraints:
     - Fixture: a real Fossil checkout with `fossil settings allow-symlinks on`,
       `givn/config.yaml` with both add-ons on, and a declaration that retains
@@ -1801,18 +1836,32 @@ then `./run-tests.sh --non-e2e` for the `scm` change.
     - Contract: `src/fossil.rs` parses the check-in manifest for path, kind,
       and executable bit (D6); one partition and one writer serve both
       backends.
-  - [ ] Implement the scenario and its tests. Files: `src/fossil.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/fossil.rs`,
         `src/scm.rs`, `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        First run after binding: exit 0; 1 scenario (1 passed), 8 steps
+          (8 passed). Existing behavior protected; no production diff. The
+          manifest reader landed in bundle 1. The fixture runs
+          `fossil settings allow-symlinks on` before the symlink is added and
+          commits an executable script and the symlink.
+        DISCRIMINATION (not historical RED): with the manifest's `x` flag
+          ignored, the command fails at `the trial's executable script is
+          executable` ("the trial's src/run.sh is not executable (mode
+          644)"); with the `l` flag ignored, it fails at `the trial's symlink
+          is a symlink to its target` ("the trial's src/link is not a
+          symlink"). Restored; green again.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        No production edit. `cargo fmt` and
+        `cargo clippy --locked --workspace --all-targets -- -D warnings` are
+        clean; ./run-tests.sh --non-e2e is 980/980 and ./run-tests.sh --e2e is
+        111/111. Re-ran the scenario: 1 scenario (1 passed), 8 steps (8
+        passed).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `copy-kinds`
+  - [x] COMMIT: `42def2eebb31612ea1052821c98ff50d76ef7198` -- Batch: `copy-kinds`
 
 ---
 
