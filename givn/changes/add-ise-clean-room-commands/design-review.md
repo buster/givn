@@ -315,5 +315,14 @@ decision:
 3. The re-read mismatch is unit-only. `design.md` Replace Flow step 10 and the
    `partition-and-write` batch record that the injectable-writer unit test in
    `src/ise/mod.rs` proves it and no delta scenario covers it.
+4. 2026-11-15: the partition moved to `src/ise/partition.rs`. `design.md` had
+   placed it in `src/ise/mod.rs`; the file passed 500 code lines during the
+   `partition-and-write` batch, so the partition, refusals 5 to 7, and the
+   `behavior` feature resolution moved to their own module. The component
+   (`ise`), its contract, and its preflight order are unchanged, and
+   `design.md`'s Architecture Impact and D1 now name the real file. Accepted as
+   a post-review deviation because the split removes a size debt without
+   changing behavior; the review's implementation-evidence check is expected to
+   find `src/ise/mod.rs` no longer holds the partition.
 
 DESIGN-REVIEW: PASS

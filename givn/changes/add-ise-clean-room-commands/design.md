@@ -79,9 +79,9 @@ Confirmed Persona IDs: `developer--primary-user`, `agent--technical-role`,
 | Prepare reads the selected revision, never the working tree | `Backend::revision_files` and `revision_blobs`; the working tree is read only for the dirty check and the current e2e re-check | `clean-room-preparation`: the ignored-file success scenario and the dirty-check refusal; the E2E prepare scenario |
 | Exactly one replacement form is required | A clap argument group requires one of `--full` and `--path` and marks them mutually exclusive; neither or both is exit 2 naming both flags | `clean-room-preparation`: the neither-form and both-forms scenarios |
 | Deletion is set arithmetic on named tracked files and named directories | `--path` accepts a tracked file or a directory; a directory expands to every tracked file beneath it; a glob is never expanded; a named path absent from the revision removes nothing | `clean-room-preparation`: the directory-expansion, full-replacement, glob, duplicate, and absent-replacement scenarios; D1 |
-| A full replacement names every tracked file under the source roots | `--full` is the union of every declared `source:` root resolved at the revision; no implicit default exists | `clean-room-preparation`: the full-replacement scenarios asserting `Not replaced: 0` |
+| A full replacement names every tracked file under the source roots | `--full` is the union of every declared `source:` root resolved at the revision; no implicit default exists | `clean-room-preparation`: the full-replacement scenarios asserting `Not replaced: 0` with no retained path under a source root and `Not replaced: 1` for a retained `src/keep.rs` |
 | A retained role takes precedence over the source roots | Retained match is tested before the source-root test, for a named file, for a named directory's expansion, and for `--full`; a retained file under a source root stays in the trial, so `Replaced` counts only non-retained files; naming a retained path refuses | `clean-room-preparation`: the retained-role and directory-contains-retained scenarios; the retained fixtures of the ignored-file, executable-bit, and explicit-revision scenarios |
-| `Not replaced` is a containment count | Direct tracked siblings in the removed files' parent directories, excluding the named files | `clean-room-preparation`: the `Not replaced: 2` and `Not replaced: 0` scenarios |
+| `Not replaced` is a containment count | Direct tracked siblings in the removed files' parent directories, excluding the named files | `clean-room-preparation`: the `Not replaced: 2`, `Not replaced: 0`, and `Not replaced: 1` scenarios |
 | `Outside the declaration` counts uncopied files | The partition's fourth set; never an error | `clean-room-preparation`: the E2E prepare scenario asserts the outside file is absent |
 | Only the `e2e` package is frozen; component steps are implementation | The `E2E digest` covers resolved `e2e` files and the selected `@e2e` scenarios only; kept source has no focused identity | `trial-input-verification`: the kept-source no-drift scenario |
 | The trial is a plain directory, never a branch or worktree | `create_dir` plus file writes; no SCM command creates the target | `clean-room-preparation`: the version-control-metadata scenario asserts `.git` and `.fslckout` absence; the E2E prepare scenario asserts the written path |
@@ -93,7 +93,7 @@ Confirmed Persona IDs: `developer--primary-user`, `agent--technical-role`,
 | An omitted receipt prints the record and writes nothing | Report then YAML record on stdout; no `Receipt path` line | `clean-room-preparation`: the stdout-record scenario |
 | A dry run writes nothing and prints the paths it would use | The preflight, partition, counts, and identities run; the writer is skipped | `clean-room-preparation`: the dry-run scenario |
 | Verify refuses a record that does not belong to this trial | Canonicalized `written_path` equals `--at`, `backend` equals the selected backend, and the record path lies outside the trial | `trial-input-verification`: the inside-trial, written-path-mismatch, and backend-mismatch scenarios; D9 |
-| Verify re-checks retained and `e2e` identities per path | `src/ise/verify.rs` compares the trial's retained files and the current e2e set and scenario map | `trial-input-verification`: the clean, retained-drift, trial-e2e, checkout-e2e, scenario, and missing-path scenarios |
+| Verify re-checks retained and `e2e` identities per path | `src/ise/verify.rs` compares the trial's retained files and the current e2e set and scenario map | `trial-input-verification`: the clean, retained-drift, trial-e2e, checkout-e2e, checkout-gained-path, scenario, scenario-gained, and missing-path scenarios |
 | Verify names every drifting path in one run | One `BTreeMap` of reasons, rendered after all checks | `trial-input-verification`: the three-drift scenario |
 | With `ise` off, both commands refuse and read no declaration or record | The manifest and prerequisite check runs before `SpecificationDeclaration::load` and before the record read | `clean-room-preparation` and `trial-input-verification`: the ise-off and architecture-principles-off scenarios; the verify ise-off scenario uses a corrupted record |
 | Git and Fossil agree | `RevisionEntry` is backend-neutral; one partition and one writer | `clean-room-preparation`: the Fossil scenario (with `allow-symlinks on`, an executable, and a symlink); D6 |
@@ -102,8 +102,10 @@ Confirmed Persona IDs: `developer--primary-user`, `agent--technical-role`,
 
 New modules:
 
-- `src/ise/mod.rs`: `replace`, the preflight order, the partition, and the
-  report model.
+- `src/ise/mod.rs`: `replace`, the preflight order, the trial write with its
+  re-read, and the report model.
+- `src/ise/partition.rs`: the partition (`Partition`), refusals 5 to 7, the
+  counts, and the `behavior` feature resolution the re-check reuses.
 - `src/ise/record.rs`: `TrialRecord`, `Counts`, the YAML shape, and the
   per-path/rollup digest helpers.
 - `src/ise/verify.rs`: the drift checks and the record trust anchor.
@@ -216,7 +218,7 @@ No new dependency and no version selected from memory.
   removed files' parent directories that were not named. Rejected: an
   implicit whole-source default (one flag would silently replace the product
   where a component was meant) and glob patterns (they introduce matching
-  into deletion). Realized in the partition in `src/ise/mod.rs` and the
+  into deletion). Realized in the partition in `src/ise/partition.rs` and the
   record fields.
 - Decides D2 (plan `S4` risk): **both write targets lie outside the checkout,
   and both are created new.** The trial directory must not exist; the
@@ -637,8 +639,10 @@ that are not retained.
 - **`Not replaced`.** The direct tracked files in the parent directories of
   `replaced_paths` that are not in `replaced_paths`. Parent directories are
   deduplicated; the count is over direct children, not the whole subtree. A
-  `--full` replacement removes every tracked file under the source roots, so
-  the count is `0`.
+  `--full` replacement removes every tracked file under the source roots that
+  no retained role matches, so the count is `0` when no retained path sits
+  under a source root; a retained file under a source root stays in the trial
+  and is counted as `1`.
 - **Paths.** All values are project-relative `/` paths. A named value is
   normalized with the declaration's normalizer; an absolute value or one that
   escapes the project is outside every source root and refuses.
@@ -680,7 +684,7 @@ write failure, `2` clap usage. Every refusal prints `ise replace: <reason>` or
 | Replacement | absent path; outside source; retained role; directory that contains a retained path; duplicate; directory; glob-shaped value |
 | Target | inside the checkout; existing directory; existing file; receipt inside the trial; receipt inside the checkout; receipt ancestor; symlinked parent; existing receipt |
 | Copy set | submodule; nested marker; symlink; executable; ignored and untracked files (absent); `.git` and `.fslckout` absent |
-| Record | unreadable; wrong scope; unknown field; missing field; record inside the builder's authority; record write failure |
+| Record | unreadable; wrong scope; wrong schema; non-64-hex replaced digest; unknown field; missing field; record inside the builder's authority; record write failure |
 | Verify | retained drift; trial e2e file drift; checkout e2e file drift; scenario drift; missing path; extra path; several drifts; written-path mismatch; backend mismatch; record placed inside the trial |
 | Precedence | addon before declaration; nine refusals before the first write; record only after every written file matches |
 

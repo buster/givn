@@ -103,12 +103,16 @@ Observable behavior, from the developer's and verifier's side:
 `givn spec route --change add-ise-clean-room-commands` reports no signal; its
 top candidates tie. The table keeps the gate's four columns and records the
 no-signal result in the recommendation column, then the decision and its
-rationale.
+rationale. Two capabilities are new in `prepare-an-ise-test`; the third row
+extends the permanent `adr-qualification-gate` fragment through
+`specs/fragments/adr-qualification-gate.feature`, whose scenario is
+`@givn.modified` (ADR-076 is accepted and the register holds 28 decisions).
 
 | Proposed capability | Route's recommendation | Decision | Rationale |
 |---|---|---|---|
 | `clean-room-preparation` | `no signal` | `NEW in prepare-an-ise-test` | No permanent capability materializes a trial. The boundary check refuses a change; it writes no directory and no record. The ideation handoff assigns this capability to the new leaf. |
 | `trial-input-verification` | `no signal` | `NEW in prepare-an-ise-test` | No permanent capability re-checks a prepared trial's frozen inputs. Change-receipt freshness proves a change, not a trial directory, and cannot name a path that changed inside the trial. The handoff assigns this capability to the same leaf. |
+| `adr-qualification-gate` | `no signal` | `EXTEND adr-qualification-gate` | Accepting ADR-076 moves the register from 27 to 28 accepted decisions, so the change modifies the permanent fragment scenario through `specs/fragments/adr-qualification-gate.feature`. The fragment keeps its owning document; the decision changes one existing assertion, not the capability. |
 
 ## Out of Scope
 
