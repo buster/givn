@@ -834,7 +834,8 @@ carries its runner's binding, stub, strict mechanism, and command, while the
       `cucumber-js --name "<title>"`); `steps-java` (`@Given(`,
       `PendingException("TODO")`, `--strict`,
       `mvn test -Dcucumber.filter.name="<title>"`); `steps-go` (`ctx.Step(`,
-      `godog.ErrPending`, `fails by default`, `go test ./... -run TestFeatures`);
+      `return godog.ErrPending`, `fails by default`,
+      `go test ./... -run TestFeatures`);
       `steps-ruby` (`Given(`, `pending("TODO")`, `fail on pending`,
       `cucumber --name "<title>"`).
     - Given: the active-change fixture plus `the author has requested the steps
@@ -887,6 +888,30 @@ carries its runner's binding, stub, strict mechanism, and command, while the
         clippy clean; re-run 6 passed.
         ```
   - [x] COMMIT: `6280a1f2` -- Batch: `stack-bodies`
+  - [x] Finding F2 closure (review blocker): the `steps-go` stub cell did not
+        discriminate the stub row. `godog.ErrPending` sits in backticks on the
+        strict row (`assets/instructions/steps-go.md:7`), so deleting the stub
+        row left all 6 rows green. The stub cell is now
+        `` `return godog.ErrPending` ``, a token only the stub row carries
+        (`:6`). Probes, each with the Outline `--exact` command:
+        ```
+        1. outline after the cell change:
+           6 scenarios (6 passed), 60 steps (60 passed)
+        2. deleted "- Unimplemented body: `return godog.ErrPending`." from
+           assets/instructions/steps-go.md:
+             ✘ And the served text carries "`return godog.ErrPending`"
+                the served text does not carry "`return godog.ErrPending`"
+             6 scenarios (5 passed, 1 failed)
+           restored the row; `git diff --stat` on the asset is empty
+        3. deleted "- Strict mode: `godog.ErrPending` fails by default; no flag
+           is needed." from the same asset:
+             ✘ And the served text carries "fails by default"
+                the served text does not carry "fails by default"
+             6 scenarios (5 passed, 1 failed)
+           restored the row; the asset is byte-identical to HEAD
+        The two rows fail separately, each naming its own row. No asset or step
+        definition changed; the fix is the Examples cell alone at `0cc81208`.
+        ```
 
 - [x] Batch verification: the `--exact` command; fmt; clippy.
       ```
@@ -1217,6 +1242,31 @@ served text landed in `02126585`; this batch proves it with the new check.
         path. fmt/clippy clean; re-run 1 passed.
         ```
   - [x] COMMIT: `2dab715d` -- Batch: `ise-mapping`
+  - [x] Finding F1 closure (review blocker): the delta support fragment
+        restated the rejected `ise` rule. `specs/fragments/fragment.md:89` read
+        "The `ise` instruction names the stack instruction for the project's
+        runner and the two record owners, and every id it names is served while
+        `ise` is effective." It now reads:
+        "The `ise` instruction names `steps` as the mapping for the change's
+        stack mechanics, names one stack instruction id as a worked example, and
+        keeps `design` and `proposal` as the record owners; every id it names is
+        served while `ise` is effective."
+        That is the settled rule (`usecase.md:66`, design D6 at
+        `design.md:198-206`, `design-review.md` decision 3,
+        `assets/instructions/ise.md:34-36`, and this batch's scenario). The
+        `gvn:base-sha256` header is unchanged: `givn/specs/fragments/fragment.md`
+        still hashes to `743c12e6`.
+        ```
+        GIVN_FEATURES=givn/changes/split-stack-instructions/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "fragments/instruction-integrity.feature::The ise instruction names
+           only instruction ids that resolve"
+          -> 1 scenario (1 passed), 6 steps (6 passed)
+        GIVN_FEATURES=givn/specs/fragments cargo test --locked \
+          --test features_runner
+          -> 21 features, 256 scenarios (256 passed), 1379 steps (1379 passed)
+        ```
+        Revision: `c5719a40`
 
 - [x] Batch verification: the `--exact` command; fmt; clippy.
       ```
@@ -1485,6 +1535,26 @@ stays green).
         ✓ change verification receipt: 29 scenario(s), 0 failed, 0 skipped at
           9f75f7c3e94ee015ccb4c3ee29333c994c545525
         ✓ verify passed
+      exit 0
+      ```
+
+- [x] Finding closure re-run (review F1 and F2): both spec fixes change the
+      delta feature digest, so every scope was re-run and the receipt was
+      regenerated at the tip.
+      ```
+      GIVN_FEATURES=givn/changes/split-stack-instructions/specs \
+        ./run-tests.sh --non-e2e -> 14 tests run: 14 passed, 0 skipped
+        (29 scenario rows)
+      ./run-tests.sh --non-e2e -> 1041 tests run: 1041 passed, 113 skipped
+      ./run-tests.sh --e2e      -> 113 tests run: 113 passed, 1041 skipped
+      cargo nextest run         -> 1709 tests run: 1709 passed, 0 skipped
+      cargo fmt --all -- --check -> exit 0
+      cargo clippy --workspace --all-targets --locked -- -D warnings -> exit 0
+      givn check tasks --change split-stack-instructions
+        -> 29 scenarios (29 passed), 190 steps (190 passed)
+           ✓ change verification receipt: 29 scenario(s), 0 failed, 0 skipped
+             at 0cc81208e8b2ec484ceb29a0644f8be1d8fe3706
+           ✓ verify passed
       exit 0
       ```
 
