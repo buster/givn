@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "change": "split-stack-instructions",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "fragments/adr-qualification-gate.feature",
+    "fragments/instruction-integrity.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "fragments/adr-qualification-gate.feature",
+    "fragments/instruction-integrity.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature"
+  ],
+  "merge_targets": {
+    "fragments/adr-qualification-gate.feature": "givn/specs/fragments/adr-qualification-gate.feature",
+    "fragments/instruction-integrity.feature": "givn/specs/fragments/instruction-integrity.feature",
+    "obtain-effective-guidance/serve-extended-rules.feature": "givn/specs/obtain-effective-guidance/serve-extended-rules.feature"
+  },
+  "started_at_unix": 1794739667,
+  "finished_at_unix": null
+}
