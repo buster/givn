@@ -140,7 +140,7 @@ Recorded, not fixed. `design.md`, the delta features, and the durable docs are
 unchanged by this section. No design-named scenario is missing: every scenario
 described in design.md "Use-Case Traceability", "Replace Flow", "Verify Flow",
 "Partition Rules", "External Boundary Cases", and the design-review decision
-set resolves to one of the 58 delta scenarios, either by exact title or by the
+set resolves to one of the 64 delta scenarios, either by exact title or by the
 descriptor below.
 
 1. **`--full` versus three scenarios that assert a file under the declared
@@ -3099,14 +3099,23 @@ that distinguishes it.
         ✓ change verification receipt: 62 scenario(s), 0 failed, 0 skipped at 14973c13b75fab8322045a11fe98dcad57df28f8
         ✓ verify passed
       ```
-- [ ] `givn check review --change add-ise-clean-room-commands` passes the
+- [x] `givn check review --change add-ise-clean-room-commands` passes the
       scenario-commit, integrity, routing, and add-on lock checks. The review
       verdict is the reviewer's, not the author's.
       ```
-      <!-- paste the review check output; the reviewer records REVIEW: PASS in review.md -->
+      givn check review --change add-ise-clean-room-commands → exit 0 (2026-11-15)
+      Mandatory checks for 'review':
+        ✓ integrity checks passed
+        ✓ run declaration passed
+      givn lint: 3 file(s) checked — clean
+      net delta: 63 added, 1 modified, 0 removed
+        ✓ overlap dispositions passed
+        ✓ scenario commits passed (64 scenario(s))
+        ✓ change verification receipt reused across documentation-only revision efe17c357f9fcf3e9b2495c7128bda404a731e7a (tested at ae0cbe917f7c5fe8620c7269641b4813c9dadd50, 62 scenario(s))
+        ✓ scenario commits passed (64 scenario(s))
       ```
 
-**Done when:** every box is checked with its batch `COMMIT:` revision, all 58
+**Done when:** every box is checked with its batch `COMMIT:` revision, all 64
 delta scenarios pass in the non-`@e2e` and `@e2e` scopes, the two `@e2e`
 transcripts are committed, `givn check tasks` exits 0, and the contradictions
 in `## Contradictions` are reported rather than silently repaired.
