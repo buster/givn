@@ -1,6 +1,6 @@
 Review kind: self-review
 Author: addon-artifact-report author
-Reviewer context: same context as the author (self-review)
+Reviewer context: addon-artifact-report author
 
 # Design Review: addon-artifact-report
 

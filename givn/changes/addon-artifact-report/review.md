@@ -73,9 +73,11 @@ the delta; no production change was made to force the original wording.
 
 ## README impact
 
-README-IMPACT: none — the change extends `givn addons list` output and its exit
-status; `README.md` documents no per-command output and no addon listing, so no
-section requires an update.
+README-IMPACT: none
+
+The change extends `givn addons list` output and its exit status. `README.md`
+documents no per-command output and no addon listing, so no section requires an
+update.
 
 ## Verdict
 
