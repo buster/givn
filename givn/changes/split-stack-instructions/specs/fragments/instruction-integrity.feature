@@ -44,21 +44,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  every named instruction id resolves
 
   @givn.added @wip
-  Scenario: The four core step instructions stay within their recorded total
-    Given  the shipped instruction corpus of this Givn checkout
-    When  the maintainer measures the four core step instructions that carry step, scenario, design, and review rules
-    Then  their combined line count is at or below the total recorded by this change
-    And  the recorded total is no greater than their pre-split total
-
-  @givn.added @wip
-  Scenario: The shipped instruction corpus stays within its line budget
-    Given  the shipped instruction corpus of this Givn checkout
-    When  the maintainer measures every shipped instruction
-    Then  the corpus counts the stack instructions
-    And  the combined line count is at or below 4,500 lines
-
-  @givn.added @wip
-  Scenario: The consolidated review guidance keeps every surviving obligation
+  Scenario: The review guidance keeps every surviving obligation
     Given  a Givn project with an active change
     When  the maintainer requests the review instructions through the Givn CLI
     Then  the served text carries "`@e2e` tag integrity"

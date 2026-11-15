@@ -1438,7 +1438,7 @@ manifest's `F` lines (`x` executable, `l` symlink), read through
 `allow-symlinks on`. A manifest read or parse failure refuses before any
 write.
 
-## 8.30 Stack Instruction Composition and the Guidance Budget
+## 8.30 Stack Instruction Composition
 
 A core step instruction carries the universal rules of its step and names each
 on-demand stack instruction with the condition that selects it; it carries no
@@ -1454,15 +1454,17 @@ context, a project may override it per id, and its body reaches the caller only
 on a request for its own id. The relation is the id convention `steps` to
 `steps-rust`, the same pairing `dialog` to `dialog-examples` established.
 
-The corpus is bounded: the four core step instructions (`specs`, `steps`,
-`design`, `review`) stay at or below their recorded post-split total, and every
-file under `assets/instructions/` stays at or below 4,500 lines with the stack
-instructions counted. The measured post-split corpus is 4,481 lines and the
-four core files total 1,544. Both numbers are asserted by the acceptance suite
-against the checkout's shipped assets, because the budget describes Givn's own
-guidance rather than a consumer project's overrides. A future stack adds a
-file, and the cap makes that cost visible instead of silent (ADR-077, `Q-126`,
-`R-148`).
+A core step instruction carries the universal rules and the id mapping; it
+does not carry a per-runner body. Per-stack mechanics are served only by a
+request for that stack's id, so a change on a stack the core instruction does
+not name never loads another stack's rows. The acceptance suite asserts the
+rule as served-text presence and absence: the core text names each id with its
+condition and carries no per-runner path, stub, binding instruction, strict
+mechanism, or run command (ADR-077, `Q-126`).
+
+Instruction length carries no numeric cap. A sentence that states a valid rule
+is not removed or split to satisfy a line count; prose that adds no rule is the
+length defect to remove. `review.md` therefore keeps its full obligation set.
 
 The instruction-id part of the guidance reference check reads served text, not
 the asset: every `givn instructions <id>` direction that a served instruction

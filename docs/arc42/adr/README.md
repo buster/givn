@@ -61,7 +61,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-074](ADR-074-neutral-source-analyzer-port.md) | accepted | Analyze source code behind a neutral `SourceAnalyzer` port with a `syn` adapter | dependency-direction and engine-replacement boundary |
 | [ADR-075](ADR-075-projected-interaction-integrity.md) | accepted | Enforce the projected interaction inventory before accepting a change | pre-mutation gate boundary; component split and dependency direction |
 | [ADR-076](ADR-076-clean-room-trial-record.md) | accepted | Bind a clean-room trial to a versioned, per-path record outside the trial | durable evidence scope; builder-versus-verifier boundary |
-| [ADR-077](ADR-077-stack-instructions-and-corpus-budget.md) | accepted | Serve stack mechanics on demand from per-stack instructions under a recorded corpus budget | durable guidance composition contract and a measured size boundary |
+| [ADR-077](ADR-077-stack-instructions.md) | accepted | Serve stack mechanics on demand from per-stack instructions | durable guidance composition contract; instruction id and load-condition boundary |
 
 ## Relationships
 

@@ -21,10 +21,11 @@ Four coordinated surfaces, each owned by one component:
    documented context, so a core instruction that names an id nobody serves
    fails by name. It reads the served text, not the asset, so a project
    override is checked as served.
-4. **Corpus budget** (the same change-local step file) records the pre-split
-   total (1,630 lines over the four core files), the post-split cap, and the
-   4,500-line corpus cap, and asserts both mechanically over the shipped
-   assets.
+4. **Instruction composition rule**: a core step instruction carries the
+   universal rules and the id mapping, and per-stack mechanics are served
+   only on a request for that stack's id. The rule is asserted as text
+   presence and absence, not as a line count; instruction length carries no
+   numeric cap, and prose that adds no rule is the length defect.
 
 The split moves rows; it adds no runner, changes no `@e2e` policy, and changes
 no request contract: text and JSON still carry identical content.
@@ -52,7 +53,7 @@ served guidance and the refusal text:
 **Personas:** `agent--technical-role`, `developer--primary-user`, and
 `givn-maintainer--owner` are confirmed. `agent--technical-role` loads the stack
 instruction; `developer--primary-user` reads the same text manually;
-`givn-maintainer--owner` owns the corpus budget.
+`givn-maintainer--owner` owns the instruction composition rule.
 
 ## Use-Case Traceability
 
@@ -73,8 +74,8 @@ Confirmed Persona IDs: `agent--technical-role`, `developer--primary-user`,
 | `instruction-integrity` extension: a named instruction id that does not resolve fails the check by name | new `instruction_references` check over served text and every effective addon instruction; each id resolved in its documented context, with a missing or extra context a finding | `instruction-integrity`: `Every instruction id a served instruction names resolves`, `A dangling stack instruction id fails the reference check by name`, `An artifact instruction named without its change context is a finding`, `A policy instruction named with a change context is a finding` |
 | `instruction-integrity` rule: the `ise` instruction's directions resolve | `ise.md` names `steps` as the stack mapping and `steps-rust` as one example, plus the two record owners; the check resolves them while `ise` is effective | `instruction-integrity`: `The ise instruction names only instruction ids that resolve` |
 | `instruction-integrity` rule: one canonical owner per rule | the moved rows leave the core instruction rather than being copied; the core points at the stack instruction | the four `serve-extended-rules` absence scenarios |
-| `instruction-integrity` rule: the consolidated review guidance keeps every obligation | the review consolidation keeps one stable marker per surviving check | `instruction-integrity`: `The consolidated review guidance keeps every surviving obligation` |
-| `instruction-integrity` rule: the corpus stays within its recorded budget | the four core cap and the 4,500-line corpus cap, measured over `assets/instructions/*.md` | `instruction-integrity`: `The four core step instructions stay within their recorded total`, `The shipped instruction corpus stays within its line budget` |
+| `instruction-integrity` rule: the review guidance keeps every obligation | `review.md` restores the pre-consolidation content and keeps one stable marker per obligation | `instruction-integrity`: `The review guidance keeps every surviving obligation` |
+| `support` fragment rule: a core step instruction carries the universal rules and the id mapping, and a stack instruction's body is served only on request | the core files carry no per-runner table; the six stack files carry the runner mechanics; nothing is measured by line count | `serve-extended-rules`: `Core step guidance carries no stack body`, `Core step guidance names each stack instruction with its load condition`, `Every stack instruction is served only on its own request with its runner body` |
 | `support` fragment rule: the register count matches the accepted records | `ADR-077` is already accepted and the register already counts 29, so the modified scenario is existing behavior protected; no capability behavior changes | `adr-qualification-gate`: `The migration preserves independent architecture history across three proposed decisions` (`@givn.modified`) |
 
 ## Architecture Impact
@@ -91,8 +92,8 @@ No module is added to `src/`. Three code surfaces change:
   `src/config/embedded.rs` picks up new files at build time, so no registration
   file lists them.
 - `tests/common/instruction_references.rs` (new) plus `tests/steps/`: the
-  instruction-direction extraction and resolution, the budget assertions, and
-  one count binding for the modified register scenario.
+  instruction-direction extraction and resolution, and one count binding for
+  the modified register scenario.
   `tests/common/reference_check.rs` keeps its file-reference job unchanged.
 
 No Mermaid diagram is warranted: the serving path is unchanged and the change
@@ -143,25 +144,25 @@ consumer, so one module with no port is proportionate.
   home, and the outline's separate TypeScript/JavaScript entries would split one
   `cucumber-js` runner across two instructions). Realized in the six asset files
   and the two core instructions.
-- Decides D2 (proposal question: where the durable budget check lives and what
-  it counts): **a permanent check over the shipped assets, counted with the
-  stack instructions**. The scenario asserts `assets/instructions/*.md` totals
-  at or below 4,500 lines with every stack instruction counted, and the four
-  core files at or below their recorded post-split cap. The plan's `G2` is the
-  gate; excluding the stack instructions would let total served text grow
-  without bound by extraction, which is the failure the gate exists to prevent.
-  Rejected: excluding the stack instructions (the gate stops gating); a recorded
-  measurement with no check (no future detection). The cap's cost is real: this
-  change must also delete about 90 lines of duplicated guidance, and the plan's
-  own action on failure is to re-cut the split. Realized in the change-local
-  step file and recorded in `docs/arc42/08-crosscutting-concepts.md`.
+- Decides D2 (proposal question: whether instruction length is capped): **no
+  numeric cap; the operator withdrew the corpus budget on 2026-11-15**. The
+  durable rule is qualitative: a core step instruction carries the universal
+  rules and the id mapping, per-stack mechanics are served only on a request
+  for that stack's id, and prose that adds no rule is the length defect. The
+  rule is asserted as text presence and absence by the load-condition and body
+  scenarios, not by a line count. Rejected: a permanent line cap (it deleted
+  valid `review.md` obligations to satisfy a number, which the operator
+  overruled); a recorded measurement with no check (no detection of a core
+  instruction that regrows a stack body, which the absence scenarios now
+  detect). Realized in the delta scenarios and recorded as the
+  `## Operator decision: no corpus line cap` entry below.
 - Decides D3 (proposal question: which instruction owns the runner mechanics
   the design instruction serves): **one instruction per stack, named by both `steps` and
   `design`**. `steps-rust` holds the Rust step file, binding form, empty-body
   stub, strict-mode mechanism, and single-scenario command; `design` names the
   same id with the condition "the change's runner is Rust". The runner is one
-  subject and the rows are three to five lines each, so twelve files would cost
-  about 60 lines of headers the corpus cap cannot absorb. The id convention
+  subject and the rows are three to five lines each, so twelve files would
+  add about 60 lines of headers for no additional rule. The id convention
   `<id>-<stack>` still identifies the file: the stack instruction is owned by
   `steps`, the instruction whose rows are the majority, and `design` points at
   it. Rejected: `steps-rust` plus `design-rust` and ten more (corpus cost);
@@ -202,6 +203,29 @@ change-scoped run executes only the delta, so the dead `28` binding in
 `tests/steps/adr_qualification_gate_steps.rs` is deleted in the same batch.
 No RED is claimed for it.
 
+## Operator decision: no corpus line cap
+
+Date: 2026-11-15.
+
+There is no hard limit on instruction length. Instructions are not padded with
+prose that adds nothing, but content that states valid rules is not removed or
+split to satisfy an arbitrary line count. The stack split is approved on its
+own merits: one owner per rule, and one load per stack.
+
+Reason: the earlier draft derived a 4,500-line corpus cap and a 1,544-line
+four-core cap from the plan's `G2` budget rule, not from a requirement. Meeting
+the corpus cap required deleting the Step 0 items 0, 8, 9, 11, and 12, the
+`## E2e coverage` section, the sign-off E2E block, and the spot-check section
+from `review.md`; the operator withdrew both caps and every check derived from
+them.
+
+Withdrawn: `CORPUS_LINES_MAX`, `CORE_INSTRUCTIONS_MAX`, the
+`CORE_INSTRUCTIONS_BEFORE` constant, the budget check, the two budget
+scenarios, ADR-077's budget decision, and every derived statement in
+`docs/arc42/`, `givn/ideation/ise-rebuildability/plan.md`, and
+`docs/ideation/ise-rebuildability.md`. Retained: the split, the six ids, the id
+mapping, the reference check, and the load-condition and body rules.
+
 ## The Split: what moves where
 
 Each stack file holds the mechanics the core instructions carried for that
@@ -231,14 +255,15 @@ Core instructions, after the split:
 | `steps.md` | the executable-spec rule, one file per capability, the archive merge rule, `@e2e` tag immutability, the canonical-policy pointer, visual capture, step reuse, the empty-body prohibition, the behavior batch, distinctions, guardrails | six ids, one paragraph with each runner condition | the per-runner step path list and the stub table; the archive binding-token list stays |
 | `design.md` | the strict-mode requirement, the single-scenario requirement, the rest of the design contract | the same six ids with the runner condition | the strict-mode table, the per-stack command examples, and the runner-product examples in the executable-spec invariant |
 | `specs.md` | unchanged | none | nothing |
-| `review.md` | every check and every marker | none | duplicated restatements of the canonical E2E and step policy (see the budget) |
+| `review.md` | every check and every marker | none | nothing; the earlier line-reduction consolidation is restored |
 | `tasks.md` | the strict-proof procedure and the empty-body prohibition | `steps` as the stack mapping | the per-runner strict flags and the stub table |
 | `tasks-reverse.md` | the strict-proof procedure and the empty-body prohibition | `steps` as the stack mapping | the per-runner strict flags and the stub table |
 | `ise.md` | the ise obligations and the two records | `steps` as the mapping, `steps-rust` as one worked id | nothing |
 
-The consolidated `review.md` keeps one imperative sentence per obligation and
-one stable marker per obligation, asserted by the `instruction-integrity`
-delta scenario.
+`review.md` keeps every obligation and one stable marker per obligation,
+asserted by the `instruction-integrity` delta scenario; the earlier
+line-reduction consolidation is withdrawn and its content restored from
+`aa50b100`, with the HTTP-client wording kept in place of `reqwest`.
 
 `steps-rust.md` (the shape the other five follow):
 
@@ -254,70 +279,34 @@ delta scenario.
 - Single scenario: `cargo test <name> -- --exact`.
 ```
 
-## The Budget
+## Instruction Composition Rule
 
-Measured before this change (`wc -l`), recorded in the change evidence:
+A core step instruction carries the universal rules of its step and the id
+mapping; it does not carry another stack's mechanics. `steps` and `design`
+name each stack instruction id with the load condition that selects it, and a
+stack instruction's body is served only by a request for its own id. `specs`
+and `review` carry no stack body and name no stack instruction. `tasks` and
+`tasks-reverse` point at `steps` for the mapping. The relation is the id
+convention `steps` to `steps-rust`, the pairing `dialog` to `dialog-examples`
+established.
 
-```text
-assets/instructions/*.md                    4528   (22 files)
-specs.md 373  steps.md 261  design.md 386  review.md 610   → 1630
-```
+The rule is asserted as text presence and absence over the served output:
 
-The 4,500-line cap is 28 lines *below* the pre-split corpus, because the three
-`ise` track predecessors added 131 lines to a 4,397-line baseline. The measured
-result after the split:
+- presence: `steps` and `design` name each id with its runner condition, and
+  each stack request serves that runner's binding, stub, strict mechanism, and
+  single-scenario command;
+- absence: the core served text carries no per-runner path, stub, binding
+  instruction, strict mechanism, or run command;
+- one owner: a moved row leaves the core text instead of being copied.
 
-| Movement | Lines |
-|---|---:|
-| six stack files added | +53 |
-| `ise.md` stack section | +4 |
-| `steps.md` net (rows out, id paragraph in) | −4 |
-| `design.md` net (table out, rule in) | −3 |
-| `review.md` net (duplication removed) | −79 |
-| `tasks.md` net (strict and stub lists removed) | −11 |
-| `tasks-reverse.md` net (strict and stub lists removed) | −7 |
-| **measured corpus** | **4481** |
-
-Measured after the split: `assets/instructions/*.md` 4481 over 28 files;
-`specs.md 373  steps.md 257  design.md 383  review.md 531  → 1544`. The
-corpus has 19 lines of headroom.
-
-`review.md` consolidation, block by block. Each row keeps the check and deletes
-the restatement; the canonical owner keeps the rule:
-
-| Block (today) | Lines today | After | Rule owner kept |
-|---|---:|---:|---|
-| Step 0 item 0 (`@e2e` tag integrity) | 8 | 5 | `givn instructions steps` owns the tag rule; the review and lint gates detect removal |
-| Step 0 items 8 and 9 (E2E scope and explicit scope selection) | 13 | 5 | `givn instructions specs` owns the canonical E2E policy, including explicit scope selection |
-| Step 0 item 10 (implementation matches the named design) | 17 | 3 | `design.md` owns the named commands, layout, and driver; the review checks the match |
-| Step 0 items 11 and 12 (interaction inventory and finding handling) | 30 | 8 | `specs.md` and the use case own the inventory; `design.md` owns the matrix; the review records the cross-reference and the finding result |
-| `## E2e coverage` | 10 | 11 | `givn instructions specs` states the E2E policy; the interface-classification policy in `specs` and `design` owns the opposite-classification check |
-| Sign-off checklist E2E block | 31 | 17 | each item becomes one line naming the check |
-| `## Step orchestration (review spot-check)` restating Step 0 | 34 | 15 | one sample re-check per obligation, pointing at Step 0 for the mechanics |
-
-The `## E2e coverage` block keeps its full opposite-classification sentence,
-so it measures one line longer; the total is still below the plan.
-
-Recorded budget constants, asserted by the scenarios:
-
-| Constant | Value | Meaning |
-|---|---:|---|
-| `CORE_INSTRUCTIONS_BEFORE` | 1630 | the four core files before the split (373 + 261 + 386 + 610) |
-| `CORE_INSTRUCTIONS_MAX` | 1544 | the measured post-split total of the four core files |
-| `CORPUS_LINES_MAX` | 4500 | every file under `assets/instructions/`, stack instructions included; the corpus measures 4481 |
-
-`CORE_INSTRUCTIONS_MAX` is a ceiling, not a target: a measured total above it is
-a `G2` failure, never a reason to raise the constant. A measured total below it
-is recorded in the change evidence, and the constant stays where the design put
-it so a later edit cannot spend the difference.
-
-`CORE_INSTRUCTIONS_MAX` must stay at or below `CORE_INSTRUCTIONS_BEFORE`; the
-scenario asserts that relation, so a later edit cannot raise the ceiling above
-the pre-split total to make room.
-
-If the measured result exceeds either cap, the plan's `G2` action applies: stop
-and re-cut the split (drop to fewer stack files) rather than raise a cap or
-delete a pinned rule. The change does not proceed to `S7` on a failed budget.
+Instruction length carries no numeric cap. The earlier draft of this design
+recorded a corpus budget with two measured ceilings and two scenarios, and
+paid for the corpus total by deleting review obligations. The operator
+withdrew the budget on 2026-11-15 (see `## Operator decision: no corpus line
+cap`). Prose that states no rule is still a defect; a rule that states valid
+behavior is never removed or split to satisfy a line count. `review.md`
+therefore keeps its full obligation set, restored from `aa50b100`, and no
+check is deleted to make a number smaller.
 
 ## Instruction Reference Check
 
@@ -363,9 +352,7 @@ surface (D4).
 | Served text → id context | a policy direction with `--change` | a finding naming the id and the extra context |
 | Served text → addon | `ise` named while the fixture has it off | the request refuses naming `ise`; the check skips the addon-bound id |
 | Served text → addon instruction | an effective addon instruction names a retired id | the check fails and names the id with its source line |
-| Budget → assets | one file over the corpus cap | the corpus scenario fails naming the total and the largest file |
-| Budget → core | the four core files over their cap | the core scenario fails naming the total |
-| Budget → constant | a cap raised above the pre-split total | the scenario fails on the relation, not only on the measurement |
+| Served text → core body | a core instruction regrows a per-runner table | the absence scenario fails naming the stack instruction that owns the row |
 
 ## Step Definitions
 
@@ -387,9 +374,9 @@ module `tests/common/instruction_references.rs` is registered in
 `tests/common/mod.rs` and carries no `#[given]`/`#[when]`/`#[then]`.
 
 Not-implemented pattern: every new step drives the built `givn` binary against
-its fixture or measures the checkout's shipped assets, then asserts a named
-sentence, an absence, a refusal, or a count. No step substitutes a stub for a
-missing production path, so a RED run fails on the assertion.
+its fixture, then asserts a named sentence, an absence, a refusal, or a
+finding. No step substitutes a stub for a missing production path, so a RED
+run fails on the assertion.
 
 Test runner command (from `givn/commands.yaml`):
 
@@ -437,8 +424,8 @@ use-case documents and existing designs.
 | `instruction-integrity`: request normal session-start instructions (permanent row) | Author starts a session with the universal dialog obligation | CLI | the built `givn` binary with no id; stdout asserted |
 
 The delta's own scenarios are regular scenarios: they assert invariants the
-`@e2e` rows do not (absence of stack bodies, id resolution, budget counts), so
-they do not duplicate an `@e2e` outcome.
+`@e2e` rows do not (absence of stack bodies, id resolution, and the review
+obligation markers), so they do not duplicate an `@e2e` outcome.
 
 ## Persona impact
 
@@ -448,7 +435,7 @@ they do not duplicate an `@e2e` outcome.
 | `serve-extended-rules` | `developer--primary-user` | Reads the same shorter core text; the Rust mechanics stay reachable by id. |
 | `serve-extended-rules` | `givn-maintainer--owner` | A moved row keeps one home; the core instruction shrinks and cannot regrow. |
 | `instruction-integrity` | `agent--technical-role` | A dangling id fails by name, so a served direction never points at nothing. |
-| `instruction-integrity` | `givn-maintainer--owner` | The corpus budget is measured, not remembered; the pre-split total is the ceiling. |
+| `instruction-integrity` | `givn-maintainer--owner` | One owner per rule is checked as text; a core instruction that regrows a stack body fails the absence assertions. |
 
 ## E2E smoke-test infrastructure
 
@@ -459,9 +446,7 @@ they do not duplicate an `@e2e` outcome.
   the delta adds no `@e2e` scenario and no new e2e step.
 - **Local infrastructure:** no server, database, container, or browser. Each
   scenario creates a `tempfile::TempDir`, writes a minimal Givn project, and
-  runs the built `givn` binary (`env!("CARGO_BIN_EXE_givn")`). The budget
-  scenarios read this checkout's `assets/instructions/` through
-  `common::repo_path`.
+  runs the built `givn` binary (`env!("CARGO_BIN_EXE_givn")`).
 - **Framework:** cucumber-rs, because the product's real interface is the CLI.
 - **Strict-mode proof:** `.fail_on_skipped()` above; the delta's first RED run
   is an unbound phrase, which the runner reports as failed.
@@ -480,9 +465,8 @@ external third-party dependency, so no digital twin is required.
 Two interface obstacles have designed fixes:
 
 - **Served text vs asset text**: the check reads served output, so a project
-  override is graded as served; the budget reads asset files, because the cap
-  describes the shipped corpus. The two never share a path, which is why D5
-  keeps them in separate modules.
+  override is graded as served; grading the asset would grade text the project
+  does not receive. D5 keeps the served-text check out of `reference_check`.
 - **Addon-bound ids in a fixture**: a fixture with `ise` off refuses `ise`; the
   check reads the fixture's effective addons before deciding to skip that id,
   so a refusal is never reported as a dangling id.
@@ -497,7 +481,7 @@ Measured population: `src/`. Excluded: tests, generated assets, fixtures, and
 the instruction corpus itself. The population is declared before the first run
 and is not changed after seeing the result.
 
-The budget and reference scenarios execute no new production branch; the
+The reference and composition scenarios execute no new production branch; the
 serving scenarios keep `run_artifact` non-zero, which is the probe. A coverage
 drop relative to the previous change is expected only in the ratio's
 denominator (the delta adds test code, not production code) and is not a
@@ -505,15 +489,13 @@ finding by itself.
 
 ## Risks and Trade-offs
 
-- **The 4,500 cap is tight.** The measured result is 4,481 lines against a
-  per-file cap of 4,500; a future stack file or guidance addition spends the
-  19-line headroom quickly. The mitigation is the plan's own `G2`: re-cut to
-  fewer stacks rather than raise the cap. Recorded as a risk in chapter 11
-  (R-148).
+- **No numeric size signal.** Instruction length is not capped, so a verbose
+  instruction is not caught by a number. The absence scenarios catch a core
+  instruction that regrows a stack body, and review names prose that adds no
+  rule; a valid rule is never a finding on length alone.
 - **Six tiny files.** A stack file of eight to ten lines is a lookup, not a
   document; the value is that it is the only place that stack's mechanics
-  live. If a seventh runner appears, its rows go into a seventh file, and the
-  cap makes that cost visible.
+  live. If a seventh runner appears, its rows go into a seventh file.
 - **`design` names `steps-<stack>`.** The pairing convention reads
   `<id>-<stack>` with `steps` as the owner while `design` points at the same
   file. The alternative (twelve files) costs more than the convention's
@@ -521,11 +503,7 @@ finding by itself.
 - **The reference check runs the binary per id.** A served-text scan of every
   instruction costs one process per id; the suite already runs the binary
   hundreds of times, so the added cost is bounded and local to two scenarios.
-- **Cap constants can be edited.** A future change can raise
-  `CORE_INSTRUCTIONS_MAX`, subject to the asserted relation that it never
-  exceeds `CORE_INSTRUCTIONS_BEFORE`; raising `CORPUS_LINES_MAX` is a visible
-  spec change, which review catches.
-- **Consolidating `review.md` risks losing a check.** The plan keeps one
-  imperative sentence per obligation and names the owner; review-time
-  verification is that every Step 0 obligation and every sign-off item is still
-  present as a check.
+- **`review.md` keeps some restated policy.** The restored text repeats the
+  canonical E2E and step policy in more than one place. One owner per rule
+  remains the review criterion; the duplication is removed only by a later
+  reviewed change that keeps every obligation, never to satisfy a count.

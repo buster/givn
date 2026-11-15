@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:5e1afe6e63df64b718b29da7e0bb6932214dabe7e3286478617234898925f2f4 -->
+<!-- givn:base-sha256:196a8cf20dd2a7c0f548fc28a1321b9931c84d46df500f11b2e35907cc162387 -->
 # Use case: obtain-effective-guidance
 
 ## Level

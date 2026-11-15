@@ -27,7 +27,7 @@ history, while the frozen `End-to-end (E2E) test` package stays green. The
 Givn phases ship the capabilities that make that routine repeatable: the
 opt-in `ise` addon, the declaration and its findings, the `@e2e` package gate
 and receipt identity, `givn ise replace` and `givn ise verify`, and the
-guidance split that keeps the instruction budget. The harness and pilot
+guidance split that keeps each rule in one place. The harness and pilot
 phases produce the evidence that decides whether the claim holds and whether
 `ise` can ever become default-on. A phase that cannot produce its evidence
 stops the plan; a qualitative success report is not a substitute.
@@ -92,7 +92,7 @@ flowchart TB
 | S2 | `givn` | Declaration loader and the four advisory declaration findings in `givn lint` | S1 | M | Each finding prints with exit 0; a malformed declaration is refused by name; `givn check review` behaviour is unchanged |
 | S3 | `givn` | `@e2e` package boundary as a blocking `givn check tasks` check, and receipt binding of the `e2e` digests, runner command digest, and Givn version | S2 | M | Missing package, dependency edge, wrong runner target, unbound step, and skipped step each refuse or fail without a receipt; the receipt carries all three values |
 | S4 | `givn` | `givn ise replace` and `givn ise verify` with the settled inputs, nine refusals, ten fixed report lines plus the optional receipt line, and trial record | S3 | L | All nine refusals occur before any write on Git and Fossil; the report prints the ten fixed lines and the receipt line when a receipt is written; tampering with a retained or `e2e` file is reported per path |
-| S5 | `givn` | Stack instruction split, the `ise` instruction, the two `specs.md` amendments, and the guidance sweep | S1 | M | `givn instructions steps` carries no Rust body and names `steps-rust`; `givn instructions ise` refuses with the addon off; the instruction line budget holds |
+| S5 | `givn` | Stack instruction split, the `ise` instruction, the two `specs.md` amendments, and the guidance sweep | S1 | M | `givn instructions steps` carries no per-runner body and names each stack id with its condition; `givn instructions ise` refuses with the addon off; a stack body is served only on its own request |
 | S6a | `givn-harness` | Stage snapshots with a recorded revision, target-stage grading, cross-stage state continuity, and sandboxed candidate grading | P0 | L | The grader reports `fail` for a reached stage that lacks Petorania; a state directory created at stage 1 is read at stages 2 and 3; every candidate runs in the sandbox with no host package install |
 | S6b | `givn-harness` | Versioned `ise` task variants that run `givn ise replace` and `givn ise verify` | S4, S6a | M | `benchmark verify` passes; the variants run both commands and each seeded defect trips its declared ids |
 | S7 | `givn-harness` | Catopia E1: `ise` off versus on across `initial`, `followup`, `followup2`, compared with the `v0.9.14` baseline | S4, S5, S6a, S6b | M | `ise=on` reaches 25/25, at least 119 regular plus 11 `@e2e` scenarios, and at least 87.33/79.85 coverage |
@@ -473,33 +473,38 @@ whether digest re-checks distinguish protected inputs from implementation.
   changed `specs` policy.
 
 **Verification.**
-- `givn instructions steps | wc -l` before and after, with the Rust body
-  absent and the `steps-rust` id plus load condition present.
-- `givn instructions steps-rust | wc -l` proves the mechanics are served on
-  request.
+- `givn instructions steps` shows the Rust body absent and the `steps-rust` id
+  with its load condition present.
+- `givn instructions steps-rust` proves the mechanics are served only on a
+  request for that id.
 - `givn instructions ise` with the addon off names `ise`; with it on, the five
   obligations are present.
 - `./run-tests.sh` and `./run-tests.sh --e2e`; the instruction-reference
   scenario fails on a dangling id.
-- Instruction budget, two independent conditions:
+- Instruction composition, two independent conditions:
   ```sh
-  wc -l assets/instructions/specs.md assets/instructions/steps.md assets/instructions/design.md assets/instructions/review.md
-  wc -l assets/instructions/*.md
+  givn instructions steps
+  givn instructions steps-rust
   ```
-  Record both commands before and after S5. The four core step files have zero
-  or negative net growth. The total, counting the new `ise` instruction and the
-  stack instructions, stays at or below 4,500 lines.
-- **Evidence:** the before and after instruction line counts, the served core
-  and stack text, the addon-off refusal transcript, and the dangling-id
-  failure.
+  The first serves the universal rules and the id mapping with no per-runner
+  body. The second serves the Rust mechanics and is the only request that
+  carries them. A core instruction that regrows a stack body fails the absence
+  scenario, whatever its length.
+- **Evidence:** the before and after served core and stack text, the addon-off
+  refusal transcript, and the dangling-id failure.
+
+The numeric corpus ceiling this phase originally recorded was withdrawn by
+operator decision on 2026-11-15. Instruction length carries no cap; prose that
+states no rule is the defect, and a rule that states valid behavior is not
+removed or split to satisfy a line count.
 
 **Exit criteria.**
-- The core and stack outputs, the `ise` refusal, the five obligations, and the
-  line budget are captured.
+- The core and stack outputs, the `ise` refusal, and the five obligations are
+  captured.
 - The two `specs.md` sentences and their pinned scenarios agree.
 
-**Teaches.** Whether on-demand stack instructions hold the budget that the
-`v0.9.15` release lost.
+**Teaches.** Whether on-demand stack instructions keep each rule in one place
+without an arbitrary size target.
 
 ### S6a: Harness snapshots, target grading, continuity, sandbox (givn-harness, L)
 
@@ -896,7 +901,7 @@ losing its E2E evidence.
 | S9 E4 | State created, migrated, and isolated across three stages; no reached requirement ungraded |
 | S10 to S12 | No production dependency, defect failures, both viewports, full-product trial green or classified |
 | S13 | Givn `e2e` package independent; all 108 scenarios accounted for; gap list classified |
-| S5 | The four core step files have zero or negative net growth, and the total is at or below 4,500 lines |
+| S5 | The core instructions carry no per-runner body, and every stack body is served only on its own request |
 
 - If every row holds, propose changing `ise` from `default_enabled: false` to
   `true`, with the `TC-14`, glossary, template, and scenario amendments. If
@@ -922,7 +927,7 @@ losing its E2E evidence.
 | Gate | Testable condition | Action when it fails |
 |---|---|---|
 | G1 | A seed cannot be passed to `/givn-propose` without this conversation | Return to P0; do not start the phase |
-| G2 | The four core step instructions (`specs`, `steps`, `design`, `review`) show a net increase, or `wc -l assets/instructions/*.md` exceeds 4,500 lines | Stop S5; re-cut the split before S7 |
+| G2 | A core step instruction (`specs`, `steps`, `design`, `review`) carries a per-runner body, or a stack instruction is served without a request for its own id | Stop S5; finish the composition before S7 |
 | G3 | The `e2e` package manifest graph reaches `source` | Stop the change; do not weaken the gate |
 | G4 | Any of the nine `ise replace` refusals writes anything before refusing, or a Fossil fixture fails | Stop S4; no trial result is admissible |
 | G5 | `ise=on` yields fewer than 119 regular plus 11 `@e2e` scenarios, or coverage below 87.33/79.85 | Stop the plan; the instruction posture repeats `v0.9.15` |
@@ -946,7 +951,7 @@ Additional stop rules:
 
 | Risk | Early signal | Mitigation |
 |---|---|---|
-| Instruction growth repeats the `v0.9.15` collapse | `wc -l` on the four core step files rises, `wc -l assets/instructions/*.md` passes 4,500, or S7 test volume falls | Land S5 before S7; gate G2; core instructions name stack ids instead of carrying bodies; stop on G5 |
+| Instruction growth repeats the `v0.9.15` collapse | A core instruction's served text shows a per-runner table, a stack body appears without its own request, or S7 test volume falls | Land S5 before S7; gate G2; core instructions name stack ids instead of carrying bodies; stop on G5 |
 | E2E step migration cost is larger than the phase | The scenario inventory shows most `@e2e` steps cannot leave process, or S13 stalls | Inventory all 108 scenarios first; move in batches; retag only with a recorded reason; keep component scenarios shared; do not enable `ise` until the boundary is green |
 | Fossil materialization edge cases | A Fossil fixture fails on symlinks, executable bits, nested checkouts, or a dirty tree | The nine refusals are checked before any write; one Git and one Fossil fixture; refuse gitlinks and submodules by name; no inference from markers |
 | Harness grader gaps inflate results | A reached stage reports `ungraded`, a fresh data directory passes a continuity check, or a defect passes | S6a target-stage grading and state carry; S6b seeded defects; negative grader fixtures; no host `pip install` |

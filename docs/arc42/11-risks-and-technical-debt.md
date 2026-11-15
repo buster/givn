@@ -132,13 +132,15 @@ historical measurement is not a current quality claim.
 | R-145 | Fossil's revision entry kinds come from the check-in manifest, so a manifest read or parse drift can misreport the executable bit or a symlink. | Low | Medium | A failed read, a malformed `F` line, or an unrecognized hash length refuses before any write; the fixture sets `allow-symlinks on` and asserts an executable file and a symlink. Git reads `ls-tree` modes for the same facts. |
 | R-146 | The trial's `@e2e` scenario selection inherits the existing detection limit: scenarios nested under `Rule:` are not inspected. | Medium | Medium | The selection uses the same tag rule as the change E2E scope and does not claim more; the limitation is recorded here and in the `prepare-an-ise-test` contract. |
 | R-147 | Module size debt sits at the 500 code-line readability boundary: `src/ise/mod.rs` carries 442 production code lines (513 non-blank, non-comment lines with inline tests), `src/e2e_boundary/mod.rs` 348 (533), and `tests/steps/ise_clean_room_support.rs` 603 fixture-only lines the outline report does not analyze; the older `src/fossil.rs` (709 physical lines, 485 production code lines) and `src/git.rs` (508 production code lines) predate this track. | Medium | Low | Every file stays under the 1,000 code-line limit, and only `src/git.rs` reports the outline `module-code-lines` hint. Split each module along responsibility boundaries in the next change that grows it; the two older files wait for a change that already touches them. |
-| R-148 | The 4,500-line corpus cap has almost no headroom: the corpus measured 4,528 lines before the split, because the three `ise` track predecessors added 131 lines to a 4,397-line baseline, so the split must pair the extraction with a consolidation of duplicated review guidance. The measured post-split corpus is 4,481 lines, 19 under the cap, and the four core files total 1,544. | Medium | Medium | The budget is measured by the acceptance suite before archive, the plan's `G2` action is to re-cut to fewer stack files rather than raise a cap, and the consolidation keeps one imperative sentence per retained check. |
-
 R-87 is deliberately absent: the identifier was retired as inaccurate during the
 operator's correction pass on this change, and no artifact references it any
 more. Renumbering R-88 would make every existing reference in this chapter
 ambiguous for no gain, so the gap stays; a later correction in the same pass
 appended R-89 after R-88 rather than reusing the retired identifier.
+
+R-148 and D-29 are also absent: the operator withdrew the corpus line budget
+on 2026-11-15, so the headroom risk and the cap-tension debt were removed; the
+identifiers are not reused.
 
 ## 11.2 Deliberate Technical Debt
 
@@ -165,7 +167,6 @@ appended R-89 after R-88 rather than reusing the retired identifier.
 | D-26 | The report cannot judge whether a package's responsibility or call order is well designed; that remains a human source-confirmed judgment. | The tool is deterministic and offline by design. | Keep the REFACTOR and review questions authoritative; no semantic model is added. |
 | D-27 | The outline is a per-component call tree, not a project call graph: same-package calls nest, calls to another component are tagged leaves, and callers are never printed. | This keeps each package's evidence independent and avoids a reverse index and cross-component expansion; the reader follows a leaf into the target component. | Add a reverse view only if source confirmation cannot reconstruct callers; no evidence for it yet. |
 | D-28 | The advisory `e2e` dependency-edge finding reads Cargo manifests only, so a project whose package graph is defined by npm, NuGet, or another ecosystem receives no edge finding. | The finding is advisory and the limit is documented in the use-case contract and `docs/reference.md`; reading one manifest format statically keeps `givn lint` free of project toolchain invocation. | Add a manifest reader per ecosystem only if a non-Cargo project enables `ise` and relies on the finding; until then the absence is stated rather than inferred. |
-| D-29 | The stack extraction and the corpus cap pull in opposite directions: moving rows is line-neutral, so the cap is met by deleting duplicated guidance, and a future runner now costs a file header inside the same ceiling. | The deleted text is duplication of a policy another instruction owns, and the split rule (`ADR-077`) makes the remaining owners explicit; the ceiling is a recorded constant with two asserted conditions, so raising it is a visible spec change. | Add a stack file only with the consolidation that pays for it; negotiate the ceiling in its own change if a real guidance need cannot fit. |
 
 ## 11.3 Post-1.0 Backlog
 

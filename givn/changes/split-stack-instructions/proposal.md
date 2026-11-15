@@ -4,8 +4,7 @@
 
 Every core step instruction now names the stack instruction for the project's
 runner and carries only the universal rules, while the per-stack mechanics are
-served on request by id and the shipped guidance corpus stays within its
-recorded line budget.
+served on request by id.
 
 ## Use-Case Context
 
@@ -22,8 +21,8 @@ recorded line budget.
 - Reason: major change. It restructures the guidance every consumer of Givn
   reads, moves the per-stack mechanics out of the four core step instructions
   that the lifecycle skills direct authors to, adds the instruction ids a
-  project may request, and turns the `ise-rebuildability` plan's `G2` gate into
-  a permanent budget check.
+  project may request, and makes the composition rule a permanent text
+  assertion.
 
 ## Problem / Opportunity
 
@@ -32,19 +31,13 @@ definition path, the binding form, and the empty-body stub for each supported
 runner in `steps`, and the runner's strict-mode mechanism and single-scenario
 command in `design`. An author writing a Rust change reads the Python, Java,
 Node, Go, and Ruby rows as well; an author on any stack reads every runner's
-strict-mode row. The measured corpus is already over the budget the
-`ise-rebuildability` plan set: `assets/instructions/` holds 22 files and 4,528
-lines against a 4,500-line cap, because the three predecessor changes of the
-`ise` track added 131 lines to a 4,397-line baseline. The four core step
-instructions total 1,630 lines (373 `specs`, 261 `steps`, 386 `design`, 610
-`review`).
+strict-mode row.
 
-Impact: the plan's `G2` gate cannot pass by adding guidance; every further
-`ise` phase would push the corpus further over the cap that exists to prevent
-the `v0.9.15` collapse, in which added defensive prose cut Catopia scenario
-volume from 130 to 76 while the hidden grade stayed at 25/25. A project on one
-stack also pays for every other stack's lookup tables on every request, and
-nothing detects a core instruction that names an instruction id nobody serves.
+Impact: a project on one stack pays for every other stack's lookup tables on
+every request, and nothing detects a core instruction that names an instruction
+id nobody serves. The split is approved on its own merits: one owner per rule
+and one load per stack. Instruction length is not capped; prose that states no
+rule is the defect, not a rule-bearing sentence.
 
 ## Proposed Solution
 
@@ -75,10 +68,11 @@ Observable behaviour, from the authoring agent's and the maintainer's side:
   every instruction id a served instruction names, and fails naming the
   unresolved id. A core instruction that names `steps-rust` while no such
   instruction resolves is a failure, not a silent gap.
-- **The corpus stays within its recorded budget.** The shipped instruction
-  corpus stays at or below 4,500 lines with the stack instructions counted, and
-  the four core step instructions stay at or below the post-split total recorded
-  by this change. Both numbers are permanent checks and both are recorded.
+- **The composition rule is asserted as text.** A core step instruction carries
+  the universal rules and the id mapping, per-stack mechanics are served only on
+  a request for that stack's id, and a core instruction that regrows a stack
+  body fails a scenario that names the row. Instruction length carries no
+  numeric cap.
 
 ## Capability Routing
 
@@ -92,7 +86,7 @@ seed assign.
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
 | `serve-extended-rules` | `EXTEND serve-extended-rules` (24.50) | `EXTEND serve-extended-rules` | Route agrees. Serving a stack instruction by id is the same request action with another id, and the seed assigns the split's serving behaviour, the named ids, and the text/JSON equality to `obtain-effective-guidance`. |
-| `instruction-integrity` | `no signal` | `EXTEND instruction-integrity` | Resolution and reference integrity stay with the `support` fragment: the dangling id, the `ise` directions, and the corpus budget are checks over served guidance, not new serving behaviour. Route ranked no candidate because the proposal's checks name no command surface. |
+| `instruction-integrity` | `no signal` | `EXTEND instruction-integrity` | Resolution and reference integrity stay with the `support` fragment: the dangling id, the `ise` directions, and the composition rule are checks over served guidance, not new serving behaviour. Route ranked no candidate because the proposal's checks name no command surface. |
 | `adr-qualification-gate` | `no signal` | `EXTEND adr-qualification-gate` | The change mints `ADR-077`, whose accepted record changes the count the permanent register scenario pins; the scenario is `@givn.modified` with the new count and no behavior of the capability changes. Route ranked no candidate because the proposal's subject is guidance composition, not ADR qualification. |
 
 ## Out of Scope
@@ -108,8 +102,8 @@ seed assign.
 - The stack bodies' content: the split moves mechanics; it does not add a
   runner, a language, or a step convention, and it does not change the Rust
   archive binding tokens.
-- A per-project budget: the cap describes Givn's shipped corpus, not a consumer
-  project's overrides.
+- A per-project instruction-length rule: the composition rule describes Givn's
+  shipped instructions, not a consumer project's overrides.
 
 ## Open Questions
 
@@ -119,8 +113,7 @@ seed assign.
   (`cucumber-rs`, `cucumber-js`, `cucumber-jvm`, `behave`, `godog`,
   `cucumber-ruby`). Which of them receive a stack instruction in this change,
   and what happens to the rows of the ones that do not? The answer fixes which
-  ids the core instructions name, which scenarios can assert, and how the
-  4,500-line corpus cap is reached.
+  ids the core instructions name and which scenarios can assert.
 - Options:
   1. **Rust only** — `givn instructions steps-rust` serves the Rust mechanics
      and the other five runners' rows stay in `steps` and `design`; gain: the
@@ -134,8 +127,7 @@ seed assign.
      each hold their own four to five facts, and the core instructions keep the
      universal rule plus the id and load condition; gain: no rule is removed,
      the core carries no stack body, and every stack's author loads one
-     instruction; cost: six new small files, and the corpus must shrink about
-     90 lines in this change to stay under the cap; in practice: `givn
+     instruction; cost: six new small files; in practice: `givn
      instructions steps` names all six ids, and a Go change loads
      `steps-go`.
   3. **Every stack the outline supports** — Rust, Python, Java, TypeScript, and
@@ -149,39 +141,32 @@ seed assign.
   artifact is `design.md`, and the recorded ids and load conditions are the
   contract the specs and the reference check use.
 
-### D2 — Where the durable budget check lives and what it counts
+### D2 — Whether instruction length is capped
 
-- Question: The plan's `G2` gate measures both `wc -l` on the four core step
-  instructions and `wc -l assets/instructions/*.md`. Is the budget a permanent
-  mechanical check over the shipped assets, and does the 4,500-line total count
-  the stack instructions or exclude them? The answer fixes whether a later
-  change can add corpus lines while passing, and whether this change must
-  delete guidance or may only move it.
+- Question: The plan's `G2` gate measured `wc -l` on the four core step
+  instructions and on `assets/instructions/*.md`. Does instruction length carry
+  a durable numeric cap and a permanent check, and does the cap count the stack
+  instructions or exclude them? The answer fixes whether a later change is
+  judged by a line count.
 - Options:
-  1. **Cap counted with the stack instructions, checked permanently** — the
-     total over every file in `assets/instructions/` stays at or below 4,500 and
-     the four core files stay at or below their post-split total, both checked
-     by a scenario; gain: the cap is the plan's own gate and cannot be gamed by
-     moving text, and the four core files cannot regrow to where they were;
-     cost: this change must delete about 90 lines of duplicated guidance to fit,
-     so the split is a consolidation as well as an extraction; in practice: a
-     later change adding 40 lines to `review` fails the budget scenario even if
-     it moves 40 lines into a stack instruction.
-  2. **Cap counted without the stack instructions** — the 4,500-line total
-     excludes the stack instruction files, which are reported separately;
-     gain: the extraction alone satisfies the budget and no existing guidance
-     must be removed; cost: total served text can grow without limit by
-     extraction, which is the failure the gate exists to prevent; in practice:
-     moving 40 lines into a new stack instruction keeps the cap satisfied while
-     a consumer on that stack still loads the same text.
-  3. **Recorded measurement only** — the before and after counts are recorded in
-     the change's evidence and no permanent check exists; gain: nothing to
-     maintain in the test suite; cost: the gate stops gating at archive, and the
-     next phase's growth is detected by nobody; in practice: `assets/
-     instructions/` grows past 4,500 again with no failing check.
-- Disposition: carried — the design's Decisions ledger decides it; the deciding
-  artifact is `design.md`, whose budget section records the exact counts and the
-  check the specs pin.
+  1. **No numeric cap; padding is the defect** — a core step instruction
+     carries the universal rules and the id mapping, per-stack mechanics are
+     served only on request, and prose that adds no rule is removed; gain: no
+     valid rule is ever deleted to satisfy a number, and one owner per rule is
+     checked as text; cost: no mechanical size signal, so review has to read
+     the text for padding and divided ownership.
+  2. **A corpus line cap with a permanent check** — the shipped total and the
+     four core files stay at or below recorded ceilings; gain: a mechanical
+     size signal; cost: valid guidance is deleted to satisfy the number, which
+     is what happened to the `review.md` obligations, and the operator withdrew
+     this option on 2026-11-15.
+  3. **A recorded measurement with no check** — counts are recorded and no
+     scenario asserts them; gain: nothing to maintain; cost: a core instruction
+     that regrows a stack body is detected by nobody.
+- Disposition: answered by the operator decision of 2026-11-15 — option 1. The
+  numeric cap, its constants, and its check are withdrawn; the design records
+  `Operator decision: no corpus line cap`, and the composition rule is asserted
+  as text presence and absence by the load-condition and body scenarios.
 
 ### D3 — Who owns the runner mechanics the design instruction serves
 
@@ -203,9 +188,8 @@ seed assign.
      `design-rust` and their five counterparts, twelve files; gain: the pairing
      rule stays literal and each core instruction owns its own payload; cost:
      twelve files of three to five lines each, with about 60 lines of file
-     headers and scope sentences, which the 4,500-line cap cannot absorb; in
-     practice: a Rust change loads two instructions whose content a reader could
-     hold in one.
+     headers and scope sentences for no additional rule; in practice: a Rust
+     change loads two instructions whose content a reader could hold in one.
   3. **Runner mechanics stay in `design`, only step mechanics split** — gain:
      the pairing rule is untouched and fewer files exist; cost: `design` keeps
      the six-runner strict-mode table, so the core instruction still carries a

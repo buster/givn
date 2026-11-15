@@ -89,10 +89,13 @@ A change can reach review with every task checked off, the runner exiting
 0, and almost nothing actually implemented — if steps were left as
 empty/no-op stubs. Mechanical check, before trusting any other artifact:
 
-0. **Verify `@e2e` tag integrity.** Grep every delta `.feature` file for a
-   removed `@e2e` tag; a removal is a finding, and the rule is owned by
-   `givn instructions steps` and independently detected by `givn check
-   review` and `givn lint`.
+0. **Verify `@e2e` tag integrity.** Grep every delta `.feature` file in
+   `givn/changes/<change-id>/specs/`. If any scenario's tags were changed
+   from including `@e2e` to excluding it, record this as a
+   implementation-evidence finding: `@e2e` coverage was planned and then removed
+   to bypass the verify-e2e gate. The fix is to restore the `@e2e` tag and
+   configure `verify.e2e_command`. Tag removal is independently detected by
+   `givn check review` and `givn lint` through tasks.md cross-reference.
 
 1. Grep every step definition file for empty/trivial bodies: `{}`, `() {}`,
    whitespace-only, bare `pass`/`return`, or a body with no reference to any
@@ -155,21 +158,65 @@ Examples:
    tree (committed or not) is itself a implementation-evidence finding — the
    review must use and credit the strongest one, not whichever one
    `verify.e2e_command` happens to point at if that is the wrong one.
-8. **Check E2E scope against the canonical specs instruction.** Each
-   normalized inventory action has one `@e2e` scenario; variants are regular.
-9. **Confirm the explicit E2E scope selection and receipt reading.** Read the
-   archive receipt's per-scope evidence; required executions report zero
-   failures and skips. Do not re-run the suite in review.
-10. **Design match.** Diff the implementation against `design.md`'s commands,
-    file layout, and framework. A silent deviation is a finding: conform the
-    implementation or update `design.md` and re-run design-review.
-11. **Interaction coverage verification.** Cross-reference every inventory
-    entry in the owning `usecase.md` against the design matrix, the matching
-    `@e2e` scenario, and the promised driving mechanism; record the table in
-    the implementation evidence section. A missing entry, scenario, or
-    mismatched driver is a finding.
-12. Any finding from 1-11 is unfinished work, never a coverage gap: reopen
-    the batch and implement it. Do not write `REVIEW: PASS` while one remains.
+8. **Check E2E scope using the canonical specs instruction.** Confirm that
+   inventory entries are normalized distinct user actions and that each has one
+   E2E scenario. Variants, error cases, and output-affecting flag combinations
+   of the same action are regular scenarios. Excess E2E scenarios are a
+   implementation-evidence finding.
+9. **Confirm the explicit E2E scope selection and receipt reading.** When regular and E2E
+   verification share one runner command, an explicit scope selection such as
+   `GIVN_RESULT_SCOPE` must distinguish the executions. Equal test counts or
+   identical command strings do not by themselves invalidate honestly isolated
+   scopes. Read the archive verification receipt's per-scope evidence; required
+   executions and zero failed or skipped tests remain required, without an
+   extra isolation run. Do not re-run the suite in review; the receipt is the
+   execution evidence.
+10. **Diff the implementation against design.md's stated commands, file
+    layout, and framework choices — do not just check they exist.**
+    design.md names specific things: the exact `verify.e2e_command` value
+    (including its tag-filter flag), exact step-definition file paths (e.g.
+    separate files per capability), exact framework/driver. If the
+    as-built project deviates from what design.md explicitly named — same
+    step file used for both e2e and non-e2e when design.md named two, a
+    different or unfiltered command than design.md specified, a different
+    driver — and `design.md` was never updated to reflect a deliberate,
+    re-reviewed change, this is not a coverage gap or an acceptable
+    "practical" shortcut. It is an implementation that silently overrode an
+    already-reviewed design decision. Record it as a implementation-evidence
+    finding: the fix is to either (a) conform the implementation to
+    design.md as originally reviewed, or (b) update design.md with the
+    corrected decision and re-run design-review (and reassess the arc42
+    chapter table if the change is structural) before the task can be
+    considered done — never to silently keep the deviation.
+11. **Interaction coverage verification** — cross-reference the interaction
+    inventory in the owning use-case document against the design's
+    Interaction Coverage Matrix and the actual `.feature` file + step
+    definitions:
+    a. Read the owning `givn/specs/<usecase-id>/usecase.md` and list every
+       entry of its `## Interactions` section — the inventory lives there,
+       never in a `.feature` comment block.
+    b. Read the design's `Interaction Coverage Matrix` table. Confirm
+       every inventory entry appears as a row. Flag missing or extra rows
+       as a finding — every interaction must be mapped, no unmapped
+       interaction may exist.
+    c. For each matrix row, confirm an `@e2e` scenario with a matching
+       title exists in the `.feature` file. The scenario title need not be
+       identical to the inventory description, but it must clearly cover
+       the same interaction.
+    d. For each matrix row, grep the e2e step definition file(s) for the
+       promised driving mechanism. If the matrix says "Playwright: click
+       button X", the step file must import/use Playwright (not an HTTP
+       client, not raw HTTP). If the driving mechanism is an HTTP client for an
+       API-only capability, confirm the step file uses that HTTP client.
+       Mismatch = driving-mechanism finding: the implementation silently
+       used a different driver than the reviewed design committed to.
+    e. Record the full cross-reference as a table in the implementation evidence check
+       section of review.md.
+12. Any finding from 1-11 is unfinished work, not a coverage gap. Reopen the
+    batch: implement the missing behavior and tests, then refactor — driving
+    the real interface per design.md's "Anticipated interface obstacles" fix,
+    not by asserting on the repository instead. Do not write `REVIEW: PASS`
+    while any finding remains.
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
@@ -327,14 +374,13 @@ gap without naming one of the three buckets above, stop and reclassify it.
 
 ## E2e coverage
 
-Apply the canonical E2E policy from `givn instructions specs --change <id>`;
-review verifies the real-interface primary assertion, the actual driver, the
-configured command, and the inventory mapping. Missing or over-produced
-coverage is unfinished work and classifies under the three buckets.
+Apply the canonical E2E policy from `givn instructions specs --change <id>`.
+Review still verifies the real-interface primary assertion, the actual driver,
+the configured E2E command, and the normalized inventory-to-scenario mapping.
+Missing, downgraded, or over-produced coverage is unfinished work and must be
+fixed or classified under the three coverage buckets above.
 
-State the opposite classification before accepting a non-browser one (a
-rendered page is a Web UI) and why it does not hold; the
-interface-classification policy owns that rule.
+Before accepting a non-browser classification, state the opposite classification — a rendered page is a Web UI — and why it does not hold. A review that only restates the author's classification is incomplete.
 
 ## Deferrals
 
@@ -446,37 +492,71 @@ blocks the archive gate regardless of this line.
 - Every consumer uses only its declared contract.
 {{/if}}
 - Strict-mode proof present and passing.
-- Scenario execution evidence is recorded per scope; review does not re-run.
-- Coverage classification uses the most recent measured evidence.
+- Scenario execution evidence is recorded per scope in the archive
+  verification receipt; review does not re-run the suite.
+- Coverage classification uses the most recent available measured evidence;
+  the archive receipt will carry the merged result.
 - Every coverage gap is classified and resolved; no fourth bucket.
 - Dead code deleted. Missing tests added. Hard-to-test gaps justified.
 - Redundant unit tests removed.
 - No `@wip` tags remain. No implementation-layer detail in the spec.
-- The local run command starts the full stack, including digital twins.
-- `verify.e2e_command` names its exact invoked file(s); no second `@e2e` file
-  implementation exists in the tree.
-- The explicit E2E scope selection is recorded and the receipt reports zero
-  failures or skips.
-- Design match: implementation commands, layout, and driver follow
-  `design.md`, or `design.md` was updated and re-reviewed.
-- Interaction coverage maps every inventory entry to a matrix row, an `@e2e`
-  scenario, and its promised driver.
-- No finding was excused with a classification outside the three buckets.
+- Canonical E2E policy was read from the resolved specs instruction; every
+  normalized inventory action has one `@e2e` scenario and variants are regular
+  scenarios.
+- Every E2E scenario has a real-interface primary assertion and uses the
+  reviewed driver; browser UI scenarios are never replaced by HTTP/fetch.
+- The local run command starts the full stack (including digital twins)
+  cleanly, verified during this review.
+- The exact file(s) `verify.e2e_command` invokes were identified and read;
+  the tree (including untracked files) was searched for a second `@e2e` file
+  implementation before accepting a weaker one.
+- The explicit E2E scope selection is recorded (`GIVN_RESULT_SCOPE` or
+  equivalent); equal counts or command strings are acceptable only with that
+  honest isolation, and required executions report zero failures and skips.
+- Design match: implementation (commands, file layout, framework/driver)
+  matches what `design.md` explicitly named — any deviation was resolved by
+  updating `design.md` and re-running design-review, never left as a silent
+  shortcut.
+- Interaction coverage maps every use-case inventory entry to a design matrix
+  row, an existing `@e2e` scenario, and step definitions using the promised
+  driving mechanism — no mismatches.
+- No finding was excused with a classification outside the three buckets
+  (no "acceptable for now," "future scope," "sufficient for current scope,"
+  or similar invented exception anywhere in this report).
 
 ## Step orchestration (review spot-check)
 
 **Audience: the agent performing the review step, not a separate review author.**
-Re-check a sample rather than trusting a reported result:
+Before accepting `REVIEW: PASS`, re-check a sample rather than trusting a
+reported result:
 
-1. Grep two or three step definition files for empty bodies.
-2. Confirm two or three checked-off tasks have revisions touching production code.
-3. Read every `@e2e` scenario's step definition and confirm a real-interface assertion.
-4. Confirm no capability has more than one `@e2e` scenario for the same action.
-5. Confirm `verify.e2e_command`'s exact files and search for a parallel implementation.
-6. Read both commands from `givn/commands.yaml` and confirm the explicit scope selection.
-7. Spot-check one command, layout, or driver decision against `design.md`.
-8. Scan `review.md` for invented exception language.
-9. Reject `REVIEW: PASS` on any contradiction and re-run the review.
+1. Grep two or three step definition files yourself for empty bodies (or all
+   when fewer than five) and confirm any "0 findings" claim.
+2. Confirm two or three checked-off tasks have revisions touching production
+   code, via `git show --stat <hash>`.
+3. Read every `@e2e` scenario's step definitions and confirm each has a
+   real-interface assertion — not repository-only, and for a browser-UI
+   capability actually driven through a real browser, never HTTP/fetch.
+4. Confirm the normalized action scope: no capability has more than one
+   `@e2e` scenario for the same action.
+5. Confirm which file(s) `verify.e2e_command` invokes, then search the tree
+   (including untracked files) for a parallel e2e implementation the report
+   did not mention. A report that never names the exact invoked file(s) or
+   never mentions the parallel-implementation check is incomplete — reject it.
+6. Read both `verify.command` and `verify.e2e_command` from
+   `givn/commands.yaml` yourself and confirm the E2E execution names an explicit
+   scope selection such as `GIVN_RESULT_SCOPE`. Equal counts or identical
+   command strings are acceptable only with that honest isolation, and a report
+   without the required execution evidence (zero failures and skips) is
+   incomplete.
+7. Spot-check one command, file-layout, or framework/driver decision
+   `design.md` names against what was actually built. A mismatch not backed by
+   an updated `design.md` plus a re-run design-review rejects PASS.
+8. Scan `review.md` itself for invented exception language ("acceptable for
+   now," "future scope," "sufficient for current scope," or similar) — any
+   such phrase rejects `REVIEW: PASS` regardless of what it excuses.
+9. Any contradiction: reject `REVIEW: PASS` and re-run the review with the
+   discrepancy named.
 
 {{#if addons.outline}}
 ## Advisory outline evidence
