@@ -2186,7 +2186,7 @@ record rewriters), and the committed transcript under
 for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch: verify'`.
 
-- [ ] Scenario: `Verification names a retained file changed in the trial`
+- [x] Scenario: `Verification names a retained file changed in the trial`
   - Design constraints:
     - Fixture: the prepared-trial helper; the verifier appends bytes to
       `<trial>/givn/specs/demo/spec.feature`.
@@ -2195,20 +2195,27 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       `the trial differs from the record`.
     - Contract: the retained check recomputes the per-path digest from the
       trial by kind, executable bit, and bytes.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `src/cli/ise.rs`, `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        RED  `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs cargo test --locked --test features_runner -- --exact "prepare-an-ise-test/trial-input-verification.feature::Verification names a retained file changed in the trial"`
+             -> `✘ Then verification fails and names "givn/specs/demo/spec.feature"`; `Step panicked. Captured output: stderr "ise verify: the trial re-check is not implemented yet\n" does not name "givn/specs/demo/spec.feature"`
+        GREEN same command -> `1 scenario (1 passed)`, `4 steps (4 passed)`
 
-- [ ] Scenario: `Verification names an e2e package file changed in the trial`
+        Evidence: the observed failure is the assertion on the named path; the fixture prepared a real trial and the binary refused with the unimplemented re-check.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification names an e2e package file changed in the trial`
   - Design constraints:
     - Fixture: the prepared-trial helper; the verifier appends bytes to
       `<trial>/tests/e2e/steps/keys.rs`.
@@ -2217,20 +2224,27 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       `the trial differs from the record` (the retained check covers e2e files
       inside the trial; Contradictions 5).
     - Contract: e2e files are retained files, so one walk covers both.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        Run  same command, scenario `Verification names an e2e package file changed in the trial`
+             -> `1 scenario (1 passed)`, `4 steps (4 passed)` (the batch's first increment walks the recorded
+             retained set, and every resolved `e2e` file is a retained file)
 
-- [ ] Scenario: `Verification names an e2e package file changed in the checkout`
+        Discrimination probe (the scenario passed once the retained check existed, because e2e files are retained files): skipping every recorded retained path that is also in `e2e_files` made it fail with `✘ Then verification fails and names "tests/e2e/steps/keys.rs"` / `assertion left == right failed: stderr=`. Probe reverted; the retained walk is the coverage.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification names an e2e package file changed in the checkout`
   - Design constraints:
     - Fixture: the prepared-trial helper; the developer edits
       `<checkout>/tests/e2e/steps/keys.rs` after preparation.
@@ -2239,20 +2253,27 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       `the checkout differs from the record`.
     - Contract: the current tree comes from `Backend::content_paths`, so a
       modified tracked file is read from the working tree (D8).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `src/e2e_boundary/mod.rs`, `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        RED  same command, scenario `Verification names an e2e package file changed in the checkout`
+             -> `✘ Then verification fails and names "tests/e2e/steps/keys.rs"`; `assertion left == right failed: stderr=` (no current-tree check existed)
+        GREEN same command -> `1 scenario (1 passed)`
 
-- [ ] Scenario: `Verification names an e2e scenario changed in the checkout`
+        Implementation: `e2e_boundary::e2e_file_set` now takes a path slice, so the current tracked-plus-untracked tree is resolved from `Backend::content_paths` without copying strings.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification names an e2e scenario changed in the checkout`
   - Design constraints:
     - Fixture: the prepared-trial helper; the developer edits the step text of
       the `@e2e`-tagged scenario in `<checkout>/givn/specs/demo/spec.feature`
@@ -2262,20 +2283,27 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       `the selected @e2e scenarios differ in the checkout`.
     - Contract: the per-feature scenario digest is recomputed from the
       checkout's `behavior` files; the frozen set is the `@e2e` selection only.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `src/gherkin/parse.rs` (or `content.rs`), `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        RED  same command, scenario `Verification names an e2e scenario changed in the checkout`
+             -> `✘ Then verification fails and names "givn/specs/demo/spec.feature"`; `assertion left == right failed: stderr=` (exit 0)
+        GREEN same command -> `1 scenario (1 passed)`
 
-- [ ] Scenario: `Verification reports no drift after a kept source file changes`
+        Setup defect found and fixed: the setup batch's step regex read `"givn/specs/demo\.feature"` and never matched the phrase `"givn/specs/demo/spec.feature"`, so the first run failed with `Step doesn't match any function` (`Step failed` on the When). Corrected the binding to `demo/spec\.feature`; the RED above is the corrected run.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification reports no drift after a kept source file changes`
   - Design constraints:
     - Fixture: the prepared-trial helper; the verifier edits
       `<trial>/src/keys/steps.rs` (kept source, inside `src/**`, outside every
@@ -2284,20 +2312,28 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
     - Then: exit 0; stdout prints `Retained: clean` and `E2E: clean`.
     - Contract: only the `E2E` package and the selected `@e2e` scenarios are
       frozen; kept source carries no focused identity.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        Run  same command, scenario `Verification reports no drift after a kept source file changes`
+             -> `1 scenario (1 passed)`, `4 steps (4 passed)`
+        Probe injecting `src/keys/steps.rs` as a frozen retained path with an impossible digest
+             -> `✘ Then verification reports the retained and e2e identities clean`; `Captured output: stdout "" does not print the line "Retained: clean"`. Probe reverted.
 
-- [ ] Scenario: `Verification names a recorded path missing from the trial`
+        Requirement protected: only the recorded retained set and the `e2e` inputs are frozen, so kept source carries no focused identity.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification names a recorded path missing from the trial`
   - Design constraints:
     - Fixture: the prepared-trial helper; the verifier deletes
       `<trial>/givn/specs/demo/spec.feature`.
@@ -2305,20 +2341,28 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
     - Then: exit 1; stderr names `givn/specs/demo/spec.feature`; the reason is
       `the path is missing from the trial`.
     - Contract: a missing retained path is drift, not a read error.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        Run  same command, scenario `Verification names a recorded path missing from the trial`
+             -> `1 scenario (1 passed)`
+        PROBE (a missing path is drift, not silence): `Err(IdentityGap::Missing) => continue`
+             -> `✘ Then verification fails and names "givn/specs/demo/spec.feature"`; `assertion left == right failed: stderr=`. Probe reverted.
 
-- [ ] Scenario: `Verification refuses while the ise addon is off`
+        Requirement protected: an absent recorded retained path is drift with its own reason.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses while the ise addon is off`
   - Design constraints:
     - Fixture: the prepared-trial helper, then the record is corrupted (for
       example truncated to `not: a-trial-record`), then
@@ -2328,20 +2372,28 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       record was not read).
     - Contract: the add-on check precedes the record read (D10); the corrupted
       record is the proof.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        Run  same command, scenario `Verification refuses while the ise addon is off`
+             -> `1 scenario (1 passed)`; `verification reports no record error` holds on a corrupted record.
+        PROBE (the add-on check precedes the record read): reading the record before `require_addons`
+             -> `✘ And verification reports no record error`; `stderr "ise verify: read the trial record '/tmp/.tmpXuGnzT/record.yaml': unknown field `not`, expected one of ...\n" reports a record error`. Probe reverted.
 
-- [ ] Scenario: `Verification refuses while architecture principles are off`
+        Requirement protected: D10, the effective manifest decides before the record is read (batch 1 behaviour, now covered by a verify scenario).
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses while architecture principles are off`
   - Design constraints:
     - Fixture: the prepared-trial helper, then `givn/config.yaml` sets
       `addons.architecture_principles: false` with `ise: true` after
@@ -2349,20 +2401,28 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
     - When: `givn ise verify --trial <receipt> --at <trial>`.
     - Then: exit 1; stderr names `architecture_principles`.
     - Contract: the same prerequisite pair as prepare; read before the record.
-  - [ ] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/cli/ise.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        Run  same command, scenario `Verification refuses while architecture principles are off`
+             -> `1 scenario (1 passed)`
+        PROBE: disabling the `architecture_principles` branch of `require_addons`
+             -> `✘ Then verification fails and names "architecture_principles"`; `assertion left == right failed: stderr=`. Probe reverted.
 
-- [ ] Scenario: `Verification refuses a record it cannot read`
+        Requirement protected: the same prerequisite pair as replace, read before the record.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses a record it cannot read`
   - Design constraints:
     - Fixture (Contradictions 4): the prepared-trial helper, then the record is
       rewritten as readable YAML whose `content_scope` is `other/v1`.
@@ -2370,40 +2430,55 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
     - Then: exit 1; stderr names the record and `ise-trial/v1`.
     - Contract: the strict record loader names the record path and the expected
       scope.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/record.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/record.rs`,
         `src/ise/verify.rs`, `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        RED  same command, scenario `Verification refuses a record it cannot read`
+             -> `✘ Then verification fails and names the record`; `assertion left == right failed: stderr=` (the foreign `content_scope` parsed and the run exited 0)
+        GREEN same command -> `1 scenario (1 passed)`
 
-- [ ] Scenario: `Verification refuses a record with an unknown field`
+        Implementation: `read_record` asserts `schema == 1`, `content_scope == ise-trial/v1`, and a 64-hex `replaced_digest`, each naming the record. Fixture follows Contradictions 4: readable YAML with `content_scope: other/v1`, which produces both the record name and the expected scope.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses a record with an unknown field`
   - Design constraints:
     - Fixture: the prepared-trial helper, then the record gains a top-level
       `extra_field: 1`.
     - When: `givn ise verify --trial <receipt> --at <trial>`.
     - Then: exit 1; stderr names the record and `extra_field`.
     - Contract: `deny_unknown_fields` on the record; the reason names the field.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/record.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/record.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        Run  same command, scenario `Verification refuses a record with an unknown field`
+             -> `1 scenario (1 passed)` (the record's `deny_unknown_fields` from `trial-record`)
+        PROBE: removing `#[serde(deny_unknown_fields)]` from `TrialRecord`
+             -> `✘ Then verification fails and names the record and the unknown field`; `assertion left == right failed: stderr=`. Probe reverted.
 
-- [ ] Scenario: `Verification refuses a record with a missing field`
+        Requirement protected: an unknown top-level key refuses with the field name.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses a record with a missing field`
   - Design constraints:
     - Fixture: the prepared-trial helper, then the record's `counts` key is
       removed.
@@ -2411,20 +2486,28 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
     - Then: exit 1; stderr names the record and `counts`.
     - Contract: a missing required field refuses with the field name; no
       default is invented.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/record.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/record.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        Run  same command, scenario `Verification refuses a record with a missing field`
+             -> `1 scenario (1 passed)`
+        PROBE: `#[serde(default)]` on `counts`
+             -> `✘ Then verification fails and names the record and the missing field`; `assertion left == right failed: stderr=`. Probe reverted.
 
-- [ ] Scenario: `Verification refuses a record placed inside the trial`
+        Requirement protected: a missing required field refuses with its name; no default is invented.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses a record placed inside the trial`
   - Design constraints:
     - Fixture: the prepared-trial helper; the record is copied to
       `<trial>/record.yaml` and verified from there.
@@ -2433,19 +2516,26 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       inside the trial.
     - Contract: the trust anchor's placement check; the builder must not own the
       record (D9).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `tests/steps/trial_input_verification_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        RED  same command, scenario `Verification refuses a record placed inside the trial`
+             -> `✘ Then verification fails and names the record path`; `assertion left == right failed: stderr=` (exit 0)
+        GREEN same command -> `1 scenario (1 passed)`
 
-- [ ] Scenario: `Verification refuses a record whose written path is not the trial`
+        Implementation: the trust anchor's placement check (D9). The copied record names the same `written_path` and backend, so only the placement check can refuse it.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses a record whose written path is not the trial`
   - Design constraints:
     - Fixture: the prepared-trial helper; the record's `written_path` is
       rewritten to a different directory, and verification runs against the
@@ -2454,20 +2544,27 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
     - Then: exit 1; stderr names the record and the trial path and reports the
       written-path mismatch.
     - Contract: canonicalized `written_path` must equal canonicalized `--at`.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
-        ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
-        ```
-        <!-- REFACTOR evidence -->
-        ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+        RED  same command, scenario `Verification refuses a record whose written path is not the trial`
+             -> `✘ Then verification fails and names the record and the trial path`; `assertion left == right failed: stderr=` (exit 0)
+        GREEN same command -> `1 scenario (1 passed)`
 
-- [ ] Scenario: `Verification refuses a record whose backend differs from the selected backend`
+        Fixture: `written_path` rewritten to an existing sibling directory, so the refusal is the canonicalized comparison, not a resolution failure.
+        ```
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+        ```
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
+        ```
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
+
+- [x] Scenario: `Verification refuses a record whose backend differs from the selected backend`
   - Design constraints:
     - Fixture: the prepared-trial helper (Git); the record's `backend` is
       rewritten to `fossil`.
@@ -2476,20 +2573,25 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       backend mismatch.
     - Contract: the record's backend must equal the selected backend; no
       backend is inferred from the directory contents.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED  same command, scenario `Verification refuses a record whose backend differs from the selected backend`
+             -> `✘ Then verification fails and names the record and the backend`; `assertion left == right failed: stderr=` (exit 0)
+        GREEN same command -> `1 scenario (1 passed)`
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
 
-- [ ] Scenario: `Verification names every drifting path in one run`
+- [x] Scenario: `Verification names every drifting path in one run`
   - Design constraints:
     - Fixture: the prepared-trial helper; the verifier changes
       `<trial>/givn/specs/demo/spec.feature`, `<trial>/docs/reference.md`, and
@@ -2499,20 +2601,26 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       drifting paths.
     - Contract: one `BTreeMap` of reasons rendered after every check, so one
       run reports all drift.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/verify.rs`,
         `src/cli/ise.rs`, `tests/steps/trial_input_verification_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        Run  same command, scenario `Verification names every drifting path in one run`
+             -> `1 scenario (1 passed)`; stderr names all three paths and `Verification failed: 3 drifting path(s)`
+        PROBE (one `BTreeMap` rendered after every check): `break` after the first retained drift
+             -> stderr `Trial: ...\nRetained drift: docs/reference.md (the trial differs from the record)\nVerification failed: 1 drifting path(s)`; `✘ Then verification fails and names all three paths`. Probe reverted.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
 
-- [ ] @e2e Scenario: `Verifier re-checks a prepared trial and receives the frozen-input report`
+- [x] @e2e Scenario: `Verifier re-checks a prepared trial and receives the frozen-input report`
   - Design constraints:
     - Fixture: a prepared Git trial with a receipt, produced by a real
       `givn ise replace` subprocess against the fixture project (the same
@@ -2525,20 +2633,29 @@ for the `@e2e` scenario, `./run-tests.sh --e2e` on the delta scope as well.
       code. Commit the transcript at
       `givn/changes/add-ise-clean-room-commands/evidence/visual/verifier-re-checks-a-prepared-trial-and-receives-the-frozen-input-report/transcript.txt`.
     - Step file: `tests/steps/trial_input_verification_e2e_steps.rs`.
-  - [ ] Implement the scenario and its tests. Files:
+  - [x] Implement the scenario and its tests. Files:
         `tests/steps/trial_input_verification_e2e_steps.rs`,
         `tests/steps/ise_clean_room_support.rs`, the committed transcript. Run
         the single-scenario command under the e2e scope, then
         `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs
         ./run-tests.sh --e2e`. Must pass.
         ```
-        <!-- RED / GREEN evidence, including the e2e scope counts -->
+        Run  `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs cargo test --locked --test features_runner -- --exact "prepare-an-ise-test/trial-input-verification.feature::Verifier re-checks a prepared trial and receives the frozen-input report"`
+             -> `1 scenario (1 passed)`, `4 steps (4 passed)`; the step captured the transcript.
+        PROBE (clean versus drift): inverting the retained digest comparison
+             -> `✘ Then verification reports the retained and e2e identities clean`; `Captured output: stdout "" does not print the line "Retained: clean"`. Probe reverted.
+        E2E scope: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --e2e`
+             -> `Summary [0.987s] 2 tests run: 2 passed, 57 skipped`
+        Transcript: `givn/changes/add-ise-clean-room-commands/evidence/visual/verifier-re-checks-a-prepared-trial-and-receives-the-frozen-input-report/transcript.txt`
         ```
   - [ ] REFACTOR: clean up, no behaviour change. Re-run both, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Re-ran the scenario command after the batch refactor (reason constants hoisted, the support import
+        normalised, `cargo fmt`): `1 scenario (1 passed)`. The batch-level re-run covers every scenario in this
+        batch: `GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs ./run-tests.sh --non-e2e`
+        -> `Summary [8.219s] 57 tests run: 57 passed, 2 skipped` (the two `@e2e` scenarios of the delta).
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `verify`
+  - [x] COMMIT: `6f179102a312a48d979451ac6d52e635789494d9` -- Batch: `verify`
 
 ---
 
