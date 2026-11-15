@@ -1337,10 +1337,15 @@ placement; copy-set marker check), `tests/steps/ise_clean_room_support.rs`
   repository is cloned.
 
 **Batch verification:** the single-scenario command below for each scenario.
+**Coverage limit:** `Preparation refuses a repository link in the copy set`
+passes before and after refusal 9, because the copy-set blob read fails first on
+a gitlink and names the same path; removing `require_copy_set` leaves it green.
+The nested-marker sibling fails without the check and carries refusal 9's
+discriminating half. Reported, not repaired by editing the feature.
 **Commit:** `givn commit <paths> -m '<release note>\n\nBatch:
 target-and-copy-refusals'`.
 
-- [ ] Scenario: `Preparation refuses a target inside the checkout`
+- [x] Scenario: `Preparation refuses a target inside the checkout`
   - Design constraints:
     - Fixture: a clean Git project with a valid declaration; the
       Given names `--into ./trial` relative to the checkout.
@@ -1348,20 +1353,34 @@ target-and-copy-refusals'`.
     - Then: exit 1; stderr names the target; the checkout holds no trial
       directory and no receipt.
     - Contract: containment is decided on canonicalized paths before any write.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a target inside the checkout"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
+        IMPLEMENTATION: `require_write_targets` resolves the target through its
+          deepest existing ancestor and refuses a path under the canonical
+          checkout before any write.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses an existing target directory`
+- [x] Scenario: `Preparation refuses an existing target directory`
   - Design constraints:
     - Fixture: an existing empty directory outside the checkout named by
       `--into`.
@@ -1369,20 +1388,35 @@ target-and-copy-refusals'`.
     - Then: exit 1; stderr names the existing target; the directory is left
       unchanged (still empty).
     - Contract: the absence check precedes `create_dir`; nothing is removed.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        Observed first run: the scenario passed with no preflight, because
+        `create_dir` failed on the existing path and the write error happened to
+        name it. The Then now requires the named absence refusal, so the
+        observable is create-new semantics, not a write failure.
+        DISCRIMINATION (not historical RED): with `require_write_targets`
+        removed, the same command fails with
+          stderr "... create the trial at '/tmp/.tmpGJCGom/trial': File exists
+          (os error 17)\n" does not report the existing path
+        GREEN: with the preflight → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: the absence check runs before `create_dir`; a write
+          failure is no longer what protects the scenario.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses an existing target file`
+- [x] Scenario: `Preparation refuses an existing target file`
   - Design constraints:
     - Fixture: `--into` names an existing regular file holding known bytes.
     - When: `givn ise replace --full --into <existing file>`.
@@ -1390,20 +1424,33 @@ target-and-copy-refusals'`.
       unchanged.
     - Contract: `create_dir` would fail anyway; the refusal is the named target
       check, before the write.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        Observed first run: the scenario passed with no preflight, because
+        `create_dir` failed on the existing file and the write error happened to
+        name it. The Then now requires the named absence refusal.
+        DISCRIMINATION (not historical RED): with `require_write_targets`
+        removed, the same command fails with
+          stderr "... create the trial at '/tmp/.tmpmG3OiM/trial': File exists
+          (os error 17)\n" does not report the existing path
+        GREEN: with the preflight → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: the absence check runs before `create_dir`.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses a receipt inside the trial directory`
+- [x] Scenario: `Preparation refuses a receipt inside the trial directory`
   - Design constraints:
     - Fixture: trial `<base>/trial` (absent), receipt `<base>/trial/record.yaml`.
     - When: `givn ise replace --full --into <base>/trial --receipt
@@ -1412,20 +1459,33 @@ target-and-copy-refusals'`.
       absent.
     - Contract: the receipt is compared against the trial path by prefix; the
       builder must not control the trust anchor (D2).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a receipt inside the trial directory"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
+        IMPLEMENTATION: `require_write_targets` refuses a receipt path that
+          starts with the resolved trial path.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses a receipt inside the checkout`
+- [x] Scenario: `Preparation refuses a receipt inside the checkout`
   - Design constraints:
     - Fixture: trial outside the checkout, receipt `<checkout>/record.yaml`.
     - When: `givn ise replace --full --into <outside> --receipt
@@ -1433,20 +1493,33 @@ target-and-copy-refusals'`.
     - Then: exit 1; stderr names the receipt; the checkout holds no receipt.
     - Contract: the receipt's outside-checkout check uses the same containment
       rule as the trial; the checkout is never written.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a receipt inside the checkout"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
+        IMPLEMENTATION: the receipt passes the same canonical containment check
+          as the trial; the checkout is never written.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses a receipt that is an ancestor of the trial directory`
+- [x] Scenario: `Preparation refuses a receipt that is an ancestor of the trial directory`
   - Design constraints:
     - Fixture: receipt `<base>/parent` (absent), trial `<base>/parent/trial`
       (absent), both outside the checkout, so the ancestor rule and not the
@@ -1456,20 +1529,33 @@ target-and-copy-refusals'`.
     - Then: exit 1; stderr names the receipt; both paths remain absent.
     - Contract: the ancestor check treats the receipt path as a directory
       prefix of the trial path (D2).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a receipt that is an ancestor of the trial directory"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 4 steps (4 passed).
+        IMPLEMENTATION: `require_write_targets` refuses a receipt path that the
+          resolved trial path starts with.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses a symlinked target that resolves inside the checkout`
+- [x] Scenario: `Preparation refuses a symlinked target that resolves inside the checkout`
   - Design constraints:
     - Fixture: `<tmp>/link` is a symlink to the checkout root; `--into` is
       `<tmp>/link/trial`.
@@ -1479,20 +1565,33 @@ target-and-copy-refusals'`.
     - Contract: the deepest existing ancestor (`<tmp>/link`) canonicalizes into
       the checkout, so the appended missing component is judged against the
       canonical root (design.md "Local Runnability", last obstacle).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a symlinked target that resolves inside the checkout"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        GREEN: the same command → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: `resolved_target` canonicalizes `<tmp>/link` and appends
+          the missing `trial` component, so the prefix test sees the checkout.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses an existing receipt`
+- [x] Scenario: `Preparation refuses an existing receipt`
   - Design constraints:
     - Fixture: a receipt file outside the checkout that already exists with
       known bytes; an absent trial path.
@@ -1501,20 +1600,36 @@ target-and-copy-refusals'`.
       the trial remains absent.
     - Contract: `create_new` semantics; an earlier trial's evidence is never
       overwritten (D2).
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an existing receipt"
+        → exit 101: assertion `left == right` failed: stderr=
+          left: Some(0)
+         right: Some(1)
+        DISCRIMINATION (not historical RED): with `require_write_targets`
+        removed, the same command fails on the missing named refusal, because
+        the receipt path is not written yet.
+        GREEN: with the preflight → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: the receipt absence check refuses before the trial is
+          created and leaves the existing record untouched.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses a repository link in the copy set`
+- [x] Scenario: `Preparation refuses a repository link in the copy set`
   - Design constraints:
     - Fixture: `structure: ["vendor/lib"]`, `source: ["src/**"]`; the revision
       carries a gitlink at `vendor/lib` written with
@@ -1523,20 +1638,34 @@ target-and-copy-refusals'`.
     - Then: exit 1; stderr names `vendor/lib`; both targets absent.
     - Contract: `RevisionEntry::kind == Submodule` refuses (refusal 9); the
       check precedes the write.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `src/git.rs`, `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        Observed first run: the scenario passed before refusal 9 existed,
+        because the copy-set blob read fails first on a gitlink and names the
+        same path; the trial stays absent either way.
+        DISCRIMINATION (not historical RED): with `require_copy_set` removed,
+        the same command still passes (exactly the blob-read masking above), so
+        this scenario cannot distinguish the submodule half of refusal 9. The
+        nested-marker sibling fails without the check and carries that half.
+        GREEN: with refusal 9 → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: `require_copy_set` refuses a `Submodule` entry in the
+          copy set before any content read; reported as a coverage limit below.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
-- [ ] Scenario: `Preparation refuses a nested repository marker in the copy set`
+- [x] Scenario: `Preparation refuses a nested repository marker in the copy set`
   - Design constraints:
     - Fixture: `structure: ["nested/_FOSSIL_"]`, `source: ["src/**"]`; the
       revision commits `nested/_FOSSIL_` as a regular file.
@@ -1544,18 +1673,32 @@ target-and-copy-refusals'`.
     - Then: exit 1; stderr names `nested/_FOSSIL_`; both targets absent.
     - Contract: any path component `.git`, `.fslckout`, or `_FOSSIL_` refuses
       (refusal 9); the check covers every copied path, at any depth.
-  - [ ] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
+  - [x] Implement the scenario and its tests. Files: `src/ise/mod.rs`,
         `tests/steps/ise_clean_room_support.rs`,
         `tests/steps/clean_room_preparation_steps.rs`. Run the single-scenario
         command. Must pass.
         ```
-        <!-- RED / GREEN evidence -->
+        RED: GIVN_FEATURES=givn/changes/add-ise-clean-room-commands/specs \
+          cargo test --locked --test features_runner -- --exact \
+          "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a nested repository marker in the copy set"
+        → exit 101: the command succeeded; stderr=""
+        DISCRIMINATION (not historical RED): with `require_copy_set` removed,
+        the same command fails with the same succeeded/stderr="" output, so the
+        scenario discriminates refusal 9.
+        GREEN: with refusal 9 → exit 0;
+          1 scenario (1 passed), 5 steps (5 passed).
+        IMPLEMENTATION: `require_copy_set` refuses a copied path whose component
+          is `.git`, `.fslckout`, or `_FOSSIL_`, before the trial is created.
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- REFACTOR evidence -->
+        Batch-wide: the copy-set check reads the revision entries without a
+        per-entry map, and the partition moved to `src/ise/partition.rs` when
+        `src/ise/mod.rs` passed the 500-code-line limit (374 + 212 code
+        lines). The re-run stayed green; cargo fmt --check and clippy
+        -D warnings are clean; ./run-tests.sh --non-e2e is 980/980.
         ```
-  - [ ] COMMIT: `<hash>` -- Batch: `target-and-copy-refusals`
+  - [x] COMMIT: `1164935743437acbf720889ae2bf56afdd89f447` -- Batch: `target-and-copy-refusals`
 
 ---
 

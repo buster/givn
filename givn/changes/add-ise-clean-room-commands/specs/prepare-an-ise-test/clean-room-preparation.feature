@@ -127,14 +127,14 @@ Feature: Clean-room preparation
     And the command exits 2
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a target inside the checkout
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial into a directory inside the checkout
     Then preparation fails and names the target
     And the checkout holds no trial directory and no receipt
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an existing target directory
     Given a Git project with ise enabled and a declaration
     And a target directory that already exists
@@ -142,7 +142,7 @@ Feature: Clean-room preparation
     Then preparation fails and names the existing target
     And the existing directory is left unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an existing target file
     Given a Git project with ise enabled and a declaration
     And a target path that exists as a regular file
@@ -150,28 +150,28 @@ Feature: Clean-room preparation
     Then preparation fails and names the existing target
     And the existing file is left unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a receipt inside the trial directory
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial with a receipt inside the trial directory
     Then preparation fails and names the receipt
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a receipt inside the checkout
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial with a receipt inside the checkout
     Then preparation fails and names the receipt
     And the checkout holds no receipt
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a receipt that is an ancestor of the trial directory
     Given a Git project with ise enabled and a declaration
     When the developer prepares a trial whose receipt path is an ancestor of the trial directory
     Then preparation fails and names the receipt
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a symlinked target that resolves inside the checkout
     Given a Git project with ise enabled and a declaration
     And a symlink outside the checkout that points into the checkout
@@ -179,7 +179,7 @@ Feature: Clean-room preparation
     Then preparation fails and names the target
     And the checkout holds no trial directory
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an existing receipt
     Given a Git project with ise enabled and a declaration
     And a receipt file that already exists
@@ -187,7 +187,7 @@ Feature: Clean-room preparation
     Then preparation fails and names the existing receipt
     And the existing receipt is left unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a repository link in the copy set
     Given a Git project with ise enabled and a declaration that retains "vendor/lib"
     And a committed revision with a repository link at "vendor/lib"
@@ -195,7 +195,7 @@ Feature: Clean-room preparation
     Then preparation fails and names "vendor/lib"
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a nested repository marker in the copy set
     Given a Git project with ise enabled and a declaration that retains "nested/_FOSSIL_"
     And a committed revision with "nested/_FOSSIL_"
