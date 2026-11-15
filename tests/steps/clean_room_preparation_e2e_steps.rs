@@ -12,7 +12,10 @@ use crate::steps::clean_room_preparation_steps::{
     assert_report_line, assert_success, assert_trial_holds, assert_trial_omits, prepare_trial,
     project_env, receipt_path, record_document, record_list, record_number, trial_path,
 };
-use crate::steps::{GivnWorld, ise_clean_room_support, stdout};
+use crate::steps::{GivnWorld, ise_clean_room_support, output, stdout};
+
+/// The `@e2e` scenario whose run this file captures as terminal evidence.
+const SCENARIO_TITLE: &str = "Developer prepares a clean-room trial from a recorded revision";
 
 #[given(
     regex = r#"^a Git project with ise enabled and a declaration that retains "givn/specs/\*\*", declares "tests/e2e", and replaces "src/\*\*"$"#
@@ -67,11 +70,11 @@ fn report_prints_the_git_backend_and_revision(world: &mut GivnWorld) {
 }
 
 #[then(
-    regex = r#"^the report prints "Retained: 3", "Kept source: 2", "Replaced: 1", "Outside the declaration: 1", and "Not replaced: 1"$"#
+    regex = r#"^the report prints "Retained: 4", "Kept source: 2", "Replaced: 1", "Outside the declaration: 1", and "Not replaced: 1"$"#
 )]
 fn report_prints_the_placement_counts(world: &mut GivnWorld) {
     for line in [
-        "Retained: 3",
+        "Retained: 4",
         "Kept source: 2",
         "Replaced: 1",
         "Outside the declaration: 1",
@@ -131,6 +134,11 @@ fn trial_holds_the_retained_and_kept_files(world: &mut GivnWorld) {
     );
 }
 
+#[then(regex = r#"^the trial holds the declaration "givn/specification\.yaml"$"#)]
+fn trial_holds_the_declaration(world: &mut GivnWorld) {
+    assert_trial_holds(world, &[ise_clean_room_support::DECLARATION_PATH]);
+}
+
 #[then(regex = r#"^the trial omits "src/keys/parser\.rs" and "notes\.md"$"#)]
 fn trial_omits_the_replaced_and_outside_files(world: &mut GivnWorld) {
     assert_trial_omits(world, &["src/keys/parser.rs", "notes.md"]);
@@ -164,7 +172,7 @@ fn receipt_records_the_preparation_evidence(world: &mut GivnWorld) {
         "the record has the wrong replaced paths"
     );
     for (key, expected) in [
-        ("retained", 3),
+        ("retained", 4),
         ("kept_source", 2),
         ("replaced", 1),
         ("outside_declaration", 1),
@@ -197,6 +205,44 @@ fn receipt_records_the_preparation_evidence(world: &mut GivnWorld) {
         Some(env!("CARGO_PKG_VERSION")),
         "the record has the wrong Givn version"
     );
+    write_transcript(world);
+}
+
+/// Capture the run as the scenario's terminal evidence. A delta run writes
+/// into the change's `evidence/visual/`; a permanent-corpus run writes into
+/// the gitignored `target/terminal-evidence/`, so an archived transcript is
+/// never recreated as untracked work.
+fn write_transcript(world: &GivnWorld) {
+    if world.scenario_title.as_deref() != Some(SCENARIO_TITLE) {
+        return;
+    }
+    let out = output(world);
+    let dir = crate::common::terminal_evidence::transcript_dir(SCENARIO_TITLE);
+    std::fs::create_dir_all(&dir).expect("create the transcript directory");
+    let argv = format!(
+        "givn ise replace --at HEAD --path src/keys/parser.rs --into {} --receipt {}",
+        trial_path(world).display(),
+        receipt_path(world).display()
+    );
+    let revision = world
+        .ise_clean_room
+        .first_revision
+        .clone()
+        .unwrap_or_else(|| "<unrecorded>".to_string());
+    let text = format!(
+        "Scenario: {SCENARIO_TITLE}\n\
+         argv: {argv}\n\
+         cwd (fixture project root): {}\n\
+         binary: the compiled `givn` the scenario spawns (CARGO_BIN_EXE_givn)\n\
+         revision: {revision}\n\
+         exit code: {}\n\
+         \n--- stdout (raw) ---\n{}\n--- stderr (raw) ---\n{}\n",
+        project_env(world).root().display(),
+        out.status.code().unwrap_or(-1),
+        String::from_utf8_lossy(&out.stdout),
+        String::from_utf8_lossy(&out.stderr),
+    );
+    std::fs::write(dir.join("transcript.txt"), text).expect("write the transcript");
 }
 
 /// The absolute trial path the writer creates: the existing container is

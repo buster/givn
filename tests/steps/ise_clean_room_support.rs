@@ -549,17 +549,14 @@ pub(crate) fn revision_content(env: &common::TestEnv, revision: &str, path: &str
 }
 
 /// A minimal Git project with `ise` enabled and the prepare scenario's
-/// declaration. The config and the declaration are excluded through
-/// `.git/info/exclude`, so the revision tree holds only the seven committed
-/// fixture files the counts name.
+/// declaration. The config is excluded through `.git/info/exclude`; the
+/// declaration is committed with the seven fixture files, so the revision
+/// records it and the trial carries it.
 pub(crate) fn e2e_trial_project() -> common::TestEnv {
     let env = common::make_bare_root();
     common::git_init(&env);
-    std::fs::write(
-        env.path(".git/info/exclude"),
-        "givn/config.yaml\ngivn/specification.yaml\n",
-    )
-    .expect("write the Git exclude fixture");
+    std::fs::write(env.path(".git/info/exclude"), "givn/config.yaml\n")
+        .expect("write the Git exclude fixture");
     std::fs::create_dir_all(env.path("givn")).expect("create givn/");
     std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
         .expect("write the fixture config");
@@ -577,6 +574,10 @@ pub(crate) fn commit_e2e_trial_revision(env: &common::TestEnv) -> String {
     commit_files(
         env,
         &[
+            (
+                DECLARATION_PATH,
+                &behavior_e2e_declaration("\"givn/specs/**\"", "\"tests/e2e\"", "\"src/**\""),
+            ),
             (E2E_FEATURE_PATH, E2E_FEATURE_CONTENT),
             ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
             ("tests/e2e/steps/demo.rs", "// e2e steps\n"),
