@@ -1789,26 +1789,31 @@ const ARCHIVE_BINDING_TOKENS: [&str; 23] = [
     ".Given(", ".When(", ".Then(", ".Step(",
 ];
 
-/// The served `specs` text and the served `review` text of one request pair.
-fn specs_and_review_texts(world: &GivnWorld) -> [(&'static str, String); 2] {
-    let specs = world
+/// The served texts of a request pair: the first is recorded in
+/// `additional_output`, the second is the last request.
+fn served_pair(
+    world: &GivnWorld,
+    first: &'static str,
+    second: &'static str,
+) -> [(&'static str, String); 2] {
+    let first_text = world
         .additional_output
         .as_deref()
-        .expect("the specs guidance was not requested");
-    let review = world
+        .unwrap_or_else(|| panic!("the {first} guidance was not requested"));
+    let second_output = world
         .last_output
         .as_ref()
-        .expect("the review guidance was not requested");
+        .unwrap_or_else(|| panic!("the {second} guidance was not requested"));
     assert!(
-        review.status.success(),
-        "the review request failed: {}",
-        String::from_utf8_lossy(&review.stderr)
+        second_output.status.success(),
+        "the {second} request failed: {}",
+        String::from_utf8_lossy(&second_output.stderr)
     );
     [
-        ("specs", specs.to_string()),
+        (first, first_text.to_string()),
         (
-            "review",
-            String::from_utf8_lossy(&review.stdout).into_owned(),
+            second,
+            String::from_utf8_lossy(&second_output.stdout).into_owned(),
         ),
     ]
 }
@@ -1897,7 +1902,7 @@ fn author_requests_specs_and_review(world: &mut GivnWorld) {
 
 #[then("neither served text names a stack instruction")]
 fn neither_text_names_stack_instruction(world: &mut GivnWorld) {
-    for (label, content) in specs_and_review_texts(world) {
+    for (label, content) in served_pair(world, "specs", "review") {
         for id in STACK_IDS {
             assert!(
                 !content.contains(id),
@@ -1909,7 +1914,7 @@ fn neither_text_names_stack_instruction(world: &mut GivnWorld) {
 
 #[then("neither served text carries a per-runner mechanism")]
 fn neither_text_carries_per_runner_mechanism(world: &mut GivnWorld) {
-    for (label, content) in specs_and_review_texts(world) {
+    for (label, content) in served_pair(world, "specs", "review") {
         for token in RUNNERS
             .iter()
             .chain(STUB_FORMS.iter())
@@ -1922,5 +1927,64 @@ fn neither_text_carries_per_runner_mechanism(world: &mut GivnWorld) {
                 "the served {label} text carries the per-runner mechanism {token:?}: {content}"
             );
         }
+    }
+}
+
+// --- tasks guidance ---------------------------------------------------------
+
+#[when(
+    "the author requests the tasks and reverse-engineering tasks instructions through the Givn CLI"
+)]
+fn author_requests_tasks_and_reverse_tasks(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let tasks = request_change_guidance(env, "tasks");
+    assert!(
+        tasks.status.success(),
+        "the tasks request failed: {}",
+        String::from_utf8_lossy(&tasks.stderr)
+    );
+    world.additional_output = Some(String::from_utf8_lossy(&tasks.stdout).into_owned());
+    world.last_output = Some(request_change_guidance(env, "tasks-reverse"));
+}
+
+#[then("the tasks text names \"steps\" as the stack mapping")]
+fn tasks_text_names_steps_mapping(world: &mut GivnWorld) {
+    let mapping = "`givn instructions steps` maps the project's runner to the stack instruction";
+    for (label, content) in served_pair(world, "tasks", "tasks-reverse") {
+        assert!(
+            content.contains(mapping),
+            "the served {label} text does not name `steps` as the stack mapping ({mapping:?}): {content}"
+        );
+    }
+}
+
+#[then("neither served text carries a per-runner step path, stub, or strict mechanism")]
+fn neither_text_carries_per_runner_body(world: &mut GivnWorld) {
+    for (label, content) in served_pair(world, "tasks", "tasks-reverse") {
+        for token in STEP_PATHS
+            .iter()
+            .chain(STUB_FORMS.iter())
+            .chain(STRICT_MECHANISMS.iter())
+            .chain(RUN_COMMANDS.iter())
+            .chain(BINDING_BULLETS.iter())
+        {
+            assert!(
+                !content.contains(token),
+                "the served {label} text carries the per-runner token {token:?}: {content}"
+            );
+        }
+    }
+}
+
+#[then("both served texts still require the strict-mode proof")]
+fn both_texts_require_strict_proof(world: &mut GivnWorld) {
+    for (label, content) in served_pair(world, "tasks", "tasks-reverse") {
+        assert!(
+            content.contains("proof-of-strictness"),
+            "the served {label} text dropped the proof-of-strictness requirement: {content}"
+        );
     }
 }
