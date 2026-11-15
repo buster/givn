@@ -13,9 +13,9 @@ use cucumber::{given, then, when};
 use crate::common;
 use crate::steps::clean_room_preparation_steps::{prepare_trial, project_env};
 use crate::steps::ise_clean_room_support::{
-    self, ADDED_E2E_FEATURE_CONTENT, ADDED_E2E_FEATURE_PATH, ADDED_E2E_STEP_PATH,
-    FOSSIL_FEATURE_PATH, REFERENCE_PATH, REPLACED_SOURCE_PATH, VERIFY_E2E_STEP_PATH,
-    VERIFY_KEPT_PATH,
+    self, ADDED_E2E_FEATURE_CONTENT, ADDED_E2E_FEATURE_PATH, ADDED_E2E_ROOT_MANIFEST_PATH,
+    ADDED_E2E_STEP_PATH, FOSSIL_FEATURE_PATH, REFERENCE_PATH, REPLACED_SOURCE_PATH,
+    VERIFY_E2E_STEP_PATH, VERIFY_KEPT_PATH,
 };
 use crate::steps::{GivnWorld, output, stderr};
 
@@ -183,6 +183,54 @@ fn verifier_changes_three_frozen_files(world: &mut GivnWorld) {
     for path in [FOSSIL_FEATURE_PATH, REFERENCE_PATH, VERIFY_E2E_STEP_PATH] {
         ise_clean_room_support::append_bytes(&trial(world).join(path));
     }
+}
+
+#[when(
+    regex = r#"^the verifier changes the retained file "givn/specification\.yaml" in the trial$"#
+)]
+fn verifier_changes_the_declaration_in_the_trial(world: &mut GivnWorld) {
+    ise_clean_room_support::append_bytes(
+        &trial(world).join(ise_clean_room_support::DECLARATION_PATH),
+    );
+}
+
+#[when(regex = r#"^the trial loses the retained file "givn/specification\.yaml"$"#)]
+fn trial_loses_the_declaration(world: &mut GivnWorld) {
+    std::fs::remove_file(trial(world).join(ise_clean_room_support::DECLARATION_PATH))
+        .expect("remove the declaration from the trial");
+}
+
+#[when(
+    regex = r#"^the developer rewrites the checkout declaration's "structure" role to "docs/glossary\.md"$"#
+)]
+fn developer_rewrites_the_structure_role(world: &mut GivnWorld) {
+    ise_clean_room_support::rewrite_checkout_role(
+        project_env(world),
+        "structure",
+        "[\"docs/glossary.md\"]",
+    );
+}
+
+#[when(
+    regex = r#"^the developer adds the e2e root "tests/extra-e2e" to the checkout declaration$"#
+)]
+fn developer_adds_the_extra_e2e_root(world: &mut GivnWorld) {
+    ise_clean_room_support::rewrite_checkout_role(
+        project_env(world),
+        "e2e",
+        "[\"tests/e2e\", \"tests/extra-e2e\"]",
+    );
+}
+
+#[when(
+    regex = r#"^the developer adds the e2e file "tests/extra-e2e/Cargo\.toml" to the checkout$"#
+)]
+fn developer_adds_the_extra_e2e_manifest(world: &mut GivnWorld) {
+    ise_clean_room_support::add_checkout_file(
+        project_env(world),
+        ADDED_E2E_ROOT_MANIFEST_PATH,
+        "[package]\nname = \"extra-e2e\"\n",
+    );
 }
 
 #[when(regex = r#"^the trial loses the retained file "givn/specs/demo/spec\.feature"$"#)]
