@@ -1,7 +1,7 @@
 @givn.delta @instruction-integrity
 Feature: Instruction Integrity
 
-  @givn.added @instruction-integrity @wip
+  @givn.added @instruction-integrity
   Scenario: The ise instruction says declared retained paths survive archiving
     Given a Givn project with the ise addon enabled and the skills synchronized
     When the consumer requests the `ise` instruction
