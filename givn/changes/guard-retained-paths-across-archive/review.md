@@ -323,6 +323,80 @@ exercises that branch. Add one unit test with an entry such as
 assert the `None` advice text. The design's rule is implemented correctly; the
 gap is the test.
 
+## Finding closure
+
+**BLOCKER 1 — the permanent `@e2e` step recreates a stale change directory after archive.**
+
+- Fix: `tests/common/terminal_evidence.rs:1-31` is now the one evidence-root
+  rule (`transcript_dir`): a run from a delta feature
+  (`GIVN_FEATURES=givn/changes/<id>/specs`) writes
+  `<change>/evidence/visual/<scenario-slug>/`, any other run writes the
+  gitignored `target/terminal-evidence/<scenario-slug>/`.
+  `tests/steps/require_durable_retained_paths_e2e_steps.rs:37` calls it
+  instead of the hardcoded change path; `tests/steps/workflow_enforcement_e2e_steps.rs:20`
+  and `tests/steps/trial_input_verification_e2e_steps.rs:52` now call the same
+  helper instead of carrying their own copy of the rule.
+- Test evidence: delta e2e
+  (`GIVN_FEATURES=givn/changes/guard-retained-paths-across-archive/specs ./run-tests.sh --e2e`)
+  passed and refreshed the committed change transcript. Post-archive probe A:
+  the delta feature copied to `target/post-archive-probe`, the change directory
+  moved aside, `GIVN_FEATURES=target/post-archive-probe ./run-tests.sh --e2e`
+  passed, wrote
+  `target/terminal-evidence/consumer-archives-a-change-whose-declared-retained-paths-survive-the-move/transcript.txt`,
+  and created nothing under `givn/changes/`. The same probe with the pre-fix
+  step passed as well but recreated
+  `givn/changes/guard-retained-paths-across-archive/evidence/visual/consumer-archives-a-change-whose-declared-retained-paths-survive-the-move/transcript.txt`;
+  that recreated directory was removed and the change directory restored from
+  its temporary location, leaving no debris. Post-archive probe B repeats it in
+  the exact post-archive configuration: the delta feature copied to its merge
+  target `givn/specs/archive-change/require-durable-retained-paths.feature`,
+  the change directory moved aside, `GIVN_FEATURES=givn/specs ./run-tests.sh --e2e`
+  ran 114 scenarios, all 114 passed, and `givn/changes/` held only the
+  unrelated untracked change; the copy was then removed and the change
+  directory restored.
+- Commit: `49021cfa`.
+
+**FINDING 2 — `archive_advice`'s `None` branch and the matching refusal form were unasserted.**
+
+- Fix: no production change; the design's rule was already implemented.
+- Tests: `src/cli/archive.rs:2181`
+  `an_entry_reaching_the_change_tree_through_another_prefix_has_no_archived_advice`
+  asserts `advice == None`; `src/cli/archive.rs:2194`
+  `the_refusal_states_that_archived_paths_must_still_match_a_prefixless_entry`
+  asserts the `the archived paths must still match '<entry>'` line and the
+  absence of a `declare '<path>'` replacement. Both drive
+  `declared_retained_path_offenders` and `retained_path_refusal` through a
+  declaration loaded by the strict loader, with the entry
+  `**/changes/moved-limits/**`. The review's suggested `**/moved-limits/**`
+  cannot reach the branch: it also matches the `givn/archive/<id>/` counterpart,
+  so the entry survives and is never an offender.
+  `cargo test --lib -- cli::archive::tests`: 28 passed.
+- Commit: `7753918d`.
+
+**Verification after both fixes.** `cargo fmt --all -- --check` and
+`cargo clippy --locked --workspace --all-targets -- -D warnings` exit 0.
+`./run-tests.sh --non-e2e`: 1054 passed, 113 skipped, exit 0.
+`./run-tests.sh --e2e`: 113 passed, 1054 skipped, exit 0; the run wrote its
+terminal transcripts under `target/terminal-evidence/` and left
+`givn/changes/` untouched. The delta scopes pass on the committed candidate:
+6 regular scenarios and 1 `@e2e` scenario.
+
+**Still open on the same blocker.** `givn check tasks --change
+guard-retained-paths-across-archive` reports `✓ scenario commits passed (7
+scenario(s))` and then refuses with `change verification requires a clean
+committed tree: givn/changes/redact-secret-shaped-values-in-history/config-lock.yaml,
+givn/changes/redact-secret-shaped-values-in-history/proposal.md`. That
+unrelated untracked change was left untouched as instructed, so the
+change-scoped receipt remains the one recorded at `da79603a` and cannot be
+refreshed in this tree.
+
+**Observation outside this change.** `./run-tests.sh --e2e` rewrites the
+committed PNGs under `givn/archive/development-timeline/evidence/visual/…`
+through `tests/common/browser.rs::evidence_root`, which follows the archived
+change instead of falling back to `target/` for a permanent run. That is the
+same defect class as Blocker 1 in the browser tier; it belongs to the
+`development-timeline` evidence and was restored, not committed, here.
+
 ## Sign-off
 
 - [x] Fabrication audit: 0 empty step bodies; all seven delta scenarios fail
