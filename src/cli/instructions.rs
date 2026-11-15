@@ -17,6 +17,12 @@ const POLICY_INSTRUCTION_IDS: &[&str] = &[
     "specs-reverse",
     "tasks-reverse",
     "ise",
+    "steps-rust",
+    "steps-python",
+    "steps-node",
+    "steps-java",
+    "steps-go",
+    "steps-ruby",
 ];
 
 /// Policy instruction ids served only while a named addon is effective. The

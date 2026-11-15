@@ -1988,3 +1988,29 @@ fn both_texts_require_strict_proof(world: &mut GivnWorld) {
         );
     }
 }
+
+// --- stack instruction id registration --------------------------------------
+
+#[then(regex = r#"^stderr lists the known instruction ids including "(.+)"$"#)]
+fn stderr_lists_known_ids_including(world: &mut GivnWorld, id: String) {
+    let stderr = crate::steps::stderr(world);
+    let list = stderr
+        .split_once("Known artifacts: ")
+        .map(|(_, list)| list)
+        .unwrap_or_else(|| panic!("the refusal carries no known-id list: {stderr}"));
+    let known: Vec<&str> = list.split(", ").map(str::trim).collect();
+    assert!(
+        known.contains(&id.as_str()),
+        "the known-id list does not carry `{id}`: {known:?}"
+    );
+}
+
+#[when(regex = r#"^the author requests "(.+)" as machine-readable output$"#)]
+fn author_requests_machine_readable(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.previous_output = Some(common::run_givn(env, &["instructions", &id]));
+    world.last_output = Some(common::run_givn(env, &["instructions", &id, "--json"]));
+}
