@@ -113,7 +113,7 @@ Required branches — cover every one (or explicitly record "no issue found"):
 - **Interface classification** — test the opposite classification before accepting a non-browser interface: a screen rendered in a browser is a Web UI, so a design that declares no browser driver must say why the opposite does not hold.
 - **ADR qualification** — use the concise qualification recorded once in the
   change assessment (`arc42.md`) and delegate the full policy to the canonical
-  Arc42 addon instruction (`givn instructions arc42-docs --change <id>`). Check
+  Arc42 addon instruction (`givn instructions arc42-docs`). Check
   whether the recorded architectural commitment, real alternatives, durable
   consequence, and existing-decision search belong in an ADR or in an existing
   lower-level artifact. For every proposed `NEW_ADR`, require the explicit

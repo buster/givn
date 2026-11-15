@@ -16,7 +16,7 @@ are historical context only.
 
 The complete qualification procedure, LLM verdict schema, routing values, and
 MADR template are owned by the resolved Arc42 addon instruction. Run
-`givn instructions arc42-docs --change <id>` before drafting.
+`givn instructions arc42-docs` before drafting.
 
 This register records status, relationships, and links; it does not duplicate
 the procedure. A chapter being affected does not by itself require a new ADR.

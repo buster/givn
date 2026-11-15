@@ -19,20 +19,14 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  it names "steps-rustt"
 
   @givn.added @wip
-  Scenario: An artifact instruction named without its change context is a finding
-    Given  a Givn project with an active change and the guidance reference check available
-    And  a served instruction names "proposal" without a change context
-    When  the maintainer runs the guidance reference check over the served guidance
-    Then  the check fails
-    And  it names "proposal" and the missing change context
-
-  @givn.added @wip
   Scenario: A policy instruction named with a change context is a finding
     Given  a Givn project with an active change and the guidance reference check available
+    And  a served instruction names "proposal" without a change context
     And  a served instruction names "steps" with a change context
     When  the maintainer runs the guidance reference check over the served guidance
     Then  the check fails
     And  it names "steps" and the extra change context
+    And  it reports no finding for "proposal"
 
   @givn.added @wip
   Scenario: The ise instruction names only instruction ids that resolve

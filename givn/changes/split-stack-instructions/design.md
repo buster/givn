@@ -71,7 +71,7 @@ Confirmed Persona IDs: `agent--technical-role`, `developer--primary-user`,
 | `obtain-effective-guidance` extension: the machine-readable path carries the same content | unchanged JSON path; the stack id is a policy id with no `generates`/`requires` | `serve-extended-rules`: `The machine-readable stack path carries the same content as the text path` |
 | `obtain-effective-guidance` extension: an unknown id keeps the refusal and lists the known ids, now including the stack ids | the same refusal string builds its list from the manifest ids plus `POLICY_INSTRUCTION_IDS` | `serve-extended-rules`: `An unknown stack instruction id is refused by name with the known list` |
 | `obtain-effective-guidance` rule: `specs`, `review`, `tasks`, and `tasks-reverse` carry no stack body | their per-stack mentions are interface-typed (browser driver) or generic; `tasks` and `tasks-reverse` point at `steps`; the split moves nothing in and deletes no rule | `serve-extended-rules`: `Specs and review guidance carry no stack body`, `The tasks guidance points at the stack mapping and carries no stack body` |
-| `instruction-integrity` extension: a named instruction id that does not resolve fails the check by name | new `instruction_references` check over served text and every effective addon instruction; each id resolved in its documented context, with a missing or extra context a finding | `instruction-integrity`: `Every instruction id a served instruction names resolves`, `A dangling stack instruction id fails the reference check by name`, `An artifact instruction named without its change context is a finding`, `A policy instruction named with a change context is a finding` |
+| `instruction-integrity` extension: a named instruction id that does not resolve fails the check by name | new `instruction_references` check over served text and every effective addon instruction; each id resolved as the CLI resolves it, a policy id with no context and an artifact id in a change context, so a policy id carrying `--change` is a finding while an artifact id without one is not | `instruction-integrity`: `Every instruction id a served instruction names resolves`, `A dangling stack instruction id fails the reference check by name`, `A policy instruction named with a change context is a finding` |
 | `instruction-integrity` rule: the `ise` instruction's directions resolve | `ise.md` names `steps` as the stack mapping and `steps-rust` as one example, plus the two record owners; the check resolves them while `ise` is effective | `instruction-integrity`: `The ise instruction names only instruction ids that resolve` |
 | `instruction-integrity` rule: one canonical owner per rule | the moved rows leave the core instruction rather than being copied; the core points at the stack instruction | the four `serve-extended-rules` absence scenarios |
 | `instruction-integrity` rule: the review guidance keeps every obligation | `review.md` restores the pre-consolidation content and keeps one stable marker per obligation | `instruction-integrity`: `The review guidance keeps every surviving obligation` |
@@ -88,7 +88,8 @@ No module is added to `src/`. Three code surfaces change:
   `instructions/<id>.md` and the unknown-id message already builds its known
   list from the manifest plus this array.
 - `assets/instructions/`: six new files, and edits to `steps.md`, `design.md`,
-  `review.md`, and `ise.md`. `#[folder = "assets/"]` on
+  `review.md`, `ise.md`, and one direction in `design-review.md` (the arc42
+  addon direction drops its ignored `--change <id>`). `#[folder = "assets/"]` on
   `src/config/embedded.rs` picks up new files at build time, so no registration
   file lists them.
 - `tests/common/instruction_references.rs` (new) plus `tests/steps/`: the
@@ -102,8 +103,8 @@ adds no component. The one new flow is inside the test harness:
 ```mermaid
 flowchart LR
   Texts[[Served instruction texts]] --> Extract[[Extract givn instructions id directions]]
-  Extract --> Resolve[[Resolve each id: artifact with --change, policy without]]
-  Resolve -->|refused| Finding[[Finding names the id and its source line]]
+  Extract --> Resolve[[Resolve each id as the CLI does: policy without a context, artifact in the active change]]
+  Resolve -->|refused, or a policy id with a context| Finding[[Finding names the id and its source line]]
   Resolve -->|served| Clean[[No finding]]
 ```
 
@@ -183,7 +184,12 @@ consumer, so one module with no port is proportionate.
   fail: an id can resolve from a project override, an addon, or the embedded
   asset. Rejected: a new `givn` subcommand (a new public surface this change
   does not need); reusing `reference_check` (file references and instruction
-  ids have different resolution rules). Realized in the new module.
+  ids have different resolution rules); making an artifact id without
+  `--change` a finding (the CLI auto-selects the single active change, so the
+  rule would flag six correct shipped directions and force an agent to know the
+  change id before reading guidance). Realized in the new module, whose context
+  rule is one-sided: a policy id with `--change` is a finding because the flag
+  is ignored for policy ids.
 - Decides D6 (`ise` and the stack instruction): `ise.md` names `steps` as the
   mapping for the change's stack mechanics and names `steps-rust` as one
   worked example, while keeping `design` and `proposal` as the record owners.
@@ -198,10 +204,11 @@ No decision is carried. D1 to D3 resolve the proposal's questions here; D4 to
 D6 are local to this change and reversing any is a one-batch edit.
 `ADR-077` is accepted, and the active register already reads 29 accepted
 decisions. The modified register-count scenario therefore asserts existing
-behaviour protected: the new `29` binding replaces the `28` phrase, and the
-change-scoped run executes only the delta, so the dead `28` binding in
-`tests/steps/adr_qualification_gate_steps.rs` is deleted in the same batch.
-No RED is claimed for it.
+behaviour protected: the `29` binding replaces the `28` phrase, and the dead
+`28` binding in `tests/steps/adr_qualification_gate_steps.rs` is deleted. The
+reconciliation landed in the operator correction of 2026-11-15 (see
+`design-review.md` `## Operator correction`), so the permanent and the
+change-scoped runs both pass before archive. No RED is claimed for it.
 
 ## Operator decision: no corpus line cap
 
@@ -316,7 +323,7 @@ check is deleted to make a number smaller.
 |---|---|---|
 | `named_instruction_ids(text)` | `-> Vec<(usize, String, String)>` | every direction as its 1-based line, that line's text, and the id; a direction is a `givn instructions <id>` occurrence inside a code span (or followed by `--change`/`--json`), so prose such as "givn instructions are resolved" is not a direction; moved from `instruction_integrity_steps.rs`, one implementation |
 | `IdFinding` | `struct { id, source, line, line_text, expected }` | one unresolved id or one id named in the wrong context |
-| `unresolved_instruction_ids(project_root, sources, artifact_ids, change)` | `-> Vec<IdFinding>` | resolve each id with the built `givn` binary: an artifact id with `--change <change>`, a policy id with no context; a missing or extra context is a finding |
+| `unresolved_instruction_ids(project_root, sources, artifact_ids, change)` | `-> Vec<IdFinding>` | resolve each id with the built `givn` binary as the direction writes it: a policy id with no context, an artifact id in a change context (the direction's own, or the single active change the CLI auto-selects); a `--change` on a policy direction is a finding |
 | `describe(findings)` | `-> String` | assertion message naming source line, line text, id, and expected context |
 
 Behaviour:
@@ -324,11 +331,29 @@ Behaviour:
 - An id is resolved, never inferred from the asset set: an override, an addon
   instruction, and an embedded asset all count as resolving, and a retired or
   unknown id fails.
-- The direction's context is part of the contract: an artifact id without
-  `--change` and a policy id with `--change` are findings, matching the
-  `all_directions`/`named_change` shape at
-  `tests/steps/instruction_integrity_steps.rs:650-738`. The finding keeps the
-  direction's line text, so a context mismatch names the sentence it read.
+- The direction's context is part of the contract in one direction only: **a
+  policy id with `--change` is a finding**. `run_artifact` resolves a
+  non-artifact id and prints it before it reads `change`
+  (`src/cli/instructions.rs:82-117`), so the flag changes nothing and the
+  direction misleads a reader into supplying a context that has no effect. The
+  finding keeps the direction's line text, so it names the sentence it read.
+  One shipped direction carried the flag and is fixed by this change:
+  `assets/instructions/design-review.md:116` named
+  `givn instructions arc42-docs --change <id>`; `arc42-docs` is a policy addon
+  instruction (resolved by `resolve_instruction`'s addon fallback, absent from
+  the manifest), so the flag was ignored. It now names the bare id, and
+  `docs/arc42/adr/README.md:19` states the same direction.
+- **An artifact id without `--change` is not a finding.** When no change is
+  named, `run_artifact` auto-selects the single active change and refuses by
+  name only when there is none or more than one
+  (`src/cli/instructions.rs:119-130`). Requiring the flag would force an agent
+  to know the change id before reading guidance, and six shipped directions
+  rely on the auto-selection: `assets/instructions/characterize.md:69`,
+  `design-review.md:18,65`, `proposal.md:111`, `review-reverse.md:24`, and
+  `specs.md:326`. The check resolves such a direction in the fixture's single
+  active change, the same way the CLI does. The wrong-context shape stays the
+  `named_change` precedent at
+  `tests/steps/instruction_integrity_steps.rs:650-738`.
 - An addon-bound id (`ise`) is checked only while the addon is effective in the
   fixture; with `ise` off the request refuses by addon name and the check skips
   that id rather than reporting a false finding.
@@ -337,8 +362,12 @@ Behaviour:
 Served-text sources: every manifest artifact id (with the active change), every
 policy id the checkout serves, and every effective addon instruction
 (`assets/addons/<id>/instructions.md`). The policy set is read from the
-`assets/instructions/` stems of this checkout and the addon set from
-`assets/addons/`, both filtered by the fixture's effective addons; the check
+`assets/instructions/` stems of this checkout and the addon instruction ids
+(`ise`, `arc42-docs`, resolved by `resolve_instruction`'s addon fallback), minus
+the manifest artifact ids; classification of a direction's id uses the graph,
+so an id outside the manifest is a policy id whether it resolves from
+`assets/instructions/` or from an addon. The addon set is read from
+`assets/addons/`, filtered by the fixture's effective addons; the check
 never asks the binary to enumerate ids, because that would add a command
 surface (D4).
 
@@ -348,8 +377,8 @@ surface (D4).
 |---|---|---|
 | Served text → instruction id | a core instruction names `steps-rust` with no such asset | the check fails and names `steps-rust` with its source line |
 | Served text → instruction id | an override names `steps-rustt` | the check fails and names `steps-rustt`; the CLI refusal keeps the unknown-id text |
-| Served text → id context | an artifact direction without `--change` | a finding naming the id and the missing context |
-| Served text → id context | a policy direction with `--change` | a finding naming the id and the extra context |
+| Served text → id context | an artifact direction without `--change` | no finding: the check resolves it in the fixture's single active change, as the CLI auto-selects |
+| Served text → id context | a policy direction with `--change` | a finding naming the id and the ignored change context |
 | Served text → addon | `ise` named while the fixture has it off | the request refuses naming `ise`; the check skips the addon-bound id |
 | Served text → addon instruction | an effective addon instruction names a retired id | the check fails and names the id with its source line |
 | Served text → core body | a core instruction regrows a per-runner table | the absence scenario fails naming the stack instruction that owns the row |
@@ -364,13 +393,13 @@ surface (D4).
 
 Every delta phrase is bound in these permanent files; no delta step copy is
 introduced. The modified register-count scenario is existing behavior
-protected: it adds the binding for `the final register has 29 accepted
-decisions and no proposed decisions` and deletes the now-dead `28` phrase from
-`tests/steps/adr_qualification_gate_steps.rs`. The change-scoped run executes
-only the delta (`GIVN_FEATURES` points at the change specs), so the deletion is
-safe before the archive merge rewrites the permanent scenario; the rest of its
-steps are already bound. No RED is claimed for that scenario. The new shared
-module `tests/common/instruction_references.rs` is registered in
+protected: the binding for `the final register has 29 accepted decisions and no
+proposed decisions` replaced the now-dead `28` phrase in
+`tests/steps/adr_qualification_gate_steps.rs`, and the permanent feature was
+reconciled to the same assertion in the operator correction of 2026-11-15, so
+both scopes pass before archive; the rest of its steps are already bound. No
+RED is claimed for that scenario. The new shared module
+`tests/common/instruction_references.rs` is registered in
 `tests/common/mod.rs` and carries no `#[given]`/`#[when]`/`#[then]`.
 
 Not-implemented pattern: every new step drives the built `givn` binary against

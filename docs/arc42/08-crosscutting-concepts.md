@@ -1468,11 +1468,14 @@ length defect to remove. `review.md` therefore keeps its full obligation set.
 
 The instruction-id part of the guidance reference check reads served text, not
 the asset: every `givn instructions <id>` direction that a served instruction
-or an effective addon instruction names must resolve in the context it names,
-an artifact id with a change context and a policy id without one. An unresolved
-or mis-contexted id is a finding naming the id, its source line, and the line
-text. An addon-bound id is checked only while its addon is effective in the
-project.
+or an effective addon instruction names must resolve as that instruction is
+resolved, a policy id with no change context and an artifact id in a change
+context (the direction's own, or the single active change the CLI
+auto-selects). A policy direction that carries `--change` is a finding: the
+flag is ignored for policy ids, so the direction promises a context that
+changes nothing. An unresolved id, or a policy id carrying a change context, is
+a finding naming the id, its source line, and the line text. An addon-bound id
+is checked only while its addon is effective in the project.
 
 A project extends one instruction's built-in rules through the `extensions:`
 map in `givn/config.yaml`: an instruction id maps to project-owned rule
@@ -1515,10 +1518,11 @@ it carries must resolve in the project that receives it: a file the project
 has, a location a named creation step creates, a project-owned destination
 the guidance itself defines, or a skill resolved by name across the
 configured agent targets. Every instruction id a direction names must resolve
-through the CLI in the same Givn version or a later one, in the context the
-direction names: an artifact direction carries a resolvable change context,
-and a policy or step direction resolves without one (an artifact request
-without a resolvable change context refuses by name). A reference into the
+through the CLI in the same Givn version or a later one, resolved the way the
+CLI resolves it: a policy or step direction resolves with no change context,
+and an artifact direction resolves in a change context, which the CLI
+auto-selects when the direction names none (an artifact request in a project
+with no single active change refuses by name). A reference into the
 Givn distribution (`assets/…`, a repository-only document) is a defect; the
 acceptance suite grades every generated skill and printed instruction against
 both rules.
