@@ -13,8 +13,13 @@ Four coordinated surfaces, each owned by one component:
    `tasks` and `tasks-reverse` point at `steps` for the mapping and carry no
    stack body; `ise` names `steps` and one example id.
 2. **Instruction id set** (`src/cli/instructions.rs`) registers the six stack
-   ids as policy instruction ids, so `givn instructions steps-rust` resolves
-   without a change context and the unknown-id refusal lists them.
+   ids as policy instruction ids, so a stack id is a policy instruction id with
+   no change context and the unknown-id refusal lists it. Reachability is not
+   what registration buys: `resolve_instruction` (`src/config/cascade.rs:55-80`)
+   already falls back to the embedded `instructions/<id>.md` asset, so
+   `givn instructions steps-rust` serves before the ids are registered. The
+   registration adds the six ids to the known list the refusal builds
+   (`src/cli/instructions.rs:83-95`) and changes no resolution path.
 3. **Instruction reference check** (`tests/common/instruction_references.rs`,
    new) extracts every `givn instructions <id>` direction from served guidance
    and every effective addon instruction, then resolves each id in its
@@ -221,7 +226,7 @@ own merits: one owner per rule, and one load per stack.
 
 Reason: the earlier draft derived a 4,500-line corpus cap and a 1,544-line
 four-core cap from the plan's `G2` budget rule, not from a requirement. Meeting
-the corpus cap required deleting the Step 0 items 0, 8, 9, 11, and 12, the
+the corpus cap required deleting the Step 0 items 0, 8, 9, 10, 11, and 12, the
 `## E2e coverage` section, the sign-off E2E block, and the spot-check section
 from `review.md`; the operator withdrew both caps and every check derived from
 them.

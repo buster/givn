@@ -178,7 +178,7 @@ still not allowed, and a rule that states valid behavior is not removed or split
 to satisfy a line count. The stack split is approved on its own merits.
 
 What changed: `assets/instructions/review.md` was restored from `aa50b100`
-(the consolidation had deleted Step 0 items 0, 8, 9, 11, and 12, the
+(the consolidation had deleted Step 0 items 0, 8, 9, 10, 11, and 12, the
 `## E2e coverage` section, the sign-off E2E block, and the spot-check section),
 with the HTTP-client wording kept in place of `reqwest`; the two budget
 scenarios and every cap constant were deleted; ADR-077 was rewritten to the
@@ -259,6 +259,35 @@ Testability, Risk, Contracts and components, ADR qualification, the contract
 checks, the review-context checks, the scenario list, the gaps table, and
 Verification. The verdict stays `PASS`; the author does not flip it, and the
 independent reviewer re-validates the re-derived plan.
+
+## Design corrigenda
+
+Date: 2026-11-15. Two factual corrections, applied by the `design-corrigenda`
+batch before any scenario batch ran. Neither is decision-bearing: no decision,
+scenario, command, file path, or arc42 statement changes, and the delta
+features and the arc42 chapter table are unaffected.
+
+1. **The overview overstated what registration buys.** `design.md` item 2 said
+   the six ids in `POLICY_INSTRUCTION_IDS` make `givn instructions steps-rust`
+   resolve. They do not: `resolve_instruction` falls back to the embedded
+   `instructions/<id>.md` asset (`src/config/cascade.rs:55-80`), so the request
+   exits 0 before registration, and registration only adds the ids to the
+   known list the refusal builds (`src/cli/instructions.rs:83-95`). Observed
+   before the correction: `givn instructions steps-rust` exit 0 and
+   `givn instructions steps-rustt` refused with a known list ending at
+   `ise`. The item now says the ids join the list and changes no resolution
+   path.
+2. **The restored review items were miscounted.** This note and `design.md`
+   `## Operator decision: no corpus line cap` listed "Step 0 items 0, 8, 9,
+   11, and 12". The restored text carries six items:
+   `assets/instructions/review.md:92` (0), `:161` (8), `:166` (9), `:174`
+   (10), `:191` (11), `:215` (12). Both enumerations now read "0, 8, 9, 10,
+   11, and 12".
+
+Because neither correction changes a decision, a scenario, a command, a file
+path, or an arc42 statement, `design-review` does not re-open; the batch's own
+verification re-runs `givn status` and `givn lint` against the corrected
+artifacts.
 
 ## Verification
 
