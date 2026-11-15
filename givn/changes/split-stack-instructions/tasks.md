@@ -535,7 +535,7 @@ Check"):**
 - Read-only: no file is written, staged, or rewritten. `describe(findings)`
   renders source line, line text, id, and expected context.
 
-- [ ] Scenario: `Every instruction id a served instruction names resolves`
+- [x] Scenario: `Every instruction id a served instruction names resolves`
   - Design constraints:
     - Given: the shared `a Givn project with an active change` binding, plus a
       new `a Givn project with an active change and the guidance reference
@@ -1426,7 +1426,7 @@ stays green).
       14/14 units, 29 rows), so no tag was dropped ahead of its test.
       ```
 
-- [ ] Contradictions 1 to 3 are dispositioned: Contradiction 1 is closed by the
+- [x] Contradictions 1 to 3 are dispositioned: Contradiction 1 is closed by the
       operator correction of 2026-11-15 (the context rule was narrowed; no
       shipped asset changes), Contradiction 2 by the permanent-feature
       reconciliation that landed early in the same correction, and
@@ -1448,7 +1448,7 @@ stays green).
       21 served policy instructions, and 2 effective addon instructions.
       ```
 
-- [ ] Whole-change verification, in this order, each exiting 0 with zero
+- [x] Whole-change verification, in this order, each exiting 0 with zero
       failures and zero in-scope skips (`cargo fmt --all -- --check` is the
       check form of `cargo fmt`; `run-tests.sh` runs both):
       ```
@@ -1473,12 +1473,19 @@ stays green).
       givn lint --change split-stack-instructions -> 3 file(s) checked — clean
       ```
 
-- [ ] `givn check tasks --change split-stack-instructions` exits 0 and records
+- [x] `givn check tasks --change split-stack-instructions` exits 0 and records
       the change verification receipt; `@wip` is gone, so the receipt covers the
       whole delta.
       ```
-      givn check tasks --change split-stack-instructions -> see the recorded
-      run below (scenario and step counts, receipt line, exit 0)
+      $ givn check tasks --change split-stack-instructions
+      [Summary]
+      3 features
+      29 scenarios (29 passed)
+      190 steps (190 passed)
+        ✓ change verification receipt: 29 scenario(s), 0 failed, 0 skipped at
+          9f75f7c3e94ee015ccb4c3ee29333c994c545525
+        ✓ verify passed
+      exit 0
       ```
 
 **Done when:** every box is checked with its batch revision, all 29 delta
