@@ -17,21 +17,7 @@ fn write_transcript(world: &GivnWorld, title: &str, argv: &str) {
         .last_output
         .as_ref()
         .expect("the scenario must run the real CLI first");
-    let slug = givn::integrity_hook::scenario_slug(title);
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let features = std::env::var("GIVN_FEATURES").unwrap_or_default();
-    let change = features
-        .strip_prefix("givn/changes/")
-        .and_then(|rest| rest.split('/').next())
-        .filter(|id| !id.is_empty());
-    let dir = if let Some(change) = change {
-        root.join("givn/changes")
-            .join(change)
-            .join("evidence/visual")
-            .join(&slug)
-    } else {
-        root.join("target/terminal-evidence").join(&slug)
-    };
+    let dir = common::terminal_evidence::transcript_dir(title);
     std::fs::create_dir_all(&dir).expect("create transcript directory");
     let cwd = world
         .env

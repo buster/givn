@@ -10,6 +10,7 @@ use std::fs;
 use cucumber::then;
 
 use super::archive_proof_support as support;
+use crate::common;
 use crate::steps::GivnWorld;
 
 const SCENARIO: &str = "Consumer archives a change whose declared retained paths survive the move";
@@ -33,10 +34,7 @@ fn archived_change_contains(world: &mut GivnWorld, name: String) {
         .last_output
         .as_ref()
         .expect("the scenario must run the real CLI first");
-    let slug = givn::integrity_hook::scenario_slug(SCENARIO);
-    let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("givn/changes/guard-retained-paths-across-archive/evidence/visual")
-        .join(&slug);
+    let dir = common::terminal_evidence::transcript_dir(SCENARIO);
     fs::create_dir_all(&dir).expect("create the transcript directory");
     let text = format!(
         "Scenario: {SCENARIO}\nargv: givn archive --change {id}\ncwd (fixture project root): {}\nexit: {}\n\n--- stdout (raw) ---\n{}\n--- stderr (raw) ---\n{}\n--- archived {} ---\n{}\n",

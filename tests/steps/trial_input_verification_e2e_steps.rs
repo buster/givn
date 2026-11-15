@@ -49,21 +49,7 @@ fn write_transcript(world: &GivnWorld) {
         return;
     }
     let out = output(world);
-    let slug = givn::integrity_hook::scenario_slug(SCENARIO_TITLE);
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let features = std::env::var("GIVN_FEATURES").unwrap_or_default();
-    let change = features
-        .strip_prefix("givn/changes/")
-        .and_then(|rest| rest.split('/').next())
-        .filter(|id| !id.is_empty());
-    let dir = match change {
-        Some(change) => root
-            .join("givn/changes")
-            .join(change)
-            .join("evidence/visual")
-            .join(&slug),
-        None => root.join("target/terminal-evidence").join(&slug),
-    };
+    let dir = crate::common::terminal_evidence::transcript_dir(SCENARIO_TITLE);
     std::fs::create_dir_all(&dir).expect("create the transcript directory");
     let argv = format!(
         "givn ise verify --trial {} --at {}",

@@ -13,6 +13,7 @@ use tempfile::TempDir;
 pub mod browser;
 pub mod instruction_references;
 pub mod reference_check;
+pub mod terminal_evidence;
 
 /// The version-control fixture the project root emulates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
