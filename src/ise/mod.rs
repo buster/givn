@@ -258,9 +258,9 @@ fn revision_declaration(
     let mut blobs = backend
         .revision_blobs(revision, &[DECLARATION_PATH.to_string()])
         .with_context(|| format!("read '{DECLARATION_PATH}' at revision '{revision}'"))?;
-    let Some((_, bytes)) = blobs.pop() else {
-        bail!("the revision '{revision}' returned no content for '{DECLARATION_PATH}'");
-    };
+    let (_, bytes) = blobs
+        .pop()
+        .expect("the scm seam returns a blob for every requested path");
     let content = std::str::from_utf8(&bytes)
         .map_err(|error| anyhow::anyhow!("{DECLARATION_PATH}: {error}"))?;
     SpecificationDeclaration::from_content(content).map_err(|error| anyhow::anyhow!("{error}"))
