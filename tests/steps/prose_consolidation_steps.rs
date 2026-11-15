@@ -961,3 +961,23 @@ fn committed_project_with_tracked_explore(world: &mut GivnWorld) {
     common::git_init(&env);
     world.env = Some(env);
 }
+
+// --- retain-declaration-in-trial: served-guidance-declaration-rule ---------
+
+#[then("the guidance states that the trial always carries the declaration itself")]
+fn guidance_states_the_trial_carries_the_declaration(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("The trial always carries the declaration itself"),
+        "the served ise guidance does not state that the trial always carries the declaration: {content}"
+    );
+}
+
+#[then("the guidance states that it is an implicit retained entry, not a sixth role")]
+fn guidance_states_the_implicit_retained_entry(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("implicit retained entry, not a sixth role"),
+        "the served ise guidance does not state that the declaration is an implicit retained entry: {content}"
+    );
+}

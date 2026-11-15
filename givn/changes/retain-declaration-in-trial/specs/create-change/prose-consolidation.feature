@@ -2,7 +2,7 @@
 
 Feature: prose-consolidation
 
-  @givn.added @wip
+  @givn.added
   Scenario: Served ise guidance states that the trial always carries the declaration
     Given  a Givn project with ise effective
     When  the author reads the served ise guidance
