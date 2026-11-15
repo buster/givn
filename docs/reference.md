@@ -30,6 +30,8 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn history settings [--json]` | Report `record.mode` and its source (`config` or `default`) without recording. |
 | `givn timeline [--change <id> \| --topic <id>] [--out <path>]` | Render one change, topic, or the project into one self-contained HTML file; default `givn/history/reports/<scope>.html`. Opens nothing and records nothing. |
 | `givn archive --change <id> [--verbose]` | Publish and verify a completed change forward-only on Git or Fossil. `--verbose` streams gate output with timestamps. Add-on drift from the change lock blocks archive. |
+| `givn ise replace [--at <revision>] (--full \| --path <path>...) --into <dir> [--receipt <path>] [--dry-run]` | Write one recorded revision into a clean-room trial directory and print the placement report. Requires `ise` and `architecture_principles`; `--at` defaults to `HEAD`. |
+| `givn ise verify --trial <record> --at <dir>` | Re-check a prepared trial's frozen retained and `e2e` inputs against the record and print the drift report. Exit `0` clean, `1` refusal or drift. |
 | `givn eject <target> [--force]` | Materialize an embedded facet for editing, for example `design:template`, `review:instruction`, `skill:givn-propose`, `manifest`, `readme:template`. |
 | `givn addons list` / `enable <name>` / `disable <name>` | Show effective state and toggle one addon. `enable` checks the registered prerequisite relation first, scaffolds addon-owned files, and resyncs; `disable` refuses while a dependent addon is on, removes the workflow effect, and leaves existing project files. While a locked change is active, mutation is refused; the operator path is `--operator --reason "<reason>"` on an interactive terminal, recorded in the change lock. |
 | `givn skills sync` | Regenerate skills, reporters, managed `AGENTS.md` blocks, and ignore state for the persisted target selection. Recognizable old generated command files are removed; custom files are preserved with a manual notice. |
@@ -316,6 +318,136 @@ requires strict revision equality or is refused; no reuse is assumed. An
 `ise`-effective change refuses a receipt without the E2E identity by name. A
 failure reports every independent stale reason and routes to `givn check
 tasks`.
+
+### Clean-room trial
+
+`givn ise replace` writes one recorded revision into a plain directory so an
+independent verifier can rebuild a product from the declared inputs.
+`givn ise verify` re-checks the frozen inputs afterwards. Both commands require
+the `ise` add-on and its `architecture_principles` prerequisite; with either
+off they refuse by name before the declaration or the record is read.
+
+| Command | Effect |
+| --- | --- |
+| `givn ise replace [--at <revision>] (--full \| --path <path>...) --into <dir> [--receipt <path>] [--dry-run]` | Read one revision, write the trial, and print the report. |
+| `givn ise verify --trial <record> --at <dir>` | Re-check a prepared trial against its record and print the frozen-input report. |
+
+**Replacement form.** `--at` defaults to `HEAD`. Exactly one of `--full` and
+`--path` is required; neither, both, or an omitted `--into` is a usage error
+with exit `2` that names the missing or conflicting flags. `--path` is
+repeatable and accepts a tracked file or a directory: a file contributes
+itself, a directory contributes every tracked file beneath it at the revision,
+a value that resolves to no tracked file removes nothing, and a glob is never
+expanded. `--full` contributes every tracked file under every declared
+`source:` root. A retained role is tested first, so a retained file under a
+source root stays in the trial under both forms.
+
+**Placement.** The trial is a plain directory outside the checkout with no
+version-control metadata, no ignored file, and no untracked file. Every path is
+project-relative and every entry kind is preserved. `--receipt` writes the
+record; without it the record is printed to stdout after the report.
+
+**Report.** The command prints these lines, then `Receipt path:` only when
+`--receipt` was given:
+
+```text
+Backend: git
+Revision: 8c1f2ab5e7d0c9a4b3f2e1d0c9b8a7f6e5d4c3b2
+Retained: 214
+Kept source: 72
+Replaced: 2
+Outside the declaration: 3
+Not replaced: 2
+Retained digest: 4f1c9a2b7d01…
+E2E digest: 82be07c3e5a9…
+Written path: /tmp/ise-passuff
+Receipt path: /tmp/ise-passuff-trial.yaml
+```
+
+`--dry-run` performs every read and refusal, writes nothing, and adds a
+`Would write:` block with the sorted union of the retained and kept-source
+paths.
+
+**Refusals.** Every refusal exits `1`, prints `ise replace: <reason>`, and
+leaves the checkout and the target unchanged.
+
+| # | Condition | Named output |
+| --- | --- | --- |
+| 1 | Declaration absent or unreadable | `givn/specification.yaml` and the loader reason |
+| 2 | `ise` off, or `architecture_principles` off | the add-on and its enable command |
+| 3 | Dirty checkout | every dirty path |
+| 4 | Missing, mixed, or nested backend | the selector's message |
+| 5 | A declared retained entry matches nothing | the entry and the revision |
+| 6 | A `--path` value outside every source root | the path |
+| 7 | A `--path` value or tracked file under a named directory matched by a retained role | the path and the role |
+| 8 | A target inside the checkout, existing, inside the trial, an ancestor of the trial, or an existing receipt | the target or receipt path |
+| 9 | A repository link or nested marker in the copy set | the file |
+
+**Record.** `ise-trial/v1` is strict: an unreadable file, a schema other than
+`1`, a content scope other than `ise-trial/v1`, an unknown field, or a missing
+field refuses with the record path and the reason.
+
+| Field | Content |
+| --- | --- |
+| `schema`, `content_scope` | `1` and `ise-trial/v1` |
+| `backend`, `revision` | the selected backend and the resolved revision |
+| `named_paths` | the sorted, deduplicated `--path` input; empty under `--full` |
+| `replaced_paths` | the sorted tracked set actually removed |
+| `counts` | `retained`, `kept_source`, `replaced`, `outside_declaration`, `not_replaced` |
+| `retained_files`, `e2e_files`, `e2e_scenarios` | one identity per path, sorted |
+| `retained_digest`, `e2e_digest`, `replaced_digest` | one rollup per identity |
+| `written_path`, `givn_version` | the trial directory and the running Givn version |
+
+**Identity.** Per path:
+`sha256(path NUL kind NUL executable-marker NUL bytes-or-target)` with kind `f`
+(regular), `x` (executable regular), or `l` (symlink), and marker `1` or `0`. A
+rollup hashes the sorted `path NUL digest` pairs; the report abbreviates a
+rollup to its first 12 hex characters and an ellipsis. `e2e_digest` covers the
+resolved `e2e` package files and one digest per `behavior` feature file over
+its `@e2e` scenarios. No timestamp is recorded.
+
+**Entry kinds.** Git derives kind and executable from the `git ls-tree` modes
+(`100644`, `100755`, `120000`, `160000`). Fossil derives them from the
+check-in manifest's `F` lines (hash, `x`, `l`) read by `fossil artifact`, with
+`\s` in a path decoded to a space; Fossil records a symlink only when the
+repository has `allow-symlinks on`.
+
+**Verification.** `givn ise verify` reads the record, confirms the trial
+directory exists, then requires the record to belong to that trial: the
+canonicalized `written_path` equals `--at`, the recorded backend equals the
+selected backend, and the record path lies outside the trial. A
+`replaced_digest` that is not 64 hex characters is a record error. A clean
+trial prints:
+
+```text
+Trial: /tmp/ise-passuff
+Retained: clean
+E2E: clean
+```
+
+Drift prints one line per path on stderr, then the count, and exits `1`:
+
+```text
+Retained drift: givn/specs/demo/spec.feature (the trial differs from the record)
+E2E drift: tests/e2e/steps/keys.rs (the checkout differs from the record)
+E2E drift: givn/specs/demo/spec.feature (the selected @e2e scenarios differ in the checkout)
+Verification failed: 3 drifting path(s)
+```
+
+| Reason | Meaning |
+| --- | --- |
+| `the path is missing from the trial` | A recorded retained path is absent from the trial. |
+| `the trial differs from the record` | The per-path digest differs in the trial. |
+| `the path is missing from the checkout's e2e package` | A recorded `e2e` file is absent from the current package. |
+| `the checkout's e2e package gained this path` | The current package holds a file the record does not. |
+| `the checkout differs from the record` | The current `e2e` file digest differs. |
+| `the selected @e2e scenarios differ in the checkout` | A per-feature scenario digest differs, or the feature path is missing. |
+
+Only the `e2e` package and the selected `@e2e` scenarios are frozen: a changed
+file under a `source:` root produces no drift, and verification never writes to
+the trial. Every check runs before the report, so one run names every drifting
+path. Exit codes: `0` clean or success, `1` refusal, drift, or read failure,
+`2` a clap usage error.
 
 ### Archive verification and recovery
 
