@@ -7,7 +7,8 @@ Reviewer context: independent grilling session whose decisions Q1–Q5 the opera
 ## Scope reviewed
 
 The full change range `23ba7139..HEAD` (the prompt's `d160e7e..HEAD` starts at
-the design/instruction commit, which is itself part of this change): the
+the design/instruction commit, which is itself part of this change), including
+the closure commits `49021cfa`, `7753918d`, `78ad5a1d`, and `9be16da3`: the
 design, design-review, arc42 assessment, tasks, both delta features, the delta
 use case, the guard in `src/cli/archive.rs`, the matcher move to
 `src/e2e_boundary/paths.rs`, the three step files, the served `ise` and
@@ -239,22 +240,19 @@ population is `src/`; no branch instrumentation was removed.
 | Location | Lines | Classification | Action |
 |---|---|---|---|
 | `ensure_declared_paths_survive_archive`, offender collection, partition, archived counterpart, reported moved path, refusal bound | covered by 7 unit tests and the delta scenarios | none | — |
-| `archive_advice` `None` branch (entry reaching the change tree through another prefix) and the matching `the archived paths must still match '<entry>'` refusal form | uncovered by any test or scenario | bucket 2 — missing test coverage | **Finding 2**: add a unit test with an entry such as `**/moved-limits/**` and assert the `None` advice form; no scenario is required |
+| `archive_advice` `None` branch (entry reaching the change tree through another prefix) and the matching `the archived paths must still match '<entry>'` refusal form | covered by `an_entry_reaching_the_change_tree_through_another_prefix_has_no_archived_advice` and `the_refusal_states_that_archived_paths_must_still_match_a_prefixless_entry`, both driving the strict loader | none | Finding 2 closed by `7753918d`; both tests fail when the prefix guard is removed (probe below) |
 
 No dead code, no redundant unit test, and no fourth-bucket classification.
 
 ## Scenario execution evidence
 
-Change-scoped receipt (`verification/tasks-verification.json`), recorded at
-`da79603a`: scope `change`, 7 total, 7 passed, 0 failed, 0 skipped, runner exit
-0. At review time the receipt is stale on the tested-content digest because the
-unrelated untracked `givn/changes/redact-secret-shaped-values-in-history/`
-changes the tested content. `givn check tasks --change
-guard-retained-paths-across-archive` refuses to refresh it: the same unrelated
-untracked directory makes the tree non-clean, and this review was instructed
-not to touch it. The change's own production and spec content is unchanged
-since the recorded run; the stale digest is not evidence about this change.
-The archive receipt does not exist yet (change not archived).
+Change-scoped receipt (`verification/tasks-verification.json`), run at
+`9be16da3`: scope `change`, 7 total, 7 passed, 0 failed, 0 skipped, runner exit
+0. The queued redaction change's scaffold landed in the same revision, so the
+tree was clean and the receipt could be refreshed. `givn check review` accepts
+it: `✓ change verification receipt passed (7 scenario(s) at
+9be16da3f534be0e04736a83273622cff7d8e30f)`. The receipt is committed with this
+review. The archive receipt does not exist yet (change not archived).
 
 **Receipt status:** change-scoped receipt passed; archive receipt not created.
 
@@ -281,6 +279,9 @@ The gate reported no long-scenario finding for this delta; no decision is
 required.
 
 ## Findings
+
+Both findings below were closed on 2026-11-15; the fix, tests, and independent
+re-audit are recorded in `## Finding closure`.
 
 **BLOCKER 1 — the permanent `@e2e` step recreates a stale change directory
 after archive, and the debris blocks every later archive.**
@@ -354,7 +355,7 @@ gap is the test.
   ran 114 scenarios, all 114 passed, and `givn/changes/` held only the
   unrelated untracked change; the copy was then removed and the change
   directory restored.
-- Commit: `49021cfa`.
+- Commit: `49021cfa` (closed 2026-11-15).
 
 **FINDING 2 — `archive_advice`'s `None` branch and the matching refusal form were unasserted.**
 
@@ -371,24 +372,50 @@ gap is the test.
   cannot reach the branch: it also matches the `givn/archive/<id>/` counterpart,
   so the entry survives and is never an offender.
   `cargo test --lib -- cli::archive::tests`: 28 passed.
-- Commit: `7753918d`.
+- Commit: `7753918d` (closed 2026-11-15).
 
-**Verification after both fixes.** `cargo fmt --all -- --check` and
-`cargo clippy --locked --workspace --all-targets -- -D warnings` exit 0.
+**Author-reported verification after both fixes.** `cargo fmt --all -- --check`
+and `cargo clippy --locked --workspace --all-targets -- -D warnings` exit 0.
 `./run-tests.sh --non-e2e`: 1054 passed, 113 skipped, exit 0.
 `./run-tests.sh --e2e`: 113 passed, 1054 skipped, exit 0; the run wrote its
 terminal transcripts under `target/terminal-evidence/` and left
 `givn/changes/` untouched. The delta scopes pass on the committed candidate:
 6 regular scenarios and 1 `@e2e` scenario.
 
-**Still open on the same blocker.** `givn check tasks --change
-guard-retained-paths-across-archive` reports `✓ scenario commits passed (7
-scenario(s))` and then refuses with `change verification requires a clean
-committed tree: givn/changes/redact-secret-shaped-values-in-history/config-lock.yaml,
-givn/changes/redact-secret-shaped-values-in-history/proposal.md`. That
-unrelated untracked change was left untouched as instructed, so the
-change-scoped receipt remains the one recorded at `da79603a` and cannot be
-refreshed in this tree.
+**Receipt closure.** The queued redaction change's scaffold landed in
+`9be16da3`, so the tree was clean and the change-scoped receipt was refreshed
+there: `head: 9be16da3…`, `tested_content_digest:
+c9b60540b22d80e73384ff49880130bd5a9700bef796f530c9f3775da593dbf2`, 7 total /
+7 passed / 0 failed / 0 skipped. `givn check review` accepts it with
+`✓ change verification receipt passed (7 scenario(s) at
+9be16da3f534be0e04736a83273622cff7d8e30f)`. The receipt is committed with this
+review.
+
+**Independent re-audit (2026-11-15).** This reviewer repeated both probes on
+this branch, not from the author's report.
+
+- Blocker 1: read `tests/common/terminal_evidence.rs` and the three consumers;
+  the hardcoded path is gone and the helper derives the change from
+  `GIVN_FEATURES`, falling back to `target/terminal-evidence/<slug>`. Probe:
+  moved `givn/changes/guard-retained-paths-across-archive` to `/tmp`, copied
+  the delta feature to
+  `givn/specs/archive-change/require-durable-retained-paths.feature`, and ran
+  `GIVN_FEATURES=givn/specs cargo test --locked --test features_runner -- \
+  "archive-change/require-durable-retained-paths.feature::Consumer archives a
+  change whose declared retained paths survive the move" --exact`.
+  Result: 1 scenario / 6 steps passed; the transcript was written to
+  `target/terminal-evidence/consumer-archives-a-change-whose-declared-retained-paths-survive-the-move/transcript.txt`
+  (1389 bytes); `find givn/changes -path
+  '*guard-retained-paths-across-archive*'` printed nothing; `givn/changes/`
+  held only the redaction change. The copied feature was removed, the change
+  directory restored, and the target transcript deleted, leaving the tree as
+  found.
+- Finding 2: read both tests and ran `cargo test --locked --lib --
+  cli::archive::tests` -> 28 passed. Mutation probe: dropping the
+  `segments[0] != "givn" || segments[1] != "changes"` guard in
+  `archive_advice` makes both new tests fail (26 passed, 2 failed); restored.
+- Receipt: `givn check review` accepts the receipt at `9be16da3`; the only
+  remaining gate error before this sign-off was the FAIL verdict.
 
 **Observation outside this change.** `./run-tests.sh --e2e` rewrites the
 committed PNGs under `givn/archive/development-timeline/evidence/visual/…`
@@ -404,12 +431,11 @@ same defect class as Blocker 1 in the browser tier; it belongs to the
       code or its regression test; no promised component is missing; no
       downgraded `@e2e` scenario; no HTTP/fetch substitute; no over-produced
       e2e scope.
-- [ ] Scenario execution evidence recorded per scope — the change-scoped
-      receipt passed at `da79603a` and the tasks record the e2e scope, but the
-      receipt is currently stale from unrelated untracked content and cannot be
-      refreshed while that directory exists.
-- [ ] Every coverage gap is classified and resolved — Finding 2 is bucket 2 and
-      is open.
+- [x] Scenario execution evidence recorded per scope — the change-scoped
+      receipt at `9be16da3` is accepted by `givn check review` (7 scenarios, 0
+      failed, 0 skipped) and the tasks record the e2e scope.
+- [x] Every coverage gap is classified and resolved — Finding 2 is closed by
+      `7753918d`; the two tests fail when the prefix guard is removed.
 - [x] No `@wip` tags remain; the delta holds seven scenario declarations.
 - [x] The delta spec contains no implementation-layer detail.
 - [x] Local run command starts the fixture stack cleanly; no digital twins.
@@ -418,16 +444,16 @@ same defect class as Blocker 1 in the browser tier; it belongs to the
 - [x] The e2e execution selects its scope explicitly through
       `GIVN_RESULT_SCOPE`; the change receipt reports zero failures and skips.
 - [x] Implementation matches design.md's commands, file layout, and driver; the
-      one deviation (the post-archive evidence path) is Finding 1, not a silent
-      design change.
+      post-archive evidence path discovered in review is fixed by `49021cfa`
+      and shared through `tests/common/terminal_evidence.rs`.
 - [x] Interaction coverage verified: one inventory entry, one matrix row, one
       `@e2e` scenario, CLI subprocess driving.
 - [x] Design.md's Internal Primitives lists the guard and every helper the step
       definitions drive; private carrier structs are implementation details of
       the listed guard.
 - [x] arc42 slug mapping verified against the real chapter files.
-- [ ] No finding is excused outside the three coverage buckets; Finding 1 is a
-      real defect and remains open.
+- [x] No finding is excused outside the three coverage buckets; both findings
+      are closed above and no finding remains open.
 
 README-IMPACT: none
 
@@ -444,4 +470,4 @@ PERSONAS: developer--primary-user
 | `agent--technical-role` | Runs archive in loops and must see the pre-mutation refusal | Exit status, unchanged change tree, absent receipt and candidate | Dispositioned, no finding |
 | `givn-maintainer--owner` | Owns the archive success guarantee and the guard's effectiveness | Use-case rules, archive gate list, delta feature, probes | Dispositioned, no finding |
 
-REVIEW: FAIL
+REVIEW: PASS
