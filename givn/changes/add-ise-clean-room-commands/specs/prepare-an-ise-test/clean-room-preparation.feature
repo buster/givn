@@ -203,7 +203,7 @@ Feature: Clean-room preparation
     Then preparation fails and names "nested/_FOSSIL_"
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation counts the files left in a replaced path's directory
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision where "src/keys/parser.rs" sits beside "src/keys/mod.rs" and "src/keys/tests.rs"
@@ -211,7 +211,7 @@ Feature: Clean-room preparation
     Then preparation succeeds and prints "Not replaced: 2"
     And the trial holds "src/keys/mod.rs" and "src/keys/tests.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation expands a directory path to the tracked files beneath it
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with "src/keys/parser.rs", "src/keys/mod.rs", and "src/other.rs"
@@ -220,7 +220,7 @@ Feature: Clean-room preparation
     And the trial omits "src/keys/parser.rs" and "src/keys/mod.rs"
     And the trial holds "src/other.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A full replacement removes every tracked file under the source roots
     Given a Git project with ise enabled, a declaration that retains "givn/specs/**", and one source root "src/**"
     And a committed revision with "src/one.rs", "src/nested/two.rs", and "givn/specs/demo.feature"
@@ -237,7 +237,7 @@ Feature: Clean-room preparation
     Then preparation succeeds and prints "Replaced: 1"
     And the receipt records one named path and one replaced path
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation does not expand a glob-shaped path
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with "src/one.rs" and "src/nested/two.rs"
@@ -245,7 +245,7 @@ Feature: Clean-room preparation
     Then preparation succeeds and prints "Replaced: 0"
     And the trial holds "src/one.rs" and "src/nested/two.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation reads the revision and leaves an ignored file out of the trial
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with "src/kept.rs"
@@ -288,7 +288,7 @@ Feature: Clean-room preparation
     And the "Would write:" block lists the sorted paths the trial would hold
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: A named path absent from the revision removes nothing
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with "src/keys/parser.rs"
@@ -296,7 +296,7 @@ Feature: Clean-room preparation
     Then preparation succeeds and prints "Replaced: 0"
     And the trial holds "src/keys/parser.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation reads an explicit revision and reports it
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision with "src/kept.rs" and a later revision adding "src/later.rs"
@@ -312,7 +312,7 @@ Feature: Clean-room preparation
     Then preparation fails and names the revision
     And the trial path and the receipt path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses when a revision blob cannot be read
     Given a Git project with ise enabled and a declaration with one source root "src/**"
     And a committed revision whose tracked blob is absent from the object store
