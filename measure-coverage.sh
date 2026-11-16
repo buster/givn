@@ -43,7 +43,10 @@ PROFILE_DIR="$PWD/target/llvm-cov-target"
 # target would make the first run-execution scenario build the fixture with
 # plain cargo; building both here keeps every artifact instrumented.
 cov_ready
-cargo llvm-cov --no-run --no-report --locked --bin givn
+# `cargo llvm-cov run` is the supported entry point that builds a binary target
+# under instrumentation; `--no-report` keeps this step out of the report path.
+# `--no-run --no-report` is refused by cargo-llvm-cov 0.9.1.
+cargo llvm-cov run --no-report --locked --bin givn -- --version
 INSTRUMENTED_BIN="$PROFILE_DIR/debug/givn"
 [ -x "$INSTRUMENTED_BIN" ] || {
     printf 'measure-coverage.sh: the instrumented givn binary is missing at %s\n' "$INSTRUMENTED_BIN" >&2

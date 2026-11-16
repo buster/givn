@@ -274,7 +274,7 @@ the scope from `GIVN_RESULT_SCOPE`. A missing or non-executable `GIVN_BIN`
 exits 2 before any scenario runs.
 
 `measure-coverage.sh` exports the instrumented binary it builds with
-`cargo llvm-cov --no-run --no-report --locked --bin givn`, sets
+`cargo llvm-cov run --no-report --locked --bin givn -- --version`, sets
 `LLVM_PROFILE_FILE`, and calls the same runner; the runner does not rebuild.
 
 `scripts/qualify-givn-e2e.sh` copies the checkout to a scratch directory,
