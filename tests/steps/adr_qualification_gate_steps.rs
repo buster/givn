@@ -899,6 +899,14 @@ fn final_register_has_frozen_package_adr(world: &mut GivnWorld) {
         frozen_package.contains("| accepted |"),
         "the ADR-078 row is not accepted: {frozen_package}"
     );
+    let summary = register
+        .lines()
+        .find(|line| line.contains("accepted records and no proposed records"))
+        .unwrap_or_else(|| panic!("the register carries no accepted-records summary"));
+    assert!(
+        summary.contains("30 accepted records"),
+        "the register summary disagrees with its accepted-row count: {summary}"
+    );
 }
 
 #[then("the final register has 27 accepted decisions and no proposed decisions")]
