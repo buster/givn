@@ -131,7 +131,7 @@ Release note: `Declare the project's retained roles and its e2e acceptance packa
 Release note: `Measure the E2E scope through the instrumented product binary`
 
 - [x] **Coverage**: `measure-coverage.sh` builds the instrumented `givn` with
-      `cargo llvm-cov --no-run --no-report --locked --bin givn`, exports
+      `cargo llvm-cov run --no-report --locked --bin givn -- --version`, exports
       `GIVN_BIN` and `LLVM_PROFILE_FILE`, and calls
       `./run-tests.sh --e2e --package e2e`; the runner never rebuilds an
       exported binary. The guard names the artifact: with a no-op `cargo` in
@@ -153,6 +153,14 @@ Release note: `Measure the E2E scope through the instrumented product binary`
 - [x] COMMIT: `9b63979c` -- Batch: coverage and browser assets
       (the coverage script, the browser setup, and the qualification script
       landed in the declaration commit)
+- [x] **Archive coverage repair**: the first archive run blocked at the
+      coverage gate because cargo-llvm-cov 0.9.1 refuses `--no-run` together
+      with `--no-report` (`error: --no-report may not be used together with
+      --no-run`); the earlier probe exercised the missing-artifact guard, not
+      the build. The build now goes through the supported `run` subcommand,
+      `docs/reference.md` and R-155 name the same command, and the archive
+      coverage gate regenerates both reports from it.
+- [x] COMMIT: `9187d6f9` -- Batch: coverage build repair
 
 ## Batch 5: qualification
 
