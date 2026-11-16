@@ -168,3 +168,10 @@ Feature: prose-consolidation
     When  the author reads the canonical E2E guidance
     Then  consumer calls to the public library API may run in process as real-interface evidence
     And  the policy does not require artificial services containers or browser infrastructure
+
+  @prose-consolidation
+  Scenario: Served ise guidance states that the trial always carries the declaration
+    Given  a Givn project with ise effective
+    When  the author reads the served ise guidance
+    Then  the guidance states that the trial always carries the declaration itself
+    And  the guidance states that it is an implicit retained entry, not a sixth role

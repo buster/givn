@@ -347,3 +347,81 @@ Feature: Clean-room preparation
     And  the trial omits the replaced source file
     And  the trial's executable script is executable
     And  the trial's symlink is a symlink to its target
+
+  @clean-room-preparation
+  Scenario: The trial carries the declaration when no role names it
+    Given  a Git project with ise enabled and a declaration with one source root "src/**"
+    When  the developer prepares a trial from "HEAD" with a full replacement
+    Then  preparation succeeds
+    And  the trial holds "givn/specification.yaml"
+
+  @clean-room-preparation
+  Scenario: The trial record lists the declaration in its retained set
+    Given  a Git project with ise enabled and a declaration with one source root "src/**"
+    When  the developer prepares a trial from "HEAD" with a full replacement and a receipt
+    Then  preparation succeeds
+    And  the receipt lists "givn/specification.yaml" in its retained set
+
+  @clean-room-preparation
+  Scenario: Preparation refuses a replacement path that names the declaration
+    Given  a Git project with ise enabled and a declaration that sources "givn/**"
+    And  a committed revision with "src/kept.rs"
+    When  the developer prepares a trial from "HEAD" with the path "givn/specification.yaml"
+    Then  preparation fails and names "givn/specification.yaml" as retained
+    And  the trial path and the receipt path remain absent
+
+  @clean-room-preparation
+  Scenario: Preparation refuses a directory that contains the declaration
+    Given  a Git project with ise enabled and a declaration that sources "givn/**"
+    And  a committed revision with "givn/notes.md"
+    When  the developer prepares a trial from "HEAD" with the directory path "givn"
+    Then  preparation fails and names "givn/specification.yaml" as retained
+    And  the trial path and the receipt path remain absent
+
+  @clean-room-preparation
+  Scenario: Preparation partitions with the declaration recorded at the selected revision
+    Given  a Git project with ise enabled and a declaration whose "structure" role names "docs/glossary.md"
+    And  a committed revision with "docs/glossary.md" and "src/one.rs"
+    And  a later revision that rewrites the declaration without the "structure" entry
+    When  the developer prepares a trial from the first revision with a full replacement
+    Then  preparation succeeds
+    And  the trial holds "docs/glossary.md"
+    And  the trial's "givn/specification.yaml" is the declaration committed at the selected revision
+
+  @clean-room-preparation
+  Scenario: Preparation refuses a revision that does not record the declaration
+    Given  a Git project with ise enabled whose first revision predates the declaration
+    When  the developer prepares a trial from the first revision with a full replacement
+    Then  preparation fails and names "givn/specification.yaml" and the revision
+    And  the trial path and the receipt path remain absent
+
+  @clean-room-preparation
+  Scenario: Preparation refuses a malformed declaration at the selected revision
+    Given  a Git project with ise enabled, a malformed declaration in its first revision, and a valid declaration at "HEAD"
+    When  the developer prepares a trial from the first revision with a full replacement
+    Then  preparation fails and names "givn/specification.yaml" and the loader's reason
+    And  the trial path and the receipt path remain absent
+
+  @clean-room-preparation
+  Scenario: Preparation refuses a declaration that is not UTF-8
+    Given  a Git project with ise enabled, a non-UTF-8 declaration in its first revision, and a valid declaration at "HEAD"
+    When  the developer prepares a trial from the first revision with a full replacement
+    Then  preparation fails and names "givn/specification.yaml" and the UTF-8 error
+    And  the trial path and the receipt path remain absent
+
+  @clean-room-preparation
+  Scenario: A full replacement keeps the declaration under a source root
+    Given  a Git project with ise enabled and a declaration that sources "givn/**"
+    And  a committed revision with "givn/notes.md"
+    When  the developer prepares a trial from "HEAD" with a full replacement
+    Then  preparation succeeds and prints "Replaced: 3"
+    And  the trial holds "givn/specification.yaml"
+    And  the trial omits "givn/notes.md"
+
+  @clean-room-preparation
+  Scenario: A role that matches the declaration counts it once
+    Given  a Git project with ise enabled and a declaration whose "contracts" role names "givn/**"
+    And  a committed revision with "givn/specs/a.md"
+    When  the developer prepares a trial from "HEAD" with a full replacement
+    Then  preparation succeeds and prints "Retained: 2"
+    And  the trial holds "givn/specification.yaml"
