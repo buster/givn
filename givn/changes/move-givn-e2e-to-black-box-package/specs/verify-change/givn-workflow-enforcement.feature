@@ -2,7 +2,7 @@
 
 Feature: givn Workflow Enforcement
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change whose declared E2E package is a standalone workspace passes the tasks check and binds the E2E scope
     Given an ise-effective change ready for change-scoped verification whose declared e2e package declares its own workspace, whose E2E runner command is "./run-tests.sh --e2e --package e2e", and whose delta has an E2E scenario
     When the developer runs `givn check tasks --change ise-boundary`
@@ -11,7 +11,7 @@ Feature: givn Workflow Enforcement
     And the change verification receipt records the E2E runner command digest
     And the change verification receipt records a passed E2E scope
 
-  @givn.modified @wip
+  @givn.modified
   Scenario Outline: An ise-effective change whose E2E runner command names no declared e2e root fails the tasks check
     Given  an ise-effective change ready for change-scoped verification whose E2E runner command is "<command>"
     When  the developer runs `givn check tasks --change ise-boundary`
