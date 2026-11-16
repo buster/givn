@@ -457,8 +457,27 @@ every delta phrase already bound in the permanent test tree.
 - [x] Change-scoped gate evidence:
       ```
       $ givn check tasks --change keep-frozen-verifier-out-of-the-trial
+      Mandatory checks for 'tasks':
+        ⚠ task preflight: review.md is missing
+        ✓ scenario commits passed (11 scenario(s))
+      error: change verification requires a clean committed tree:
+        docs/arc42/02-architecture-constraints.md, docs/arc42/03-context-and-scope.md,
+        docs/arc42/04-solution-strategy.md, docs/arc42/05-building-block-view.md,
+        docs/arc42/06-runtime-view.md, docs/arc42/08-crosscutting-concepts.md,
+        docs/arc42/09-architecture-decisions.md, docs/arc42/11-risks-and-technical-debt.md,
+        docs/arc42/adr/ADR-076-clean-room-trial-record.md, docs/arc42/adr/README.md,
+        docs/glossary.md, docs/reference.md,
+        givn/changes/add-delivery-identity-to-trial-record/…
+      EXIT: 1
       ```
-      (output in the change-scoped receipt; the delta runs rewrite the committed
-      transcript with a fresh fixture revision, which was restored to the
-      committed bytes afterwards.)
+      The scenario-commit check passes for all eleven scenarios. The gate then
+      refuses to run because the worktree is not clean: every remaining path
+      belongs to the in-flight `add-delivery-identity-to-trial-record` change and
+      to the arc42/reference/glossary edits that change and this one share
+      line-by-line (for example, the `cli::ise` row names `ise deliver` and the
+      frozen-package line in one line, and `docs/arc42/adr/README.md` gained both
+      changes' rows). Those lines were authored for both changes by the same
+      session and cannot be split by the commit tool's per-actor units, so this
+      change commits none of them. `review.md` is the review step's artifact, not
+      this step's.
 
