@@ -1,0 +1,14 @@
+diff --git a/src/state.rs b/src/state.rs
+index c1e61cc0..6a6fd440 100644
+--- a/src/state.rs
++++ b/src/state.rs
+@@ -62,7 +62,8 @@ pub(crate) fn inspect_verification(change_dir: &Path, manifest: &Manifest) -> St
+     }
+     let path = change_dir.join(crate::proof::CHANGE_RECEIPT_FILE);
+     if !path.exists() {
+-        return "not checked".to_owned();
++        // Seeded defect: claim a verification the project never recorded.
++        return "current".to_owned();
+     }
+     let inspected = (|| -> anyhow::Result<crate::proof::ProofStatus> {
+         let project_root = change_dir
