@@ -318,34 +318,43 @@ README-IMPACT: none
 
 ## Findings
 
-### B1 (blocker) — the proposal routing table omits `adr-qualification-gate`
+### B1 (closed 2026-11-16) — the proposal routing table omitted `adr-qualification-gate`
 
-`givn check review` fails with:
+Original failure: `givn check review` refused with
 
 ```text
-error: review checks failed:
-  integrity checks failed:
-  capability routing decisions do not match the built delta:
-  delta capability 'adr-qualification-gate' is not declared in the Capability
-  Routing table — the proposal records no 'NEW in <usecase-id>' or
-  'EXTEND <capability>' decision for it
+capability routing decisions do not match the built delta:
+delta capability 'adr-qualification-gate' is not declared in the Capability
+Routing table — the proposal records no 'NEW in <usecase-id>' or
+'EXTEND <capability>' decision for it
 ```
 
 The delta has three capability tags: `clean-room-preparation`,
 `trial-input-verification`, and `adr-qualification-gate`.
-`proposal.md`'s `## Capability Routing` table declares the first two only. The
+`proposal.md`'s `## Capability Routing` table declared the first two only. The
 third delta is `specs/fragments/adr-qualification-gate.feature`, which modifies
 the permanent ADR register scenario and its binding; `arc42.md` records it, the
 design records it, and the tasks commit `84651394` implements it, but the
-proposal never routes it.
+proposal never routed it.
 
-Fix (author work, not reviewer work): add a third row to `proposal.md`'s
-Capability Routing table, `EXTEND adr-qualification-gate`, with the route's
-recommendation and the rationale that the register reconciliation is the
-consequence of ADR-078 and is not `clean-room-preparation` or
-`trial-input-verification`. Then re-run `givn check review`. The routing gate
-reads only the proposal table, so no review.md disposition can override it.
-This review does not edit the proposal: the final review writes only review.md.
+Closure: commit `a7a0088d` (2026-11-16) adds the third row and refreshes the
+section's recorded route score from 17.00 to 27.00. `givn spec route --change
+keep-frozen-verifier-out-of-the-trial` now reports
+`EXTEND givn-workflow-enforcement` (`verify-change`, score 27.00, signal). The
+table lists all three capabilities; each row records that recommendation and a
+reasoned deviation: `clean-room-preparation` and `trial-input-verification`
+belong to `prepare-an-ise-test`, and `adr-qualification-gate` owns the register
+that ADR-078 moves from 29 to 30 accepted decisions. All three rows therefore
+deviate for the stated reason, and the prose says so.
+
+Closure checks. `git show --name-only a7a0088d` lists only
+`givn/changes/keep-frozen-verifier-out-of-the-trial/proposal.md`, and the diff
+touches only the `## Capability Routing` section (the score, the "All three
+rows" sentence, the first row's parenthetical, and the new third row). Nothing
+else in the proposal changed. `givn check review` on the tree before this
+verdict flip reported only `review.md actual verdict is FAIL` and no routing
+error; the receipt was reused across the documentation-only revision. The
+blocker is closed and no production code changed to close it.
 
 ### O1 (observation) — this change's durable docs landed under the sibling's commit
 
@@ -381,7 +390,8 @@ risk (a deleted field) is recorded in ADR-078. Not a defect.
 The implementation behavior is correct: writer exclusion, record field, report
 line, trial-side refusal, bounded refusal, compatibility, ADR register, contract
 surface, evidence, and the lost-feedback statement all pass their probes. The
-change cannot pass review because its proposal omits a delta capability from the
-routing table, and the review is not the artifact that owns that table.
+one blocker, the missing `adr-qualification-gate` routing row, was closed by
+`a7a0088d` on 2026-11-16; the closed finding and its closure checks are recorded
+under B1 above. The review gate now exits 0.
 
-REVIEW: FAIL
+REVIEW: PASS
