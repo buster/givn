@@ -427,3 +427,30 @@ Feature: Clean-room preparation
     When  the developer prepares a trial from "HEAD" with a full replacement
     Then  preparation succeeds and prints "Retained: 2"
     And  the trial holds "givn/specification.yaml"
+
+  @clean-room-preparation
+  Scenario: The trial record names the frozen role its trial omits
+    Given  a Git project with ise enabled and a declaration that retains "givn/specs/**", declares "tests/e2e", and replaces "src/**"
+    And  a committed revision with "givn/specs/demo.feature", "tests/e2e/Cargo.toml", "tests/e2e/steps/demo.rs", and "src/kept.rs"
+    When  the developer prepares a trial from "HEAD" with a full replacement and a receipt
+    Then  preparation succeeds
+    And  the receipt's excluded roles hold "e2e"
+    And  the receipt's retained set holds no path under "tests/e2e"
+    And  the receipt holds one e2e identity per resolved package path
+
+  @clean-room-preparation
+  Scenario: A declaration with no frozen package excludes no role
+    Given  a Git project with ise enabled and a declaration with one source root "src/**"
+    When  the developer prepares a trial from "HEAD" with a full replacement and a receipt
+    Then  preparation succeeds
+    And  the report holds no "Frozen package" line
+    And  the receipt's excluded roles are empty
+
+  @clean-room-preparation
+  Scenario: A frozen package root that covers the declaration keeps it in the trial
+    Given  a Git project with ise enabled and a declaration whose "e2e" role names "givn/**"
+    And  a committed revision with "givn/specs/a.md" and "src/kept.rs"
+    When  the developer prepares a trial from "HEAD" with a full replacement
+    Then  preparation succeeds and prints "Retained: 1" and "Frozen package: e2e, not copied (1 file)"
+    And  the trial holds "givn/specification.yaml"
+    And  the trial omits "givn/specs/a.md"

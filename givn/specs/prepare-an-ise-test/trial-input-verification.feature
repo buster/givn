@@ -176,3 +176,27 @@ Feature: Trial input verification
     And  the verifier re-checks the trial against the record
     Then  verification fails and names "tests/extra-e2e/Cargo.toml"
     And  verification reports the e2e package gained the path
+
+  @trial-input-verification
+  Scenario: Verification bounds the frozen paths it refuses
+    Given  a prepared Git trial with a receipt whose frozen package holds twenty-five files
+    When  the verifier copies the whole e2e package "tests/e2e" into the trial
+    And  the verifier re-checks the trial against the record
+    Then  verification fails and names the first twenty frozen paths in sorted order
+    And  verification reports the count of the remaining frozen paths
+
+  @trial-input-verification
+  Scenario: Verification keeps a trial prepared before the package was excluded re-checkable
+    Given  a prepared Git trial whose record and trial were written before the frozen package was excluded
+    When  the verifier re-checks the trial against the record
+    Then  verification reports the retained and e2e identities clean
+    And  the record names no excluded role
+    And  the trial holds "tests/e2e/steps/keys.rs"
+    And  verification exits zero
+
+  @trial-input-verification
+  Scenario: A frozen role that covers the declaration re-checks clean
+    Given  a prepared Git trial whose frozen role covers the declaration
+    When  the verifier re-checks the trial against the record
+    Then  verification reports the retained and e2e identities clean
+    And  verification exits zero

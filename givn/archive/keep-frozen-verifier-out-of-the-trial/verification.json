@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "change": "keep-frozen-verifier-out-of-the-trial",
+  "status": "pending",
+  "candidate_revision": null,
+  "tested_revision": null,
+  "scopes": {},
+  "coverage": null,
+  "scope_evidence": {},
+  "coverage_inputs": null,
+  "merge_completed": true,
+  "merged_deltas": [
+    "fragments/adr-qualification-gate.feature",
+    "prepare-an-ise-test/clean-room-preparation.feature",
+    "prepare-an-ise-test/trial-input-verification.feature"
+  ],
+  "merge_in_progress": null,
+  "merge_plan": [
+    "fragments/adr-qualification-gate.feature",
+    "prepare-an-ise-test/clean-room-preparation.feature",
+    "prepare-an-ise-test/trial-input-verification.feature"
+  ],
+  "merge_targets": {
+    "fragments/adr-qualification-gate.feature": "givn/specs/fragments/adr-qualification-gate.feature",
+    "prepare-an-ise-test/clean-room-preparation.feature": "givn/specs/prepare-an-ise-test/clean-room-preparation.feature",
+    "prepare-an-ise-test/trial-input-verification.feature": "givn/specs/prepare-an-ise-test/trial-input-verification.feature"
+  },
+  "started_at_unix": 1794840846,
+  "finished_at_unix": null
+}
