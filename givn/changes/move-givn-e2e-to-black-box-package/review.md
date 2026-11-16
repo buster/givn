@@ -492,4 +492,41 @@ exits 1 because F2 remains and the verdict is FAIL. The exact final output is
 recorded in the review report; the blocker is F1, with F2 as the gate-shape
 blocker.
 
+## Finding closure
+
+Recorded by the implementation context. The verdict line below stays the
+reviewer's.
+
+| ID | Fix | Evidence | Commit |
+|---|---|---|---|
+| F1 | Deleted the dead `--package` window branch in `names_root` and its three unit tests. The declared command satisfies the pre-existing whole-token rule because `e2e` is a token equal to the declared root, so no product code remains in the change. `design.md`, `design-review.md`, `proposal.md`, `docs/reference.md`, and `tasks.md` batch 2 now record that fact. | `./run-tests.sh --e2e --package e2e` → 119 scenarios (119 passed); the delta run → 6 scenarios (6 passed), including the accepted-command scenario through the real rule; `./run-tests.sh --e2e` exits 2 with `--e2e names the tier, not the package`; `./run-tests.sh --e2e --package other` exits 2 with `--package names no declared e2e root: 'other'`. | `8fb6c3f6`; docs `cda1a089`, `67ad51bb` |
+| F2 | The Step Definitions table names `e2e/tests/steps/workflow_enforcement_e2e_steps.rs`; the phrase table moved under its own `## New and Changed Step Phrases` section. | `givn check review` reports no promised-file integrity error. | `67ad51bb` |
+| F3 | `tasks.md` batch 6 records both scopes: `GIVN_FEATURES=givn/specs/fragments cargo test --locked --test features_runner -- --tags "@adr-qualification-gate and not @e2e"` → 17 scenarios (17 passed), 91 steps; `GIVN_CUCUMBER_TAGS='@e2e and @adr-qualification-gate' ./run-tests.sh --e2e --package e2e` → 1 scenario (1 passed), 7 steps. `design-review.md` keeps the pre-move 18/18 run and states the post-move split. | Both commands above. | `cda1a089`, `67ad51bb` |
+| F4 | `design.md` and `proposal.md` measure 111 `@e2e` `Scenario:` declarations plus 3 `Scenario Outline:` declarations whose 8 example rows execute: 119 executions in 56 tagged feature files. `review-disposition-gates.feature` is the 57th file a `@e2e` string grep counts; the tag appears there only inside step docstrings. No title and no tag changed. | `./run-tests.sh --e2e --package e2e` prints `56 features` / `119 scenarios (119 passed)` / `781 steps`; `git diff 132d9ea3^..HEAD -- givn/specs` holds no `Scenario:` or `@e2e` change. | `67ad51bb` |
+| F5 | Chapter 04 reads "a standalone `e2e` workspace package with its own workspace root, excluded from the published crate". | `docs/arc42/04-solution-strategy.md:23` | `553f3c48` |
+| F6 | `tests/e2e/browser-driver.mjs` no longer exists. The remaining reference, `tests/common/browser.rs`, spawned it at that dead path and no component scenario binds a browser step, so the module and its `pub mod browser;` are deleted. The package harness names `e2e/browser/browser-driver.mjs` and no longer cites another change's task ids. | `rg 'tests/e2e/browser'` → no hits; `./run-tests.sh --non-e2e` → 1081 passed, 114 skipped; the package run → 119 passed. | `1b658a63` |
+| F7 | `tasks.md` batch 4 records that `coverage/` predates the source edit and that archive regenerates `coverage/non-e2e-cobertura.xml` and `coverage/e2e-cobertura.xml` from the merged candidate, and states the guard: with a no-op `cargo` in `PATH` the script exits 2 with `the instrumented givn binary is missing at <root>/target/llvm-cov-target/debug/givn`. No report was hand-edited. | Probe above; the instrumented binary was restored afterwards. | `cda1a089` |
+
+### Gate state after closure
+
+`givn check tasks --change move-givn-e2e-to-black-box-package` passed at
+`67ad51bb1466b746879684fbe4501a2f9b2f0e70` (6 delta scenarios, verified content
+`f171013d7174e4d9cc8706fc810ee24c904cd55cbed5aee45f1e2314747876ff`); the
+receipt commit is `efbd381ab1`.
+
+`givn check review` now reports only `review.md actual verdict is FAIL`. No
+integrity, receipt-freshness, scenario-commit, overlap, run-declaration, or lint
+error remains.
+
+Runner results: `cargo fmt --all -- --check` exit 0;
+`cargo clippy --workspace --all-targets -- -D warnings` exit 0 and the same for
+`--manifest-path e2e/Cargo.toml`; `./run-tests.sh --e2e --package e2e` → 56
+features, 119 scenarios (119 passed), 781 steps (781 passed), exit 0;
+`./run-tests.sh --non-e2e` → 1081 tests passed, 114 skipped, exit 0.
+
+Not closed here: the six binaries under
+`givn/archive/development-timeline/evidence/visual/**` were rewritten by the
+package run of another archived change. They are outside this change's tested
+content and are left as the suite wrote them.
+
 REVIEW: FAIL
