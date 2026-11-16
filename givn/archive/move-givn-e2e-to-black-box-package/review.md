@@ -201,6 +201,14 @@ duplicate reports. The existing instrumented binary is from 16:00, before the
 20:45 `names_root` edit, so this change has no current coverage measurement;
 the archive must regenerate both reports (finding F7).
 
+Archive-run correction: the probe above exercised the missing-artifact guard,
+not the build. cargo-llvm-cov 0.9.1 refuses `--no-run` with `--no-report`
+(`error: --no-report may not be used together with --no-run`), which blocked
+the first archive coverage gate. `measure-coverage.sh` now builds with
+`cargo llvm-cov run --no-report --locked --bin givn -- --version`; the resumed
+archive regenerated both reports and passed at `Line coverage: 86%
+(21551/24950)`, `Branch coverage: n/a (0/0)`.
+
 ### P7: ADR register
 
 `docs/arc42/adr/README.md` has 31 `| accepted |` rows, 0 proposed rows, and the
