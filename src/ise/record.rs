@@ -34,6 +34,11 @@ pub(super) struct TrialRecord {
     pub named_paths: Vec<String>,
     pub replaced_paths: Vec<String>,
     pub counts: Counts,
+    /// The roles whose files the trial does not hold: `e2e` when the frozen set
+    /// is non-empty, empty otherwise. An absent field declares the older
+    /// record content, whose frozen files are retained entries.
+    #[serde(default)]
+    pub excluded_roles: Vec<String>,
     pub retained_digest: String,
     pub e2e_digest: String,
     pub replaced_digest: String,

@@ -953,36 +953,19 @@ fn preparation_prints_the_record_to_stdout(world: &mut GivnWorld) {
 }
 
 /// The `Would write:` entries the default fixture's `--full` trial holds: its
-/// five retained files and the declaration every trial retains, with no
-/// tracked source file kept.
-const DEFAULT_TRIAL_PATHS: [&str; 6] = [
+/// four retained files and the declaration every trial retains, with no
+/// tracked source file kept and the frozen e2e package excluded.
+const DEFAULT_TRIAL_PATHS: [&str; 5] = [
     "docs/arc42/02-architecture-constraints.md",
     "docs/glossary.md",
     "docs/reference.md",
     "givn/specification.yaml",
     "givn/specs/demo.feature",
-    "tests/e2e/Cargo.toml",
 ];
 
 #[then(regex = r#"^the "Would write:" block lists the sorted paths the trial would hold$"#)]
 fn would_write_block_lists_the_sorted_paths(world: &mut GivnWorld) {
-    let text = stdout(world);
-    let mut lines = text.lines();
-    let mut entries: Vec<String> = Vec::new();
-    let mut in_block = false;
-    for line in lines.by_ref() {
-        if line == "Would write:" {
-            in_block = true;
-            continue;
-        }
-        if in_block {
-            let Some(path) = line.strip_prefix("  ") else {
-                break;
-            };
-            entries.push(path.to_string());
-        }
-    }
-    assert!(in_block, "stdout {text:?} has no 'Would write:' block");
+    let entries = would_write_entries(world);
     let expected: Vec<String> = DEFAULT_TRIAL_PATHS
         .iter()
         .map(|path| path.to_string())
@@ -991,6 +974,28 @@ fn would_write_block_lists_the_sorted_paths(world: &mut GivnWorld) {
         entries, expected,
         "the Would write block does not list the sorted trial paths"
     );
+}
+
+/// The paths in one run's `Would write:` block, in printed order.
+fn would_write_entries(world: &GivnWorld) -> Vec<String> {
+    let text = stdout(world);
+    let mut entries: Vec<String> = Vec::new();
+    let mut in_block = false;
+    for line in text.lines() {
+        if line == "Would write:" {
+            in_block = true;
+            continue;
+        }
+        if !in_block {
+            continue;
+        }
+        let Some(path) = line.strip_prefix("  ") else {
+            break;
+        };
+        entries.push(path.to_string());
+    }
+    assert!(in_block, "stdout {text:?} has no 'Would write:' block");
+    entries
 }
 
 #[then(regex = r#"^the checkout holds no receipt$"#)]
@@ -1243,7 +1248,7 @@ const FIXED_REPORT_LINES: [&str; 10] = [
 ];
 
 #[then(
-    regex = r#"^the dry run prints the ten fixed report lines, the receipt path line, and a "Would write:" block$"#
+    regex = r#"^the dry run prints the fixed report lines, the receipt path line, the frozen line, and a "Would write:" block$"#
 )]
 fn dry_run_prints_the_fixed_lines(world: &mut GivnWorld) {
     assert_success(world);
@@ -1256,6 +1261,7 @@ fn dry_run_prints_the_fixed_lines(world: &mut GivnWorld) {
     }
     let receipt = receipt_path(world);
     assert_report_line(world, &format!("Receipt path: {}", receipt.display()));
+    assert_report_line(world, "Frozen package: e2e, not copied (1 file)");
     assert_report_line(world, "Would write:");
 }
 
@@ -1352,14 +1358,9 @@ fn the_trial_does_not_hold_the_ignored_file(world: &mut GivnWorld) {
     assert_trial_omits(world, &[ise_clean_room_support::IGNORED_PATH]);
 }
 
-#[then(regex = r#"^the trial holds "givn/specs/demo\.feature"$"#)]
-fn the_trial_holds_the_demo_feature(world: &mut GivnWorld) {
-    assert_trial_holds(world, &["givn/specs/demo.feature"]);
-}
-
-#[then(regex = r#"^the trial holds "src/kept\.rs"$"#)]
-fn the_trial_holds_the_kept_file(world: &mut GivnWorld) {
-    assert_trial_holds(world, &[ise_clean_room_support::KEPT_PATH]);
+#[then(regex = r#"^the trial holds "([^"]+)"$"#)]
+fn the_trial_holds(world: &mut GivnWorld, path: String) {
+    assert_trial_holds(world, &[path.as_str()]);
 }
 
 #[then(regex = r#"^the trial holds "src/keys/mod\.rs" and "src/keys/tests\.rs"$"#)]
@@ -1367,24 +1368,9 @@ fn the_trial_holds_the_keys_siblings(world: &mut GivnWorld) {
     assert_trial_holds(world, &["src/keys/mod.rs", "src/keys/tests.rs"]);
 }
 
-#[then(regex = r#"^the trial holds "src/keys/parser\.rs"$"#)]
-fn the_trial_holds_the_parser(world: &mut GivnWorld) {
-    assert_trial_holds(world, &["src/keys/parser.rs"]);
-}
-
 #[then(regex = r#"^the trial holds "src/one\.rs" and "src/nested/two\.rs"$"#)]
 fn the_trial_holds_the_nested_source(world: &mut GivnWorld) {
     assert_trial_holds(world, &["src/one.rs", "src/nested/two.rs"]);
-}
-
-#[then(regex = r#"^the trial holds "src/other\.rs"$"#)]
-fn the_trial_holds_other(world: &mut GivnWorld) {
-    assert_trial_holds(world, &["src/other.rs"]);
-}
-
-#[then(regex = r#"^the trial holds "src/keep\.rs"$"#)]
-fn the_trial_holds_the_retained_source_file(world: &mut GivnWorld) {
-    assert_trial_holds(world, &[ise_clean_room_support::RETAINED_SOURCE_PATH]);
 }
 
 #[then(regex = r#"^the trial holds no "\.git" entry and no "\.fslckout" entry$"#)]
@@ -1575,19 +1561,9 @@ fn receipt_lists_the_declaration_in_its_retained_set(world: &mut GivnWorld) {
     );
 }
 
-#[then(regex = r#"^the trial holds "docs/glossary\.md"$"#)]
-fn the_trial_holds_the_glossary(world: &mut GivnWorld) {
-    assert_trial_holds(world, &["docs/glossary.md"]);
-}
-
-#[then(regex = r#"^the trial holds "givn/specification\.yaml"$"#)]
-fn the_trial_holds_the_declaration(world: &mut GivnWorld) {
-    assert_trial_holds(world, &[ise_clean_room_support::DECLARATION_PATH]);
-}
-
-#[then(regex = r#"^the trial omits "givn/notes\.md"$"#)]
-fn the_trial_omits_the_notes(world: &mut GivnWorld) {
-    assert_trial_omits(world, &["givn/notes.md"]);
+#[then(regex = r#"^the trial omits "([^"]+)"$"#)]
+fn the_trial_omits(world: &mut GivnWorld, path: String) {
+    assert_trial_omits(world, &[path.as_str()]);
 }
 
 // --- retain-declaration-in-trial: revision-declaration-authority ----------
@@ -1694,4 +1670,147 @@ fn trial_declaration_is_the_selected_revisions_copy(world: &mut GivnWorld) {
         actual, expected,
         "the trial's declaration is not the copy recorded at revision {revision}"
     );
+}
+
+// --- keep-frozen-verifier-out-of-the-trial: frozen-package-exclusion -------
+
+#[given(
+    regex = r#"^a committed revision with "givn/specs/demo\.feature", "tests/e2e/Cargo\.toml", "tests/e2e/steps/demo\.rs", and "src/kept\.rs"$"#
+)]
+fn commit_revision_with_the_e2e_package(world: &mut GivnWorld) {
+    common::git_commit_all(project_env(world), "fixture: declaration");
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            (
+                ise_clean_room_support::E2E_FEATURE_PATH,
+                ise_clean_room_support::E2E_FEATURE_CONTENT,
+            ),
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+            ("tests/e2e/steps/demo.rs", "// e2e steps\n"),
+            (
+                ise_clean_room_support::KEPT_PATH,
+                ise_clean_room_support::KEPT_CONTENT,
+            ),
+        ],
+        "fixture: e2e package and kept source",
+    );
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "e2e" role names "givn/\*\*"$"#
+)]
+fn git_project_whose_e2e_role_names_givn(world: &mut GivnWorld) {
+    let env = ise_clean_room_support::e2e_wildcard_project();
+    common::git_commit_all(&env, "fixture: e2e wildcard declaration");
+    world.env = Some(env);
+}
+
+#[given(regex = r#"^a committed revision with "givn/specs/a\.md" and "src/kept\.rs"$"#)]
+fn commit_revision_with_a_spec_document_and_kept_source(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("givn/specs/a.md", "spec\n"),
+            (
+                ise_clean_room_support::KEPT_PATH,
+                ise_clean_room_support::KEPT_CONTENT,
+            ),
+        ],
+        "fixture: spec document and kept source",
+    );
+}
+
+#[then(regex = r#"^the receipt's excluded roles hold "([^"]+)"$"#)]
+fn receipt_excluded_roles_hold(world: &mut GivnWorld, role: String) {
+    let record = record_document(world);
+    assert_eq!(
+        record_list(&record, "excluded_roles"),
+        vec![role],
+        "the receipt names another excluded role set"
+    );
+}
+
+#[then(regex = r#"^the receipt's excluded roles are empty$"#)]
+fn receipt_excluded_roles_are_empty(world: &mut GivnWorld) {
+    let record = record_document(world);
+    assert!(
+        record_list(&record, "excluded_roles").is_empty(),
+        "the receipt names an excluded role while nothing is frozen"
+    );
+}
+
+#[then(regex = r#"^the receipt's retained set holds no path under "([^"]+)"$"#)]
+fn receipt_retained_set_holds_no_path_under(world: &mut GivnWorld, directory: String) {
+    let record = record_document(world);
+    let retained = record
+        .get("retained_files")
+        .and_then(serde_yaml_ng::Value::as_mapping)
+        .unwrap_or_else(|| panic!("the record has no 'retained_files' mapping"));
+    let prefix = format!("{directory}/");
+    for key in retained.keys() {
+        let path = key
+            .as_str()
+            .unwrap_or_else(|| panic!("a retained_files key is not a string"));
+        assert!(
+            path != directory && !path.starts_with(&prefix),
+            "the receipt's retained set holds {path}"
+        );
+    }
+}
+
+#[then(regex = r#"^the receipt holds one e2e identity per resolved package path$"#)]
+fn receipt_holds_one_e2e_identity_per_package_path(world: &mut GivnWorld) {
+    let record = record_document(world);
+    let identities = record
+        .get("e2e_files")
+        .and_then(serde_yaml_ng::Value::as_mapping)
+        .unwrap_or_else(|| panic!("the record has no 'e2e_files' mapping"));
+    let mut paths: Vec<&str> = identities.keys().filter_map(|key| key.as_str()).collect();
+    paths.sort();
+    assert_eq!(
+        paths,
+        vec!["tests/e2e/Cargo.toml", "tests/e2e/steps/demo.rs"],
+        "the record does not hold one identity per resolved package path"
+    );
+    for (path, digest) in identities {
+        let digest = digest
+            .as_str()
+            .unwrap_or_else(|| panic!("the e2e identity for {path:?} is not a string"));
+        assert_eq!(
+            digest.len(),
+            64,
+            "the e2e identity for {path:?} is not a SHA-256 value"
+        );
+    }
+}
+
+#[then(regex = r#"^the report holds no "Frozen package" line$"#)]
+fn report_holds_no_frozen_package_line(world: &mut GivnWorld) {
+    let text = stdout(world);
+    assert!(
+        !text.lines().any(|line| line.starts_with("Frozen package:")),
+        "stdout {text:?} prints a Frozen package line while nothing is frozen"
+    );
+}
+
+#[then(
+    regex = r#"^preparation succeeds and prints "Retained: 1" and "Frozen package: e2e, not copied \(1 file\)"$"#
+)]
+fn preparation_succeeds_with_one_retained_and_one_frozen(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Retained: 1");
+    assert_report_line(world, "Frozen package: e2e, not copied (1 file)");
+}
+
+#[then(regex = r#"^the "Would write:" block lists no path under "([^"]+)"$"#)]
+fn would_write_block_lists_no_path_under(world: &mut GivnWorld, directory: String) {
+    let entries = would_write_entries(world);
+    let prefix = format!("{directory}/");
+    for path in &entries {
+        assert!(
+            path != &directory && !path.starts_with(&prefix),
+            "the Would write block lists {path}"
+        );
+    }
 }

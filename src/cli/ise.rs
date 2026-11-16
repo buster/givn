@@ -55,8 +55,10 @@ pub fn verify(project_root: &Path, trial: &Path, at: &Path) -> i32 {
     }
 }
 
-/// The report: ten fixed lines, the receipt path only when one was given, the
-/// dry run's `Would write:` block, and the record when it went to stdout.
+/// The report: the fixed lines with the conditional frozen-package line
+/// between `E2E digest` and `Written path`, the receipt path only when one was
+/// given, the dry run's `Would write:` block, and the record when it went to
+/// stdout.
 fn render(report: &Report) -> String {
     let mut text = format!(
         "Backend: {}\n\
@@ -67,8 +69,7 @@ fn render(report: &Report) -> String {
          Outside the declaration: {}\n\
          Not replaced: {}\n\
          Retained digest: {}\n\
-         E2E digest: {}\n\
-         Written path: {}\n",
+         E2E digest: {}\n",
         report.backend,
         report.revision,
         report.counts.retained,
@@ -78,8 +79,24 @@ fn render(report: &Report) -> String {
         report.counts.not_replaced,
         abbreviate(&report.retained_digest),
         abbreviate(&report.e2e_digest),
-        report.written_path.display(),
     );
+    if !report.excluded_roles.is_empty() {
+        let noun = if report.frozen_files == 1 {
+            "file"
+        } else {
+            "files"
+        };
+        text.push_str(&format!(
+            "Frozen package: {}, not copied ({} {})\n",
+            report.excluded_roles.join(", "),
+            report.frozen_files,
+            noun
+        ));
+    }
+    text.push_str(&format!(
+        "Written path: {}\n",
+        report.written_path.display()
+    ));
     if let Some(receipt) = &report.receipt {
         text.push_str(&format!("Receipt path: {}\n", receipt.display()));
     }

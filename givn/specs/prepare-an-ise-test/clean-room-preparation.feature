@@ -293,8 +293,9 @@ Feature: Clean-room preparation
   Scenario: A dry run performs every read and writes no trial or record
     Given  a Git project with ise enabled and a declaration
     When  the developer runs a dry run from "HEAD" with a full replacement and a receipt
-    Then  the dry run prints the ten fixed report lines, the receipt path line, and a "Would write:" block
+    Then  the dry run prints the fixed report lines, the receipt path line, the frozen line, and a "Would write:" block
     And  the "Would write:" block lists the sorted paths the trial would hold
+    And  the "Would write:" block lists no path under "tests/e2e"
     And  the trial path and the receipt path remain absent
 
   @clean-room-preparation

@@ -23,6 +23,7 @@ pub(super) struct Partition {
     kept_source: Vec<String>,
     replaced: Vec<String>,
     outside: Vec<String>,
+    frozen: Vec<String>,
     not_replaced: usize,
 }
 
@@ -56,6 +57,12 @@ impl Partition {
         &self.retained
     }
 
+    /// The sorted frozen paths: the resolved `e2e` package minus the
+    /// declaration. The trial never copies one.
+    pub(super) fn frozen_paths(&self) -> &[String] {
+        &self.frozen
+    }
+
     /// The sorted tracked paths this replacement removes.
     pub(super) fn replaced_paths(&self) -> &[String] {
         &self.replaced
@@ -80,6 +87,13 @@ pub(super) fn partition(
         .collect();
     let tracked: BTreeSet<&str> = entries.iter().map(|entry| entry.path.as_str()).collect();
 
+    let revision_paths: Vec<&str> = entries.iter().map(|entry| entry.path.as_str()).collect();
+    let frozen: Vec<String> = crate::e2e_boundary::e2e_file_set(declaration, &revision_paths)
+        .into_iter()
+        .filter(|path| path != DECLARATION_PATH)
+        .collect();
+    let frozen_set: BTreeSet<&str> = frozen.iter().map(String::as_str).collect();
+
     let mut retained_paths: BTreeSet<String> = BTreeSet::new();
     retained_paths.insert(DECLARATION_PATH.to_string());
     retained_paths.extend(
@@ -88,6 +102,7 @@ pub(super) fn partition(
             .filter(|entry| retained_role(&entry.path, &roles).is_some())
             .map(|entry| entry.path.clone()),
     );
+    retained_paths.retain(|path| !frozen_set.contains(path.as_str()));
     let retained: Vec<String> = retained_paths.into_iter().collect();
 
     let candidates: BTreeSet<String> = if request.full {
@@ -104,7 +119,7 @@ pub(super) fn partition(
     let retained_set: BTreeSet<&str> = retained.iter().map(String::as_str).collect();
     let mut replaced: Vec<String> = candidates
         .into_iter()
-        .filter(|path| !retained_set.contains(path.as_str()))
+        .filter(|path| !retained_set.contains(path.as_str()) && !frozen_set.contains(path.as_str()))
         .collect();
     replaced.sort();
     let replaced_set: BTreeSet<&str> = replaced.iter().map(String::as_str).collect();
@@ -115,6 +130,7 @@ pub(super) fn partition(
         .filter(|path| {
             !retained_set.contains(path.as_str())
                 && !replaced_set.contains(path.as_str())
+                && !frozen_set.contains(path.as_str())
                 && path_or_parent_matches(&source_roots, path)
         })
         .cloned()
@@ -127,6 +143,7 @@ pub(super) fn partition(
         .filter(|path| {
             !retained_set.contains(path.as_str())
                 && !replaced_set.contains(path.as_str())
+                && !frozen_set.contains(path.as_str())
                 && !path_or_parent_matches(&source_roots, path)
         })
         .cloned()
@@ -139,6 +156,7 @@ pub(super) fn partition(
         kept_source,
         replaced,
         outside,
+        frozen,
         not_replaced,
     })
 }
@@ -376,5 +394,70 @@ mod tests {
             super::super::record::identities(placement.retained_paths(), &entries, &blobs)
                 .expect("every retained path is listed at the revision");
         assert_eq!(counts.retained, identities.len());
+    }
+
+    /// A frozen path is in no bucket: not retained, not kept source, not replaced,
+    /// and not outside, even when it sits under a source root a full replacement
+    /// covers.
+    #[test]
+    fn a_frozen_path_under_a_source_root_is_in_no_bucket() {
+        let container = tempfile::TempDir::new().expect("create the fixture project");
+        let declaration = declaration_in(
+            container.path(),
+            "behavior: []\nstructure: []\ncontracts: []\nlimits: []\ne2e: [\"src/e2e\"]\nsource: [\"src/**\"]\n",
+        );
+        let entries = [
+            RevisionEntry {
+                path: DECLARATION_PATH.to_string(),
+                kind: EntryKind::Regular,
+                executable: false,
+            },
+            RevisionEntry {
+                path: "src/e2e/Cargo.toml".to_string(),
+                kind: EntryKind::Regular,
+                executable: false,
+            },
+            RevisionEntry {
+                path: "src/e2e/tests/keys.rs".to_string(),
+                kind: EntryKind::Regular,
+                executable: false,
+            },
+            RevisionEntry {
+                path: "src/kept.rs".to_string(),
+                kind: EntryKind::Regular,
+                executable: false,
+            },
+        ];
+        let mut request = full_replacement();
+        request.full = true;
+        let placement = partition(&declaration, &entries, &request, "abc123")
+            .expect("the fixture revision partitions");
+        assert_eq!(
+            placement.frozen_paths(),
+            ["src/e2e/Cargo.toml", "src/e2e/tests/keys.rs"],
+            "the resolved package is not the frozen set"
+        );
+        assert_eq!(
+            placement.retained_paths(),
+            [DECLARATION_PATH.to_string()],
+            "the frozen package is retained"
+        );
+        assert_eq!(placement.copy_paths(), vec![DECLARATION_PATH.to_string()]);
+        assert_eq!(
+            placement.replaced_paths(),
+            ["src/kept.rs".to_string()],
+            "a frozen path under a source root is not replaced"
+        );
+        assert_eq!(
+            placement.counts(),
+            Counts {
+                retained: 1,
+                kept_source: 0,
+                replaced: 1,
+                outside_declaration: 0,
+                not_replaced: 0,
+            },
+            "a frozen path deeper than a replaced file's directory is no sibling"
+        );
     }
 }

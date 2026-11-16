@@ -446,6 +446,20 @@ pub(crate) const E2E_FEATURE_PATH: &str = "givn/specs/demo.feature";
 pub(crate) const E2E_FEATURE_CONTENT: &str =
     "Feature: demo\n\n  @e2e\n  Scenario: demo\n    Given nothing\n";
 
+/// A declaration whose `e2e` role names `entry` and whose other retained
+/// roles are empty, with one source root, so only the `e2e` entry can match
+/// the revision.
+pub(crate) fn e2e_declaration(entry: &str, source: &str) -> String {
+    format!(
+        "behavior: []\n\
+         structure: []\n\
+         contracts: []\n\
+         limits: []\n\
+         e2e: [{entry}]\n\
+         source: [{source}]\n"
+    )
+}
+
 /// A declaration with the named `behavior` and `e2e` roles and one source
 /// root, so no other declared entry can match nothing at the revision.
 pub(crate) fn behavior_e2e_declaration(behavior: &str, e2e: &str, source: &str) -> String {
@@ -477,6 +491,29 @@ pub(crate) fn contracts_wildcard_project() -> common::TestEnv {
     std::fs::write(
         env.path(DECLARATION_PATH),
         contracts_declaration("\"givn/**\"", "\"src/**\""),
+    )
+    .expect("write the fixture declaration");
+    env
+}
+
+/// A project whose `e2e` role names `givn/**`. The config and the command file
+/// are excluded from the repository, so the revision's `givn/` holds only the
+/// declaration and the document the role matches; the resolved package
+/// therefore covers the declaration itself and one other file.
+pub(crate) fn e2e_wildcard_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::write(
+        env.path(".git/info/exclude"),
+        "givn/config.yaml\ngivn/commands.yaml\n",
+    )
+    .expect("write the Git exclude fixture");
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
+        .expect("write the fixture config");
+    std::fs::write(
+        env.path(DECLARATION_PATH),
+        e2e_declaration("\"givn/**\"", "\"src/**\""),
     )
     .expect("write the fixture declaration");
     env

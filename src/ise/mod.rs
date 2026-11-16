@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
-use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
+use crate::config::declaration::{DECLARATION_PATH, Role, SpecificationDeclaration};
 use crate::config::manifest::Manifest;
 use crate::config::overlay::load_effective_at;
 use crate::scm::{Backend, EntryKind, RevisionEntry};
@@ -50,7 +50,8 @@ pub struct Admission {
 }
 
 /// One successful preparation's report: the fixed lines, the two digest
-/// rollups, the write targets, and the record when it went to stdout.
+/// rollups, the frozen package's role and size, the write targets, and the
+/// record when it went to stdout.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
     pub backend: &'static str,
@@ -58,6 +59,11 @@ pub struct Report {
     pub counts: Counts,
     pub retained_digest: String,
     pub e2e_digest: String,
+    /// The roles whose files the trial does not hold; empty when nothing is
+    /// frozen, so the report prints no frozen line.
+    pub excluded_roles: Vec<&'static str>,
+    /// The frozen paths the trial omits, counted once per frozen path.
+    pub frozen_files: usize,
     pub written_path: PathBuf,
     pub receipt: Option<PathBuf>,
     /// The sorted paths a dry run would write; `None` outside a dry run.
@@ -86,7 +92,7 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
         &admission.revision,
     )?;
     let trial = require_write_targets(project_root, request)?;
-    require_copy_set(&placement.copy_paths(), &admission.entries)?;
+    require_copy_set(&copy_set(&placement), &admission.entries)?;
 
     let copy_paths = placement.copy_paths();
     let revision_paths: Vec<&str> = admission
@@ -108,6 +114,11 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
         .collect();
 
     let counts = placement.counts();
+    let excluded_roles: Vec<&'static str> = if placement.frozen_paths().is_empty() {
+        Vec::new()
+    } else {
+        vec![Role::E2e.as_str()]
+    };
     let retained_files =
         record::identities(placement.retained_paths(), &admission.entries, &blobs)?;
     let e2e_files = record::identities(&e2e_paths, &admission.entries, &blobs)?;
@@ -122,6 +133,10 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
         named_paths: named_paths(request),
         replaced_paths,
         counts,
+        excluded_roles: excluded_roles
+            .iter()
+            .map(|role| (*role).to_string())
+            .collect(),
         retained_digest: record::rollup(&retained_files),
         e2e_digest: record::e2e_rollup(&e2e_files, &e2e_scenarios),
         replaced_digest: record::rollup(&replaced_files),
@@ -137,6 +152,8 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
         counts,
         retained_digest: record.retained_digest.clone(),
         e2e_digest: record.e2e_digest.clone(),
+        excluded_roles,
+        frozen_files: placement.frozen_paths().len(),
         written_path: trial.clone(),
         receipt: request.receipt.clone(),
         would_write: request.dry_run.then(|| copy_paths.clone()),
@@ -179,6 +196,20 @@ fn named_paths(request: &ReplaceRequest) -> Vec<String> {
         .paths
         .iter()
         .filter_map(|value| crate::config::declaration::normalize_project_path(value))
+        .collect();
+    paths.sort();
+    paths.dedup();
+    paths
+}
+
+/// The union of the copy set and the frozen set: every revision path the trial
+/// may copy or the record names, so a repository link in either set refuses by
+/// name before any content is read.
+fn copy_set(placement: &partition::Partition) -> Vec<String> {
+    let mut paths: Vec<String> = placement
+        .copy_paths()
+        .into_iter()
+        .chain(placement.frozen_paths().iter().cloned())
         .collect();
     paths.sort();
     paths.dedup();
