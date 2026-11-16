@@ -10,7 +10,6 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
-pub mod browser;
 pub mod instruction_references;
 pub mod reference_check;
 #[allow(dead_code)]

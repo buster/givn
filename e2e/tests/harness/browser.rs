@@ -1,7 +1,7 @@
 //! The Rust side of the `@e2e` browser tier.
 //!
 //! One [`BrowserDriver`] owns the JSON-line driver process
-//! (`tests/e2e/browser-driver.mjs`) for the scenario's lifetime: it spawns it,
+//! (`e2e/browser/browser-driver.mjs`) for the scenario's lifetime: it spawns it,
 //! sends one command at a time, and reads one reply. A non-zero driver exit, a
 //! timeout, or an `{"ok": false, "error": …}` reply fails the step — it is
 //! never turned into a skipped one — and the process is killed on drop, so a
@@ -33,9 +33,8 @@ const CHANGE_DIR: &str = "givn/changes/development-timeline";
 
 /// The `@e2e` tier's browser driver: one `node` process, one browser, one
 /// context, one page per scenario.
-#[allow(dead_code)] // Task E2–E9 drive it; Task E1 creates and proves it.
 pub struct BrowserDriver {
-    /// The `node` process running `tests/e2e/browser-driver.mjs`.
+    /// The `node` process running `e2e/browser/browser-driver.mjs`.
     child: Child,
     /// The driver's stdin: one JSON command per line.
     stdin: ChildStdin,
@@ -45,7 +44,9 @@ pub struct BrowserDriver {
     next_id: u64,
 }
 
-#[allow(dead_code)] // Task E2–E9 drive it; Task E1 creates and proves it.
+// Two commands, `press` and `scroll_into_view`, have no scenario in the moved
+// corpus yet; every other command is reached from `e2e/tests/steps/`.
+#[allow(dead_code)]
 impl BrowserDriver {
     /// Start the driver for one scenario: the repository's driver script, run
     /// with `node` resolved from `PATH` (the design does not pin Node).
@@ -291,7 +292,7 @@ impl fmt::Debug for BrowserDriver {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         formatter
             .debug_struct("BrowserDriver")
-            .field("driver", &"tests/e2e/browser-driver.mjs")
+            .field("driver", &"e2e/browser/browser-driver.mjs")
             .field("pid", &self.child.id())
             .finish()
     }
@@ -299,7 +300,6 @@ impl fmt::Debug for BrowserDriver {
 
 /// The `file://` URL of one report inside the scenario's temporary project
 /// root: the report is one self-contained file, so the browser needs no server.
-#[allow(dead_code)] // Task E6–E9 navigate through it.
 pub fn file_url(path: &Path) -> String {
     let absolute = path
         .canonicalize()
@@ -311,7 +311,6 @@ pub fn file_url(path: &Path) -> String {
 /// `<change>/evidence/visual/<scenario-slug>/<viewport>.png`, exactly the path
 /// `src/integrity_hook.rs::check_visual_evidence` reads. The slug is the hook's
 /// own rule (`src/integrity_hook.rs::scenario_slug`), never a second convention.
-#[allow(dead_code)] // Task E2–E9 commit their captures here.
 pub fn evidence_file(scenario: &str, viewport: &str) -> PathBuf {
     evidence_root(scenario).join(format!("{viewport}.png"))
 }
@@ -319,7 +318,6 @@ pub fn evidence_file(scenario: &str, viewport: &str) -> PathBuf {
 /// The declared state's evidence file of one `@e2e` scenario:
 /// `<viewport>--<state>.png` beside the final-state pair — the naming the
 /// visual gate enforces for the contract's `empty` state.
-#[allow(dead_code)] // Task E9 commits the `empty` pair here.
 pub fn state_evidence_file(scenario: &str, viewport: &str, state: &str) -> PathBuf {
     evidence_root(scenario).join(format!("{viewport}--{state}.png"))
 }
@@ -341,7 +339,6 @@ fn change_dir(root: &Path) -> PathBuf {
 }
 
 /// The scenario's evidence directory under the change's visual evidence root.
-#[allow(dead_code)] // Reached through the two evidence-file helpers above.
 fn evidence_root(scenario: &str) -> PathBuf {
     change_dir(&super::binary::product_root())
         .join("evidence")
