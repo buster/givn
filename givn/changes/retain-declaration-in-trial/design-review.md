@@ -1,8 +1,8 @@
 # Design Review: retain-declaration-in-trial
 
 Review kind: independent
-Author: retain-declaration-in-trial hardening author (omp, deepseek-flash)
-Reviewer context: independent grilling session whose decisions Q1–Q2 and blockers B1–B6 the operator recorded on 2026-11-15; this authoring context applied them and owns the artifact edits
+Author: c0bf1029 (implementation author)
+Reviewer context: one independent review context (omp, deepseek-flash), 2026-11-16, a fresh session with no author conversation that re-audited the design and the implementation
 
 ## Reviewed inputs
 

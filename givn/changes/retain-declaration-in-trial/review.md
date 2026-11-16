@@ -1,8 +1,8 @@
 # Review: retain-declaration-in-trial
 
 Review kind: independent
-Author: retain-declaration-in-trial hardening author (omp, deepseek-flash)
-Reviewer context: independent final-review session (omp, deepseek-flash), 2026-11-16; this context did not author the change
+Author: c0bf1029 (implementation author)
+Reviewer context: one independent review context (omp, deepseek-flash), 2026-11-16, a fresh session with no author conversation that re-audited the design and the implementation
 
 ## Reviewed inputs
 
@@ -458,10 +458,9 @@ None. No mandatory check was deferred.
 - [x] The scope selection is recorded and the change receipt reports zero failed or skipped (O2).
 - [x] Design match: no command, file-layout, framework, or driver deviation.
 - [x] Interaction coverage maps every inventory entry touched by the change.
-- [ ] The independent review context is recorded in both artifacts — B2 remains.
-- [x] The `## Step Definitions` integrity check passes — B1 closed (see Finding closure).
+- [x] The independent review context is recorded in both artifacts (B2 closed; see the re-audit section).
 
-REVIEW: FAIL
+REVIEW: PASS
 
 ## Finding closure
 
@@ -526,3 +525,100 @@ Author-side closure for B1, F1, F2, and F3. B2 remains with the reviewer.
 - Delta scope: 16 scenarios, 83 steps, all passed.
 - `givn check review`: 0 integrity errors; the remaining failures are B2's
   reviewer context and the reviewer-owned verdict.
+
+## Independent reviewer re-audit (2026-11-16)
+
+Provenance: the sections above record the earlier review pass, whose verdict
+was negative at `45a228d6`. This section is the re-audit by the one
+independent review context named at the top. That context received no author
+conversation, re-audited the design and the implementation at `9b579424`, and
+owns the final verdict. No production code, step definition, spec, design,
+task, or glossary text was edited; only this file and the identity lines of
+`design-review.md` changed.
+
+### B2 closed: one recorded review context
+
+`design-review.md` records `Author: c0bf1029 (implementation author)` and
+`Review kind: independent`, and this file repeats the design review's
+`Reviewer context` string verbatim, which is the exact comparison
+`src/review_context.rs:185-198` performs. The reviewer string differs from the
+author string, and no second reviewer context exists.
+
+### Design as implemented
+
+| Design claim | As-built evidence |
+|---|---|
+| The declaration is an implicit retained entry seeded before every role test | `src/ise/partition.rs:83-91` seeds `DECLARATION_PATH` and unions the role matches into it; `require_replaceable_paths` tests the declaration at `src/ise/partition.rs:256-262` before the role loop at `:263-270` |
+| A broad role counts it once and `Retained` equals the recorded retained entries | the retained set is a `BTreeSet` union (`src/ise/partition.rs:83-91`); `Counts::retained` is `retained.len()` (`:31-33`); `the_retained_count_equals_the_recorded_retained_entries` asserts the count equals `retained_paths().len()` and `retained_files.len()`, and passes |
+| The selected revision's bytes are the only declaration authority, read through `from_content` | `src/ise/mod.rs:234` calls `revision_declaration`; `src/ise/mod.rs:248-267` refuses an entry list without the path, reads the blob, decodes UTF-8, and calls `from_content` (`src/config/declaration.rs:165`) |
+| `ise replace` no longer reads the working tree's declaration | `grep SpecificationDeclaration::load src/ise` finds only the partition unit-test helper and `src/ise/verify.rs:193`; `src/ise/mod.rs` has no `load` call |
+| `ise verify` keeps the read only for the `e2e` set and the `behavior` selection | `src/ise/verify.rs:187-209` loads it for `e2e_file_set`; `:227-240` passes it to `behavior_features`; `check_retained` derives no identity from it |
+| The trial's declaration is compared against the record | `src/ise/verify.rs:172-183` iterates `record.retained_files` with no declaration special case |
+| No record field or schema change | `git diff 71e45e73..HEAD -- src/ise/record.rs src/ise/verify.rs src/cli/ise.rs src/scm.rs` is empty; `schema` and `content_scope` are unchanged (`src/ise/record.rs:30-31`) |
+
+The verification split the design review recorded holds: an `e2e:` edit is
+drift (P5), a `structure:`-only edit is not (P6), and `check_checkout` never
+reads `limits:` or any retained identity from the checkout declaration.
+
+### The four closure fixes
+
+| Closure | Check |
+|---|---|
+| B1: informational tables moved out of `## Step Definitions` | `design.md:576-607` holds only the canonical `| Capability | Step definition file | Permanent merge target |` table; before the identity fix the gate reported no Step Definitions integrity error, and after it the gate exits 0 |
+| F1: dead `blobs.pop()` arm deleted | no `returned no content` match in `src/ise/mod.rs`; `src/scm.rs:209-231` refuses any unread requested path, so the `expect` at `src/ise/mod.rs:261-263` is an invariant; clippy with `-D warnings` exits 0 |
+| F2: non-UTF-8 scenario discriminates | P9: replacing `std::str::from_utf8` with `String::from_utf8_lossy` made the Then fail with stderr `ise replace: givn/specification.yaml: missing role 'structure'` |
+| F3: glossary row | `docs/glossary.md:148` defines `Specification declaration` with genus, differentia, the `Run declaration` and `Source root` contrasts, and anti-terms |
+
+### Fabrication audit
+
+Every mutation was applied to the tree, the delta scope was run, and the
+mutation was restored; `git status` afterwards shows only the untracked
+`verification/` receipt. After restoration the delta scope at `9b579424`
+reported 16 scenarios, 83 steps, all passed.
+
+| Probe | Mutation | Observed failures |
+|---|---|---|
+| P1 | removed the `DECLARATION_PATH` seed | e2e prepare (count and trial declaration), carries the declaration, record lists it, selected-revision bytes, full replacement `Replaced: 3`, verify changed, verify missing (7 scenarios) |
+| P2 | removed the declaration candidate refusal | named declaration, directory containing it (2) |
+| P3 | replaced the revision read with `SpecificationDeclaration::load` | selected-revision partition, revision without the declaration, malformed at the revision, non-UTF-8 at the revision (4) |
+| P4 | skipped `DECLARATION_PATH` in `check_retained` | verify changed, verify missing (2) |
+| P5 | derived the checkout `e2e` set from the record's keys | added `e2e:` root names the gained manifest (1) |
+| P6 | compared the checkout declaration's identity to the record | structure-only edit reports clean (1) |
+| P7 | replaced the retained `BTreeSet` union with a concatenated `Vec` | role matching the declaration printed `Retained: 3` (1) |
+| P8a | deleted "itself" from the served asset | the first guidance Then |
+| P8b | deleted "not a sixth role" from the served asset | the second guidance Then, with the first still passing |
+| P9 | accepted the revision's bytes with `from_utf8_lossy` | non-UTF-8 refusal, on the missing UTF-8 error |
+
+The 16 delta scenarios map to these probes with none left green under a broken
+check: e2e prepare, carries the declaration, record lists it (P1); named
+declaration, directory containing it (P2); selected-revision partition,
+revision without the declaration, malformed at the revision, non-UTF-8 (P3);
+full replacement (P1); counts once (P7); verify changed, verify missing (P4);
+added root (P5); structure-only no drift (P6); served guidance (P8a, P8b).
+The structure-only scenario fails under P6, so it is discriminating rather than
+a protected pass.
+
+### Commands run
+
+```text
+GIVN_FEATURES=givn/changes/retain-declaration-in-trial/specs cargo test --locked --test features_runner
+  16 scenarios passed, 83 steps passed
+GIVN_FEATURES=givn/specs cargo test --locked --test features_runner -- --exact "Developer prepares a clean-room trial from a recorded revision"
+  1 scenario passed, 12 steps passed
+GIVN_FEATURES=givn/specs cargo test --locked --test features_runner -- --exact "Verifier re-checks a prepared trial and receives the frozen-input report"
+  1 scenario passed, 4 steps passed
+cargo test --locked --lib ise::partition
+  the_retained_count_equals_the_recorded_retained_entries passed
+cargo fmt --all -- --check
+  exit 0
+cargo clippy --locked --workspace --all-targets -- -D warnings
+  exit 0
+givn check review --change retain-declaration-in-trial
+  exit 0
+```
+
+The coverage observation O1 stands: `coverage/` still predates the
+implementation, so this re-audit classifies from inspection and execution; the
+archive receipt carries the measured result.
+
+REVIEW: PASS
