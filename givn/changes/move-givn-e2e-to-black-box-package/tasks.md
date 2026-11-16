@@ -190,3 +190,22 @@ Release note: `Record the standalone acceptance package as ADR-079`
 - [x] COMMIT: `cec46e95` -- Batch: architecture record
 - [x] Scenario: The migration preserves independent architecture history across three proposed decisions
 - [x] COMMIT: `cec46e95` -- Batch: architecture record
+
+## Final review gate
+
+- [x] `givn check review --change move-givn-e2e-to-black-box-package` exits 0 at
+      the review PASS revision `d271dc64`, with the receipt reused across the
+      documentation-only revision.
+      ```
+      $ givn check review --change move-givn-e2e-to-black-box-package
+        ✓ integrity checks passed
+        ✓ run declaration passed
+        givn lint: 2 file(s) checked — clean
+        net delta: 1 added, 2 modified, 0 removed
+        ✓ overlap dispositions passed
+        ✓ scenario commits passed (3 scenario(s))
+        ✓ change verification receipt reused across documentation-only revision
+          d271dc6451bb416fe7418e67868474c76bad2995 (tested at
+          67ad51bb1466b746879684fbe4501a2f9b2f0e70, 6 scenario(s))
+      exit 0
+      ```

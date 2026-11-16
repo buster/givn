@@ -562,6 +562,8 @@ features, 119 scenarios (119 passed), 781 steps (781 passed), exit 0;
 Not closed here: the six binaries under
 `givn/archive/development-timeline/evidence/visual/**` were rewritten by the
 package run of another archived change. They are outside this change's tested
-content and are left as the suite wrote them.
+content and were restored to their tracked content with
+`git checkout -- givn/archive/development-timeline/evidence/visual` before
+archive.
 
 REVIEW: PASS
