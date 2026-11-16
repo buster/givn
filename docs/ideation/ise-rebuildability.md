@@ -382,7 +382,53 @@ The plan's stop rules are explicit: a phase does not skip its predecessor's
 recorded evidence; a failing gate is reported with the command and the
 observed value; a benchmark task file is never edited in place.
 
-## 8. Open items
+## 8. Results
+
+The gates in section 7 are the plan's thresholds. The arms below are what was
+measured: seven paid runs, $2.1804 committed, on the `catopia-v2-ise` `0.3.0`
+benchmark. Arm-level detail, including bundle paths, revisions, and per-run
+spend, is in `docs/experiments/ise-rebuild-experiment.md` in the
+`givn-harness` worktree `/home/buster/projects/givn-harness-ise`.
+
+| Arm | Outcome | Grade |
+|---|---|---|
+| `initial`, `ise` on | `archived_and_failed` | 13/14, `R8` |
+| `initial`, `ise` off | `archived_and_passed` | 14/14 |
+| cold rebuild, first two runs | `stalled`, then `delivered_and_failed` | `G1` only |
+| cold rebuild, replicate | `delivered_and_passed` | 16/16, frozen verifier 15/15 |
+| `Constant Ise` follow-up | re-graded 2/2, but chose incremental | 2/2 |
+| state continuity, two stages | `archived_and_passed` | 9/9 |
+
+**The protocol works for a cold rebuild.** The replicate rebuilt the executable
+surface from the retained Specification, passed the frozen verifier 15/15 and
+every graded behaviour check, and fixed the seed's `R8` failure. Its trial
+record reads `Kept source 0; Replaced 1`.
+
+**The verifier is weaker than the contract.** The first rebuild carried neither
+`contract.md` nor `law.md`, because the declaration left both outside every
+role, and the frozen verifier still passed 15/15. A rebuild can pass with the
+contracts it never received.
+
+**Three protocol defects were found and fixed.** `guard-retained-paths-across-archive`
+refuses an archive that moves a declared retained path, after an agent declared
+a change artifact as one and the archive moved it. `retain-declaration-in-trial`
+copies `givn/specification.yaml` into every trial and re-checks it per path,
+after the first trial carried no declaration. Harness `4f477bc` grades a stage
+with `require_archive = false` in-stage, after the rebuild stage stalled
+waiting for an archive that its `require_archive = false` setting never
+produces.
+
+**The gap-record failure did not reproduce.** One rebuild failed `G1` for gap
+records naming a passing check and an artifact outside every source root; the
+replicate ran the same seed on the same binary and passed with no gap file.
+
+**Two questions stay open.** `Constant Ise` remains unmeasured, because the
+only follow-up arm recorded `incremental modification` and its snapshot holds
+no trial record; and the verifier-strength question stays open, because no arm
+tests whether a verifier that reads only the declared roles can certify a
+rebuild that the retained Specification does not describe.
+
+## 9. Open items
 
 - **Promotion to default-on.** `S14` decides. Until then `ise` remains an
   `Opt-in addon` with `default_enabled: false`.

@@ -1,6 +1,7 @@
 # Plan: ise-rebuildability
 
-Status: draft 2026-11-14.
+Status: executing since 2026-11-14; phase and campaign state as of 2026-11-16
+in section 0.
 
 This plan sequences the decisions recorded in `frame.md`, `eventstorming.md`,
 `questions.md`, `domain-terms.md`, and `use-cases/*.md` across four
@@ -16,6 +17,59 @@ consumer contract), `Ise Test` (one clean-room rebuild execution, with
 `Dry-Run Ise` or `Full replacement` as its mode), `Spec gap` (one of four
 outcomes recorded before a fix), and `Change strategy` (the design's
 `Decides D<n>` entry).
+
+## 0. Status
+
+Updated 2026-11-16. `S1` to `S6b` are delivered. `S7` to `S9` ran as the paid
+campaign and are reported as experiments, not as passed phases. The
+`givn-harness` record at `docs/experiments/ise-rebuild-experiment.md`, in the
+worktree `/home/buster/projects/givn-harness-ise`, is authoritative for
+arm-level detail: bundles, revisions, spend, and the evidence behind each
+finding. This section states only what each phase delivered and what its gate
+measured.
+
+**Done.**
+
+| Phase | Delivered by | Receipt |
+|---|---|---|
+| `S1`, `S2` | `add-ise-addon-and-specification`, archive commit `1e4527ae` | `givn/archive/add-ise-addon-and-specification/verification.json` |
+| `S3` | `enforce-ise-e2e-boundary`, archive commit `3808c34f` | `givn/archive/enforce-ise-e2e-boundary/verification.json` |
+| `S4` | `add-ise-clean-room-commands`, archive commit `8e887c58` | `givn/archive/add-ise-clean-room-commands/verification.json` |
+| `S5` | `split-stack-instructions`, archive commit `cbaee3f4` | `givn/archive/split-stack-instructions/verification.json` |
+| `S6a` | `givn-harness` `984231a` (`catopia-v2-ise` `0.3.0`), with `84dcfc1` and `8eda691` (target-stage grading over one data directory) and `dc5002a` (graded requirements from a committed wheelhouse) | none; the harness keeps no archive receipt |
+| `S6b` | `givn-harness` `984231a` (three `ise` task variants), with `fe73146` (seeded stages and the pinned frozen verifier) | none; the harness keeps no archive receipt |
+
+`S1` and `S2` shipped as one change: the addon, its prerequisite, the
+declaration scaffold, the loader, and the four advisory findings.
+
+**Corrections landed from campaign evidence.**
+
+| Change | Archive commit | Arm failure it fixes |
+|---|---|---|
+| `guard-retained-paths-across-archive` | `bc33c39e` | An agent declared a change artifact as a retained `limits:` path, `givn archive` moved it, and `givn ise replace` then refused at the recorded revision. |
+| `retain-declaration-in-trial` | `bc18decb` | Rebuild 1's trial carried no `givn/specification.yaml`, so `G1` had no declaration to read and the stage stalled before grading. |
+
+**Run.** `S7` to `S9` ran as `E1` to `E4`. The record's `Arm records` section
+holds every bundle path, revision, grade, and spend figure.
+
+| Arm | Phase | What ran | Observed |
+|---|---|---|---|
+| `E1` | `S7` | `catopia-v2-ise` `initial`, one run per arm, same binary and model | `ise` off `archived_and_passed` 14/14; `ise` on `archived_and_failed` 13/14 on `R8` |
+| `E2` | `S8` | `rebuild-initial` from seed `4af78d55`, three runs | `delivered_and_passed` 16/16 with the frozen verifier 15/15 and `Kept source 0; Replaced 1`; the two earlier runs failed `G1` |
+| `E3` | `S9` | `followup` continuation from `4af78d55` | `archived_and_failed` at 1/2 for the bundle shape, 2/2 after the chain carry; the builder recorded `incremental modification` |
+| `E4` | `S9` | `followup2` continuation of `16cb5cb8` with `4af78d55` carried beside it | `archived_and_passed` 9/9 with the chain replayed |
+
+**Outstanding.**
+
+- **`S10` to `S12`, the Passuff arm.** Blocked: the product exists only as
+  uncommitted work in another workspace, so there is nothing to declare, gate,
+  or rebuild.
+- **`S13` and `S14`.** `S13` is gated on `S12`; `S14` is gated on `S8`, `S9`,
+  `S12`, and `S13`. The `E3` arm never ran a replacement, so the `Constant
+  Ise` row of the `S14` evidence table has no evidence and `ise` stays
+  opt-in.
+- **`redact-secret-shaped-values-in-history`.** Queued as a committed scaffold
+  at `proposal-done`; no specs, design, tasks, or review.
 
 ## 1. Purpose and claim
 
@@ -95,9 +149,9 @@ flowchart TB
 | S5 | `givn` | Stack instruction split, the `ise` instruction, the two `specs.md` amendments, and the guidance sweep | S1 | M | `givn instructions steps` carries no per-runner body and names each stack id with its condition; `givn instructions ise` refuses with the addon off; a stack body is served only on its own request |
 | S6a | `givn-harness` | Stage snapshots with a recorded revision, target-stage grading, cross-stage state continuity, and sandboxed candidate grading | P0 | L | The grader reports `fail` for a reached stage that lacks Petorania; a state directory created at stage 1 is read at stages 2 and 3; every candidate runs in the sandbox with no host package install |
 | S6b | `givn-harness` | Versioned `ise` task variants that run `givn ise replace` and `givn ise verify` | S4, S6a | M | `benchmark verify` passes; the variants run both commands and each seeded defect trips its declared ids |
-| S7 | `givn-harness` | Catopia E1: `ise` off versus on across `initial`, `followup`, `followup2`, compared with the `v0.9.14` baseline | S4, S5, S6a, S6b | M | `ise=on` reaches 25/25, at least 119 regular plus 11 `@e2e` scenarios, and at least 87.33/79.85 coverage |
-| S8 | `givn-harness` | Catopia E2: cold rebuild of `initial` from the frozen Specification with a fresh builder | S7 | M | The frozen E2E suite passes, or every difference carries exactly one `Spec gap` outcome |
-| S9 | `givn-harness` | Catopia E3 (Constant Ise on `followup`) and E4 (state created at stage 1, migrated at stage 2, isolated at stage 3) | S7 | L | The frozen suite stays green through the one-component rebuild; every reached state check passes, and a lost or leaked state is a failure |
+| S7 | `givn-harness` | Catopia E1: `ise` off versus `ise` on, one run per arm, on the `catopia-v2-ise` `initial` stage with the same binary and model; the historical `catopia-v2` three-stage comparison was not run | S4, S5, S6a, S6b | M | Both arms graded: `ise` off 14/14 `archived_and_passed`, `ise` on 13/14 `archived_and_failed` on `R8`. Neither bundle recorded scenarios or coverage, so the 119 + 11 and 87.33/79.85 thresholds were not evaluated |
+| S8 | `givn-harness` | Catopia E2: `rebuild-initial` from the `4af78d55` seed Specification with a fresh builder, three runs | S7 | M | The grade passes 16/16 with the frozen verifier 15/15 on `E0` to `E14` and `G1` at pass, and the trial record reads `Kept source 0; Replaced 1`; the two earlier runs failed `G1` |
+| S9 | `givn-harness` | Catopia E3: `followup` continuation from the `initial` seed with `Constant Ise` permitted; E4: `followup2` continuing the `followup` snapshot with the `initial` ancestor carried | S7 | L | E3 grades `M1` and `M2` at pass once the bundle carries its prerequisite, and the archived design records `incremental modification`, so no replacement was measured. E4 grades `P1` to `P4`, `T1` to `T4`, and `A1` at pass with the chain replayed. No arm grades a `followup2` bundle against an empty data directory, so the negative continuity fixture did not run |
 | S10 | `passuff` | Separate `e2e` package, PTY at 80x24 and 120x40, HTTP mock, seeded defects that must fail | S5 | M | The package declares no dependency on production crates; every seeded defect fails a named scenario; both viewport sizes produce evidence |
 | S11 | `passuff` | Constant Ise trial with `--path`, rebuild, frozen E2E green, neighboring components named | S4, S10 | M | The rebuilt component passes the frozen suite and the review names every changed neighboring component |
 | S12 | `passuff` | Full-product `Dry-Run Ise` from `givn/specs` plus `docs` | S11 | L | The frozen suite passes, or every difference is classified; no difference is closed as drift |
@@ -598,6 +652,12 @@ without a hidden contract.
 
 ### S7: Catopia E1: `ise` off versus on (givn-harness, M)
 
+**Campaign record.** `docs/experiments/ise-rebuild-experiment.md` in
+`/home/buster/projects/givn-harness-ise` holds this phase's bundles and
+evidence. The arm ran the `initial` stage of `catopia-v2-ise` once per
+condition, not the three `catopia-v2` stages this section describes, and
+neither bundle recorded scenarios or coverage.
+
 **Changes.**
 - Pin one Givn binary from the post-S5 `main` with
   `./scripts/build-givn-main.sh`, record its SHA-256 and `--givn-source-ref`,
@@ -644,6 +704,11 @@ repeating the `v0.9.15` collapse.
 
 ### S8: Catopia E2: cold rebuild of `initial` (givn-harness, M)
 
+**Campaign record.** `docs/experiments/ise-rebuild-experiment.md` in
+`/home/buster/projects/givn-harness-ise` holds this phase's bundles and
+evidence. The arm ran `rebuild-initial` three times through `stage-run`; the
+third delivered and passed 16/16.
+
 **Changes.**
 - Take the `ise=on` `initial` snapshot from S7, confirm its checkpoint
   revision, and treat its declared `Specification` as the only builder input.
@@ -682,6 +747,12 @@ repeating the `v0.9.15` collapse.
 build and which rules it still lacks.
 
 ### S9: Catopia E3 and E4 (givn-harness, L)
+
+**Campaign record.** `docs/experiments/ise-rebuild-experiment.md` in
+`/home/buster/projects/givn-harness-ise` holds this phase's bundles and
+evidence. The arm recorded `incremental modification` for E3, so no component
+replacement was measured, and ran E4 as a continuation chain that replays
+`initial` and `followup` before grading `followup2`.
 
 **Changes.**
 - **E3, Constant Ise on `followup`:** run `benchmarks/catopia-v2-ise` with
@@ -914,6 +985,10 @@ losing its E2E evidence.
 **Verification.**
 - Re-read the recorded runs and the evidence table; no row is filled from a
   report summary alone.
+- The campaign's measured values live in the `givn-harness` record at
+  `docs/experiments/ise-rebuild-experiment.md` in
+  `/home/buster/projects/givn-harness-ise`; read each row's bundle, not the
+  record's summary line.
 - The user decides the promotion.
 - **Evidence:** the evidence table and the recorded decision.
 
@@ -1039,3 +1114,70 @@ commits on the integration branch, following `AGENTS.md`: one atomic
 
 **Phase report.** Every phase records the branch it is on, the base it was
 created from, and whether the checkout was clean at creation.
+
+## 12. Campaign results
+
+Seven paid runs, $2.1804 committed, on `givn-harness` branch `ise/evaluation`.
+The record named in section 0 holds every bundle, revision, and grade. E1 is a
+shape check at one run per arm: both deliveries pass the same 13 requirements
+and differ only on `R8`, and neither bundle recorded scenarios or coverage.
+
+| Arm | Outcome | Grade | Spend |
+|---|---|---|---|
+| `initial` `ise` on | `archived_and_failed` | 13/14, `R8` | $0.4691 |
+| `initial` `ise` off | `archived_and_passed` | 14/14 | $0.9735 |
+| cold rebuild, first two runs | `stalled`, then `delivered_and_failed` | `G1` only | $0.2224 |
+| cold rebuild, replicate | `delivered_and_passed` | **16/16**, frozen verifier 15/15, fixes `R8` | $0.0812 |
+| `Constant Ise` follow-up | 2/2 re-graded, but chose incremental so the replacement is untested | 2/2 | $0.2108 |
+| state continuity, two stages | `archived_and_passed` | 9/9 | $0.2234 |
+
+**The protocol works for a cold rebuild.** The replicate rebuilt the executable
+surface from the retained Specification and passed the frozen verifier 15/15
+and every graded behaviour check `E0` to `E14`, and the seed's `R8` failure has
+no counterpart in the rebuild. Evidence: rebuild 3's `result.json` marks `E0`
+to `E14` at pass, `run_e2e.py` against that snapshot prints
+`frozen-e2e: 15/15 passed`, and the trial record reads
+`Kept source 0; Replaced 1`.
+
+**The verifier is weaker than the contract.** Rebuild 1's trial carried
+neither `contract.md` nor `law.md`, because the seed's declaration left both
+files outside every role (`Retained 64; Outside the declaration 74`), and the
+frozen verifier still passed 15/15. A rebuild can pass with the contracts it
+never received.
+
+**Three protocol defects were found and fixed.** An agent declared a change
+artifact as a retained path, `givn archive` moved it, and `givn ise replace`
+refused at the recorded revision; `guard-retained-paths-across-archive` now
+refuses that archive and names the archived path to declare instead. Rebuild
+1's trial carried no `givn/specification.yaml`; `retain-declaration-in-trial`
+copies the declaration into every trial and re-checks it per path. A stage with
+`require_archive = false` stalled waiting for an archive that never comes;
+harness `4f477bc` grades such a stage in-stage.
+
+**The gap-record failure did not reproduce.** Rebuild 2 failed `G1` for three
+`spec-gaps.jsonl` records that named `E12`, a check that passes, one of which
+also named a path outside every source root. Rebuild 3 ran the same seed on the
+same binary and passed 16/16 with no gap file.
+
+**`Constant Ise` remains unmeasured.** The follow-up arm recorded
+`change strategy: incremental modification` and its design review states that
+no `Ise Test` mode applies; `app.py` changed by 93 insertions and 38 deletions
+with no new module, and the delivered snapshot holds no trial record.
+
+**Harness machinery gaps.** Three, each recorded with its needing arm:
+
+- **Checkpoint commit before freezing a dirty stage.** `freeze_snapshot`
+  records `HEAD` and does not commit, so a stage whose delivered files were
+  never committed freezes a revision that omits them.
+- **Frozen-package digest in the multi-stage `run`.** `stage-run` pins, copies,
+  mounts read-only, and records the package; `run` does not, and no
+  post-session digest re-check exists. `SandboxPolicy.extra_ro_binds` uses
+  `--ro-bind-try`, which skips a missing source without an error.
+- **`accepted-spec-gaps.jsonl` written by the runner.** The grader checks the
+  prefix when the file exists; no runner writes it, so the history check never
+  fires in a campaign.
+
+What remains unproven is `Constant Ise`: no arm rebuilt one component behind
+its unchanged consumer contract, so the protocol has evidence for a
+whole-product cold rebuild and for ordinary evolution, and none for a component
+replacement.
