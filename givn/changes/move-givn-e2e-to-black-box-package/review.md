@@ -457,29 +457,32 @@ Removed+added pairs: none (`net delta: 1 added, 2 modified, 0 removed`).
 
 ## Sign-off checklist
 
-- Fabrication audit: **failed**, F1 (dead branch, vacuous tests, false RED).
-- Every checked task has a verified commit: F3 records a false observable
-  check; the commits themselves exist (`132d9ea3`, `1282b9cd`, `9b63979c`,
-  `cec46e95`).
-- Every promised component exists: the code does; design.md's promised path
-  does not (F2).
+- Fabrication audit: clean after closure. F1 deleted the dead branch and its
+  vacuous tests, and the false RED is corrected in `tasks.md` and `design.md`.
+- Every checked task has a verified commit: yes. F3's observable command and
+  counts were corrected and re-run at `5ba85549`.
+- Every promised component exists: yes. F2 corrected the Step Definitions path
+  and the phrase table placement.
 - Every consumer uses only its declared contract: yes.
 - Strict-mode proof present and passing: yes.
-- Scenario execution evidence: the delta 6/6, the package 119/119, the
-  component permanent 17/17, and the package permanent 1/1 are recorded here;
-  the change receipt records the 6-scenario change scope.
-- Coverage classification: from inspection (F7); the archive must measure.
-- Every gap classified and resolved: F1 is unresolved.
-- Dead code deleted: no (F1).
-- Missing tests added: no (F1).
-- Redundant unit tests removed: no (F1).
+- Scenario execution evidence: component permanent 17/17 (91 steps), package
+  permanent 1/1 (7 steps), delta 6/6 (37 steps), full package 119/119 (781
+  steps); the change receipt records the 6-scenario change scope.
+- Coverage classification: no coverage report for this change; the archive
+  regenerates both reports (F7), as `tasks.md` batch 4 records.
+- Every gap classified and resolved: yes after the F1 closure.
+- Dead code deleted: yes (F1, `8fb6c3f6`).
+- Missing tests added: not applicable after the dead rule was deleted; the
+  accepted command is covered by the whole-token unit test and the delta
+  scenario.
+- Redundant unit tests removed: yes (F1).
 - No `@wip` tags: yes (`givn lint` clean).
 - Canonical E2E policy read and applied: yes.
 - Real-interface primary assertions and reviewed driver: yes.
 - The local run command starts the full stack: yes (P4).
 - `verify.e2e_command` files identified and no untracked parallel runner: yes.
 - Explicit E2E scope selection: yes (`GIVN_RESULT_SCOPE=e2e`).
-- Design match: **no**, F1 and F2.
+- Design match: yes after the F1 and F2 corrections.
 - Interaction coverage: yes, 13 plus 1.
 - No fourth-bucket exception: none used.
 
@@ -487,10 +490,19 @@ Removed+added pairs: none (`net delta: 1 added, 2 modified, 0 removed`).
 
 Before this file existed, `givn check review --change
 move-givn-e2e-to-black-box-package` exited 1 with the promised-files failure,
-a missing verdict, and a missing persona disposition. With this file it still
-exits 1 because F2 remains and the verdict is FAIL. The exact final output is
-recorded in the review report; the blocker is F1, with F2 as the gate-shape
-blocker.
+a missing verdict, and a missing persona disposition. After the F1 to F7
+closures, the only remaining error was the FAIL verdict. With the re-audit at
+`5ba85549` and the verdict flipped, the gate exits 0:
+
+```text
+  ✓ overlap dispositions passed
+  ✓ scenario commits passed (3 scenario(s))
+  ✓ change verification receipt reused across documentation-only revision
+    5ba85549b49135dd883973b66343efa1a23a9a24
+    (tested at 67ad51bb1466b746879684fbe4501a2f9b2f0e70, 6 scenario(s))
+  ✓ scenario commits passed (3 scenario(s))
+EXIT: 0
+```
 
 ## Finding closure
 
@@ -507,6 +519,29 @@ reviewer's.
 | F6 | `tests/e2e/browser-driver.mjs` no longer exists. The remaining reference, `tests/common/browser.rs`, spawned it at that dead path and no component scenario binds a browser step, so the module and its `pub mod browser;` are deleted. The package harness names `e2e/browser/browser-driver.mjs` and no longer cites another change's task ids. | `rg 'tests/e2e/browser'` → no hits; `./run-tests.sh --non-e2e` → 1081 passed, 114 skipped; the package run → 119 passed. | `1b658a63` |
 | F7 | `tasks.md` batch 4 records that `coverage/` predates the source edit and that archive regenerates `coverage/non-e2e-cobertura.xml` and `coverage/e2e-cobertura.xml` from the merged candidate, and states the guard: with a no-op `cargo` in `PATH` the script exits 2 with `the instrumented givn binary is missing at <root>/target/llvm-cov-target/debug/givn`. No report was hand-edited. | Probe above; the instrumented binary was restored afterwards. | `cda1a089` |
 
+### Re-audit at 2026-11-16
+
+The review context re-ran every closure on `5ba85549` and the full package
+run after it. This table records what the reviewer verified, not what the
+implementation context reported.
+
+| ID | Commit | Date | Re-audit result |
+|---|---|---|---|
+| F1 | `8fb6c3f6` plus docs `cda1a089`, `67ad51bb` | 2026-11-16 | `src/e2e_boundary/mod.rs:432-441` is the whole-token rule; no `--package` branch and no `the_package_flag_names_its_value`, `a_package_flag_naming_another_root_names_nothing`, or `a_bare_tier_flag_names_no_package` test remains. The `src/` diff against `132d9ea3^` is 4 doc-comment lines, not literally empty, and changes no behavior. `./run-tests.sh --e2e` exits 2 with `--e2e names the tier, not the package`; `./run-tests.sh --e2e --package other` exits 2 with `--package names no declared e2e root: 'other'`. Delta clean: 6 scenarios (6 passed), 37 steps. `CargoPackage::read` workspace mutation: 6 scenarios (5 passed, 1 failed) at `Then the command exits 0`, exit 1. Full package: 56 features, 119 scenarios (119 passed), 781 steps, exit 0. |
+| F2 | `67ad51bb` | 2026-11-16 | The Step Definitions table names `e2e/tests/steps/workflow_enforcement_e2e_steps.rs`; the phrase table sits under its own `## New and Changed Step Phrases` heading. `givn check review` reports no promised-file integrity error. |
+| F3 | `cda1a089`, `67ad51bb` | 2026-11-16 | Component `@adr-qualification-gate and not @e2e`: 17 scenarios (17 passed), 91 steps. Package `@e2e and @adr-qualification-gate`: 1 scenario (1 passed), 7 steps. Both exit 0. |
+| F4 | `67ad51bb` | 2026-11-16 | Design and proposal measure 111 `@e2e` `Scenario:` declarations plus 3 outlines whose 8 example rows execute, for 119 executions in 56 feature files. `GIVN_CUCUMBER_TAGS='@e2e' ... --list` prints 119 units across 56 distinct feature paths. The 57th file a string grep counts is the docstring-only case. No title or tag changed. |
+| F5 | `553f3c48` | 2026-11-16 | `docs/arc42/04-solution-strategy.md:23` reads "a standalone `e2e` workspace package with its own workspace root". |
+| F6 | `1b658a63` | 2026-11-16 | `tests/common/browser.rs` and its module declaration are gone; `e2e/tests/harness/browser.rs` names `e2e/browser/browser-driver.mjs`; no `tests/e2e/browser` or "Task E" reference remains. |
+| F7 | `cda1a089` | 2026-11-16 | `tasks.md` batch 4 records that `coverage/` predates the source edit and that archive regenerates both reports. With a no-op `cargo` in `PATH`, `measure-coverage.sh` exits 2 naming the missing instrumented binary. |
+
+The design-review record was amended in place at `67ad51bb` (Q1 and blocker 2)
+to state the corrected runner rule, the 56-file corpus, and the 17 plus 1 scope
+split. Its `DESIGN-REVIEW: PASS` marker remains at the end, and the review
+context re-read the amended record against the corrected `design.md` and
+re-confirms it. The design change is a correction of findings F1, F2, F3, and
+F4, not a new decision.
+
 ### Gate state after closure
 
 `givn check tasks --change move-givn-e2e-to-black-box-package` passed at
@@ -514,9 +549,9 @@ reviewer's.
 `f171013d7174e4d9cc8706fc810ee24c904cd55cbed5aee45f1e2314747876ff`); the
 receipt commit is `efbd381ab1`.
 
-`givn check review` now reports only `review.md actual verdict is FAIL`. No
-integrity, receipt-freshness, scenario-commit, overlap, run-declaration, or lint
-error remains.
+After the re-audit and the verdict flip, `givn check review` exits 0. No
+integrity, receipt-freshness, scenario-commit, overlap, run-declaration, lint,
+visual, persona, or README error remains.
 
 Runner results: `cargo fmt --all -- --check` exit 0;
 `cargo clippy --workspace --all-targets -- -D warnings` exit 0 and the same for
@@ -529,4 +564,4 @@ Not closed here: the six binaries under
 package run of another archived change. They are outside this change's tested
 content and are left as the suite wrote them.
 
-REVIEW: FAIL
+REVIEW: PASS
