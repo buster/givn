@@ -538,3 +538,20 @@ the report, the trial, and the record.
         test; the `revision-declaration-authority` commit carries the verify
         fixture change that the new admission rule requires (the fixture's
         revision must record the declaration).
+
+- [x] `givn check review --change retain-declaration-in-trial` passes the
+      scenario-commit, integrity, routing, and overlap checks; the review ends
+      with `REVIEW: PASS` in the recorded independent reviewer context.
+      ```
+      $ givn check review --change retain-declaration-in-trial; echo $?
+      Mandatory checks for 'review':
+        ✓ integrity checks passed
+        ✓ run declaration passed
+      givn lint: 3 file(s) checked — clean
+      net delta: 15 added, 1 modified, 0 removed
+        ✓ overlap dispositions passed
+        ✓ scenario commits passed (16 scenario(s))
+        ✓ change verification receipt passed (15 scenario(s) at e68ff970dfeccabadc668344d99b461242074b15)
+        ✓ scenario commits passed (16 scenario(s))
+      0
+      ```
