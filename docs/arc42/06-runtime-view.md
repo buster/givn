@@ -985,18 +985,17 @@ advisory outline guide ([`docs/outline.md`](../outline.md)). Historical gate
 material remains in archived changes and ADR history; it is not current
 architecture.
 
-## 6.21 `givn ise replace`, `givn ise deliver`, and `givn ise verify`
+## 6.21 `givn ise replace` and `givn ise verify`
 
-All three commands are bound to `addons.ise` and its `architecture_principles`
+Both commands are bound to `addons.ise` and its `architecture_principles`
 prerequisite in the effective project config. With either off, each refuses by
 name before reading the declaration or a record. The change's
 `config-lock.yaml` is not their authority; it decides the change-scoped
 boundary gate.
 
-The `replace` parser requires exactly one of `--full` and repeated `--path`, and
-a required `--into`; neither, both, or an omitted target is a usage error (exit
-2) that names the missing or conflicting flags. `deliver` requires `--trial`,
-`--at`, and `--receipt`; `verify` requires `--trial` and `--at`.
+The parser requires exactly one of `--full` and repeated `--path`, and a
+required `--into`; neither, both, or an omitted target is a usage error (exit 2)
+that names the missing or conflicting flags.
 
 ### Replace
 
@@ -1055,48 +1054,13 @@ every non-frozen role-retained file once, so it equals the record's
 first 12 hex characters of the rollup followed by `…`; the record carries the
 full digests and the per-path evidence.
 
-### Deliver
-
-1. Load the effective manifest; `ise` off, or its prerequisite off, refuses
-   before any record read.
-2. Read the `ise-trial/v1` record with its strict schema, including the
-   `delivery` block when one is present: an unknown key inside the block, or a
-   digest that is not 64 hex characters, refuses and names the record.
-3. Confirm the record belongs to this trial: the canonicalized `written_path`
-   equals `--at`, the record's `backend` equals the selected backend, and the
-   record path lies outside the trial.
-4. Refuse a record that already holds a `delivery` block; a delivery is
-   recorded once.
-5. Run the retained and checkout comparisons `verify` runs. Any drifting
-   retained or `e2e` identity refuses with every drifting path and its reason,
-   so a seal is never taken over an input that already drifted.
-6. Walk the trial directory and hash every regular file and symlink whose path
-   the recorded `retained_files` does not list, by the record's per-path
-   identity rule. An unreadable path, or an entry that is neither a regular
-   file nor a symlink, refuses and names it. Directories carry no identity, and
-   a symlink is hashed by its target text.
-7. Check the receipt target: it lies outside the checkout, it does not exist,
-   and it does not lie inside the trial. The containment check resolves the
-   deepest existing ancestor, so a symlinked parent cannot alias the checkout.
-8. Write the record with the `delivery` block set, with `create_new`
-   semantics. A write failure names the receipt and removes the partial file.
-9. Print `Trial`, `Trial revision`, `Backend`, `Retained: clean`,
-   `E2E: clean`, `Delivered`, `Delivered digest`, and `Receipt path`, and exit
-   0.
-
-`Trial revision` is the record's input revision, and `Delivered` is the
-delivered map's entry count. The input record file is never rewritten, so one
-trial yields one input record and one delivery record.
-
 ### Verify
 
 1. Load the effective manifest; `ise` off, or its prerequisite off, refuses
    before any record or declaration read.
 2. Read the `ise-trial/v1` record with its strict schema. A wrong scope, an
    unknown field, a missing field, or an unreadable file refuses and names the
-   record. In delivery mode the run then requires a `delivery` block and
-   refuses without one, naming the record and the missing identity; that check
-   precedes every comparison, so an unanswerable request never reports drift.
+   record.
 3. Confirm the record belongs to this trial: the canonicalized `written_path`
    equals `--at`, the record's `backend` equals the selected backend, and the
    record path lies outside the trial; assert `replaced_digest` is a 64-hex
@@ -1120,20 +1084,11 @@ trial yields one input record and one delivery record.
 8. Compare the current e2e file set and scenario map to the record, and each
    common path's digest. A missing path, an added path, or a changed digest is
    drift.
-9. In delivery mode, compare each recorded delivered path against the trial:
-   a path missing from the trial, a differing digest, and a trial path outside
-   the retained set that the record does not list are `Delivery drift`.
-10. Print every reason once per path and exit 1, or print `Retained: clean` and
-    `E2E: clean`, plus `Delivery: clean` in delivery mode or `Delivery: not
-    checked` when an input-mode run reads a record that holds a block, and exit
-    0.
+9. Print every reason once per path and exit 1, or print `Retained: clean` and
+   `E2E: clean` and exit 0.
 
 The frozen input is the record's retained and `e2e` identities. A file the
 builder adds to the trial after preparation is outside them, and the frozen
-E2E suite, not the digest, is the acceptance authority. The delivered identity
-is the second half of the pair: it covers every trial path the retained set
-does not list, so an edited or added delivered file is named once a delivery
-was recorded, and a trial with no delivery record holds no delivery evidence at
-all.
+E2E suite, not the digest, is the acceptance authority.
 
 *[Architecture documentation index](README.md)*

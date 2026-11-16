@@ -1417,7 +1417,6 @@ not a change artifact.
 | `e2e_scenarios` | Per-feature-file digest of the selected `@e2e` scenarios |
 | `written_path` | The absolute trial directory |
 | `givn_version` | The running Givn version |
-| `delivery` | Optional block, written only by `givn ise deliver`: `delivered_digest`, `delivered_files`, and the sealing `givn_version` |
 
 A frozen path is one `e2e_files` lists or one under a root the current
 declaration's `e2e` role resolves. The trial-side refusal applies only to a
@@ -1426,24 +1425,6 @@ record whose `excluded_roles` names `e2e`, and it exempts
 prepared from a role that resolves over `givn/**` re-checks clean. The report's
 `Frozen package` line counts the frozen set, not `e2e_files.len()`, which may
 include the declaration.
-
-`replaced_digest` is a rollup over the replaced set at the record's `revision`:
-it describes the trial input that was removed, never the delivered bytes. The
-`delivery` block is the delivered identity and is named for it: a digest inside
-the block describes what was delivered, and every other digest in the record
-describes the trial input. The block adds no schema version, so a record
-written by `givn ise replace` is byte-identical to before and a record without
-the block holds no delivery identity.
-
-The delivered set is every regular file and symlink under the trial directory
-whose path `retained_files` does not list: the recreated replaced paths, the
-kept source, and any path the builder created. Directories carry no identity, a
-symlink is identified by its target text, and the two identities therefore
-partition the trial directory. A seal requires clean frozen inputs, records
-once, and lands in a new file outside the checkout and the trial; the input
-record is never rewritten. An older reader refuses a delivery record by the
-unknown field `delivery`, which is the intended failure: it cannot check the
-block and must not ignore it.
 
 `retained_files` always includes `givn/specification.yaml` as an implicit
 entry, and `counts.retained` equals that map's entry count, so a retained role
@@ -1497,10 +1478,7 @@ that an `e2e` role resolving over `givn/**` also covers is not a leak. The
 refusal names at most twenty sorted paths and the remainder count. A record
 that names no excluded role was prepared with the package in its retained set,
 so its frozen files are retained entries, the retained comparison covers them,
-and an open trial prepared before the rule keeps re-checking clean. `--delivery`
-adds the delivered comparison and refuses a record without the block; an
-input-mode run over a record that holds one prints `Delivery: not checked`, so a
-reader never mistakes an input re-check for a delivery re-check. The record
+and an open trial prepared before the rule keeps re-checking clean. The record
 carries no runner command; the independent verifier chooses and records the
 runner outside the record.
 
