@@ -985,17 +985,18 @@ advisory outline guide ([`docs/outline.md`](../outline.md)). Historical gate
 material remains in archived changes and ADR history; it is not current
 architecture.
 
-## 6.21 `givn ise replace` and `givn ise verify`
+## 6.21 `givn ise replace`, `givn ise deliver`, and `givn ise verify`
 
-Both commands are bound to `addons.ise` and its `architecture_principles`
+All three commands are bound to `addons.ise` and its `architecture_principles`
 prerequisite in the effective project config. With either off, each refuses by
 name before reading the declaration or a record. The change's
 `config-lock.yaml` is not their authority; it decides the change-scoped
 boundary gate.
 
-The parser requires exactly one of `--full` and repeated `--path`, and a
-required `--into`; neither, both, or an omitted target is a usage error (exit 2)
-that names the missing or conflicting flags.
+The `replace` parser requires exactly one of `--full` and repeated `--path`, and
+a required `--into`; neither, both, or an omitted target is a usage error (exit
+2) that names the missing or conflicting flags. `deliver` requires `--trial`,
+`--at`, and `--receipt`; `verify` requires `--trial` and `--at`.
 
 ### Replace
 
@@ -1013,25 +1014,30 @@ that names the missing or conflicting flags.
    revision; a malformed or unreadable declaration refuses with the loader's
    reason. The parsed revision declaration is the only authority the partition
    uses.
-6. Partition the tracked paths. The retained set is the union of the five
-   retained roles and the declaration, counted once; a declared non-empty entry
-   that matches nothing refuses. Each `--path` value is normalized: a tracked
-   file contributes itself, a directory contributes every tracked file beneath
-   it, a glob-shaped value is never expanded, and a value that resolves no
-   tracked path removes nothing. Over that candidate set, the declaration
-   refuses first, then a retained-role match, then a path outside every source
-   root. `--full` contributes every tracked file under every source root.
-   Remaining source paths are kept source; the rest are outside the
-   declaration.
+6. Partition the tracked paths. The frozen set is every tracked file of the
+   `e2e` role's resolved packages at that revision, except
+   `givn/specification.yaml`; those files are in no placement bucket and are
+   never copied. The retained set is the union of the four non-frozen retained
+   roles and the declaration, counted once and with no frozen path; a declared
+   non-empty entry that matches nothing refuses. Each `--path` value is
+   normalized: a tracked file contributes itself, a directory contributes every
+   tracked file beneath it, a glob-shaped value is never expanded, and a value
+   that resolves no tracked path removes nothing. Over that candidate set, the
+   declaration refuses first, then a retained-role match, then a path outside
+   every source root. `--full` contributes every tracked file under every
+   source root and the frozen set wins over both forms. Remaining source paths
+   are kept source; the rest are outside the declaration.
 7. Check the write targets. The trial and the receipt lie outside the
    checkout; the trial and the receipt do not exist; the receipt is not inside
    the trial and is not an ancestor of it. The containment check resolves the
    deepest existing ancestor, so a symlinked parent cannot alias the target
    inside the checkout.
 8. Refuse a gitlink, a submodule, or a copied path whose component is `.git`,
-   `.fslckout`, or `_FOSSIL_`.
-9. On `--dry-run`, print the report, the optional receipt line, and the sorted
-   `Would write:` paths, and stop. Nothing is created.
+   `.fslckout`, or `_FOSSIL_`, over the copy set and the frozen set, because
+   both are read from the revision.
+9. On `--dry-run`, print the report, the optional frozen line, the optional
+   receipt line, and the sorted `Would write:` paths, and stop. Nothing is
+   created.
 10. Create the trial with `create_dir`, write each file with its recorded
     executable bit or symlink target, and re-read every path against the
     revision. A mismatch removes the trial and writes no record.
@@ -1041,11 +1047,46 @@ that names the missing or conflicting flags.
 
 The report prints the ten fixed lines `Backend`, `Revision`, `Retained`,
 `Kept source`, `Replaced`, `Outside the declaration`, `Not replaced`,
-`Retained digest`, `E2E digest`, and `Written path`, plus `Receipt path` when
-given. `Retained` counts the declaration and every role-retained file once, so
-it equals the record's `retained_files` entry count. The two digests are the
+`Retained digest`, `E2E digest`, and `Written path`, then
+`Frozen package: <role>, not copied (<n> files)` when the frozen set is
+non-empty, then `Receipt path` when given. `Retained` counts the declaration and
+every non-frozen role-retained file once, so it equals the record's
+`retained_files` entry count and counts no frozen path. The two digests are the
 first 12 hex characters of the rollup followed by `…`; the record carries the
 full digests and the per-path evidence.
+
+### Deliver
+
+1. Load the effective manifest; `ise` off, or its prerequisite off, refuses
+   before any record read.
+2. Read the `ise-trial/v1` record with its strict schema, including the
+   `delivery` block when one is present: an unknown key inside the block, or a
+   digest that is not 64 hex characters, refuses and names the record.
+3. Confirm the record belongs to this trial: the canonicalized `written_path`
+   equals `--at`, the record's `backend` equals the selected backend, and the
+   record path lies outside the trial.
+4. Refuse a record that already holds a `delivery` block; a delivery is
+   recorded once.
+5. Run the retained and checkout comparisons `verify` runs. Any drifting
+   retained or `e2e` identity refuses with every drifting path and its reason,
+   so a seal is never taken over an input that already drifted.
+6. Walk the trial directory and hash every regular file and symlink whose path
+   the recorded `retained_files` does not list, by the record's per-path
+   identity rule. An unreadable path, or an entry that is neither a regular
+   file nor a symlink, refuses and names it. Directories carry no identity, and
+   a symlink is hashed by its target text.
+7. Check the receipt target: it lies outside the checkout, it does not exist,
+   and it does not lie inside the trial. The containment check resolves the
+   deepest existing ancestor, so a symlinked parent cannot alias the checkout.
+8. Write the record with the `delivery` block set, with `create_new`
+   semantics. A write failure names the receipt and removes the partial file.
+9. Print `Trial`, `Trial revision`, `Backend`, `Retained: clean`,
+   `E2E: clean`, `Delivered`, `Delivered digest`, and `Receipt path`, and exit
+   0.
+
+`Trial revision` is the record's input revision, and `Delivered` is the
+delivered map's entry count. The input record file is never rewritten, so one
+trial yields one input record and one delivery record.
 
 ### Verify
 
@@ -1053,28 +1094,46 @@ full digests and the per-path evidence.
    before any record or declaration read.
 2. Read the `ise-trial/v1` record with its strict schema. A wrong scope, an
    unknown field, a missing field, or an unreadable file refuses and names the
-   record.
+   record. In delivery mode the run then requires a `delivery` block and
+   refuses without one, naming the record and the missing identity; that check
+   precedes every comparison, so an unanswerable request never reports drift.
 3. Confirm the record belongs to this trial: the canonicalized `written_path`
    equals `--at`, the record's `backend` equals the selected backend, and the
    record path lies outside the trial; assert `replaced_digest` is a 64-hex
    value. A mismatch refuses and names the record and the mismatch.
-4. Recompute each recorded retained path's digest from the trial, the
+4. Load the checkout's declaration. A checkout without one refuses with the
+   loader's missing-declaration message.
+5. When the record's `excluded_roles` names `e2e`, exempt
+   `givn/specification.yaml` and every path in `retained_files`, then walk the
+   trial and refuse before any identity comparison if it holds any other path
+   the recorded `e2e` set or a root the checkout's `e2e` role resolves covers,
+   naming at most twenty sorted paths and the remainder count. A record that
+   names no excluded role was prepared with the package in its retained set, so
+   this step does nothing and the retained comparison covers those files.
+6. Recompute each recorded retained path's digest from the trial, the
    declaration included. A missing path or a mismatch is drift.
-5. Load the checkout's declaration and build the current tree from the
-   backend's content paths (tracked plus untracked non-ignored). That
-   declaration is not a retained identity: it only resolves the current e2e
-   file set and the current `@e2e` scenario map, so an edit that moves `e2e:`
-   or `behavior:` changes those sets and is drift, while an edit that moves
-   only `structure:` or `limits:` does not. A checkout without a declaration
-   refuses with the loader's missing-declaration message.
-6. Compare the current e2e file set and scenario map to the record, and each
+7. Build the current tree from the backend's content paths (tracked plus
+   untracked non-ignored). That declaration is not a retained identity: it
+   only resolves the current e2e file set and the current `@e2e` scenario map,
+   so an edit that moves `e2e:` or `behavior:` changes those sets and is
+   drift, while an edit that moves only `structure:` or `limits:` does not.
+8. Compare the current e2e file set and scenario map to the record, and each
    common path's digest. A missing path, an added path, or a changed digest is
    drift.
-7. Print every reason once per path and exit 1, or print `Retained: clean` and
-   `E2E: clean` and exit 0.
+9. In delivery mode, compare each recorded delivered path against the trial:
+   a path missing from the trial, a differing digest, and a trial path outside
+   the retained set that the record does not list are `Delivery drift`.
+10. Print every reason once per path and exit 1, or print `Retained: clean` and
+    `E2E: clean`, plus `Delivery: clean` in delivery mode or `Delivery: not
+    checked` when an input-mode run reads a record that holds a block, and exit
+    0.
 
-The frozen set is the record. A file the builder adds to the trial after
-preparation is outside the recorded identities; the frozen E2E suite, not the
-digest, is the acceptance authority.
+The frozen input is the record's retained and `e2e` identities. A file the
+builder adds to the trial after preparation is outside them, and the frozen
+E2E suite, not the digest, is the acceptance authority. The delivered identity
+is the second half of the pair: it covers every trial path the retained set
+does not list, so an edited or added delivered file is named once a delivery
+was recorded, and a trial with no delivery record holds no delivery evidence at
+all.
 
 *[Architecture documentation index](README.md)*

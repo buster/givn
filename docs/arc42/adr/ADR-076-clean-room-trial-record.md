@@ -153,7 +153,55 @@ changed `@e2e` scenario, and a missing path.
 - `givn/changes/add-ise-clean-room-commands/design.md` owns the identity rule,
   the record fields, and the refusals.
 - ADR-010 owns the declaration authority; ADR-070 owns the change verification
-  receipt (`change-proof/v1`); ADR-071 owns the SCM seam.
+  receipt (`change-proof/v1`); ADR-071 owns the SCM seam. ADR-078 owns what the
+  trial directory contains: the frozen `e2e` package is never copied, and the
+  record's optional `excluded_roles` field names the omitted role.
 - Arc42 chapters [2](../02-architecture-constraints.md),
   [6](../06-runtime-view.md), and [8](../08-crosscutting-concepts.md) carry the
   current facts.
+
+## Amendment — the delivery identity (add-delivery-identity-to-trial-record)
+
+Amended by the `add-delivery-identity-to-trial-record` change on 2026-11-16.
+The record keeps `ise-trial/v1` and every existing field name; the amendment
+adds one optional block, the command that writes it, and the stated meaning of
+the field whose name was read as the delivered replacement.
+
+- **The input identity is named for its object.** `replaced_digest` is the
+  rollup over the replaced set at the record's `revision`: the trial input that
+  was removed, never the delivered bytes. It keeps its name, so every record
+  already written keeps its exact meaning, and no `ise-trial/v2` reader exists.
+- **A delivery identity exists.** `givn ise deliver --trial <record> --at <dir>
+  --receipt <path>` writes a new record that holds every input field plus a
+  `delivery` block with `delivered_files` (one identity per delivered path),
+  `delivered_digest`, and the sealing `givn_version`. The delivered set is
+  every regular file and symlink under the trial directory that
+  `retained_files` does not list, so the retained and delivered identities
+  partition the trial directory.
+- **A seal is checked before it is recorded.** The command refuses when the
+  frozen inputs already drifted, when the record already holds a delivery
+  identity, and when the receipt exists or lies inside the checkout or the
+  trial. It writes outside both, with create-new semantics, and never rewrites
+  the input record.
+- **Verification can fail.** `givn ise verify --delivery` compares the recorded
+  delivered set against the trial, names every missing, differing, or gained
+  path, and refuses a record without the block. An input-mode run over a record
+  that holds one prints `Delivery: not checked`, so an input re-check is never
+  read as a delivery re-check.
+- **Compatibility is fail-closed.** A record without the block stays readable
+  and holds no delivery identity. An older Givn refuses a delivery record by
+  the unknown field `delivery` instead of ignoring the block it cannot check.
+
+Rejected: renaming `replaced_digest` with an `ise-trial/v2` scope (a second
+scope, a permanent alias reader for every record already written, and the same
+rename for `replaced_paths`); letting `givn ise verify` write the block (an
+identity computed at check time is computed from the bytes it would compare, so
+it always matches); a separate `ise-delivery/v1` file (two files to hold and
+pair, a second reader scope, and a mismatched-pair refusal class); and a
+delivered set covering only the replaced paths (a kept-source edit or an added
+path would stay unbound while the record read as complete).
+
+This amendment removes the limit recorded as R-143 for a sealed trial and adds
+R-153 for the seal's own moment. Reference:
+`givn/changes/add-delivery-identity-to-trial-record/design.md` decisions D1 to
+D5, and `givn/changes/add-delivery-identity-to-trial-record/specs/prepare-an-ise-test/usecase.md`.

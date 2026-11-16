@@ -1411,17 +1411,63 @@ not a change artifact.
 | `named_paths` | Every distinct `--path` value, sorted; empty under `--full` |
 | `replaced_paths` | The tracked files actually removed, sorted; a named directory contributes its expansion |
 | `counts` | `retained`, `kept_source`, `replaced`, `outside_declaration`, `not_replaced` |
+| `excluded_roles` | The declaration roles whose files the trial does not hold: `[e2e]` when the frozen package is non-empty, empty otherwise |
 | `retained_digest`, `e2e_digest`, `replaced_digest` | Full rollup digests |
 | `retained_files`, `e2e_files` | Per-path digests, sorted |
 | `e2e_scenarios` | Per-feature-file digest of the selected `@e2e` scenarios |
 | `written_path` | The absolute trial directory |
 | `givn_version` | The running Givn version |
+| `delivery` | Optional block, written only by `givn ise deliver`: `delivered_digest`, `delivered_files`, and the sealing `givn_version` |
+
+A frozen path is one `e2e_files` lists or one under a root the current
+declaration's `e2e` role resolves. The trial-side refusal applies only to a
+record whose `excluded_roles` names `e2e`, and it exempts
+`givn/specification.yaml` and every path in `retained_files`, so a trial
+prepared from a role that resolves over `givn/**` re-checks clean. The report's
+`Frozen package` line counts the frozen set, not `e2e_files.len()`, which may
+include the declaration.
+
+`replaced_digest` is a rollup over the replaced set at the record's `revision`:
+it describes the trial input that was removed, never the delivered bytes. The
+`delivery` block is the delivered identity and is named for it: a digest inside
+the block describes what was delivered, and every other digest in the record
+describes the trial input. The block adds no schema version, so a record
+written by `givn ise replace` is byte-identical to before and a record without
+the block holds no delivery identity.
+
+The delivered set is every regular file and symlink under the trial directory
+whose path `retained_files` does not list: the recreated replaced paths, the
+kept source, and any path the builder created. Directories carry no identity, a
+symlink is identified by its target text, and the two identities therefore
+partition the trial directory. A seal requires clean frozen inputs, records
+once, and lands in a new file outside the checkout and the trial; the input
+record is never rewritten. An older reader refuses a delivery record by the
+unknown field `delivery`, which is the intended failure: it cannot check the
+block and must not ignore it.
 
 `retained_files` always includes `givn/specification.yaml` as an implicit
 entry, and `counts.retained` equals that map's entry count, so a retained role
 that also matches the declaration adds no second entry; `retained_digest`
 covers it. A record written before this entry existed still verifies against
 the paths it lists, and the verifier never synthesizes the missing entry.
+
+The frozen `End-to-end (E2E) test` package is never part of the trial's content
+(ADR-078). Its files are the tracked files of the `e2e` role's resolved
+packages at the selected revision, except `givn/specification.yaml`, and they
+are in no placement bucket: not retained, not kept source, not replaced, and
+not outside the declaration. `counts.retained` therefore excludes them,
+`retained_files` lists none of them, and `replaced_paths` never claims one was
+removed. `e2e_files` and `e2e_digest` still carry their identities, and
+`excluded_roles` names the role, so `counts.retained` is unambiguous under both
+the old and the new counting rule. The printed `<n>` counts the frozen set, not
+the recorded `e2e_files`, which may include `givn/specification.yaml` when the
+role's resolution reaches it. `givn ise replace` prints
+`Frozen package: e2e, not copied (<n> files)` between `E2E digest` and
+`Written path` when the set is non-empty, and prints no such line when it is
+empty. The field adds no schema version, so a record written by an earlier
+Givn stays readable with an empty list, which is exactly what it attests; an
+earlier reader refuses a record carrying the field through its unknown-field
+rule.
 
 The per-path digest rule includes the path, the entry kind (`f` regular, `x`
 executable regular, `l` symlink), the executable marker, and the bytes or
@@ -1442,8 +1488,21 @@ including the receipt.
 the canonicalized `written_path` equals `--at`, the record's `backend` equals
 the selected backend, and the record path lies outside the trial. It then
 asserts the recorded `replaced_digest` and re-checks the retained and `e2e`
-identities. The record carries no runner command; the independent verifier
-chooses and records the runner outside the record.
+identities. A record whose `excluded_roles` names `e2e` is refused before any
+comparison when the trial holds a path the recorded `e2e` set or the checkout's
+resolved `e2e` roots cover: that record attests a trial prepared without the
+package, so a frozen path in the trial is a leak. It exempts
+`givn/specification.yaml` and every path in `retained_files`, so the declaration
+that an `e2e` role resolving over `givn/**` also covers is not a leak. The
+refusal names at most twenty sorted paths and the remainder count. A record
+that names no excluded role was prepared with the package in its retained set,
+so its frozen files are retained entries, the retained comparison covers them,
+and an open trial prepared before the rule keeps re-checking clean. `--delivery`
+adds the delivered comparison and refuses a record without the block; an
+input-mode run over a record that holds one prints `Delivery: not checked`, so a
+reader never mistakes an input re-check for a delivery re-check. The record
+carries no runner command; the independent verifier chooses and records the
+runner outside the record.
 
 The e2e identity is revision-resolved: each path matched by the declared `e2e`
 role resolves to its nearest `Cargo.toml` directory at the revision, and every
