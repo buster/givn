@@ -23,7 +23,7 @@ off.
   `givn archive` refuses such a declaration before moving the change. The trial
   always carries the declaration itself: `givn/specification.yaml` is an
   implicit retained entry, not a sixth role, so a project need not list it and
-  a builder reads the declared roles from the copy the selected revision
+  the agent reads the declared roles from the copy the selected revision
   records.
 - **two-layer test boundary** — `@e2e` scenarios run from the declared `e2e`
   package and survive a rebuild. Component scenarios stay in the Specification

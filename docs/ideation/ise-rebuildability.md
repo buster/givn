@@ -36,7 +36,7 @@ Those facts expose four failure modes.
 | Failure mode | Evidence | Consequence for an Ise Test |
 |---|---|---|
 | **Unprotected verification semantics** | The shared runner, the in-process calls above, and no dependency rule in the E2E target | The frozen suite can pass without touching the real interface, so a rebuild is never tested for the behavior the product exposes. |
-| **Incomplete durable Specification** | CLI flags, exit codes, persisted schemas, state migrations, and viewport budgets sit in `src/`, change history, or prose rather than in a declared retained set. | A builder cannot state what the replacement must preserve, and no file says which paths may be deleted. |
+| **Incomplete durable Specification** | CLI flags, exit codes, persisted schemas, state migrations, and viewport budgets sit in `src/`, change history, or prose rather than in a declared retained set. | The agent cannot state what the replacement must preserve, and no file says which paths may be deleted. |
 | **All-enabled addons and divided instruction ownership** | Nine addons default to `true`; the four core step instructions carried every runner's rows. In `givn-harness` the `v0.9.15` guidance addition kept the Catopia hidden grade at `25/25` while scenario volume fell from `130` to `76` and coverage from `87.3/79.9` to `67.7/60.8`. | Enabling `ise` without a stack-instruction split leaves a rule with more than one apparent owner and adds prose; the split keeps one owner per rule. |
 | **No separation between co-evolution and frozen reconstruction** | Givn instructions assume specifications, tests, and code change together. | A rebuild has no clean-room protocol, no frozen acceptance authority, and no classification of differences. |
 
@@ -93,7 +93,7 @@ permanent project declaration.
 | Role | What it retains | Ise source element | Example carrier |
 |---|---|---|---|
 | `behavior` | Behavior and invariants; use-case contracts; Gherkin scenarios. | Behavior and invariants; automated tests (scenario text). | `givn/specs/**` |
-| `structure` | Vocabulary and structural model; the terms and boundaries a builder must share. | Not a separate Ise heading; Givn adds it so a builder shares the domain language. | `docs/glossary.md`, `docs/domain-model.md` |
+| `structure` | Vocabulary and structural model; the terms and boundaries the agent must share. | Not a separate Ise heading; Givn adds it so the agent shares the domain language. | `docs/glossary.md`, `docs/domain-model.md` |
 | `contracts` | Public APIs, events, wire formats, database schemas, externally visible UI states. | Contracts and schemas. | `docs/reference.md` |
 | `limits` | Target stack, allowed dependencies, security and compliance rules, latency and resource budgets. | Technical limits. | `docs/arc42/02-architecture-constraints.md` |
 | `e2e` | One package holding the E2E runner and every `@e2e` step definition. | Automated black-box tests. | `tests/e2e` |
@@ -213,7 +213,7 @@ neither errors nor trial content.
 
 The trial is a plain directory outside the checkout, never a branch or a
 worktree. A branch carries history, and a Fossil checkout carries the
-repository database, so either would hand the builder the old Source code.
+repository database, so either would hand the agent the old Source code.
 The trial preserves relative paths, the executable bit, and symlink targets.
 It carries no version-control metadata and no ignored or untracked files,
 because preparation reads the selected revision, not the working tree.
@@ -236,13 +236,13 @@ trial record. A written file that differs from its revision content fails
 preparation and writes no record.
 
 Only the `End-to-end (E2E)` test package is frozen as acceptance authority.
-The declared Specification is the builder's read-only input and is recorded
-by digest so a verifier can prove what the builder received, but the E2E
-suite is what decides pass or fail. The freeze is a digest, not a filesystem
-lock: the builder receives the package as retained content and may not edit
-it, and `givn ise verify` detects an edit per path. An edited black-box
-scenario, step definition, or runner file is a different Ise Test, not a
-passing one.
+The declared Specification is the agent's read-only input and is recorded
+by digest so the developer can prove what the agent received, but the
+End-to-end (E2E) test is what decides pass or fail. The freeze is a digest,
+not a filesystem lock: the agent receives the package as retained content and
+may not edit it, and `givn ise verify` detects an edit per path. An edited
+black-box scenario, step definition, or runner file is a different Ise Test,
+not a passing one.
 
 `givn ise verify` re-checks the retained and `e2e` identities against the
 written trial and the current `e2e` package. It reports drift per path. A
@@ -294,7 +294,7 @@ one outcome, recorded before any fix.
 | Outcome | What is wrong | Route |
 |---|---|---|
 | **`E2E test defect`** | The test. | Correct the E2E test; the trial stops and restarts. A corrective change edits the E2E suite. |
-| **`implementation defect`** | The build. | Return to the builder inside the Ise Test. No corpus or suite edit. |
+| **`implementation defect`** | The build. | Return to the agent inside the Ise Test. No corpus or suite edit. |
 | **`specification defect`** | The Specification. | Open a corrective change that adds the missing rule, then rebuild. |
 | **`acceptable undocumented change`** | Nothing that matters. | Record the difference in the corpus. No silent drift. |
 
@@ -323,10 +323,10 @@ names the artifact that is wrong, not who found it.
 - **No branch or worktree.** The trial is a plain directory outside the
   checkout. A branch carries history and a Fossil checkout carries the
   repository database.
-- **No containment of the builder.** Givn withholds the replaced Source code
+- **No containment of the agent.** Givn withholds the replaced Source code
   and history from the trial and records what it handed over. It does not
-  sandbox the builder's process or prove what the builder read. Isolating the
-  builder's context is the caller's obligation, with the harness or the
+  sandbox the agent's process or prove what the agent read. Isolating the
+  agent's context is the caller's obligation, with the harness or the
   developer.
 - **No built-in rebuild orchestration for other repositories.** Givn prepares
   the clean room and re-checks its frozen inputs. It does not build the
@@ -347,7 +347,7 @@ rejected alternatives stay in
 | `Q4` | Declaration site | Dedicated `givn/specification.yaml` with five roles and a `source:` list, no component list. | A block in `givn/config.yaml` (the lenient top level hides a misspelled block) and convention (cannot express the `source` partition). |
 | `Q5` | E2E boundary | One `e2e` package holding the runner and every `@e2e` step definition, no production link, unbound or skipped step fails, feature files shared. | Keeping the tag's in-process library allowance, and splitting the suite into multiple targets. |
 | `Q6` | Addon coupling | `ise` requires `architecture_principles` in both directions. | No prerequisite (an `ise`-only project), and auto-enabling the prerequisite. |
-| `Q7` | Personas | Three personas; the bare-clone and frozen-verifier lens sits under `givn-maintainer--owner`. | A fourth external-contributor persona, and separate builder and verifier personas. |
+| `Q7` | Personas | Three personas; the bare-clone and End-to-end (E2E) test lens sits under `givn-maintainer--owner`. | A fourth external-contributor persona, and separate personas for the agent and the End-to-end (E2E) test. |
 | `Q8` | Addon posture name | `Opt-in addon`. | `Experimental addon`, which names maturity rather than the stored default. |
 | `Q9` | Term process | Revisit all seven Event Storming terms one by one on The Ise Principle's wording. | Keeping the coined terms. |
 | `Q10` | Durable input name | `Specification`, contrasted with `Source code`. | `Product specification`, which makes existing feature-specification sentences false. |
@@ -362,7 +362,7 @@ rejected alternatives stay in
 
 The plan tests one claim: a Specification declared in `givn/specification.yaml`,
 frozen with the declared `e2e` package and recorded by digest, is sufficient
-for a fresh builder to rebuild a component or a whole product without reading
+for a fresh agent to rebuild a component or a whole product without reading
 the replaced Source code or repository history, while the frozen E2E package
 stays green. The evidence decides whether `ise` can ever become default-on.
 
@@ -404,10 +404,10 @@ surface from the retained Specification, passed the frozen verifier 15/15 and
 every graded behaviour check, and fixed the seed's `R8` failure. Its trial
 record reads `Kept source 0; Replaced 1`.
 
-**The verifier is weaker than the contract.** The first rebuild carried neither
-`contract.md` nor `law.md`, because the declaration left both outside every
-role, and the frozen verifier still passed 15/15. A rebuild can pass with the
-contracts it never received.
+**The End-to-end (E2E) test is weaker than the contract.** The first rebuild
+carried neither `contract.md` nor `law.md`, because the declaration left both
+outside every role, and the frozen test still passed 15/15. A rebuild can pass
+with the contracts it never received.
 
 **Three protocol defects were found and fixed.** `guard-retained-paths-across-archive`
 refuses an archive that moves a declared retained path, after an agent declared
@@ -424,9 +424,10 @@ replicate ran the same seed on the same binary and passed with no gap file.
 
 **Two questions stay open.** `Constant Ise` remains unmeasured, because the
 only follow-up arm recorded `incremental modification` and its snapshot holds
-no trial record; and the verifier-strength question stays open, because no arm
-tests whether a verifier that reads only the declared roles can certify a
-rebuild that the retained Specification does not describe.
+no trial record; and the End-to-end (E2E) test-strength question stays open,
+because no arm tests whether the End-to-end (E2E) test, reading only the
+declared roles, can certify a rebuild that the retained Specification does not
+describe.
 
 ## 9. Open items
 

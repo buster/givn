@@ -48,13 +48,13 @@ fn proposal_names_the_record_and_outcome(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the served proposal guidance sends \"implementation defect\" back to the builder with no corpus edit"
+    "the served proposal guidance sends \"implementation defect\" back to the agent with no corpus edit"
 )]
 fn proposal_returns_implementation_defect(world: &mut GivnWorld) {
     let content = served_guidance(world);
     assert!(
         content.contains(
-            "`implementation defect` returns to the builder inside the Ise Test with no corpus edit"
+            "`implementation defect` returns to the agent inside the Ise Test with no corpus edit"
         ),
         "the served proposal guidance omits the implementation-defect route: {content}"
     );

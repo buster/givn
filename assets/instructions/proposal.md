@@ -56,7 +56,7 @@ language that a non-technical stakeholder can read and validate.
   fix, and names the artifact that is wrong, not who found it. The outcome
   selects the route: `specification defect` or `E2E test defect` carries the
   corpus or E2E suite edit in this change, `implementation defect` returns to
-  the builder inside the Ise Test with no corpus edit, and
+  the agent inside the Ise Test with no corpus edit, and
   `acceptable undocumented change` is recorded in the corpus.
 {{/if}}
 - **Question IDs.** Open questions carry stable IDs `D1`, `D2`, … (`D<n>` in

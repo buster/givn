@@ -45,7 +45,7 @@ The developer starts a new change.
 ## Extensions
 
 - 1: the requested identity is invalid → the system rejects it and leaves the project unchanged; protects the minimal guarantee.
-- 2: the `Spec gap` outcome is `implementation defect` → the change's proposal carries no corpus or E2E suite edit and the difference returns to the builder inside the Ise Test; recovers the classification without a corpus edit.
+- 2: the `Spec gap` outcome is `implementation defect` → the change's proposal carries no corpus or E2E suite edit and the difference returns to the agent inside the Ise Test; recovers the classification without a corpus edit.
 
 ## Rules
 
@@ -66,7 +66,7 @@ The developer starts a new change.
 - A `Spec gap` record holds exactly one of `E2E test defect`, `implementation defect`, `specification defect`, or `acceptable undocumented change`, recorded before any fix.
 - The record names the artifact that is wrong, not who found it.
 - Only `specification defect` is a gap in the Specification; an `E2E test defect` is a gap in the test, an `implementation defect` is a gap in the build, and an `acceptable undocumented change` is no gap at all.
-- A corrective proposal names the record and its outcome: an outcome of `specification defect` or `E2E test defect` carries the corpus or E2E suite edit in that change; `implementation defect` returns to the builder inside the Ise Test; `acceptable undocumented change` is recorded in the corpus.
+- A corrective proposal names the record and its outcome: an outcome of `specification defect` or `E2E test defect` carries the corpus or E2E suite edit in that change; `implementation defect` returns to the agent inside the Ise Test; `acceptable undocumented change` is recorded in the corpus.
 - A `Spec gap` of `E2E test defect` recorded during an `Ise Test` stops that trial, and the trial restarts after the E2E test is corrected. The `e2e` package is part of the Specification, so the corrected test is a Specification correction, not an exception to the freeze.
 - No difference is closed as silent drift.
 - The permanent contract's other rules stand unchanged: managed dialog bootstrap and its companion index, one release note per change and its batch shape, actual RED, GREEN, and REFACTOR evidence, explicit verification scope, justified E2E reclassification, visual and terminal evidence, and project-owned skill replacements.

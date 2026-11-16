@@ -146,7 +146,7 @@ through `givn new`.
   - `spec-gap` new. A `Spec gap` record holds exactly one of `E2E test defect`,
     `implementation defect`, `specification defect`, or `acceptable
     undocumented change` before any fix. A corrective proposal names the
-    record and its outcome: an `implementation defect` returns to the builder
+    record and its outcome: an `implementation defect` returns to the agent
     inside the Ise Test; a `specification defect` or `E2E test defect` opens a
     corrective change that edits the corpus or the E2E suite; an `acceptable
     undocumented change` is recorded in the corpus. The guidance carries the

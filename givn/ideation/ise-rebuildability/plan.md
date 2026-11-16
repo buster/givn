@@ -82,7 +82,7 @@ delivery fix is the control.
 
 The plan exists to test one claim: a `Specification` declared in
 `givn/specification.yaml`, frozen together with the declared `e2e` package and
-recorded by digest, is sufficient for a fresh builder to rebuild a component
+recorded by digest, is sufficient for a fresh agent to rebuild a component
 or a whole product without reading the replaced `Source code` or repository
 history, while the frozen `End-to-end (E2E) test` package stays green. The
 Givn phases ship the capabilities that make that routine repeatable: the
@@ -630,7 +630,7 @@ behind ungraded requirements and fresh data directories.
 - State the expected commands in each variant:
   `givn ise replace [--at <revision>] (--full | --path <path>...) --into <dir> [--receipt <path>] [--dry-run]`
   and `givn ise verify --trial <record> --at <dir>`. The task must not hide the
-  CLI contract the builder depends on.
+  CLI contract the agent depends on.
 - Add seeded defects for each new requirement and make `benchmark verify` fail
   when a defect does not trip its declared ids.
 - Record the pinned binary, its version, and the revision used by each variant.
@@ -718,16 +718,16 @@ third delivered and passed 16/16.
 
 **Changes.**
 - Take the `ise=on` `initial` snapshot from S7, confirm its checkpoint
-  revision, and treat its declared `Specification` as the only builder input.
+  revision, and treat its declared `Specification` as the only agent input.
   S7 runs the unmodified `catopia-v2`; the rebuild stage lives in
   `benchmarks/catopia-v2-ise` with `task-rebuild-initial.md`.
 - Run `givn ise replace [--at <revision>] --full --into <dir> [--receipt <path>] [--dry-run]`
   with the recorded snapshot revision. `--full` replaces the whole declared
   `source:` set and `Not replaced` is 0. Pass `--receipt` to keep the record
   file.
-- Start a fresh builder session whose workspace is the trial directory only. It
+- Start a fresh agent session whose workspace is the trial directory only. It
   sees no original source, no original history, and no previous conversation.
-- Run the frozen `e2e` package from outside the builder's write authority.
+- Run the frozen `e2e` package from outside the agent's write authority.
 - Grade the rebuilt workspace against the `initial` requirement set.
 
 **Must not change.**
@@ -884,7 +884,7 @@ losing its E2E evidence.
   `--full`; the whole declared `source:` set is replaced. The trial keeps
   the declared `behavior` (`givn/specs`), `structure`, `contracts`, `limits`,
   and `e2e` paths; the `e2e` package stays outside the replaced root.
-- Rebuild the product from the retained Specification with a fresh builder.
+- Rebuild the product from the retained Specification with a fresh agent.
 - Run the frozen E2E package.
 - Classify every difference with one `Spec gap` outcome and open corrective
   changes for defects in the corpus or the E2E suite.
@@ -904,7 +904,7 @@ losing its E2E evidence.
 **Exit criteria.**
 - The frozen suite passes, or every difference is classified.
 - The report states which Specification rules were added, which implementation
-  defects returned to the builder, and which changes were accepted.
+  defects returned to the agent, and which changes were accepted.
 
 **Teaches.** Whether a complete product can be rebuilt from its own corpus.
 
@@ -1016,7 +1016,7 @@ losing its E2E evidence.
 | G6 | A difference in E2 has no `Spec gap` outcome, or a difference is closed as drift | Stop S8; the classification is incomplete |
 | G7 | The Constant Ise rebuild changes the consumer contract | Stop E3; the trial is not Constant Ise |
 | G8 | A reached state check is `ungraded`, or a lost or leaked state passes | Stop E4; fix the grader before using its result |
-| G9 | The Passuff `e2e` package declares a production dependency, or a seeded defect passes | Stop the pilot; the verifier cannot fail |
+| G9 | The Passuff `e2e` package declares a production dependency, or a seeded defect passes | Stop the pilot; the End-to-end (E2E) test cannot fail |
 | G10 | Givn's `e2e` package depends on `givn`, or a scenario is retagged without a reason | Stop S13 before enabling `ise` |
 | G11 | Any S14 row is missing or failed | Keep `ise` opt-in |
 
@@ -1039,7 +1039,7 @@ Additional stop rules:
 | Harness grader gaps inflate results | A reached stage reports `ungraded`, a fresh data directory passes a continuity check, or a defect passes | S6a target-stage grading and state carry; S6b seeded defects; negative grader fixtures; no host `pip install` |
 | Enabling `ise` on Givn before its E2E steps are black-box | `cargo tree -p givn-e2e` shows `givn`, or `givn check tasks` refuses after enablement | Split S13 into the boundary change and the enablement change; gate G10; do not set `ise: true` in `givn/config.yaml` early |
 | A stage snapshot has no usable revision | `givn ise replace` cannot read the recorded revision, or the tree is dirty | S6a writes one checkpoint commit before freezing and records the revision; S8 refuses to start without it |
-| A trial record sits in the builder's write authority | The record and the trial can be edited together, and the digest check passes | Require an explicit `--receipt` outside the trial for any trial a verifier re-checks; an omitted `--receipt` prints to stdout and leaves no file to trust |
+| A trial record sits in the agent's write authority | The record and the trial can be edited together, and the digest check passes | Require an explicit `--receipt` outside the trial for any trial the developer re-checks; an omitted `--receipt` prints to stdout and leaves no file to trust |
 | Paid campaign cost runs past the budget | The spend line approaches the cap before the third stage | Finite `--budget-usd`, dated price table, sequential conditions, one trial per condition first; stop after `initial` when the budget is tight |
 | Passuff in-process tests carry behavior no black-box scenario covers | Retagging removes the only assertion for a user action | Inventory each `@e2e` scenario before retagging; add a black-box scenario first; a reason is required for every retag |
 | Scope expands into `Strangler Ise` or the WIP drafts | A phase starts to model a migrated cutover or multi-agent verification | The open-items list holds them; a phase that needs one stops and returns to the user |
@@ -1146,10 +1146,10 @@ to `E14` at pass, `run_e2e.py` against that snapshot prints
 `frozen-e2e: 15/15 passed`, and the trial record reads
 `Kept source 0; Replaced 1`.
 
-**The verifier is weaker than the contract.** Rebuild 1's trial carried
-neither `contract.md` nor `law.md`, because the seed's declaration left both
-files outside every role (`Retained 64; Outside the declaration 74`), and the
-frozen verifier still passed 15/15. A rebuild can pass with the contracts it
+**The End-to-end (E2E) test is weaker than the contract.** Rebuild 1's trial
+carried neither `contract.md` nor `law.md`, because the seed's declaration left
+both files outside every role (`Retained 64; Outside the declaration 74`), and
+the frozen test still passed 15/15. A rebuild can pass with the contracts it
 never received.
 
 **Three protocol defects were found and fixed.** An agent declared a change

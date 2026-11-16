@@ -17,7 +17,7 @@ Feature: spec-gap
     When  the consumer requests the proposal guidance for an active change
     Then  the command exits 0
     And  the served proposal guidance names the record and its outcome for a corrective change
-    And  the served proposal guidance sends "implementation defect" back to the builder with no corpus edit
+    And  the served proposal guidance sends "implementation defect" back to the agent with no corpus edit
     And  the served proposal guidance carries the corpus or E2E suite edit for "specification defect" and "E2E test defect"
     And  the served proposal guidance records "acceptable undocumented change" in the corpus
 
