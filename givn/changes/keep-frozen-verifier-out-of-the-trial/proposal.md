@@ -83,16 +83,17 @@ Observable behavior, from the developer's and verifier's side:
 ## Capability Routing
 
 `givn spec route --change keep-frozen-verifier-out-of-the-trial` reports signal:
-`EXTEND givn-workflow-enforcement` (use case `verify-change`, score 17.00). The
+`EXTEND givn-workflow-enforcement` (use case `verify-change`, score 27.00). The
 match comes from the scaffolded proposal's `givn check` sentence, the word
 `route`, and generic goal words. That capability enforces change gates; it reads
-no trial directory and no trial record. Both rows therefore deviate, and the
-Rationale column records why.
+no trial directory, no trial record, and no ADR register. All three rows
+therefore deviate, and the Rationale column records why.
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| `clean-room-preparation` | `EXTEND givn-workflow-enforcement` (`verify-change`, score 17.00, signal; matched on `givn check`, `route`, and generic words) | `EXTEND clean-room-preparation` | What changes is what a trial contains and what the report counts. `prepare-an-ise-test` owns trial materialization; `givn-workflow-enforcement` owns change gates and reads no trial directory. |
+| `clean-room-preparation` | `EXTEND givn-workflow-enforcement` (`verify-change`, score 27.00, signal; matched on `givn check`, `route`, and generic words) | `EXTEND clean-room-preparation` | What changes is what a trial contains and what the report counts. `prepare-an-ise-test` owns trial materialization; `givn-workflow-enforcement` owns change gates and reads no trial directory. |
 | `trial-input-verification` | `EXTEND givn-workflow-enforcement` (same recommendation, same score) | `EXTEND trial-input-verification` | What changes is one verification refusal and the set the trial-side comparison runs over. `prepare-an-ise-test` owns the frozen-input re-check. |
+| `adr-qualification-gate` | `EXTEND givn-workflow-enforcement` (same recommendation, same score) | `EXTEND adr-qualification-gate` | Recording ADR-078 moves the active register from 29 to 30 accepted decisions, and the permanent scenario with its binding asserts the new count in this change. `adr-qualification-gate` owns the register; `givn-workflow-enforcement` owns change gates and reads no ADR register. |
 
 ## Out of Scope
 
