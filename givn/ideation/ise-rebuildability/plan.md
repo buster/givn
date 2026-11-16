@@ -68,8 +68,15 @@ holds every bundle path, revision, grade, and spend figure.
   `S12`, and `S13`. The `E3` arm never ran a replacement, so the `Constant
   Ise` row of the `S14` evidence table has no evidence and `ise` stays
   opt-in.
-- **`redact-secret-shaped-values-in-history`.** Queued as a committed scaffold
-  at `proposal-done`; no specs, design, tasks, or review.
+
+**Withdrawn.** The change `redact-secret-shaped-values-in-history` was
+withdrawn on 2026-11-16. The incident it addressed was a harness delivery
+defect: the harness wrote the provider key into `.harness/secrets.env` inside
+the agent workspace, and the agent printed it. The harness now delivers the
+key by environment inheritance only, so a sandboxed run does not put a plain
+key where a tool can read or print it. Givn-side redaction is out of scope and
+is recorded as an accepted exception rather than an open gap; the harness
+delivery fix is the control.
 
 ## 1. Purpose and claim
 
