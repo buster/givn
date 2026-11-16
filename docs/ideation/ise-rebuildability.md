@@ -429,6 +429,20 @@ because no arm tests whether the End-to-end (E2E) test, reading only the
 declared roles, can certify a rebuild that the retained Specification does not
 describe.
 
+**The S14 evidence is compiled.** The promotion tables for `ise` sit in
+`## S14 evidence` of `givn/ideation/ise-rebuildability/plan.md`: eight archived
+changes with `proven` receipts and the two withdrawn ones, the instruction
+split (1,630 to 1,544 lines for the four core steps, six stack instructions,
+4,561-line corpus after the numeric cap was withdrawn), a cold rebuild at 20 of
+20 with an 18 of 18 frozen verifier in two runs, two `Constant Ise` follow-ups
+replacing the same three paths with every named neighbour unchanged, 9 of 9
+continuity, an `ise` off and on pair that differs only on `R8`, the Passuff
+ladder from 8 of 8 with the tests visible to 3 of 8 blind to 8 of 8 after the
+first amendment to 25 of 29 and 29 of 29 after the widened suite and the third
+amendment, and the limits that stay: a 29-scenario acceptance suite, an
+unenforced contamination rule, `gap-03`'s unstated post-migration observation,
+and no Givn self-rebuild.
+
 ## 9. Open items
 
 - **Promotion to default-on.** `S14` decides. Until then `ise` remains an

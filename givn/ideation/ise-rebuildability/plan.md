@@ -1122,6 +1122,87 @@ commits on the integration branch, following `AGENTS.md`: one atomic
 **Phase report.** Every phase records the branch it is on, the base it was
 created from, and whether the checkout was clean at creation.
 
+## S14 evidence
+
+Compiled 2026-11-16 from the archive receipts, the `givn-harness` records, and the Passuff trial transcripts; every row names the artifact it was read from.
+
+**Givn capabilities shipped.** Receipt fields from `givn/archive/<change>/verification.json`: `Regular` and `@e2e` are the verified scope totals, `Merged` is `merge_completed`, and every receipt records zero merged deltas and no merge targets.
+
+| Change | Phase | Receipt | Regular | `@e2e` | Coverage | Merged | Note | Source |
+|---|---|---|---|---|---|---|---|---|
+| `add-ise-addon-and-specification` | `S1`, `S2` | `proven` | 1113 | 116 | 85 | yes | Addon, prerequisite, declaration scaffold, loader, four advisory findings | receipt |
+| `enforce-ise-e2e-boundary` | `S3` | `proven` | 1142 | 116 | 85 | yes | Package boundary gate and receipt identity | receipt |
+| `add-ise-clean-room-commands` | `S4` | `proven` | 1203 | 118 | 86 | yes | `ise replace` and `ise verify`, nine refusals, two fixtures | receipt |
+| `split-stack-instructions` | `S5` | `proven` | 1231 | 118 | 86 | yes | Six stack instructions, core bodies removed, id mapping | receipt |
+| `guard-retained-paths-across-archive` | correction | `proven` | 1238 | 119 | 86 | yes | Refuses an archive that moves a declared retained path | receipt |
+| `retain-declaration-in-trial` | correction | `proven` | 1253 | 119 | 86 | yes | Copies `givn/specification.yaml` into every trial | receipt |
+| `keep-frozen-verifier-out-of-the-trial` | correction | `proven` | 1259 | 119 | 86 | yes | The frozen verifier stays outside the trial path set | receipt |
+| `move-givn-e2e-to-black-box-package` | `S13` change A | `proven` | 1261 | 119 | 86 | yes | `e2e/` package with its own manifest, runner, and step definitions | receipt |
+| `redact-secret-shaped-values-in-history` | none | `withdrawn` | - | - | - | no | The key reached the workspace through a harness delivery defect; the harness now inherits it by environment only, so Givn-side redaction is out of scope | `plan.md` section 0, `ae48fedf` |
+| `add-delivery-identity-to-trial-record` | none | `withdrawn` | - | - | - | no | `replaced_digest` already fingerprints the replaced paths as the trial was written, so a delivery identity added no check | `5c181819` |
+
+**Instruction growth.** Line counts from the files at the named commit.
+
+| Fact | Value | Source |
+|---|---|---|
+| Four core step instructions (`specs`, `steps`, `design`, `review`) | 1,630 to 1,544 lines at the split | `assets/instructions/*.md` at `02126585^` and `02126585` |
+| Stack instructions | Six files (`steps-rust`, `steps-python`, `steps-node`, `steps-java`, `steps-go`, `steps-ruby`), 53 lines | `assets/instructions/steps-*.md` |
+| Shipped corpus after the cap was withdrawn | 4,561 lines | `assets/instructions/**` at `cbaee3f4` |
+| Numeric cap | Withdrawn 2026-11-15 by operator decision: no line limit, prose that states no rule is the defect, and a rule that states valid behavior is not removed to satisfy a count | `givn/archive/split-stack-instructions/design.md` `## Operator decision: no corpus line cap` |
+
+**Catopia results.** Figures from the two records named in section 0.
+
+| Result | Value | Runs | Source |
+|---|---|---|---|
+| Cold rebuild | 20/20 graded, frozen verifier 18/18, package `1.2.0` | 2 | `ise-rebuild-0.4.0.md` section 9 |
+| `Constant Ise` follow-up | 3/3; the record names `catopia/certification.py`, `catopia/law.py`, `catopia/register.py`; every named neighbour byte-identical to the seed | 2 | same, sections 8 and 9 |
+| State continuity, three stages | 9/9, chain replayed from `initial` | 1 | `ise-rebuild-experiment.md` `E4` |
+| `ise` off against `ise` on, `initial` | off 14/14, on 13/14 on `R8`; neither difference attributable at one run per arm | 1 each | same, `E1` |
+
+**Passuff results.** Suite totals from the recorded transcripts; runs 1 to 4 are paid reconstructions, and the 29/29 rows are the frozen suite run against the delivered binaries.
+
+| Run or amendment | Variant | Suite | Result | Source |
+|---|---|---|---|---|
+| Run 1 | Graded, frozen package visible | 8 scenarios, 60 steps | 8/8 | `/tmp/passuff-verify`; `passuff-ise-clean-room-trial` |
+| Run 2 | Blind | 8, 60 | 3/8 | same |
+| Amendment `dddeb14` | `docs/reference.md`: wire contract, notification seam, visible strings | `docs/reference.md` +413 lines; commit +419/-3 | - | `git show dddeb14 --stat` |
+| Run 3 | Blind after amendment `dddeb14` | 8, 60 | 8/8 twice | skill record |
+| Run 4 | Blind, widened suite | 29, 240 | 25/29, 232/236 steps twice | skill record |
+| Amendment `ce3b982` | Frozen scenario asserts corrupt state by bytes | +22/-32 | - | `git show ce3b982 --stat` |
+| Amendment `1cecd0b` | `docs/reference.md`: migration row, empty-inbox wording, watch exit | +45/-6 | - | `git show 1cecd0b --stat` |
+| Run 4, re-run | Blind, widened suite after the amendments | 29, 240 | 29/29, 240/240, twice | `/tmp/passuff-verify/candidate-1.txt`, `candidate-2.txt` |
+| Baseline | Original product, widened suite | 29, 240 | 29/29, 240/240 | `/tmp/passuff-verify/baseline.txt` |
+
+**Givn self-rebuild.** Prepared only; no rebuild has run.
+
+| Item | State | Source |
+|---|---|---|
+| Addon enabled | `ise: true` | `givn/config.yaml:248`, commit `a9b54140` |
+| Trial seeded | `givn/specification.yaml` declares five retained roles and `source: src/**, tests/**` | `givn/specification.yaml` |
+| Boundary green | `move-givn-e2e-to-black-box-package` archived; the `e2e` package runs the 119 `@e2e` scenarios and reaches no product crate | receipt; `e2e/Cargo.toml` |
+| Scale | 14,714 retained lines against 113,940 replaced, from the dry run | Session record; the checkout now measures 14,695 retained and 114,174 replaced |
+| Weak evidence 1 | `--dry-run` writes no directory and no record, so no agent rebuilds from it and no frozen test grades it | section 4, `Dry run` |
+| Weak evidence 2 | One seed at one revision cannot separate run variance from an effect | `ise-rebuild-experiment.md` section 9, two runs per condition |
+
+**The open limits.**
+
+| Limit | State | Source |
+|---|---|---|
+| The acceptance suite is 29 scenarios, not the product | A green run qualifies the boundary, not full-spec conformance; 76 gap records are unexercised | `passuff-frozen-e2e-qualification` step 9 |
+| The contamination rule is an instruction, not a sandbox | Nothing prevents the reader from opening `crates/**` in the original checkout | `passuff-ise-clean-room-trial` `## Contamination rule` |
+| `gap-03` post-migration observation | Neither `docs/reference.md` nor the suite states whether the first check after migration baselines existing activity | `/tmp/passuff-verify/gaps.txt`; `docs/reference.md` version-1 state row |
+| No self-rebuild | No `Dry-Run Ise` has run on Givn itself; `S13` change B is not started | `### S13` above |
+
+## S14 decision
+
+Date: 2026-11-16. Evidence: `## S14 evidence`. The operator decides; this section stays open until the answer is recorded.
+
+1. **Keep `ise` opt-in** (`default_enabled: false`, unchanged).
+2. **Promote to default-on** for new projects.
+3. **Promote only after a bounded self-rebuild dry run** lands and is judged.
+
+**Answer.** Not recorded.
+
 ## 12. Campaign results
 
 Seven paid runs, $2.1804 committed, on `givn-harness` branch `ise/evaluation`.
