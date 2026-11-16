@@ -78,12 +78,14 @@ Release note: `Move the @e2e acceptance corpus into a standalone package that li
 
 Release note: `Name the E2E package through --package in the declared runner command`
 
-- [x] **Runner-target rule**: `names_root` in `src/e2e_boundary/mod.rs` reads
-      the token after `--package` and accepts the root when that value equals
-      it; the whole-token and `<root>/` path forms stay accepted, so a bare
-      `--e2e` tier flag names no package. Unit tests: `the_package_flag_names_its_value`,
-      `a_package_flag_naming_another_root_names_nothing`,
-      `a_bare_tier_flag_names_no_package`.
+- [x] **Runner-target rule**: no product change. The predecessor's rule in
+      `src/e2e_boundary/mod.rs` accepts any whole token equal to the declared
+      root or carrying `<root>/`; the `--package` value `e2e` is such a token,
+      so `./run-tests.sh --e2e --package e2e` satisfies it. A bare `--e2e` tier
+      flag names no root. Review finding F1 proved that a `--package` window
+      branch changed no result; it and its three unit tests are deleted, and
+      the accepted command stays covered by the delta scenario and the outline
+      row.
 - [x] **Command**: `givn/commands.yaml` `verify.e2e_command` becomes
       `./run-tests.sh --e2e --package e2e`.
 - [x] **Project runner**: `run-tests.sh` builds `givn` and `ready_fixture`
@@ -101,10 +103,12 @@ Release note: `Name the E2E package through --package in the declared runner com
       cargo test --locked --test features_runner -- --tags
       "@givn-workflow-enforcement or @adr-qualification-gate"` →
       `6 scenarios (6 passed); 37 steps (37 passed)`.
-- [x] RED: before `names_root` learned `--package`, the accepted-command
-      scenario failed with `stderr names the declared e2e root and the E2E
-      runner command` (the command named `e2e` only as a flag value), and the
-      outline's `./run-tests.sh --e2e` row passed for the wrong reason.
+- [x] GREEN with no product change: the accepted-command scenario passes
+      through the pre-existing whole-token rule, so no RED is claimed for it.
+      It still discriminates: the review's mutation (`CargoPackage::read`
+      refuses a `[workspace]` manifest) makes it fail at `Then the command
+      exits 0`. The outline's `./run-tests.sh --e2e` row discriminates too:
+      accepting the bare flag makes exactly that row fail.
 - [x] COMMIT: `1282b9cd` -- Batch: typed package runner name
 - [x] Scenario: An ise-effective change whose E2E runner command names no declared e2e root fails the tasks check
 - [x] COMMIT: `1282b9cd` -- Batch: typed package runner name
@@ -130,12 +134,19 @@ Release note: `Measure the E2E scope through the instrumented product binary`
       `cargo llvm-cov --no-run --no-report --locked --bin givn`, exports
       `GIVN_BIN` and `LLVM_PROFILE_FILE`, and calls
       `./run-tests.sh --e2e --package e2e`; the runner never rebuilds an
-      exported binary.
+      exported binary. The guard names the artifact: with a no-op `cargo` in
+      `PATH` the script exits 2 with `the instrumented givn binary is missing at
+      <root>/target/llvm-cov-target/debug/givn`. The reports under `coverage/`
+      predate the source edit, so they are not evidence for this change; archive
+      regenerates `coverage/non-e2e-cobertura.xml` and
+      `coverage/e2e-cobertura.xml` from the merged candidate instead.
 - [x] **Browser assets**: `browser-driver.mjs`, `package.json`,
       `package-lock.json`, and `.gitignore` moved to `e2e/browser/`;
       `setup-e2e-browser.sh` installs from there; a missing driver fails the
       browser scenario by name (`the browser driver exited before answering
-      'goto'`), never a skip.
+      'goto'`), never a skip. The component-tier `tests/common/browser.rs` is
+      deleted: it spawned the moved driver at `tests/e2e/browser-driver.mjs`
+      and no component scenario binds a browser step.
 - [x] **Observable check**: the browser scenarios in
       `./run-tests.sh --e2e --package e2e` pass
       (`development-report.feature` browser scenarios included in the 119).
@@ -166,12 +177,16 @@ Release note: `Record the standalone acceptance package as ADR-079`
       the permanent scenario asserts the same count.
 - [x] **Chapters and docs**: `docs/arc42/{02,04,05,06,07,08,11}`,
       `docs/glossary.md` (`E2E package`), and `docs/reference.md` record the
-      package, the typed runner name, the lockfile guard, and the coverage
-      path.
-- [x] **Observable check**:
+      package, the declared runner command name, the lockfile guard, and the
+      coverage path.
+- [x] **Observable check**: two scopes after the move. Component:
       `GIVN_FEATURES=givn/specs/fragments cargo test --locked --test
-      features_runner -- --tags "@adr-qualification-gate"` →
-      `18 scenarios (18 passed)`.
+      features_runner -- --tags "@adr-qualification-gate and not @e2e"` →
+      `17 scenarios (17 passed); 91 steps (91 passed)`. Package:
+      `GIVN_CUCUMBER_TAGS='@e2e and @adr-qualification-gate' ./run-tests.sh
+      --e2e --package e2e` → `1 scenario (1 passed); 7 steps (7 passed)`. The
+      18th `@adr-qualification-gate` scenario is the permanent `@e2e` one, bound
+      only in the package after the move.
 - [x] COMMIT: `cec46e95` -- Batch: architecture record
 - [x] Scenario: The migration preserves independent architecture history across three proposed decisions
 - [x] COMMIT: `cec46e95` -- Batch: architecture record
