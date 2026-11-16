@@ -18,9 +18,10 @@ Feature: Trial input verification
   @trial-input-verification
   Scenario: Verification names an e2e package file changed in the trial
     Given  a prepared Git trial with a receipt
-    When  the verifier changes the e2e file "tests/e2e/steps/keys.rs" in the trial
+    When  the verifier copies the e2e file "tests/e2e/steps/keys.rs" into the trial
     And  the verifier re-checks the trial against the record
     Then  verification fails and names "tests/e2e/steps/keys.rs"
+    And  verification reports the trial holds a path the frozen package covers
 
   @trial-input-verification
   Scenario: Verification names an e2e package file changed in the checkout
@@ -140,7 +141,8 @@ Feature: Trial input verification
   @trial-input-verification
   Scenario: Verification names every drifting path in one run
     Given  a prepared Git trial with a receipt
-    When  the verifier changes the retained files "givn/specs/demo/spec.feature" and "docs/reference.md" and the e2e file "tests/e2e/steps/keys.rs" in the trial
+    When  the verifier changes the retained files "givn/specs/demo/spec.feature" and "docs/reference.md" in the trial
+    And  the developer changes the e2e file "tests/e2e/steps/keys.rs" in the checkout
     And  the verifier re-checks the trial against the record
     Then  verification fails and names all three paths
 

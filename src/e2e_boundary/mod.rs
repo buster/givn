@@ -272,6 +272,13 @@ impl E2eBoundary {
         self.resolved.iter().chain(self.import_paths.iter())
     }
 
+    /// Whether a project-relative path is a resolved root or lies below one.
+    /// The frozen-package refusal tests a trial path through this rule, so the
+    /// containment semantics have one implementation beside the resolution.
+    pub(crate) fn contains(&self, path: &str) -> bool {
+        self.roots().any(|root| is_under(path, root))
+    }
+
     /// The conditions that block the change check: the placement and
     /// acceptance conditions, plus `RunnerNamesNoPackage` when the command
     /// names no resolved root.
@@ -485,6 +492,21 @@ mod tests {
             conditions: Vec::new(),
         };
         assert!(boundary.conditions("./run-tests.sh tests/e2e/").is_empty());
+    }
+
+    #[test]
+    fn containment_covers_a_resolved_root_and_everything_below_it() {
+        let boundary = E2eBoundary {
+            resolved: vec!["tests/e2e".to_string()],
+            import_paths: vec!["tests/imported-e2e".to_string()],
+            conditions: Vec::new(),
+        };
+        assert!(boundary.contains("tests/e2e"));
+        assert!(boundary.contains("tests/e2e/steps/keys.rs"));
+        assert!(boundary.contains("tests/imported-e2e/tests/keys.rs"));
+        assert!(!boundary.contains("tests/e2e-extra/steps/keys.rs"));
+        assert!(!boundary.contains("src/keys/parser.rs"));
+        assert!(!boundary.contains(""));
     }
 
     fn write(root: &std::path::Path, relative: &str, content: &str) {

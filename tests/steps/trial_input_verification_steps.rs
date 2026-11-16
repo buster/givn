@@ -32,6 +32,12 @@ fn record(world: &GivnWorld) -> PathBuf {
 fn prepare(world: &mut GivnWorld) {
     world.env = Some(ise_clean_room_support::verify_trial_project());
     ise_clean_room_support::commit_verify_trial_revision(project_env(world));
+    prepare_prepared(world);
+}
+
+/// Run the real `givn ise replace` over the project's committed revision and
+/// require success.
+fn prepare_prepared(world: &mut GivnWorld) {
     prepare_trial(world, Some("HEAD"), &["--path", REPLACED_SOURCE_PATH]);
     let out = output(world);
     assert!(
@@ -85,6 +91,51 @@ fn rewrite_record(world: &GivnWorld, mutate: impl FnOnce(&mut serde_yaml_ng::Map
 #[given(regex = r#"^a prepared Git trial with a receipt$"#)]
 fn prepared_git_trial(world: &mut GivnWorld) {
     prepare(world);
+}
+
+#[given(
+    regex = r#"^a prepared Git trial with a receipt whose frozen package holds twenty-five files$"#
+)]
+fn prepared_git_trial_with_a_broad_package(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::broad_package_project());
+    prepare_prepared(world);
+}
+
+#[given(
+    regex = r#"^a prepared Git trial whose record and trial were written before the frozen package was excluded$"#
+)]
+fn prepared_git_trial_written_before_the_exclusion(world: &mut GivnWorld) {
+    prepare(world);
+    let trial = trial(world);
+    for path in [
+        ise_clean_room_support::VERIFY_E2E_MANIFEST_PATH,
+        VERIFY_E2E_STEP_PATH,
+    ] {
+        ise_clean_room_support::copy_into_trial(project_env(world), &trial, path);
+    }
+    ise_clean_room_support::rewrite_record_without_excluded_roles(&record(world));
+}
+
+#[given(regex = r#"^a prepared Git trial whose frozen role covers the declaration$"#)]
+fn prepared_git_trial_whose_frozen_role_covers_the_declaration(world: &mut GivnWorld) {
+    let env = ise_clean_room_support::e2e_wildcard_project();
+    ise_clean_room_support::commit_files(
+        &env,
+        &[
+            (
+                ise_clean_room_support::DECLARATION_PATH,
+                &ise_clean_room_support::e2e_declaration("\"givn/**\"", "\"src/**\""),
+            ),
+            ("givn/specs/a.md", "spec\n"),
+            (
+                ise_clean_room_support::KEPT_PATH,
+                ise_clean_room_support::KEPT_CONTENT,
+            ),
+        ],
+        "fixture: frozen role over the declaration",
+    );
+    world.env = Some(env);
+    prepare_prepared(world);
 }
 
 #[given(regex = r#"^a prepared Git trial with a corrupted record$"#)]
@@ -166,9 +217,9 @@ fn verifier_changes_the_retained_file(world: &mut GivnWorld) {
     ise_clean_room_support::append_bytes(&trial(world).join(FOSSIL_FEATURE_PATH));
 }
 
-#[when(regex = r#"^the verifier changes the e2e file "tests/e2e/steps/keys\.rs" in the trial$"#)]
-fn verifier_changes_the_e2e_file_in_the_trial(world: &mut GivnWorld) {
-    ise_clean_room_support::append_bytes(&trial(world).join(VERIFY_E2E_STEP_PATH));
+#[when(regex = r#"^the verifier copies the e2e file "([^"]+)" into the trial$"#)]
+fn verifier_copies_the_e2e_file_into_the_trial(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::copy_into_trial(project_env(world), &trial(world), &path);
 }
 
 #[when(regex = r#"^the verifier changes the kept source file "src/keys/steps\.rs" in the trial$"#)]
@@ -176,13 +227,16 @@ fn verifier_changes_the_kept_source_file(world: &mut GivnWorld) {
     ise_clean_room_support::append_bytes(&trial(world).join(VERIFY_KEPT_PATH));
 }
 
-#[when(
-    regex = r#"^the verifier changes the retained files "givn/specs/demo/spec\.feature" and "docs/reference\.md" and the e2e file "tests/e2e/steps/keys\.rs" in the trial$"#
-)]
-fn verifier_changes_three_frozen_files(world: &mut GivnWorld) {
-    for path in [FOSSIL_FEATURE_PATH, REFERENCE_PATH, VERIFY_E2E_STEP_PATH] {
+#[when(regex = r#"^the verifier changes the retained files "([^"]+)" and "([^"]+)" in the trial$"#)]
+fn verifier_changes_two_retained_files(world: &mut GivnWorld, first: String, second: String) {
+    for path in [first, second] {
         ise_clean_room_support::append_bytes(&trial(world).join(path));
     }
+}
+
+#[when(regex = r#"^the verifier copies the whole e2e package "([^"]+)" into the trial$"#)]
+fn verifier_copies_the_whole_e2e_package(world: &mut GivnWorld, directory: String) {
+    ise_clean_room_support::copy_tree_into_trial(project_env(world), &trial(world), &directory);
 }
 
 #[when(
@@ -337,6 +391,66 @@ fn verification_fails_and_names_all_three_paths(world: &mut GivnWorld) {
     assert!(
         text.contains("3 drifting path(s)"),
         "stderr {text:?} does not report three drifting paths"
+    );
+}
+
+#[then(regex = r#"^verification reports the trial holds a path the frozen package covers$"#)]
+fn verification_reports_the_frozen_path(world: &mut GivnWorld) {
+    let text = stderr(world);
+    for needle in [
+        "holds",
+        "the frozen e2e package covers",
+        "the builder must not receive the acceptance suite",
+    ] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not carry {needle:?}"
+        );
+    }
+}
+
+#[then(regex = r#"^verification fails and names the first twenty frozen paths in sorted order$"#)]
+fn verification_names_the_first_twenty_frozen_paths(world: &mut GivnWorld) {
+    assert_failed_naming(world, &["25 path(s)"]);
+    let mut expected: Vec<String> =
+        vec![ise_clean_room_support::VERIFY_E2E_MANIFEST_PATH.to_string()];
+    for index in 0..19 {
+        expected.push(format!("tests/e2e/steps/f{index:02}.rs"));
+    }
+    let text = stderr(world);
+    let mut cursor = 0;
+    for path in &expected {
+        let rest = &text[cursor..];
+        let position = rest
+            .find(path)
+            .unwrap_or_else(|| panic!("stderr {text:?} does not name {path:?}"));
+        cursor += position + path.len();
+    }
+    assert!(
+        !text.contains("tests/e2e/steps/f19.rs"),
+        "stderr {text:?} names a path beyond the twenty-path bound"
+    );
+}
+
+#[then(regex = r#"^verification reports the count of the remaining frozen paths$"#)]
+fn verification_reports_the_remaining_count(world: &mut GivnWorld) {
+    let text = stderr(world);
+    assert!(
+        text.contains("(and 5 more)"),
+        "stderr {text:?} does not report the five remaining frozen paths"
+    );
+}
+
+#[then(regex = r#"^the record names no excluded role$"#)]
+fn record_names_no_excluded_role(world: &mut GivnWorld) {
+    let path = record(world);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the record {}: {error}", path.display()));
+    let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text)
+        .unwrap_or_else(|error| panic!("parse the record {}: {error}", path.display()));
+    assert!(
+        document.get("excluded_roles").is_none(),
+        "the record still carries an excluded role"
     );
 }
 

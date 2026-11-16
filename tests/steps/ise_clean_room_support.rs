@@ -716,6 +716,114 @@ pub(crate) fn commit_verify_trial_revision(env: &common::TestEnv) -> String {
     )
 }
 
+/// The e2e step files the broad-package fixture commits beside its manifest,
+/// so the resolved package holds twenty-five paths.
+pub(crate) const BROAD_PACKAGE_STEP_FILES: usize = 24;
+
+/// The e2e package directory the broad-package fixture resolves to one root.
+pub(crate) const BROAD_PACKAGE_PATH: &str = "tests/e2e";
+
+/// A Git project with `ise` enabled whose committed `tests/e2e` package holds
+/// twenty-five files: the manifest beside twenty-four step files committed in
+/// one revision, so `e2e_file_set` resolves the directory to that manifest.
+pub(crate) fn broad_package_project() -> common::TestEnv {
+    let env = verify_trial_project();
+    let mut owned: Vec<(String, String)> = vec![
+        (DECLARATION_PATH.to_string(), verify_declaration()),
+        (
+            FOSSIL_FEATURE_PATH.to_string(),
+            FOSSIL_FEATURE_CONTENT.to_string(),
+        ),
+        (REFERENCE_PATH.to_string(), "reference\n".to_string()),
+        (
+            VERIFY_E2E_MANIFEST_PATH.to_string(),
+            "[package]\nname = \"e2e\"\n".to_string(),
+        ),
+        (
+            VERIFY_KEPT_PATH.to_string(),
+            "pub fn steps() {}\n".to_string(),
+        ),
+        (
+            REPLACED_SOURCE_PATH.to_string(),
+            "pub fn parse() {}\n".to_string(),
+        ),
+    ];
+    for index in 0..BROAD_PACKAGE_STEP_FILES {
+        owned.push((
+            format!("{BROAD_PACKAGE_PATH}/steps/f{index:02}.rs"),
+            format!("// e2e steps {index}\n"),
+        ));
+    }
+    let files: Vec<(&str, &str)> = owned
+        .iter()
+        .map(|(path, content)| (path.as_str(), content.as_str()))
+        .collect();
+    commit_files(&env, &files, "fixture: broad e2e package");
+    env
+}
+
+/// Copy one tracked checkout path into the trial, creating its parent
+/// directories: preparation never writes a frozen path, so a scenario that
+/// needs one plants the checkout's own bytes.
+pub(crate) fn copy_into_trial(env: &common::TestEnv, trial: &Path, path: &str) {
+    let source = env.path(path);
+    let target = trial.join(path);
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent).expect("create the planted path's parent");
+    }
+    std::fs::copy(&source, &target).unwrap_or_else(|error| {
+        panic!("copy {} into the trial: {error}", source.display());
+    });
+}
+
+/// Copy every checkout file under `directory` into the trial, so a scenario
+/// plants a whole frozen package.
+pub(crate) fn copy_tree_into_trial(env: &common::TestEnv, trial: &Path, directory: &str) {
+    let root = env.path(directory);
+    let mut directories = vec![root];
+    while let Some(directory) = directories.pop() {
+        for entry in std::fs::read_dir(&directory)
+            .unwrap_or_else(|error| panic!("read {}: {error}", directory.display()))
+        {
+            let path = entry.expect("read the checkout entry").path();
+            let relative = path
+                .strip_prefix(env.root())
+                .expect("the walked path is inside the checkout")
+                .to_string_lossy()
+                .into_owned();
+            if path.is_dir() {
+                directories.push(path);
+            } else {
+                copy_into_trial(env, trial, &relative);
+            }
+        }
+    }
+}
+
+/// Record a receipt's content rewrite as an older record: every `e2e_files`
+/// identity also appears in `retained_files` and `excluded_roles` is absent.
+/// The trial already holds the package's own bytes, so the identities stay
+/// correct and the retained comparison covers the planted paths.
+pub(crate) fn rewrite_record_without_excluded_roles(path: &Path) {
+    let mut mapping = record_mapping(path);
+    let e2e = mapping
+        .get(serde_yaml_ng::Value::String("e2e_files".to_string()))
+        .cloned()
+        .unwrap_or_else(|| panic!("the record has no e2e_files mapping"));
+    let retained_key = serde_yaml_ng::Value::String("retained_files".to_string());
+    let mut retained = match mapping.remove(&retained_key) {
+        Some(serde_yaml_ng::Value::Mapping(map)) => map,
+        other => panic!("the record's retained_files is not a mapping: {other:?}"),
+    };
+    match e2e {
+        serde_yaml_ng::Value::Mapping(map) => retained.extend(map),
+        other => panic!("the record's e2e_files is not a mapping: {other:?}"),
+    }
+    mapping.insert(retained_key, serde_yaml_ng::Value::Mapping(retained));
+    mapping.remove(serde_yaml_ng::Value::String("excluded_roles".to_string()));
+    write_record_mapping(path, mapping);
+}
+
 /// The record parsed into a mapping a scenario can rewrite before the
 /// re-check, so one prepared trial proves every record refusal.
 pub(crate) fn record_mapping(path: &Path) -> serde_yaml_ng::Mapping {

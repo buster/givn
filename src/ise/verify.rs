@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 
-use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
+use crate::config::declaration::{DECLARATION_PATH, Role, SpecificationDeclaration};
 use crate::config::overlay::load_effective_at;
 use crate::gherkin::content::e2e_scenario_digest;
 use crate::scm::{Backend, EntryKind};
@@ -70,10 +70,18 @@ pub fn verify(project_root: &Path, trial: &Path, at: &Path) -> Result<VerifyRepo
     let trial_directory = trial_directory(at)?;
     let backend = crate::scm::select(project_root)?;
     require_record_belongs(trial, &record, &trial_directory, backend.name())?;
+    let declaration = SpecificationDeclaration::load(project_root)
+        .map_err(|error| anyhow::anyhow!("{error}"))?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "{DECLARATION_PATH} is missing; the clean-room trial requires a declared Specification"
+            )
+        })?;
 
     let mut drift = Drift::new();
+    require_frozen_absent(project_root, &trial_directory, &declaration, &record)?;
     check_retained(&trial_directory, &record, &mut drift);
-    check_checkout(project_root, &backend, &record, &mut drift)?;
+    check_checkout(project_root, &backend, &declaration, &record, &mut drift)?;
     Ok(VerifyReport {
         trial: trial_directory,
         drift,
@@ -166,6 +174,88 @@ fn require_record_belongs(
     Ok(())
 }
 
+/// The trial-side refusal names at most this many covered paths.
+const FROZEN_REPORT_LIMIT: usize = 20;
+
+/// Refuse a trial that holds a path the frozen `e2e` package covers, for a
+/// record whose `excluded_roles` names `e2e`. `givn/specification.yaml` and
+/// every path the record's `retained_files` lists are exempt: the declaration
+/// is the implicit retained entry an `e2e` role resolving over `givn/**` also
+/// covers, and a recorded retained path is content the record attests the
+/// trial holds. The refusal runs before any identity comparison.
+fn require_frozen_absent(
+    project_root: &Path,
+    trial: &Path,
+    declaration: &SpecificationDeclaration,
+    record: &TrialRecord,
+) -> Result<()> {
+    if !record
+        .excluded_roles
+        .iter()
+        .any(|role| role == Role::E2e.as_str())
+    {
+        return Ok(());
+    }
+    let boundary = crate::e2e_boundary::E2eBoundary::resolve(project_root, declaration);
+    let offending: Vec<String> = trial_paths(trial)?
+        .into_iter()
+        .filter(|path| path != DECLARATION_PATH && !record.retained_files.contains_key(path))
+        .filter(|path| record.e2e_files.contains_key(path) || boundary.contains(path))
+        .collect();
+    if offending.is_empty() {
+        return Ok(());
+    }
+    let listed: Vec<&str> = offending
+        .iter()
+        .take(FROZEN_REPORT_LIMIT)
+        .map(String::as_str)
+        .collect();
+    let remainder = offending.len() - listed.len();
+    let more = if remainder == 0 {
+        String::new()
+    } else {
+        format!(" (and {remainder} more)")
+    };
+    bail!(
+        "the trial '{}' holds {} path(s) the frozen e2e package covers; the builder must not receive the acceptance suite: {}{more}",
+        trial.display(),
+        offending.len(),
+        listed.join(", ")
+    )
+}
+
+/// Every non-directory path under the trial, relative to it and sorted, without
+/// following symlinks. The walk skips nothing: a frozen path planted under
+/// `target/` or `givn/changes/` counts.
+fn trial_paths(trial: &Path) -> Result<Vec<String>> {
+    let mut paths: Vec<String> = Vec::new();
+    let mut directories = vec![trial.to_path_buf()];
+    while let Some(directory) = directories.pop() {
+        let entries = std::fs::read_dir(&directory)
+            .with_context(|| format!("read the trial directory '{}'", directory.display()))?;
+        for entry in entries {
+            let entry =
+                entry.with_context(|| format!("read an entry of '{}'", directory.display()))?;
+            let path = entry.path();
+            let file_type = entry
+                .file_type()
+                .with_context(|| format!("read the kind of '{}'", path.display()))?;
+            if file_type.is_dir() {
+                directories.push(path);
+                continue;
+            }
+            let relative = path
+                .strip_prefix(trial)
+                .expect("every walked path is inside the trial")
+                .to_string_lossy()
+                .replace('\\', "/");
+            paths.push(relative);
+        }
+    }
+    paths.sort();
+    Ok(paths)
+}
+
 /// Every recorded retained path: a missing path and a differing digest are the
 /// two retained reasons. The recorded set is the trial's authority, not the
 /// current declaration.
@@ -187,16 +277,10 @@ fn check_retained(trial: &Path, record: &TrialRecord, drift: &mut Drift) {
 fn check_checkout(
     project_root: &Path,
     backend: &Backend,
+    declaration: &SpecificationDeclaration,
     record: &TrialRecord,
     drift: &mut Drift,
 ) -> Result<()> {
-    let declaration = SpecificationDeclaration::load(project_root)
-        .map_err(|error| anyhow::anyhow!("{error}"))?
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "{DECLARATION_PATH} is missing; the clean-room trial requires a declared Specification"
-            )
-        })?;
     let content = backend
         .content_paths()
         .with_context(|| format!("read the project tree at '{}'", project_root.display()))?;
@@ -206,7 +290,7 @@ fn check_checkout(
         .collect();
     let current_paths: Vec<&str> = paths.iter().map(String::as_str).collect();
 
-    let current_e2e = crate::e2e_boundary::e2e_file_set(&declaration, &current_paths);
+    let current_e2e = crate::e2e_boundary::e2e_file_set(declaration, &current_paths);
     for (path, recorded) in &record.e2e_files {
         let reason = if !current_e2e.contains(path) {
             CHECKOUT_MISSING_PATH
@@ -224,7 +308,7 @@ fn check_checkout(
             drift.insert((DriftLine::E2e, path.clone()), CHECKOUT_GAINED_PATH);
         }
     }
-    check_scenarios(project_root, &declaration, &current_paths, record, drift)
+    check_scenarios(project_root, declaration, &current_paths, record, drift)
 }
 
 /// The selected `@e2e` scenarios per `behavior` feature: a missing, an extra,
