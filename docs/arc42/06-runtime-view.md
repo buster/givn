@@ -674,6 +674,20 @@ plays the started product in `givn run` scenarios: it binds a port, answers a
 readiness path, and can self-exit, fail early, answer failure forever, or trap
 signals into a marker file.
 
+Givn's own repository runs two tiers. The component tier is the
+`tests/features_runner.rs` binary: it creates an isolated temporary project,
+invokes the compiled CLI, captures exit status and stdout/stderr, and performs
+secondary filesystem assertions for non-`@e2e` scenarios. The End-to-end (E2E)
+tier is the standalone `e2e` package: its runner selects `@e2e` scenarios from
+the same feature files, executes `GIVN_BIN` against a temporary project, fails
+on an unbound or skipped step, and writes the four counts and the declared
+scope to `GIVN_RESULT_FILE`. `./run-tests.sh --e2e --package e2e` canonicalizes
+the feature and result paths, builds the product binary unless an instrumented
+`GIVN_BIN` is supplied, exports its path, and runs the package; `givn check
+tasks` and `givn archive` run the same command with their own feature path and
+result file. The package runner first refuses a `Cargo.lock` naming a product
+crate.
+
 ## 6.15 `givn run`
 
 `givn run [--port <n>] [--print]` executes the product declared by the `run:`

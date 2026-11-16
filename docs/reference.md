@@ -161,13 +161,20 @@ path sits under a `source:` root, when a resolved
 package's tree contains a `source:` root, when a package has a dependency edge into
 `source`, when a path that resolves no package contains a reference resolving into
 a `source:` root, or when `verify.e2e_command` does not name every resolved
-`e2e` root. The runner-target rule is textual: the command must contain each
-resolved root's directory as a whole token or a token containing
-`<directory>/`. It proves naming, not execution, and a run that reported another
-scope is refused by the result's scope field. The import fallback reads
-path-resolving references only: an external package name, or a language whose
-import syntax the reader does not recognize, is admitted. A change with `ise`
-off reads no declaration and gains no boundary refusal.
+`e2e` root. The runner-target rule is textual: a resolved root is named by a
+token equal to the root or containing `<root>/`, or by the token after
+`--package` when that value equals the root. A bare `--e2e` tier flag names no
+package, so a command whose only package evidence is that flag is refused. The
+whole-token and path forms keep their existing acceptance; the `--package` form
+is the typed form Givn's own command uses. The check proves naming, not
+execution, and a run that reported another scope is refused by the result's
+scope field. Both readers are static: a registry, git, or renamed dependency
+carries no project path and is admitted, so the boundary check cannot see a
+published product edge; a project's E2E runner is expected to assert its
+committed lockfile for that case. The import fallback reads path-resolving
+references only: an external package name, or a language whose import syntax
+the reader does not recognize, is admitted. A change with `ise` off reads no
+declaration and gains no boundary refusal.
 
 ## Configuration authority
 
@@ -235,10 +242,48 @@ The runner receives:
 | `GIVN_RESULT_SCOPE` | `change`, `regular`, or `e2e`. |
 
 The result is `{"total": n, "passed": n, "failed": n, "skipped": n}`; `scope` is
-optional, but when present it must match the expected scope. A missing,
+optional, but when present it must match the expected scope. Givn's own E2E
+package also reads `GIVN_BIN` (the built product binary, required) and
+`GIVN_READY_FIXTURE` (the built ready fixture, required by run-execution
+scenarios); `./run-tests.sh --e2e --package e2e` exports both. The harness reads
+the package's parent directory as the product checkout for the read-only
+repository files a scenario asserts; `GIVN_ROOT` overrides it when the package
+is not inside the checkout it tests. A missing,
 unreadable, malformed, non-reconciling (`passed + failed + skipped != total`),
 zero-scenario, failed, or skipped result blocks. The previous result file is
 removed before launch.
+
+### Repository acceptance package
+
+Givn's own `@e2e` tier is the standalone `e2e` package. `e2e/Cargo.toml`
+declares its own `[workspace]`, `publish = false`, and no dependency on the
+`givn` crate; the root package `exclude` list holds `e2e/**`. The package holds
+the runner, every `@e2e` step definition, the fixtures, and the browser driver
+assets under `e2e/browser/`. Feature files stay in `givn/specs/`.
+
+`./run-tests.sh --e2e --package e2e` canonicalizes `GIVN_FEATURES`,
+`GIVN_RESULT_FILE`, and the binary directory to absolute paths, sets
+`GIVN_RESULT_SCOPE=e2e`, builds `givn` and `ready_fixture` unless `GIVN_BIN`
+already names an executable, exports both paths, and runs
+`cargo test --locked --manifest-path e2e/Cargo.toml --test e2e_runner` in one
+process with `e2e/` as the working directory. The `e2e` token is the value of
+`--package`, so the declared command satisfies the runner-target rule; `--e2e`
+alone names no package and `givn check tasks` refuses it. The package runner
+first reads `e2e/Cargo.lock` and exits 2 when a `[[package]]` named `givn`,
+`givn-config`, or `givn-core` appears, then filters `@e2e`, excludes
+`@givn.removed`, fails on a skipped step, and writes the four-count result with
+the scope from `GIVN_RESULT_SCOPE`. A missing or non-executable `GIVN_BIN`
+exits 2 before any scenario runs.
+
+`measure-coverage.sh` exports the instrumented binary it builds with
+`cargo llvm-cov --no-run --no-report --locked --bin givn`, sets
+`LLVM_PROFILE_FILE`, and calls the same runner; the runner does not rebuild.
+
+`scripts/qualify-givn-e2e.sh` copies the checkout to a scratch directory,
+requires `cargo tree --manifest-path e2e/Cargo.toml` to name no product crate,
+runs the suite green, applies one seeded product defect, requires the suite to
+fail, reverts the defect, and requires the suite to pass again. The checkout
+under test is never modified.
 
 ### Bootstrap the project runner
 
@@ -628,7 +673,7 @@ cargo check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
 ./run-tests.sh --non-e2e     # this repository's verify.command scope
-./run-tests.sh --e2e         # this repository's verify.e2e_command scope
+./run-tests.sh --e2e --package e2e   # this repository's verify.e2e_command scope
 ./measure-coverage.sh        # non-E2E and E2E Cobertura reports
 ./merge-coverages.sh         # merged report used by README badges/blocks
 ```
@@ -640,7 +685,7 @@ cargo install --path . --locked --force
 givn skills sync
 givn instructions
 ./run-tests.sh --non-e2e
-./run-tests.sh --e2e
+./run-tests.sh --e2e --package e2e
 ```
 
 *[Documentation index](INDEX.md)*

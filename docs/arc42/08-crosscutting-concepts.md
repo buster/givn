@@ -1619,4 +1619,32 @@ repaired — a project that must purge them does so with its own SCM tooling
 outside Givn, and the reachable local refs boundary (remotes and forks are
 outside the guarantee) is named, not acted on.
 
+## 8.31 The Declared E2E Package and the Binary-Only Harness
+
+Givn's black-box acceptance authority is the standalone `e2e` package. The
+package declares its own `[workspace]` so its manifest and lockfile resolve
+without the product workspace, is excluded from the published crate through the
+root `exclude` list, and links no product crate. It holds the runner, every `@e2e` step definition, the
+fixtures those steps need, and the browser driver assets. Feature files stay in
+`givn/specs/`; the package selects `@e2e` scenarios by tag.
+
+| Runner variable | Meaning |
+|---|---|
+| `GIVN_BIN` | Required, executable path to the built product binary. |
+| `GIVN_READY_FIXTURE` | Path to the built `ready_fixture`; required by the run-execution scenarios only. |
+| `GIVN_FEATURES` | The feature path the runner executes; defaults to `givn/specs/`. |
+| `GIVN_RESULT_FILE` | Where the runner writes `{"scope", "total", "passed", "failed", "skipped"}`. |
+| `GIVN_RESULT_SCOPE` | The scope the run reports; the E2E scope reports `e2e`. |
+
+`./run-tests.sh --e2e --package e2e` canonicalizes the feature and result paths,
+builds the binary and the ready fixture unless an instrumented `GIVN_BIN` is
+supplied, exports both paths, and runs the package in one process. `givn check
+tasks` and `givn archive` run the same command with their own feature path and
+result file; the `--package e2e` value is what satisfies the runner-target rule,
+because `--e2e` alone names no package. The runner first refuses a `Cargo.lock`
+naming a product crate, then filters `@e2e`, excludes `@givn.removed`, fails on
+a skipped step, and exits nonzero on a failed, skipped, or zero count. The
+failure mode this closes is a suite that passes because it exercised the library
+it lives beside rather than the binary a consumer installs.
+
 *[Architecture documentation index](README.md)*

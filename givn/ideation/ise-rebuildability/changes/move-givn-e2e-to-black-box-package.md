@@ -1,6 +1,6 @@
 # Change seed: move-givn-e2e-to-black-box-package
 
-Status: ready
+Status: proposed by move-givn-e2e-to-black-box-package
 
 - Use-case IDs: `verify-change` (`givn-workflow-enforcement`) and
   `obtain-effective-guidance` (`serve-extended-rules`, consumed by the served

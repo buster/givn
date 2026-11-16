@@ -98,7 +98,9 @@ directory: with `record.mode: full`, content lands inline in
 so the whole footprint (record, content, reports, and pending state) stays under
 the ignored `givn/history/` root. The `agents` target is a skills mirror that no
 harness runs, so it receives no reporter. The browser tier's Node project under
-`tests/e2e/` is repository content and is not installed into a consumer project.
+`e2e/browser/` is repository content and is not installed into a consumer
+project. The `e2e/` package itself is a standalone workspace excluded from the
+published crate, so it is also absent from an installed product.
 
 Generated skills are written only to the persisted target selection. Givn may
 maintain its own fenced blocks in root `AGENTS.md`; all content outside those

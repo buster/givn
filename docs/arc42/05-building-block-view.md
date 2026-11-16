@@ -24,7 +24,8 @@ flowchart TD
     G --> HIST[development record and report]
     G --> SKILL[skills renderer and targets]
     G --> ASSET[embedded assets]
-    G --> TEST[repository acceptance tests]
+    G --> TEST[repository component tier]
+    G -. excluded from the published crate .-> E2E[e2e acceptance package]
     G --> SPEC[spec inventory, ownership, routing]
     G --> EB[declared E2E boundary resolver]
     G --> ISE[clean-room trial]
@@ -62,6 +63,7 @@ flowchart TD
 | `cli::ise` | Map the `ise replace` and `ise verify` subcommands, print the ten fixed report lines plus the optional frozen-package and receipt lines or the per-path drift lines, and map refusals, drift, and read failures to exit 1. |
 | `ise` | Partition a selected revision into the non-frozen retained roles plus `givn/specification.yaml`, kept source, replaced, the frozen `e2e` package, and outside-the-declaration paths from exactly one of `--full` and repeated `--path`, reading the declaration recorded at that revision; enforce the nine refusals before any write; write and re-read the plain trial with no frozen path in it; build the `ise-trial/v1` record with per-path identities and `excluded_roles`; confirm the record belongs to the trial and the backend, refuse a trial that holds a frozen path the record excludes, then re-check the trial and the current e2e set. |
 | `cli::test_result` | Write the four-count runner result to `GIVN_RESULT_FILE` for simple runners. |
+| `e2e/` package (repository test building block) | Hold the End-to-end (E2E) runner, every `@e2e` step definition, the fixtures, the browser driver assets, and a committed lockfile in a standalone workspace that links no product crate; reach the product only through the binary named by `GIVN_BIN`. |
 | Acceptance support (`tests/common/`) | Drive the built binary against fixture projects; grade file references in installed guidance; grade instruction-id directions in served instruction and effective addon instruction text with `instruction_references` (each id resolved as the CLI resolves it: a policy id with no change context, an artifact id in a change context the CLI auto-selects when the direction names none; a policy id carrying `--change` is a finding, an artifact id without one is not), and grade stack composition as served text presence and absence rather than by line count. |
 | `proof` (with the check/archive adapters) | Capture stable verification inputs, validate fresh runner results, persist change and archive receipts (including the optional E2E identity and E2E scope outcome), classify receipt freshness, and classify archive provenance. |
 | `cli::archive` | Check preconditions and receipt freshness; while `ise` is effective, refuse a declaration whose retained role entry the change move would isolate, naming the entry, the moved path, and the archived path to declare instead; run structural gates; project and check the interaction inventory before mutation; publish the merged candidate; move the change with one rename; recheck the merged permanent inventory before verification; run regular/E2E scopes and the optional coverage gate; refresh managed README blocks; guard finalization; publish the proven receipt. Persists successful scope evidence for reuse. |
