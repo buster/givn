@@ -2,7 +2,7 @@
   "schema": 2,
   "change": "move-givn-e2e-to-black-box-package",
   "status": "passed",
-  "head": "67ad51bb1466b746879684fbe4501a2f9b2f0e70",
+  "head": "c20b2f13e0e9142c9d4f0bff5a37af7d9f91a34d",
   "features_path": "givn/changes/move-givn-e2e-to-black-box-package/specs",
   "features_digest": "52b195e79764d4d870169438c09fc3f21ac34d319d87c473189129ffe5932bf0",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
@@ -17,5 +17,5 @@
     "failed": 0,
     "skipped": 0
   },
-  "finished_at_unix": 1794860365
+  "finished_at_unix": 1794860775
 }

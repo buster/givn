@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:13ebf7d61a63baeafa0838c7d19142836ae7959cc3c59364faca7756f00dbb01 -->
+<!-- givn:base-sha256:256e7fac8138fc717438d7643add965397372d1d11e5af87e42140ff696e3e52 -->
 # Use case: verify-change
 
 ## Level
@@ -23,6 +23,13 @@ change to the project's declared Specification boundary, refuses a declared
 E2E acceptance set that is missing, links production source, or is not named by
 the E2E runner command, runs the change-scoped E2E execution, and binds the
 E2E identity of the accepted results into the evidence it issues.
+
+The delta adds one accepted package shape: a resolved `e2e` package that
+declares its own workspace and is excluded from the product package. The check
+reads the package's own manifest, an exclusion is not a dependency edge, and
+the package reaches the product only by executing the built binary. The delta
+also types the runner-target rule: a resolved package is named by the token
+after `--package` or by a path token, so a bare `--e2e` flag names no package.
 
 ## Trigger
 
@@ -69,7 +76,8 @@ The developer requests verification of a change, or the project-health check.
 - 2: a resolved `e2e` path sits under a `source` root, or a resolved package's tree contains a `source` root → the check refuses, names the path or package and the root, and issues no receipt; protects the minimal guarantee.
 - 2: a resolved `e2e` package has a direct, transitive, or workspace-inherited dependency edge into `source` → the check refuses, names the package and the edge, and issues no receipt; protects the minimal guarantee.
 - 2: a resolved `e2e` path resolves no package and a reference under it resolves into a `source` root → the check refuses, names the path and the imported package, and issues no receipt; protects the minimal guarantee.
-- 2: the E2E runner command names no resolved `e2e` root → the check refuses and names the root and the command; protects the minimal guarantee.
+- 2: the E2E runner command names no resolved `e2e` root → the check refuses and names the root and the command; a command naming the package only through the bare `--e2e` flag is the canonical case; protects the minimal guarantee.
+- 2: a resolved `e2e` package declares its own workspace and the product package excludes its tree → the check reads the package's own manifest, the exclusion is not a dependency edge, and the boundary holds; protects the minimal guarantee.
 - 3: tested inputs, including the E2E identity, change during execution → no passed receipt is issued for those changed inputs; protects the success guarantee.
 - 4: fresh output is missing, malformed, has the wrong scope, has unreconciled or zero counts, or reports failures → verification fails without a passed receipt; protects the success guarantee.
 - 4: the delta has no `@e2e` scenario → the receipt records the E2E scope as not applicable and no E2E runner executes; protects the success guarantee.
@@ -100,7 +108,7 @@ The developer requests verification of a change, or the project-health check.
 - Feature files stay shared, so an `@e2e` scenario and a component scenario may live in the same `.feature` file; the tag is the package's scope, not a file boundary.
 - The declared `e2e` roots and `source` roots are disjoint both ways: no resolved `e2e` path lies inside a `source` root, and no resolved `e2e` package's tree contains a `source` root.
 - With the `ise` addon effective, the change check requires the resolved packages to exist, to have no dependency edge into `source`, and `verify.e2e_command` to name every resolved root. A resolved path in no package is checked by its path-resolving references instead of a manifest.
-- The runner-target comparison is textual: it proves the command names each resolved `e2e` root, not that the process executed it. A run that reported the regular scope is refused by the result's scope.
+- The runner-target comparison is textual: it proves the command names each resolved `e2e` root, not that the process executed it. A root is named by a token equal to the root or containing `<root>/`, or by the token after `--package` when that value equals the root; a bare `--e2e` tier flag names no package. A run that reported the regular scope is refused by the result's scope.
 - An unbound step is reported as a failed test and a reported skip is refused; neither yields a passed receipt, and each refusal states its own count.
 - The verification receipt binds the digests of the resolved packages, the E2E runner command digest, the running Givn version, and the E2E scope outcome, so a replaced or weakened black-box suite changes the receipt.
 - The E2E scope outcome is delta-aware: with an `@e2e` scenario in the delta the receipt requires a green E2E scope, and without one it records not applicable; either mismatch is stale.
@@ -116,6 +124,8 @@ The developer requests verification of a change, or the project-health check.
 - The dependency-edge comparison reads Cargo manifests for each resolved package and stays static. A resolved path that resolves no package is checked by its path-resolving references only; a reference the reader cannot resolve to a project path, such as an external package name, is admitted. A malformed package manifest is refused by the change check because the boundary cannot be proven. The advisory pass keeps its existing findings and skips the edge comparison for a manifest it cannot read. The limit is documented in `docs/reference.md`.
 - A change whose locked add-on set has `ise` off keeps today's receipt bytes, freshness rules, and single change-scoped runner; neither E2E field is serialized, and it gains no new refusal.
 - The E2E identity is an additional stale reason, not a replacement for the tested-content digest. A component step definition remains tested content; the focused identity is what names the resolved protected packages.
+- A resolved `e2e` package may declare its own workspace and sit outside the product workspace. The resolver reads the nearest package manifest; an `exclude` entry is not a dependency edge, and the package's own lockfile and target directory change no boundary condition.
+- The declared package is the project's acceptance authority: its runner and every `@e2e` step definition live in it, and no `@e2e` step definition reaches the product except by executing the built binary. A step that needs production source becomes a component scenario, so the suite survives a rebuild of the Source code.
 
 ## Examples
 
@@ -138,6 +148,9 @@ The developer requests verification of a change, or the project-health check.
 - Two checked scenarios share one reachable revision containing their regression tests; no separate production edit or phase commit is demanded.
 - A long atomic import scenario records keep with a brief reason; a shape-matching short scenario needs no disposition.
 - `givn check` explains that no checks ran and distinguishes static checks from runner-executing checks.
+- A project declares `e2e: ["e2e"]`, the package declares `[workspace]` and is excluded from the product package, and the E2E command is `./run-tests.sh --e2e --package e2e`; the tasks check accepts the boundary, runs the E2E scope, and binds the package digest.
+- A project's E2E command is `./run-tests.sh --e2e` and its declared root is `e2e`; the bare flag names the tier, not the package, so the check refuses and names the root the command must name.
+- An `@e2e` step definition calls a product formatter in process to compute its expected value; it is rewritten to assert the value the binary printed instead of being retagged.
 
 ## Minimal guarantee
 
@@ -153,6 +166,10 @@ distinguished from completed proof. With the `ise` addon effective, the
 specification-health check names the state of every declared role and the
 declared acceptance package, the tasks check refuses a boundary violation, and
 the evidence carries the E2E identity of the accepted results.
+
+The declared package is that acceptance authority: every `@e2e` scenario
+reaches the product through the built binary, so the evidence survives a
+rebuild of the Source code.
 
 ## Personas
 
