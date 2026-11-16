@@ -2,7 +2,7 @@
 
 Feature: Clean-room preparation
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Developer prepares a clean-room trial from a recorded revision
     Given  a Git project with ise enabled and a declaration that retains "givn/specs/**", declares "tests/e2e", and replaces "src/**"
     And  a committed revision with "givn/specs/demo.feature", "tests/e2e/Cargo.toml", "tests/e2e/steps/demo.rs", "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", and "notes.md"

@@ -70,11 +70,11 @@ fn report_prints_the_git_backend_and_revision(world: &mut GivnWorld) {
 }
 
 #[then(
-    regex = r#"^the report prints "Retained: 4", "Kept source: 2", "Replaced: 1", "Outside the declaration: 1", and "Not replaced: 1"$"#
+    regex = r#"^the report prints "Retained: 2", "Kept source: 2", "Replaced: 1", "Outside the declaration: 1", and "Not replaced: 1"$"#
 )]
 fn report_prints_the_placement_counts(world: &mut GivnWorld) {
     for line in [
-        "Retained: 4",
+        "Retained: 2",
         "Kept source: 2",
         "Replaced: 1",
         "Outside the declaration: 1",
@@ -82,6 +82,11 @@ fn report_prints_the_placement_counts(world: &mut GivnWorld) {
     ] {
         assert_report_line(world, line);
     }
+}
+
+#[then(regex = r#"^the report prints "Frozen package: e2e, not copied \(2 files\)"$"#)]
+fn report_prints_the_frozen_package_line(world: &mut GivnWorld) {
+    assert_report_line(world, "Frozen package: e2e, not copied (2 files)");
 }
 
 #[then(
@@ -126,8 +131,6 @@ fn trial_holds_the_retained_and_kept_files(world: &mut GivnWorld) {
         world,
         &[
             ise_clean_room_support::E2E_FEATURE_PATH,
-            "tests/e2e/Cargo.toml",
-            "tests/e2e/steps/demo.rs",
             "src/keys/mod.rs",
             "src/other.rs",
         ],
@@ -139,9 +142,19 @@ fn trial_holds_the_declaration(world: &mut GivnWorld) {
     assert_trial_holds(world, &[ise_clean_room_support::DECLARATION_PATH]);
 }
 
-#[then(regex = r#"^the trial omits "src/keys/parser\.rs" and "notes\.md"$"#)]
-fn trial_omits_the_replaced_and_outside_files(world: &mut GivnWorld) {
-    assert_trial_omits(world, &["src/keys/parser.rs", "notes.md"]);
+#[then(
+    regex = r#"^the trial omits "src/keys/parser\.rs", "notes\.md", "tests/e2e/Cargo\.toml", and "tests/e2e/steps/demo\.rs"$"#
+)]
+fn trial_omits_the_replaced_and_frozen_files(world: &mut GivnWorld) {
+    assert_trial_omits(
+        world,
+        &[
+            "src/keys/parser.rs",
+            "notes.md",
+            "tests/e2e/Cargo.toml",
+            "tests/e2e/steps/demo.rs",
+        ],
+    );
 }
 
 #[then(
@@ -172,7 +185,7 @@ fn receipt_records_the_preparation_evidence(world: &mut GivnWorld) {
         "the record has the wrong replaced paths"
     );
     for (key, expected) in [
-        ("retained", 4),
+        ("retained", 2),
         ("kept_source", 2),
         ("replaced", 1),
         ("outside_declaration", 1),

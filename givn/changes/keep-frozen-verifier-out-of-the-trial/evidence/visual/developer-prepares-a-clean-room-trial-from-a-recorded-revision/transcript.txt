@@ -1,0 +1,23 @@
+Scenario: Developer prepares a clean-room trial from a recorded revision
+argv: givn ise replace --at HEAD --path src/keys/parser.rs --into /tmp/.tmpufXqiQ/trial --receipt /tmp/.tmpufXqiQ/record.yaml
+cwd (fixture project root): /tmp/.tmpMTwF8V
+binary: the compiled `givn` the scenario spawns (CARGO_BIN_EXE_givn)
+revision: 9b5fd636615c804abf292ac3f3c8c06c643bc61d
+exit code: 0
+
+--- stdout (raw) ---
+Backend: git
+Revision: 9b5fd636615c804abf292ac3f3c8c06c643bc61d
+Retained: 2
+Kept source: 2
+Replaced: 1
+Outside the declaration: 1
+Not replaced: 1
+Retained digest: 7d7a8df82f9f…
+E2E digest: f41d020038de…
+Frozen package: e2e, not copied (2 files)
+Written path: /tmp/.tmpufXqiQ/trial
+Receipt path: /tmp/.tmpufXqiQ/record.yaml
+
+--- stderr (raw) ---
+

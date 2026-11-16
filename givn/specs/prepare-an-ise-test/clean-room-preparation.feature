@@ -8,12 +8,13 @@ Feature: Clean-room preparation
     When  the developer prepares a trial from "HEAD" with the path "src/keys/parser.rs" and a receipt
     Then  preparation succeeds
     And  the report prints "Backend: git" and a "Revision:" line holding the resolved 40-hex commit
-    And  the report prints "Retained: 4", "Kept source: 2", "Replaced: 1", "Outside the declaration: 1", and "Not replaced: 1"
+    And  the report prints "Retained: 2", "Kept source: 2", "Replaced: 1", "Outside the declaration: 1", and "Not replaced: 1"
+    And  the report prints "Frozen package: e2e, not copied (2 files)"
     And  the report abbreviates the retained digest and the e2e digest to 12 lowercase hex characters and an ellipsis
     And  the report prints the written trial path and the receipt path
     And  the trial holds the retained and kept source files, including "src/keys/mod.rs"
     And  the trial holds the declaration "givn/specification.yaml"
-    And  the trial omits "src/keys/parser.rs" and "notes.md"
+    And  the trial omits "src/keys/parser.rs", "notes.md", "tests/e2e/Cargo.toml", and "tests/e2e/steps/demo.rs"
     And  the receipt records the replacement revision, the backend, the replaced paths, the counts, the replaced digest, the written path, and the Givn version
 
   @clean-room-preparation
