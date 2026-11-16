@@ -423,17 +423,33 @@ fn digest_hex(hasher: Sha256) -> String {
         .collect()
 }
 
-/// Whether the command names `root`: as a whole token, or as a token carrying
-/// `<root>/`. Quoting around a token is allowed.
+/// Whether the command names `root`: as the value of `--package`, as a whole
+/// token, or as a token carrying `<root>/`. Quoting around a token is allowed.
+///
+/// `--package <root>` is the typed form: a runner that takes the package as a
+/// flag value names that package and nothing else. A bare tier flag
+/// (`--e2e`) names no package, and a `--package` value naming a different
+/// root names nothing here.
 fn names_root(command: &str, root: &str) -> bool {
     let needle = if root.is_empty() { "." } else { root };
     let prefix = format!("{needle}/");
-    command.split_whitespace().any(|raw| {
-        let token = raw.trim_matches(|character: char| {
-            matches!(character, '"' | '\'' | ',' | ';' | '(' | ')')
-        });
-        token == needle || !prefix.is_empty() && token.contains(&prefix)
-    })
+    let tokens: Vec<&str> = command
+        .split_whitespace()
+        .map(|raw| {
+            raw.trim_matches(|character: char| {
+                matches!(character, '"' | '\'' | ',' | ';' | '(' | ')')
+            })
+        })
+        .collect();
+    if tokens
+        .windows(2)
+        .any(|pair| pair[0] == "--package" && pair[1] == needle)
+    {
+        return true;
+    }
+    tokens
+        .iter()
+        .any(|token| *token == needle || !prefix.is_empty() && token.contains(&prefix))
 }
 
 #[cfg(test)]
@@ -452,6 +468,25 @@ mod tests {
             "tests/e2e"
         ));
         assert!(names_root("./run.sh \"tests/e2e\"", "tests/e2e"));
+    }
+
+    #[test]
+    fn the_package_flag_names_its_value() {
+        assert!(names_root("./run-tests.sh --e2e --package e2e", "e2e"));
+        assert!(names_root("./run-tests.sh --package e2e", "e2e"));
+        assert!(names_root("./run-tests.sh --package \"e2e\"", "e2e"));
+    }
+
+    #[test]
+    fn a_package_flag_naming_another_root_names_nothing() {
+        assert!(!names_root("./run-tests.sh --e2e --package other", "e2e"));
+        assert!(!names_root("./run-tests.sh --package e2e-extra", "e2e"));
+    }
+
+    #[test]
+    fn a_bare_tier_flag_names_no_package() {
+        assert!(!names_root("./run-tests.sh --e2e", "e2e"));
+        assert!(!names_root("./run-tests.sh --non-e2e", "e2e"));
     }
 
     #[test]

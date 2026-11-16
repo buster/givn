@@ -3879,6 +3879,13 @@ fn change_without_ise(world: &mut GivnWorld) {
     e2e_boundary_support::change_ready_for_verification_without_ise(world);
 }
 
+#[given(
+    "an ise-effective change ready for change-scoped verification whose declared e2e package declares its own workspace, whose E2E runner command is \"./run-tests.sh --e2e --package e2e\", and whose delta has an E2E scenario"
+)]
+fn ise_change_with_standalone_workspace_package(world: &mut GivnWorld) {
+    super::e2e_boundary_support::ise_change_with_standalone_workspace(world);
+}
+
 #[then("the change verification receipt records a digest of every resolved e2e package")]
 fn receipt_records_e2e_package_digests(world: &mut GivnWorld) {
     let receipt = change_receipt_json(world);

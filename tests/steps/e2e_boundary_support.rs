@@ -244,6 +244,49 @@ pub(crate) fn ise_change_with_passing_e2e_over_two_packages(world: &mut GivnWorl
     commit(world);
 }
 
+/// The declaration, root manifest, and standalone package of an acceptance
+/// package that is its own workspace root and excluded from the product
+/// package.
+const STANDALONE_WORKSPACE: &str = r#"#!/bin/sh
+# The project runner the fixture declares: one passing scenario per scope.
+if [ -n "${GIVN_RESULT_FILE:-}" ]; then
+    scope=${GIVN_RESULT_SCOPE:-regular}
+    printf '{"scope":"%s","total":1,"passed":1,"failed":0,"skipped":0}\n' "$scope" \
+        > "$GIVN_RESULT_FILE"
+fi
+"#;
+
+/// An `ise`-effective change whose declared `e2e` package declares its own
+/// workspace, is excluded from the product package, and is named by the E2E
+/// runner command through `--package`; the delta carries one `@e2e` scenario.
+pub(crate) fn ise_change_with_standalone_workspace(world: &mut GivnWorld) {
+    ise_change(world);
+    declare(world, &["e2e"], &["src/**"]);
+    write_manifest(
+        world,
+        "Cargo.toml",
+        "[package]\nname = \"fixture-product\"\nversion = \"0.1.0\"\nexclude = [\"e2e/**\"]\n",
+    );
+    write_manifest(
+        world,
+        "e2e/Cargo.toml",
+        "[package]\nname = \"fixture-e2e\"\nversion = \"0.0.0\"\npublish = false\n\n[workspace]\n",
+    );
+    write_manifest(world, "src/lib.rs", "pub fn fixture() {}\n");
+    write_executable(world, "run-tests.sh", STANDALONE_WORKSPACE);
+    write_verify_commands(
+        world,
+        "./run-tests.sh --non-e2e",
+        "./run-tests.sh --e2e --package e2e",
+    );
+    let state = world
+        .e2e_boundary
+        .as_mut()
+        .expect("an ise boundary fixture is required first");
+    state.resolved_packages.push("e2e".to_string());
+    add_delta_e2e_scenario(world);
+}
+
 /// An `ise`-effective change ready for change-scoped verification: a resolved
 /// `e2e` package, a green regular run, and no `@e2e` scenario in the delta.
 pub(crate) fn ise_change_ready_for_verification(world: &mut GivnWorld) {
