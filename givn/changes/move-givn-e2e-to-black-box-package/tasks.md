@@ -70,9 +70,9 @@ Release note: `Move the @e2e acceptance corpus into a standalone package that li
       `features_runner`, and an `e2e/Cargo.toml` did not exist. The first
       package run before the step migration failed with unbound steps; the
       migrated run is the GREEN above.
-- [x] COMMIT: `PENDING-B1` -- Batch: standalone black-box package
+- [x] COMMIT: `132d9ea3` -- Batch: standalone black-box package
 - [x] Scenario: A change whose declared E2E package is a standalone workspace passes the tasks check and binds the E2E scope
-- [x] COMMIT: `PENDING-B1` -- Batch: standalone black-box package
+- [x] COMMIT: `132d9ea3` -- Batch: standalone black-box package
 
 ## Batch 2: the typed package runner name
 
@@ -105,9 +105,9 @@ Release note: `Name the E2E package through --package in the declared runner com
       scenario failed with `stderr names the declared e2e root and the E2E
       runner command` (the command named `e2e` only as a flag value), and the
       outline's `./run-tests.sh --e2e` row passed for the wrong reason.
-- [x] COMMIT: `PENDING-B2` -- Batch: typed package runner name
+- [x] COMMIT: `1282b9cd` -- Batch: typed package runner name
 - [x] Scenario: An ise-effective change whose E2E runner command names no declared e2e root fails the tasks check
-- [x] COMMIT: `PENDING-B2` -- Batch: typed package runner name
+- [x] COMMIT: `1282b9cd` -- Batch: typed package runner name
 
 ## Batch 3: the project declaration
 
@@ -120,7 +120,7 @@ Release note: `Declare the project's retained roles and its e2e acceptance packa
 - [x] **Observable check**: `givn lint` exits 0 with the declaration present
       and the `ise` addon off (`givn lint: 2 file(s) checked, 3 finding(s)` are
       the three `@wip` delta scenarios).
-- [x] COMMIT: `PENDING-B3` -- Batch: project declaration
+- [x] COMMIT: `9b63979c` -- Batch: project declaration
 
 ## Batch 4: coverage and browser assets
 
@@ -139,7 +139,9 @@ Release note: `Measure the E2E scope through the instrumented product binary`
 - [x] **Observable check**: the browser scenarios in
       `./run-tests.sh --e2e --package e2e` pass
       (`development-report.feature` browser scenarios included in the 119).
-- [x] COMMIT: `PENDING-B4` -- Batch: coverage and browser assets
+- [x] COMMIT: `9b63979c` -- Batch: coverage and browser assets
+      (the coverage script, the browser setup, and the qualification script
+      landed in the declaration commit)
 
 ## Batch 5: qualification
 
@@ -153,7 +155,7 @@ Release note: `Prove the acceptance package fails on a seeded product defect`
 - [x] **Observable check**: with the patch applied and the product rebuilt the
       package reports `119 scenarios (118 passed, 1 failed)`, exit 1; after the
       revert `119 scenarios (119 passed)`, exit 0.
-- [x] COMMIT: `PENDING-B5` -- Batch: qualification
+- [x] COMMIT: `9b63979c` -- Batch: qualification
 
 ## Batch 6: the architecture record
 
@@ -170,6 +172,6 @@ Release note: `Record the standalone acceptance package as ADR-079`
       `GIVN_FEATURES=givn/specs/fragments cargo test --locked --test
       features_runner -- --tags "@adr-qualification-gate"` →
       `18 scenarios (18 passed)`.
-- [x] COMMIT: `PENDING-B6` -- Batch: architecture record
+- [x] COMMIT: `cec46e95` -- Batch: architecture record
 - [x] Scenario: The migration preserves independent architecture history across three proposed decisions
-- [x] COMMIT: `PENDING-B6` -- Batch: architecture record
+- [x] COMMIT: `cec46e95` -- Batch: architecture record
