@@ -480,4 +480,24 @@ every delta phrase already bound in the permanent test tree.
       session and cannot be split by the commit tool's per-actor units, so this
       change commits none of them. `review.md` is the review step's artifact, not
       this step's.
+- [x] Final review gate: `givn check review --change
+      keep-frozen-verifier-out-of-the-trial` exits 0 with `REVIEW: PASS` in
+      `review.md`.
+      ```
+      $ givn check review --change keep-frozen-verifier-out-of-the-trial
+      Mandatory checks for 'review':
+        ✓ integrity checks passed
+        ✓ run declaration passed
+      givn lint: 3 file(s) checked — clean
+      net delta: 6 added, 5 modified, 0 removed
+        ✓ overlap dispositions passed
+        ✓ scenario commits passed (11 scenario(s))
+        ✓ change verification receipt reused across documentation-only revision
+          b478bfff9b362267e0b290452f7e2177a16f9877 (tested at
+          a2f3bfb3614f86e2a3f2978443d52c22515873a3, 10 scenario(s))
+        ✓ scenario commits passed (11 scenario(s))
+      EXIT: 0
+      ```
+      The gate printed only `[SHAPE]` and `[SUBST]` advisories for the delta
+      scenarios; no advisory blocks the review.
 
