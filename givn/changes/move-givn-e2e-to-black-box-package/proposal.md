@@ -57,9 +57,11 @@ From the maintainer's side:
 - **Scope separation.** `verify.e2e_command` runs the new package; the regular
   scope keeps the in-process component tier. Both read the same feature files
   and select by tag, so the feature files stay where they are.
-- **Wording preserved.** The current corpus has 116 `@e2e` scenarios in 57
-  feature files, not the seed's 108 in 51; the corpus grew after the seed. All
-  116 keep their wording. Four of them contain a step that calls a product
+- **Wording preserved.** The current corpus has 111 `@e2e` `Scenario:`
+  declarations plus 3 `Scenario Outline:` declarations whose 8 example rows
+  execute (119 executions) in 56 feature files, not the seed's 108 in 51; the
+  corpus grew after the seed. All of them keep their wording. Four of them
+  contain a step that calls a product
   helper; each step is rewritten against the binary's output or a literal
   fixture. Zero scenarios are retagged. The package's inventory records
   every scenario and its bound step definitions.

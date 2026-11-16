@@ -162,16 +162,14 @@ package's tree contains a `source:` root, when a package has a dependency edge i
 `source`, when a path that resolves no package contains a reference resolving into
 a `source:` root, or when `verify.e2e_command` does not name every resolved
 `e2e` root. The runner-target rule is textual: a resolved root is named by a
-token equal to the root or containing `<root>/`, or by the token after
-`--package` when that value equals the root. A bare `--e2e` tier flag names no
+token equal to the root or containing `<root>/`. The `--package` value is such
+a token, so `--package e2e` names the root; a bare `--e2e` tier flag names no
 package, so a command whose only package evidence is that flag is refused. The
-whole-token and path forms keep their existing acceptance; the `--package` form
-is the typed form Givn's own command uses. The check proves naming, not
-execution, and a run that reported another scope is refused by the result's
-scope field. Both readers are static: a registry, git, or renamed dependency
-carries no project path and is admitted, so the boundary check cannot see a
-published product edge; a project's E2E runner is expected to assert its
-committed lockfile for that case. The import fallback reads path-resolving
+check proves naming, not execution, and a run that reported another scope is
+refused by the result's scope field. Both readers are static: a registry, git,
+or renamed dependency carries no project path and is admitted, so the boundary
+check cannot see a published product edge; a project's E2E runner is expected to
+assert its committed lockfile for that case. The import fallback reads path-resolving
 references only: an external package name, or a language whose import syntax
 the reader does not recognize, is admitted. A change with `ise` off reads no
 declaration and gains no boundary refusal.

@@ -22,14 +22,16 @@ below with the rejected alternatives and the line where it landed.
 No. `names_root` (`src/e2e_boundary/mod.rs:428-441`) matches a token equal to
 the root or a token containing `<root>/`; `--e2e` matches neither, so the old
 design (`design.md:68` and `:131` before hardening) claimed a form the product
-refuses. Resolution: the command becomes `./run-tests.sh --e2e --package e2e`,
-and `names_root` reads the token after `--package`, accepting the root only when
-that value equals it. The existing whole-token and `<root>/` forms stay
+refuses. Resolution: the command becomes `./run-tests.sh --e2e --package e2e`.
+`names_root` accepts the `--package` value because that value is a whole token
+equal to the root; the rule needed no product change, and review finding F1
+deleted the dead `--package` branch that had been added for it. The existing
+whole-token and `<root>/` forms stay
 accepted, so no consumer-visible refusal changes. `--e2e` alone names the tier,
 not the package. Rejected: accepting `--e2e` as evidence (it names no package);
 narrowing the whole-token form (it would refuse positional root tokens projects
-use today, for no acceptance gain). Landed at `design.md:143-147`, `:222-234`,
-`usecase.md:111`, `docs/reference.md:164-169`, the accepted-command Given
+use today, for no acceptance gain). Landed at `design.md:148-154`, `:228-244`,
+`usecase.md:111`, `docs/reference.md:164-172`, the accepted-command Given
 (`specs/verify-change/givn-workflow-enforcement.feature:7`), and the modified
 outline row (`:26`).
 
@@ -105,8 +107,12 @@ design states no undercount. Landed at `design.md:34-48`, `:292-362`.
 
 ## Blockers and their closure
 
-1. **Runner naming.** Closed by Q1. `design.md:143-147`, `:222-234`,
-   `:425-427`; `docs/reference.md:164-169`; `givn/commands.yaml:4`.
+1. **Runner naming.** Closed by Q1. `design.md:148-154`, `:228-244`,
+   `:84`; `docs/reference.md:164-172`; `givn/commands.yaml:4`. The rule needed
+   no product change: the whole-token form already accepts the `--package`
+   value equal to the declared root. Review finding F1 closed a dead
+   `--package` branch and its three unit tests; `design.md`, this record, and
+   `tasks.md` batch 2 state the command satisfies the rule as a token.
 2. **ADR register count.** `docs/arc42/adr/README.md` carries 31 accepted rows
    and the ADR-079 row. The permanent scenario and its binding agreed on 30 and
    went red (`left: 31, right: 30`). Reconciled: permanent
@@ -114,10 +120,13 @@ design states no undercount. Landed at `design.md:34-48`, `:292-362`.
    `tests/steps/adr_qualification_gate_steps.rs:881-912` asserts 31 and requires
    the ADR-078 and ADR-079 rows to be accepted; the delta `@givn.modified`
    scenario asserts the same
-   (`specs/fragments/adr-qualification-gate.feature:10`). Both scopes green:
-   the permanent fragment scope passed 18/18 scenarios, the delta
-   `@givn.modified` scenario passed 1/1, and the non-e2e suite passed 1081/1081
-   (the 114 skipped are the excluded `@e2e` scenarios).
+   (`specs/fragments/adr-qualification-gate.feature:10`). Both scopes green
+   before the move: the permanent fragment scope passed 18/18 scenarios, the
+   delta `@givn.modified` scenario passed 1/1, and the non-e2e suite passed
+   1081/1081 (the 114 skipped are the excluded `@e2e` scenarios). After the move
+   the same tag run splits: 17 scenarios in the component tier
+   (`@adr-qualification-gate and not @e2e`) and 1 in the package
+   (`@e2e and @adr-qualification-gate`), measured in `tasks.md` batch 6.
 3. **Migration inventory.** Closed by Q5; the design states 23, the measured
    count, and lists every binding.
 4. **Relative `GIVN_FEATURES`.** Closed by Q2. `design.md:440-448` passes an
@@ -178,6 +187,7 @@ givn lint: 2 file(s) checked, 3 finding(s)   # three @wip scenarios, contract pe
 $ GIVN_FEATURES=givn/specs/fragments cargo test --locked --test features_runner -- --tags "@adr-qualification-gate"
 18 scenarios (18 passed); 98 steps (98 passed)
   including 'The migration preserves independent architecture history across three proposed decisions'
+  # before the move; after it the tag run splits 17 component (91 steps) + 1 package (7 steps)
 
 $ GIVN_FEATURES=givn/changes/move-givn-e2e-to-black-box-package/specs cargo test --locked --test features_runner -- --tags "@adr-qualification-gate"
 1 scenario (1 passed); 11 steps (11 passed)   # the delta @givn.modified scenario

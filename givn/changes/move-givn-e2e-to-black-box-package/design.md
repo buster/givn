@@ -23,8 +23,12 @@ scope at that package. Five surfaces:
 5. **Documentation.** `docs/reference.md`, the affected arc42 chapters, the
    glossary, and a new ADR record the acceptance-package boundary.
 
-Measured corpus on 2026-11-16: 116 `@e2e` scenarios in 57 feature files; the
-seed's figures are stale. The measured binding set of the `@e2e` corpus spans
+Measured corpus on 2026-11-16: 111 `@e2e` `Scenario:` declarations and 3
+`@e2e` `Scenario Outline:` declarations whose 8 example rows execute, so the
+runner executes 119 scenarios in 56 feature files. A `@e2e` string grep counts
+57 files because the tag appears only inside step docstrings in
+`givn/specs/verify-change/review-disposition-gates.feature`. The seed's figures
+are stale. The measured binding set of the `@e2e` corpus spans
 76 step modules: 31 `*_e2e_steps.rs` files, 9 support modules, and shared files
 that also bind component scenarios (including the generic fixture steps in
 `tests/steps/mod.rs`). `tests/features_runner.rs` calls
@@ -77,7 +81,7 @@ Confirmed Persona IDs: `agent--technical-role`, `givn-maintainer--owner`.
 |---|---|---|
 | `verify-change` rule: the declared `e2e` role resolves one or more packages, each holding its own manifest, the runner, and every `@e2e` step definition | `e2e/Cargo.toml` is the manifest; `e2e/tests/e2e_runner.rs` is the runner; `e2e/tests/steps/<capability>.rs` holds the definitions | the moved suite runs through the package; the delta scenario proves a standalone-workspace package resolves and binds |
 | `verify-change` rule: the package links no production source | no manifest edge, no `use givn::`, products reached through `GIVN_BIN` | `cargo tree --manifest-path e2e/Cargo.toml`; the package runner's `e2e/Cargo.lock` assertion; `scripts/qualify-givn-e2e.sh` |
-| `verify-change` rule: `verify.e2e_command` names every resolved root | `givn/commands.yaml` carries `./run-tests.sh --e2e --package e2e`; the declaration root is `e2e`; `names_root` reads the root as the token after `--package` or as a path token | the predecessor's runner-target rule; the added delta scenario (accepted command) and the modified outline row (`--e2e` without `--package`) |
+| `verify-change` rule: `verify.e2e_command` names every resolved root | `givn/commands.yaml` carries `./run-tests.sh --e2e --package e2e`; the declaration root is `e2e`; `names_root` accepts any whole token equal to the root or carrying `<root>/`, so the `--package` value names it | the predecessor's runner-target rule; the added delta scenario (accepted command) and the modified outline row (`--e2e` without `--package`) |
 | `verify-change` rule: a delta with `@e2e` scenarios runs the E2E scope and binds its identity | `./run-tests.sh --e2e --package e2e` passes `GIVN_RESULT_SCOPE=e2e` and `GIVN_RESULT_FILE` through; the package writes the four counts and the scope | the delta scenario asserts the receipt binds both digests and records a passed E2E scope |
 | `verify-change` extension: a resolved package that declares its own workspace is accepted | the resolver reads the nearest package manifest; an `exclude` entry is not a dependency edge | the delta scenario |
 | `verify-change` rule: an unbound or skipped step fails the E2E run | `.fail_on_skipped()` plus a filter that excludes `@givn.removed`; exit 1 on failed, skipped, or zero | the package runner; the strict-mode probe in tasks |
@@ -143,9 +147,11 @@ e2e/
 
 `givn/commands.yaml` carries
 `e2e_command: "./run-tests.sh --e2e --package e2e"`. The `e2e` token is the
-value of `--package`, so the runner-target rule reads a typed flag value rather
-than a bare tier flag: the `--e2e` flag names no root and is refused. The regular
-scope keeps `command: "./run-tests.sh --non-e2e"`.
+value of `--package`, and the runner-target rule already accepts any whole token
+equal to the declared root, so the command names the package with no product
+change. A bare `--e2e` flag names no root: `run-tests.sh` refuses it, and the
+delta outline keeps the refusal. The regular scope keeps
+`command: "./run-tests.sh --non-e2e"`.
 
 ### Contracts and Components
 
@@ -155,9 +161,8 @@ scope keeps `command: "./run-tests.sh --non-e2e"`.
 
 One contract, one component. The product's `e2e_boundary` resolver and
 `proof` module keep their responsibilities from
-`enforce-ise-e2e-boundary`; this change adds the `--package` acceptance form to
-`names_root` and supplies the package those checks were written for. No other
-product code changes.
+`enforce-ise-e2e-boundary`; this change does not change them, and supplies the
+package those checks were written for. No product code changes.
 
 ## Data Model Changes
 
@@ -223,16 +228,20 @@ never enter the published crate.
 - **Decides the runner-naming question: the command names the package through
   `--package`.** `verify.e2e_command` becomes
   `./run-tests.sh --e2e --package e2e`. `names_root` in
-  `src/e2e_boundary/mod.rs` reads the token after `--package` and accepts the
-  root when that value equals it; a bare `--e2e` flag, or a `--package` value
-  naming something else, names nothing. The existing whole-token and `<root>/`
-  path forms stay accepted, so `--manifest-path e2e/Cargo.toml` and the
-  existing fixture commands are unchanged and no consumer-visible refusal
-  changes. Rejected: accepting `--e2e` as evidence, because the flag names the
-  tier, not the package; and narrowing the whole-token form, because that
-  would refuse a positional root token projects use today. Realized in
-  `src/e2e_boundary/mod.rs`, `givn/commands.yaml`, `docs/reference.md`, and the
-  delta scenarios.
+  `src/e2e_boundary/mod.rs` accepts any whole token equal to the declared root
+  or carrying `<root>/`; the `--package` value `e2e` is such a token, so the
+  command satisfies the rule with no product change. A bare `--e2e` flag names
+  no root and `run-tests.sh` refuses it before the package runs; a `--package`
+  value naming another root names nothing, because no token equals the declared
+  root. The existing whole-token and `<root>/` path forms stay accepted, so
+  `--manifest-path e2e/Cargo.toml` and the existing fixture commands are
+  unchanged and no consumer-visible refusal changes. Rejected: reading the token
+  after `--package` as a separate typed form, because the whole-token rule
+  subsumes it and the branch cannot change any result (review finding F1);
+  accepting `--e2e` as evidence, because the flag names the tier, not the
+  package; and narrowing the whole-token form, because that would refuse a
+  positional root token projects use today. Realized in `givn/commands.yaml`,
+  `run-tests.sh`, `docs/reference.md`, and the delta scenarios.
 - **Decides the path question: the project runner canonicalizes the paths it
   hands the package.** The package's working directory is `e2e/`, so
   `run-tests.sh` resolves `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and the binary
@@ -304,7 +313,8 @@ otherwise the step body is rewritten against `GIVN_BIN`, a literal, or a file
 the package wrote. A scenario is retagged only when its assertion cannot be
 expressed through the binary. None is.
 
-Measured on 2026-11-16: 116 `@e2e` scenarios in 57 feature files; 23
+Measured on 2026-11-16: 111 `@e2e` scenarios plus 3 outlines (8 example rows) in
+56 feature files, 119 executions; 23
 product-calling step definitions across 18 of those scenarios in 11 files; 3
 fixture-helper sites in `tests/steps/mod.rs`; 4 product-calling support modules
 under `tests/steps/`; 3 copied `tests/common/` helpers. Lines are this
@@ -349,7 +359,8 @@ revision's.
 | `tests/steps/outline_report_support.rs` (4 sites) | `outline` model types and analyzer trait | write the fixture source and assert the binary's report; no analyzer |
 | `tests/steps/repository_ownership_fixtures_support.rs` (1 site) | `usecase_md_template` | literal narrative |
 | `tests/common/mod.rs` (10 sites, `effective_manifest`) | `Manifest::load_embedded`, `overlay::apply_config`, `overlay::apply_commands` | read the written `givn/config.yaml` and `givn/commands.yaml`; drop the helper where unused |
-| `tests/common/browser.rs`, `tests/common/terminal_evidence.rs` | `integrity_hook::scenario_slug` | package-local `scenario_slug` copy |
+| `tests/common/terminal_evidence.rs` | `integrity_hook::scenario_slug` | package-local `scenario_slug` copy; the component copy stays because `tests/steps/trial_input_verification_steps.rs` binds it |
+| `tests/common/browser.rs` | `integrity_hook::scenario_slug` | package-local copy; the component copy is deleted because no component scenario binds a browser step after the move |
 | `tests/features_runner.rs` | `gherkin::delta::is_removed_placeholder` | `@givn.removed` tag filter |
 
 ### Step modules and their disposition
@@ -361,7 +372,8 @@ revision's.
 | `tests/steps/mod.rs` fixture steps used by `@e2e` scenarios | copied into the package harness with the three helper rewrites above; the component copy stays |
 | `tests/steps/archive_proof_support.rs`, `development_timeline_support.rs`, `outline_report_support.rs`, `repository_ownership_fixtures_support.rs` | copied with the rewrites above; the component copies stay |
 | `tests/steps/run_declaration_fixtures_support.rs`, `run_execution_support.rs`, `ise_clean_room_support.rs`, `template_conditional_rendering_support.rs` | copied unchanged; they name no product symbol |
-| `tests/common/browser.rs`, `tests/common/terminal_evidence.rs`, `tests/common/mod.rs` | copied with a local `scenario_slug` and the `effective_manifest` rewrite; the originals stay for the component tier |
+| `tests/common/terminal_evidence.rs`, `tests/common/mod.rs` | copied with a local `scenario_slug` and the `effective_manifest` rewrite; the originals stay for the component tier |
+| `tests/common/browser.rs` | copied with a local `scenario_slug`; the component copy is deleted because it spawned the moved driver at `tests/e2e/browser-driver.mjs` and no component scenario binds a browser step |
 | `tests/steps/run_command_steps.rs`, `workflow_enforcement_steps.rs`, `instruction_integrity_steps.rs`, `prose_consolidation_steps.rs`, `default_all_addons_steps.rs`, `development_report_steps.rs` | the `@e2e`-bound definitions are copied and rewritten; the component definitions stay |
 | `tests/features_runner.rs` and every `tests/steps/*_e2e_steps.rs` reference in `mod.rs` | removed from the component tier; the package runner is its own target |
 
@@ -408,10 +420,10 @@ pin), and precedence (scope selection by tag, not by command shape).
 | Capability | Step definition file | Permanent merge target |
 |---|---|---|
 | `givn-workflow-enforcement` (delta, non-`@e2e`) | `tests/steps/workflow_enforcement_steps.rs` | same file, extended in place |
-| `givn-workflow-enforcement` (`@e2e`, moved corpus) | `e2e/tests/steps/workflow_enforcement.rs` | permanent package file, created by the move |
+| `givn-workflow-enforcement` (`@e2e`, moved corpus) | `e2e/tests/steps/workflow_enforcement_e2e_steps.rs` | permanent package file, created by the move |
 | `adr-qualification-gate` (delta, `@givn.modified`) | `tests/steps/adr_qualification_gate_steps.rs` | same file, extended in place |
 
-New and changed phrases:
+## New and Changed Step Phrases
 
 | Phrase (exact) | Binding file | Note |
 |---|---|---|
