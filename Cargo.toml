@@ -15,6 +15,7 @@ categories = ["command-line-utilities", "development-tools"]
 license = "GPL-3.0-or-later"
 repository = "https://github.com/buster/givn"
 exclude = [
+    "e2e/**",
     "harness/**",
     "reports/**",
     "test-corpus/**",

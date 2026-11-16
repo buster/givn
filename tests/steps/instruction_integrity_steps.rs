@@ -948,13 +948,22 @@ fn check_served_instruction(world: &mut GivnWorld, id: &str) {
     record_reference_check(world, sources, artifacts, change);
 }
 
+/// The tier's own fixture for "an active change exists": the @e2e copy lives
+/// in the package, and this tier keeps its own.
+fn setup_active_change_project(world: &mut GivnWorld) {
+    world.env = Some(crate::common::make_init_root());
+    let env = world.env.as_ref().expect("fixture project");
+    let output = crate::common::run_givn(env, &["new", "instruction-integrity"]);
+    assert!(output.status.success(), "create fixture change failed");
+}
+
 fn findings_report(world: &GivnWorld) -> String {
     crate::common::instruction_references::describe(&world.instruction_findings)
 }
 
 #[given("a Givn project with an active change and the guidance reference check available")]
 fn givn_project_with_active_change_and_reference_check(world: &mut GivnWorld) {
-    crate::steps::instruction_integrity_e2e_steps::givn_project_with_active_change(world);
+    setup_active_change_project(world);
     // The check reads the artifact set from the graph, so the fixture must
     // serve it before any direction is graded.
     let output = crate::common::run_givn(env(world), &["graph", "--json"]);
@@ -3782,5 +3791,70 @@ fn review_guidance_neighboring_answer_is_not_a_gate(world: &mut GivnWorld) {
     assert!(
         content.contains("review question, never a gate"),
         "the served review guidance does not deny the gate: {content}"
+    );
+}
+
+fn active_project(world: &GivnWorld) -> &crate::common::TestEnv {
+    world.env.as_ref().expect("E2E project is missing")
+}
+
+#[given("a Givn project with an active change")]
+pub(crate) fn givn_project_with_active_change(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let output = crate::common::run_givn(&env, &["new", "instruction-integrity"]);
+    assert!(output.status.success(), "create fixture change failed");
+    world.env = Some(env);
+}
+
+#[given("an initialized Givn project without an active change")]
+fn initialized_project_without_change(world: &mut GivnWorld) {
+    world.env = Some(crate::common::make_init_root());
+}
+
+#[when("the author requests the normal Givn startup instructions through the Givn CLI")]
+fn author_requests_startup_instructions(world: &mut GivnWorld) {
+    let env = active_project(world);
+    world.last_output = Some(crate::common::run_givn(env, &["instructions"]));
+}
+
+#[when("the author requests the specs instructions through the Givn CLI")]
+fn author_requests_specs_instructions(world: &mut GivnWorld) {
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(
+            env,
+            &["instructions", "specs", "--change", "instruction-integrity"],
+        )
+    };
+    world.last_output = Some(output);
+}
+
+fn stdout(world: &GivnWorld) -> String {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("no CLI output was captured");
+    assert!(output.status.success(), "CLI command failed");
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[then("the CLI output contains the complete interaction and E2E policy")]
+fn cli_contains_complete_policy(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(output.contains("Primary assertion rule"));
+    assert!(output.contains("Real-interface driving rule"));
+    assert!(output.contains("Interface obstacle rule"));
+}
+
+#[then("the CLI output no longer advertises retrieval commands")]
+fn cli_no_longer_advertises_retrieval(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        !output.contains("givn spec index"),
+        "specs instruction still advertises `givn spec index` after semantic-gate retirement"
+    );
+    assert!(
+        !output.contains("retrieval-unavailable"),
+        "specs instruction still describes retrieval-unavailable behaviour"
     );
 }

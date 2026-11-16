@@ -642,3 +642,83 @@ fn expired_deadline_uses_existing_cleanup(world: &mut GivnWorld) {
         "cleanup started another full probe wait: {elapsed}ms"
     );
 }
+
+fn git_fixture(env: &common::TestEnv, args: &[&str]) -> std::process::Output {
+    std::process::Command::new("git")
+        .args(args)
+        .current_dir(env.root())
+        .output()
+        .expect("run git fixture command")
+}
+
+fn git_fixture_stdout(env: &common::TestEnv, args: &[&str]) -> String {
+    let output = git_fixture(env, args);
+    assert!(
+        output.status.success(),
+        "git command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[when("the user runs `givn upgrade` again")]
+fn upgrade_again(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.run_prev_commit = Some(git_fixture_stdout(env, &["rev-parse", "HEAD"]));
+    world.last_output = Some(common::run_givn(env, &["upgrade"]));
+}
+
+#[then("the working tree is clean")]
+fn working_tree_is_clean(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let status = git_fixture_stdout(env, &["status", "--porcelain"]);
+    assert!(
+        status.trim().is_empty(),
+        "the working tree must be clean after the upgrade commit:\n{status}"
+    );
+}
+
+#[then(regex = r#"^the latest revision contains "(.*)"$"#)]
+fn latest_revision_contains(world: &mut GivnWorld, path: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let names = match env.backend() {
+        common::BackendKind::Git => {
+            git_fixture_stdout(env, &["show", "--name-only", "--format=", "HEAD"])
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(env, &["diff", "--brief", "--checkin", "current"]);
+            String::from_utf8_lossy(&out.stdout).into_owned()
+        }
+    };
+    assert!(
+        names.lines().any(|line| line.contains(&path)),
+        "the latest revision must touch {path}; it touches:\n{names}"
+    );
+}
+
+#[then("the latest revision is unchanged by the second upgrade")]
+fn latest_revision_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = world
+        .run_prev_commit
+        .as_deref()
+        .expect("the pre-second-upgrade commit hash is required");
+    let after = git_fixture_stdout(env, &["rev-parse", "HEAD"]);
+    assert_eq!(
+        before.trim(),
+        after.trim(),
+        "the second upgrade created an additional commit"
+    );
+}

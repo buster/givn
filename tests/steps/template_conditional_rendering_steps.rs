@@ -598,3 +598,28 @@ fn failure_names_template_and_directive(world: &mut GivnWorld) {
         "failure must name the invalid directive, got: {combined}",
     );
 }
+
+#[when(regex = r"^a consumer disables the ([a-z0-9-]+) addon through the Givn CLI$")]
+fn consumer_disable_addon(world: &mut GivnWorld, addon: String) {
+    let cli_id = addon.replace('-', "_");
+    let out = common::run_givn(support::env(world), &["addons", "disable", &cli_id]);
+    world.last_output = Some(out);
+}
+
+#[then("the served review instruction contains the Ubiquitous language conformance section")]
+fn served_review_instruction_contains_ubiquitous_language(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "review");
+    assert!(
+        content.contains("Ubiquitous language conformance"),
+        "the served review instruction is missing the ubiquitous-language section:\n{content}"
+    );
+}
+
+#[then("the served review instruction omits the Ubiquitous language conformance section")]
+fn served_review_instruction_omits_ubiquitous_language(world: &mut GivnWorld) {
+    let content = support::served_artifact_instruction(world, "review");
+    assert!(
+        !content.contains("Ubiquitous language conformance"),
+        "the served review instruction carries the ubiquitous-language section:\n{content}"
+    );
+}

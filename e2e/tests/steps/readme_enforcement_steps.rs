@@ -1,0 +1,307 @@
+//! Unit-level step definitions for the README enforcement capability.
+//!
+//! Fixtures construct deterministic README states on an initialised project
+//! root; assertions reuse the shared subprocess harness (`tests/common`).
+
+use super::GivnWorld;
+use crate::harness as common;
+use cucumber::{given, then};
+
+pub(crate) fn scaffolded_readme_text() -> String {
+    "\
+# readme-demo-project
+
+<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->
+
+## Quick start
+
+<!-- givn:todo: Exact commands to clone, build, and run the project. -->
+
+## Prerequisites
+
+<!-- givn:todo: Required tools, languages, or runtimes. -->
+
+## Usage
+
+<!-- givn:todo: A brief example or --help output showing how to use the project. -->
+
+## Contributing
+
+<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->
+
+## License
+
+<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->
+
+<!-- givn:begin:development -->
+## Development
+
+Run the project-owned scripts used by `givn/commands.yaml`:
+
+```sh
+./run-tests.sh
+./run-tests.sh --e2e
+```
+<!-- givn:end:development -->
+"
+    .to_string()
+}
+
+fn write_readme(world: &mut GivnWorld, content: &str) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    std::fs::write(env.path("README.md"), content).expect("write README.md");
+}
+
+#[given("a scaffolded README")]
+fn scaffolded_readme(world: &mut GivnWorld) {
+    write_readme(world, &scaffolded_readme_text());
+}
+
+#[given("a complete README")]
+fn complete_readme(world: &mut GivnWorld) {
+    let text = scaffolded_readme_text()
+        .replace(
+            "<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->",
+            "A small command-line tool that prints greetings.",
+        )
+        .replace("<!-- givn:todo: Exact commands to clone, build, and run the project. -->", "cargo install this-project")
+        .replace("<!-- givn:todo: Required tools, languages, or runtimes. -->", "Rust 1.97.1")
+        .replace("<!-- givn:todo: A brief example or --help output showing how to use the project. -->", "this-project --help")
+        .replace("<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->", "Conventional Commits.")
+        .replace("<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->", "MIT");
+    write_readme(world, &text);
+}
+
+#[given("a stale development managed block")]
+fn stale_block_readme(world: &mut GivnWorld) {
+    let text = scaffolded_readme_text()
+        .replace(
+            "<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->",
+            "A small command-line tool that prints greetings.",
+        )
+        .replace("<!-- givn:todo: Exact commands to clone, build, and run the project. -->", "cargo install this-project")
+        .replace("<!-- givn:todo: Required tools, languages, or runtimes. -->", "Rust 1.97.1")
+        .replace("<!-- givn:todo: A brief example or --help output showing how to use the project. -->", "this-project --help")
+        .replace("<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->", "Conventional Commits.")
+        .replace("<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->", "MIT")
+        .replace(
+            "Run the project-owned scripts used by `givn/commands.yaml`:\n\n```sh\n./run-tests.sh\n./run-tests.sh --e2e\n```",
+            "Run the project-owned scripts:\n\n```sh\nstale-command-listing\n```",
+        );
+    write_readme(world, &text);
+}
+
+#[given("verify commands are no-ops")]
+fn verify_commands_noops(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
+    let yaml = "\
+verify:
+  command: \"./emit-result.sh regular\"
+  e2e_command: \"\"
+coverage:
+  measure_command: \"true\"
+  merge_command: \"true\"
+  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
+  e2e_path: \"coverage/e2e-cobertura.xml\"
+  output_path: \"coverage/cobertura-coverage.xml\"
+";
+    std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
+}
+
+pub(crate) fn write_reviewable_change(world: &mut GivnWorld, id: &str) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    // These fixtures exercise the README gate, not the outline gate. The
+    // outline addon is enabled by default, so opt this fixture out explicitly.
+    let config_path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).expect("read givn/config.yaml");
+    std::fs::write(
+        &config_path,
+        config.replace("outline: true", "outline: false"),
+    )
+    .expect("disable the outline addon");
+    let change_dir = env.path(&format!("givn/changes/{id}"));
+    std::fs::create_dir_all(&change_dir).expect("create change dir");
+    std::fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write proposal");
+    let permanent_dir = env.path("givn/specs/example");
+    std::fs::create_dir_all(&permanent_dir).expect("create permanent usecase dir");
+    std::fs::write(
+        permanent_dir.join("example.feature"),
+        "Feature: Example\n\n  Scenario: Existing fixture behavior\n    Given a fixture step\n",
+    )
+    .expect("write permanent fixture feature");
+    common::write_fixture_delta(env, id, "example", "Readme fixture behavior");
+    std::fs::write(change_dir.join("design.md"), "# Design\n").expect("write design");
+    std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write design-review");
+    std::fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- all scenarios done\n",
+    )
+    .expect("write tasks");
+    std::fs::write(change_dir.join("review.md"), "REVIEW: PASS\n").expect("write review");
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n")
+        .expect("write arc42");
+    world.last_change_id = Some(id.to_string());
+}
+
+#[given(regex = r#"^a reviewable change "([^"]+)"$"#)]
+fn reviewable_change(world: &mut GivnWorld, id: String) {
+    write_reviewable_change(world, &id);
+}
+
+#[given(regex = r#"^a completed change "([^"]+)"$"#)]
+fn completed_change_short(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change_dir = env.path(&format!("givn/changes/{id}"));
+    let out = common::run_givn(env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    std::fs::write(
+        change_dir.join("proposal.md"),
+        crate::steps::fixture_routing_proposal("example"),
+    )
+    .expect("write proposal");
+    std::fs::write(change_dir.join("design.md"), "# Design\n").expect("write design");
+    std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write design-review");
+    std::fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- all done\n",
+    )
+    .expect("write tasks");
+    std::fs::write(
+        change_dir.join("review.md"),
+        "README-IMPACT: none\n\nREVIEW: PASS\n",
+    )
+    .expect("write review");
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n")
+        .expect("write arc42");
+    let permanent = env.path("givn/specs/example");
+    std::fs::create_dir_all(&permanent).expect("create permanent usecase dir");
+    std::fs::write(
+        permanent.join("example.feature"),
+        "Feature: example\n  Scenario: Existing stub\n    Given a placeholder step\n",
+    )
+    .expect("write permanent feature");
+    let document = crate::harness::usecase_md_template()
+        .replace("<usecase-id>", "example")
+        .replace("<capability-id>", "example")
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace("<scenario title>", "stub")
+        .replace(
+            "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| example | exercise the capability | stub |\n",
+            "- none\n",
+        );
+    std::fs::write(permanent.join("usecase.md"), document).expect("write permanent usecase");
+    let specs_dir = change_dir.join("specs").join("example");
+    std::fs::create_dir_all(&specs_dir).expect("create specs dir");
+    std::fs::write(
+        specs_dir.join("example.feature"),
+        "@givn.delta\nFeature: example\n  Scenario: stub\n    Given a placeholder step\n",
+    )
+    .expect("write delta spec");
+    crate::harness::declare_fixture_routing(env, &id);
+    world.last_change_id = Some(id);
+}
+
+#[given(regex = r#"^its review records the impact "(.*)"$"#)]
+fn review_records_impact(world: &mut GivnWorld, decision: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let id = world
+        .last_change_id
+        .as_deref()
+        .expect("a change id is required first");
+    let path = env.path(&format!("givn/changes/{id}/review.md"));
+    let existing = std::fs::read_to_string(&path).expect("read review.md");
+    std::fs::write(&path, format!("{existing}README-IMPACT: {decision}\n"))
+        .expect("write README-IMPACT line");
+}
+
+#[given("the README is snapshotted")]
+fn snapshot_readme(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    std::fs::copy(env.path("README.md"), env.path("readme-before.bin")).unwrap();
+}
+
+#[given("a stale development managed block with exactly one ordered opening and closing marker")]
+fn ordered_stale_block(world: &mut GivnWorld) {
+    stale_block_readme(world);
+    let env = world.env.as_ref().unwrap();
+    // The gate's own rule, asserted on the file: exactly one ordered marker
+    // pair, never a second or a reordered one.
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    let findings: Vec<&str> = readme
+        .lines()
+        .filter(|line| {
+            line.contains("givn:begin:development") || line.contains("givn:end:development")
+        })
+        .collect();
+    let begins = findings
+        .iter()
+        .filter(|line| line.contains("givn:begin:development"))
+        .count();
+    let ends = findings
+        .iter()
+        .filter(|line| line.contains("givn:end:development"))
+        .count();
+    assert_eq!(
+        begins, 1,
+        "the README carries {begins} development begin markers"
+    );
+    assert_eq!(ends, 1, "the README carries {ends} development end markers");
+    let begin_at = readme.find("givn:begin:development").expect("begin marker");
+    let end_at = readme.find("givn:end:development").expect("end marker");
+    assert!(
+        begin_at < end_at,
+        "the development markers are out of order"
+    );
+}
+
+#[given("user-authored prose before and after the managed block")]
+fn surround_development_block(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let text = std::fs::read_to_string(env.path("README.md")).unwrap();
+    write_readme(
+        world,
+        &format!("User prefix.  \t\r\n{text}\r\nUser suffix.  \t"),
+    );
+    snapshot_readme(world);
+}
+
+#[then("the user-authored prose before and after the managed block is byte-for-byte unchanged")]
+fn surrounding_prose_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().unwrap();
+    let before = std::fs::read_to_string(env.path("readme-before.bin")).unwrap();
+    let after = std::fs::read_to_string(env.path("README.md")).unwrap();
+    let begin = "<!-- givn:begin:development -->";
+    let end = "<!-- givn:end:development -->";
+    assert_eq!(
+        &before[..before.find(begin).unwrap()],
+        &after[..after.find(begin).unwrap()]
+    );
+    assert_eq!(
+        &before[before.find(end).unwrap() + end.len()..],
+        &after[after.find(end).unwrap() + end.len()..]
+    );
+}

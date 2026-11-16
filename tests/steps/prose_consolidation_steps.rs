@@ -981,3 +981,68 @@ fn guidance_states_the_implicit_retained_entry(world: &mut GivnWorld) {
         "the served ise guidance does not state that the declaration is an implicit retained entry: {content}"
     );
 }
+
+#[then("the served proposal instruction preserves the proposed-by seed stamp")]
+fn proposal_preserves_proposed_by_stamp(_world: &mut GivnWorld) {
+    let content =
+        std::fs::read_to_string(crate::common::repo_path("assets/instructions/proposal.md"))
+            .expect("read proposal instruction");
+    assert!(
+        content.contains("Status: proposed by <change-id>"),
+        "proposal instruction lost the proposed-by seed stamp"
+    );
+    assert!(
+        content.contains("Seed stamping"),
+        "proposal instruction lost the seed-stamping section"
+    );
+}
+
+#[then("the served archive instruction preserves the implemented-in seed stamp")]
+fn archive_preserves_implemented_in_stamp(_world: &mut GivnWorld) {
+    let content =
+        std::fs::read_to_string(crate::common::repo_path("assets/instructions/archive.md"))
+            .expect("read archive instruction");
+    assert!(
+        content.contains("Status: implemented in <change-id>"),
+        "archive instruction lost the implemented-in seed stamp"
+    );
+}
+
+fn fixture(world: &GivnWorld) -> &crate::common::TestEnv {
+    world.env.as_ref().expect("e2e fixture is missing")
+}
+
+fn delivered(rel: &str, world: &GivnWorld) -> String {
+    std::fs::read_to_string(fixture(world).path(rel)).unwrap_or_else(|e| panic!("{rel}: {e}"))
+}
+
+#[then("generated propose and archive skills direct authors to those instructions")]
+fn propose_and_archive_skills_direct_to_instructions(world: &mut GivnWorld) {
+    let root = fixture(world).root();
+    for (skill, instruction) in [("propose", "proposal"), ("archive", "archive")] {
+        for target in givn::config::overlay::load_skills_targets(&root).unwrap_or_default() {
+            let rel = format!(".{target}/skills/givn-{skill}/SKILL.md");
+            let content = delivered(&rel, world);
+            let needle = format!("givn instructions {instruction}");
+            assert!(
+                content.contains(&needle),
+                "{rel} does not point to {needle}: {content}"
+            );
+        }
+    }
+}
+
+#[then("no separately generated propose or archive command is installed")]
+fn no_propose_or_archive_command(world: &mut GivnWorld) {
+    let root = fixture(world).root();
+    for target in givn::config::overlay::load_skills_targets(&root).unwrap_or_default() {
+        for command in ["givn-propose", "givn-archive"] {
+            let path = root.join(format!(".{target}/commands/{command}.md"));
+            assert!(
+                !path.exists(),
+                "a generated command was installed: {}",
+                path.display()
+            );
+        }
+    }
+}

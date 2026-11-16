@@ -243,7 +243,7 @@ fn catalog_bundles_are_complete(world: &mut GivnWorld) {
 fn automatic_migration_change(world: &mut GivnWorld) {
     // The fixture records 0.7.0, the oldest declared migration source: a
     // project below the route floor receives no migration plan at all.
-    let env = crate::steps::release_0_3_0_e2e_steps::git_project_at_0_7_0();
+    let env = git_project_at_0_7_0();
     let output = crate::common::run_givn(&env, &["upgrade"]);
     assert!(
         output.status.success(),
@@ -257,7 +257,7 @@ fn automatic_migration_change(world: &mut GivnWorld) {
 fn existing_migration_project_at_0_7_0(world: &mut GivnWorld, id: String) {
     // The pre-created migrate-* change is respected whatever its version suffix.
     assert!(id.starts_with("migrate-"), "{id}");
-    let env = crate::steps::release_0_3_0_e2e_steps::git_project_at_0_7_0();
+    let env = git_project_at_0_7_0();
     let migration = env.path(&format!("givn/changes/{id}"));
     std::fs::create_dir_all(&migration).expect("create existing migration plan");
     // The upgrade dedup detection keys on migration.yaml — the fixture's
@@ -278,7 +278,7 @@ fn existing_migration_project_at_0_7_0(world: &mut GivnWorld, id: String) {
 #[when("an LLM opens the migration change")]
 fn llm_opens_migration_change(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("migration project fixture");
-    let id = crate::steps::release_0_3_0_e2e_steps::find_migration_change_id(env);
+    let id = find_migration_change_id(env);
     let design = std::fs::read_to_string(env.path(&format!("givn/changes/{id}/design.md")))
         .expect("read migration design");
     world.additional_output = Some(design);
@@ -309,7 +309,7 @@ fn no_fabricated_design_review(world: &mut GivnWorld) {
     assert!(
         !env.path(&format!(
             "givn/changes/{}/design-review.md",
-            crate::steps::release_0_3_0_e2e_steps::find_migration_change_id(env)
+            find_migration_change_id(env)
         ))
         .exists()
     );
@@ -326,7 +326,7 @@ fn no_fabricated_implementation_commit(world: &mut GivnWorld) {
     assert!(
         !env.path(&format!(
             "givn/changes/{}/tasks.md",
-            crate::steps::release_0_3_0_e2e_steps::find_migration_change_id(env)
+            find_migration_change_id(env)
         ))
         .exists()
     );
@@ -335,14 +335,8 @@ fn no_fabricated_implementation_commit(world: &mut GivnWorld) {
 #[then("the normal Givn review and archive gates remain required")]
 fn normal_gates_remain_required(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("migration project fixture");
-    let output = crate::common::run_givn(
-        env,
-        &[
-            "graph",
-            "--change",
-            &crate::steps::release_0_3_0_e2e_steps::find_migration_change_id(env),
-        ],
-    );
+    let output =
+        crate::common::run_givn(env, &["graph", "--change", &find_migration_change_id(env)]);
     assert!(output.status.success());
     let graph = String::from_utf8_lossy(&output.stdout);
     assert!(graph.contains("design-review"), "{graph}");
@@ -402,4 +396,170 @@ fn rewrite_history_error_names_it(world: &mut GivnWorld) {
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("unrecognized subcommand"), "{stderr}");
     assert!(stderr.contains("'rewrite-history'"), "{stderr}");
+}
+
+/// The tier's own 0.7.0 project fixture; the @e2e copy lives in the package.
+pub(crate) fn git_project_at_0_7_0() -> crate::common::TestEnv {
+    git_project_with_version("0.7.0")
+}
+
+fn git_project_with_version(version: &str) -> crate::common::TestEnv {
+    let env = crate::common::make_bare_root();
+    let init = crate::common::run_givn_with_stdin(
+        &env,
+        &["init", "--no-addons", "--agents", "opencode"],
+        "",
+    );
+    assert!(
+        init.status.success(),
+        "fixture init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+
+    let config_path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).expect("read fixture config");
+    std::fs::write(
+        &config_path,
+        config.replace(
+            &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
+            &format!("givn_config_version: \"{version}\""),
+        ),
+    )
+    .expect("write legacy fixture config");
+
+    let generated_skill = env.path(".opencode/skills/givn-spec/SKILL.md");
+    let mut skill = std::fs::read_to_string(&generated_skill).expect("read generated skill");
+    skill.push_str("\nlegacy generated marker\n");
+    std::fs::write(generated_skill, skill).expect("mark generated skill as legacy");
+
+    crate::common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
+        "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\n",
+    );
+    std::fs::write(
+        env.path(".gitignore"),
+        ".opencode/\nAGENTS.md\ngivn/history/\n",
+    )
+    .expect("ignore generated agent files and the development record");
+
+    crate::common::git(&env, &["init"]);
+    crate::common::git(&env, &["config", "user.name", "Givn Migration Test"]);
+    crate::common::git(
+        &env,
+        &["config", "user.email", "givn-migration@example.test"],
+    );
+    crate::common::git(&env, &["add", "--all"]);
+    let commit = crate::common::git(
+        &env,
+        &["commit", "-m", &format!("fixture: Givn {version} project")],
+    );
+    assert!(
+        commit.status.success(),
+        "fixture commit failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
+
+    env
+}
+
+/// The migration change the upgrade created in the fixture.
+fn find_migration_change_id(env: &crate::common::TestEnv) -> String {
+    let changes = env.path("givn/changes");
+    let mut ids: Vec<String> = std::fs::read_dir(&changes)
+        .expect("read fixture changes")
+        .flatten()
+        .filter(|entry| entry.path().is_dir())
+        .filter_map(|entry| entry.file_name().to_str().map(str::to_string))
+        .filter(|name| name.starts_with("migrate-"))
+        .collect();
+    ids.sort();
+    ids.pop().expect("the upgrade created a migration change")
+}
+
+#[when("the consumer invokes `givn upgrade` for migration")]
+fn consumer_runs_upgrade(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("legacy project fixture");
+    world.last_output = Some(crate::common::run_givn(env, &["upgrade"]));
+}
+
+#[when("the consumer runs `givn upgrade` again")]
+fn consumer_runs_upgrade_again(world: &mut GivnWorld) {
+    consumer_runs_upgrade(world);
+}
+
+fn git(env: &crate::common::TestEnv, args: &[&str]) -> std::process::Output {
+    std::process::Command::new("git")
+        .args(args)
+        .current_dir(env.root())
+        .output()
+        .expect("run git fixture command")
+}
+
+fn git_stdout(env: &crate::common::TestEnv, args: &[&str]) -> String {
+    let output = git(env, args);
+    assert!(
+        output.status.success(),
+        "git command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[then("the command fails before changing project files")]
+fn command_fails_before_file_changes(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(!output.status.success(), "upgrade unexpectedly succeeded");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("clean checkout")
+            || stderr.contains("requires a Git repository")
+            || stderr.contains("version-controlled project"),
+        "{stderr}"
+    );
+    let env = world.env.as_ref().expect("dirty project fixture");
+    let expected = world.additional_output.as_deref().expect("config snapshot");
+    let actual = std::fs::read_to_string(env.path("givn/config.yaml")).expect("read config");
+    assert_eq!(
+        actual, expected,
+        "config changed before dirty-worktree rejection"
+    );
+}
+
+#[then("the command does not overwrite the migration change")]
+fn migration_not_overwritten(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("prepared project fixture");
+    let actual = {
+        let id = find_migration_change_id(env);
+        std::fs::read_to_string(env.path(&format!("givn/changes/{id}")).join("design.md"))
+    }
+    .expect("read migration design");
+    let expected = world
+        .additional_output
+        .as_deref()
+        .expect("prepared migration snapshot")
+        .split_once("\n---DESIGN---\n")
+        .expect("design snapshot separator")
+        .1;
+    assert_eq!(actual, expected);
+}
+
+#[then("no second migration commit is created")]
+fn no_second_migration_commit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("prepared project fixture");
+    let before = world
+        .additional_output
+        .as_deref()
+        .expect("prepared migration snapshot")
+        .split_once('\n')
+        .expect("commit count snapshot")
+        .0;
+    let after = git_stdout(env, &["rev-list", "--count", "HEAD"]);
+    assert_eq!(after.trim(), before.trim());
+}
+
+#[then("the command reports that the project is already prepared for migration")]
+fn already_prepared_report(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("already prepared for migration"));
 }

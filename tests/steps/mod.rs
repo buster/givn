@@ -10,105 +10,84 @@ use cucumber::{World, gherkin::Step, given, then, when};
 
 use crate::common;
 
-pub mod adr_qualification_gate_e2e_steps;
 pub mod adr_qualification_gate_steps;
-pub mod agent_activity_reporting_e2e_steps;
 pub mod agent_activity_reporting_steps;
 pub mod arc42_review_alignment_steps;
-pub mod archive_proof_e2e_steps;
 pub mod archive_proof_steps;
 pub mod archive_proof_support;
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
-pub mod change_strategy_e2e_steps;
 pub mod change_strategy_steps;
 pub mod choose_project_license_steps;
-pub mod clean_room_preparation_e2e_steps;
 pub mod clean_room_preparation_steps;
 pub mod coverage_readme_example_steps;
-pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod default_all_addons_steps;
-pub mod development_record_e2e_steps;
 pub mod development_record_steps;
-pub mod development_report_e2e_steps;
 pub mod development_report_steps;
+// Fixture vocabulary shared with the `e2e` acceptance package: a helper no
+// component scenario reaches is retained so both tiers keep one vocabulary and
+// the fixture builders stay comparable line for line. The scenarios, not the
+// item list, are the acceptance authority.
+#[allow(dead_code)]
 pub mod development_timeline_support;
 pub mod e2e_boundary_support;
-pub mod enable_optional_addons_ise_e2e_steps;
 pub mod enable_optional_addons_ise_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
 pub mod extract_coverage_gate_steps;
-pub mod fix_domain_modeling_skill_trigger_e2e_steps;
 pub mod fix_domain_modeling_skill_trigger_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod grouped_merge_steps;
 pub mod init_agent_target_selection_steps;
-pub mod initialize_a_project_e2e_steps;
 pub mod initialize_a_project_steps;
-pub mod instruction_extension_e2e_steps;
 pub mod instruction_extension_steps;
-pub mod instruction_integrity_e2e_steps;
 pub mod instruction_integrity_steps;
 pub mod interaction_projection_steps;
+#[allow(dead_code)]
 pub mod ise_clean_room_support;
+#[allow(dead_code)]
 pub mod llm_attribution_e2e_steps;
-pub mod llm_attribution_installation_e2e_steps;
+#[allow(dead_code)]
 pub mod llm_attribution_installation_steps;
 pub mod llm_attribution_steps;
 pub mod local_only_rules_steps;
-pub mod outline_report_e2e_steps;
 pub mod outline_report_steps;
 pub mod outline_report_support;
 pub mod preserve_docstrings_on_archive_steps;
-pub mod prose_consolidation_e2e_steps;
 pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
-pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
-pub mod release_0_3_0_e2e_steps;
 pub mod release_0_3_0_steps;
-pub mod release_e2e_steps;
+#[allow(dead_code)]
 pub mod release_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
-pub mod require_durable_retained_paths_e2e_steps;
 pub mod require_durable_retained_paths_steps;
-pub mod require_merged_step_definitions_e2e_steps;
 pub mod require_merged_step_definitions_steps;
 pub mod review_disposition_gates_steps;
-pub mod run_command_e2e_steps;
 pub mod run_command_steps;
 pub mod run_declaration_fixtures_support;
-pub mod run_execution_e2e_steps;
 pub mod run_execution_steps;
 pub mod run_execution_support;
 pub mod run_readme_steps;
 pub mod run_upgrade_steps;
-pub mod scm_backend_selection_e2e_steps;
 pub mod scm_backend_selection_steps;
-pub mod serve_extended_rules_e2e_steps;
 pub mod serve_extended_rules_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_discovery_deterministic_steps;
-pub mod spec_gap_e2e_steps;
 pub mod spec_gap_steps;
 pub mod spec_overlap_gates_steps;
-pub mod specification_declaration_e2e_steps;
 pub mod specification_declaration_steps;
 pub mod specification_health_steps;
-pub mod template_conditional_rendering_e2e_steps;
 pub mod template_conditional_rendering_steps;
 pub mod template_conditional_rendering_support;
-pub mod trial_input_verification_e2e_steps;
 pub mod trial_input_verification_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod visual_design_contract_steps;
 pub mod visual_review_gate_steps;
-pub mod workflow_enforcement_e2e_steps;
 pub mod workflow_enforcement_steps;
 
 #[derive(Debug, Default, World)]
@@ -120,12 +99,16 @@ pub struct GivnWorld {
     /// State for the commit-attribution scenarios.
     pub(crate) git_attribution: Option<llm_attribution_steps::GitAttributionState>,
     /// State for the generated OpenCode attribution integration scenario.
-    pub(crate) opencode_plugin: Option<llm_attribution_e2e_steps::OpencodePluginState>,
     /// State for the generated Claude attribution integration scenario.
-    pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
     /// State for the generated omp attribution integration scenarios.
-    pub(crate) omp_attribution: Option<llm_attribution_e2e_steps::OmpAttributionState>,
     /// State for the generated Maki attribution integration scenarios.
+    /// State for the generated agent-integration scenarios.
+    pub(crate) opencode_plugin: Option<llm_attribution_e2e_steps::OpencodePluginState>,
+    /// State for the generated agent-integration scenarios.
+    pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
+    /// State for the generated agent-integration scenarios.
+    pub(crate) omp_attribution: Option<llm_attribution_e2e_steps::OmpAttributionState>,
+    /// State for the generated agent-integration scenarios.
     pub(crate) maki_attribution: Option<llm_attribution_e2e_steps::MakiAttributionState>,
     /// Captured stdout/stderr/exit of the last `givn` invocation.
     last_output: Option<Output>,
@@ -171,13 +154,13 @@ pub struct GivnWorld {
     /// In-process `givn run` execution for the SIGTERM scenario.
     pub(crate) run_inproc: Option<run_execution_support::InProcStart>,
     /// Marker file the fixture writes when it receives a signal.
-    pub(crate) run_trap_marker: Option<std::path::PathBuf>,
     /// The run managed block text produced by the render step.
     pub(crate) run_rendered_block: Option<String>,
     /// Commands-file content captured before the backfill ran.
     pub(crate) run_commands_before: Option<String>,
     /// Whether the backfill applied a change to the commands file.
     pub(crate) run_backfill_applied: Option<bool>,
+    /// Git commit hash captured before a second upgrade.
     /// Git commit hash captured before a second upgrade.
     pub(crate) run_prev_commit: Option<String>,
     /// Working directory override for the next `givn` invocation (nested
@@ -211,12 +194,8 @@ pub struct GivnWorld {
     pub(crate) development_report: Option<development_report_steps::DevelopmentReportState>,
     /// State for the `@e2e` `development-record` scenarios: the parsed
     /// machine-readable record the scenario's own read printed.
-    pub(crate) development_record_e2e:
-        Option<development_record_e2e_steps::DevelopmentRecordE2eState>,
     /// State for the `@e2e` `agent-activity-reporting` scenarios: the output of
     /// the reporter run the scenario drove through its real entry point.
-    pub(crate) agent_activity_reporting_e2e:
-        Option<agent_activity_reporting_e2e_steps::AgentActivityReportingE2eState>,
     /// Snapshot of a pending receipt taken by a fixture, for the
     /// "receipt is unchanged" assertion.
     pub(crate) archive_receipt_snapshot: Option<String>,
@@ -231,8 +210,6 @@ pub struct GivnWorld {
     /// State for the `@e2e` `development-report` scenarios: the generated
     /// report and the browser the browser scenarios drive.
     #[allow(dead_code)] // Tasks E5–E9 read it.
-    pub(crate) development_report_e2e:
-        Option<development_report_e2e_steps::DevelopmentReportE2eState>,
     /// State for the `specification-declaration` scenarios.
     pub(crate) specification_declaration:
         specification_declaration_steps::SpecificationDeclarationState,
@@ -1558,4 +1535,60 @@ fn topic_persona_file_exists(world: &mut GivnWorld, path: String) {
         std::fs::create_dir_all(parent).expect("create topic personas dir");
     }
     std::fs::write(&file_path, "# Persona: topic\n").expect("write topic persona file");
+}
+
+#[then(regex = r#"^the file "([^"]+)" contains "(.*)"$"#)]
+fn file_contains(world: &mut GivnWorld, rel: String, needle: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content =
+        std::fs::read_to_string(env.path(&rel)).unwrap_or_else(|e| panic!("read {rel}: {e}"));
+    assert!(
+        content.contains(&needle),
+        "{rel} lacks {needle:?}:\n{content}"
+    );
+}
+
+#[given("a git-managed project with givn initialised")]
+fn git_managed_project(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let init = common::run_givn(&env, &["init", "--agents", "opencode"]);
+    assert!(
+        init.status.success(),
+        "fixture init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+    // The committed baseline predates the run declaration: the upgrade
+    // scenarios strip it themselves, and `givn upgrade` demands a clean
+    // worktree, so the strip must already be part of the baseline commit.
+    let commands = std::fs::read_to_string(env.path("givn/commands.yaml"))
+        .expect("read fixture commands.yaml");
+    let stripped = common::remove_top_level_key(&commands, "run");
+    std::fs::write(env.path("givn/commands.yaml"), stripped).expect("write commands.yaml");
+    std::fs::write(
+        env.path(".gitignore"),
+        ".opencode/\nAGENTS.md\ngivn/history/\n",
+    )
+    .expect("ignore generated agent files and the development record");
+    git_fixture(&env, &["init"]);
+    git_fixture(&env, &["config", "user.name", "Givn Run Test"]);
+    git_fixture(&env, &["config", "user.email", "givn-run@example.test"]);
+    git_fixture(&env, &["add", "--all"]);
+    let commit = git_fixture(&env, &["commit", "-m", "fixture: initialised project"]);
+    assert!(
+        commit.status.success(),
+        "fixture commit failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
+    world.env = Some(env);
+}
+
+fn git_fixture(env: &common::TestEnv, args: &[&str]) -> std::process::Output {
+    std::process::Command::new("git")
+        .args(args)
+        .current_dir(env.root())
+        .output()
+        .expect("run git fixture command")
 }

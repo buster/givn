@@ -1814,3 +1814,10 @@ fn would_write_block_lists_no_path_under(world: &mut GivnWorld, directory: Strin
         );
     }
 }
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration that retains "givn/specs/\*\*", declares "tests/e2e", and replaces "src/\*\*"$"#
+)]
+fn git_project_with_the_e2e_declaration(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::e2e_trial_project());
+}
