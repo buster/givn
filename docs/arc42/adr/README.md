@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-29 accepted records and no proposed records. The fifteen semantic-engine
+30 accepted records and no proposed records. The fifteen semantic-engine
 records were superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and
 moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -62,6 +62,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-075](ADR-075-projected-interaction-integrity.md) | accepted | Enforce the projected interaction inventory before accepting a change | pre-mutation gate boundary; component split and dependency direction |
 | [ADR-076](ADR-076-clean-room-trial-record.md) | accepted | Bind a clean-room trial to a versioned, per-path record outside the trial | durable evidence scope; builder-versus-verifier boundary |
 | [ADR-077](ADR-077-stack-instructions.md) | accepted | Serve stack mechanics on demand from per-stack instructions | durable guidance composition contract; instruction id and load-condition boundary |
+| [ADR-078](ADR-078-frozen-package-outside-the-trial.md) | accepted | Keep the frozen End-to-end (E2E) test package outside the clean-room trial | builder-versus-verifier authority boundary; durable record and compatibility boundary |
 
 ## Relationships
 
