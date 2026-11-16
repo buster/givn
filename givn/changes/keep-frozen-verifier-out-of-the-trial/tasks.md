@@ -380,8 +380,12 @@ Files: `givn/specs/fragments/adr-qualification-gate.feature`,
     ADR count`. Restoring the row made both the delta and the permanent
     scenario pass.
   - GREEN: 1 scenario / 11 steps passed from the delta specs and from
-    `givn/specs`.
-  - [x] COMMIT: 500d78df8b -- Batch: pending-register-reconciliation
+    `givn/specs`. The reconciliation body landed in `500d78df8b`, whose message
+    did not name the batch, so the gate rejected it; `84651394c7` re-issues the
+    binding with the batch label and adds the prose/table assertion (the
+    register's summary sentence must say 30 accepted records), which the same
+    scenario now protects.
+  - [x] COMMIT: 84651394c7 -- Batch: pending-register-reconciliation
 
 ## Batch: prepare-trial-frozen-package-e2e
 
