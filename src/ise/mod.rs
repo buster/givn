@@ -19,24 +19,35 @@ use crate::scm::{Backend, EntryKind, RevisionEntry};
 
 mod partition;
 mod record;
+/// The retired verifier body; the comparison slice reuses its drift reads
+/// and replaces the module.
+#[allow(dead_code)]
 mod verify;
 
 pub(crate) use record::abbreviate;
-pub use verify::{DriftLine, VerifyReport, verify};
 
-/// `givn ise replace`'s parsed request.
+/// What one rebuild command replaces.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RebuildScope {
+    /// Every tracked file under the declared source roots.
+    All,
+    /// A tracked file or a directory's tracked files; the command requires
+    /// at least one path.
+    Paths(Vec<String>),
+}
+
+/// `givn ise rebuild-all`'s and `givn ise rebuild-component`'s parsed
+/// request.
 #[derive(Debug, Clone)]
-pub struct ReplaceRequest {
+pub struct RebuildRequest {
     /// Revision to read; `None` and `HEAD` both resolve the current revision.
     pub at: Option<String>,
-    /// Replace every tracked file under the declared source roots.
-    pub full: bool,
-    /// Replace a tracked file or a directory's tracked files (repeatable).
-    pub paths: Vec<String>,
-    /// Trial directory; required and outside the checkout.
+    /// The files this rebuild replaces.
+    pub scope: RebuildScope,
+    /// Spec copy directory; required and outside the checkout.
     pub into: PathBuf,
-    /// Optional trial-record path, written only when supplied.
-    pub receipt: Option<PathBuf>,
+    /// Optional manifest path; written only when supplied.
+    pub manifest: Option<PathBuf>,
     /// Perform every read and refusal without writing.
     pub dry_run: bool,
 }
@@ -65,10 +76,9 @@ pub struct Report {
     /// The frozen paths the trial omits, counted once per frozen path.
     pub frozen_files: usize,
     pub written_path: PathBuf,
-    pub receipt: Option<PathBuf>,
     /// The sorted paths a dry run would write; `None` outside a dry run.
     pub would_write: Option<Vec<String>>,
-    /// The YAML record when no receipt path was given.
+    /// The YAML record printed after a successful rebuild.
     pub record: Option<String>,
 }
 
@@ -83,7 +93,7 @@ pub struct Counts {
 }
 
 /// Materialize a trial from one recorded revision and report its placement.
-pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> {
+pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> {
     let admission = admit(project_root, request.at.as_deref())?;
     let placement = partition::partition(
         &admission.declaration,
@@ -155,7 +165,6 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
         excluded_roles,
         frozen_files: placement.frozen_paths().len(),
         written_path: trial.clone(),
-        receipt: request.receipt.clone(),
         would_write: request.dry_run.then(|| copy_paths.clone()),
         record: None,
     };
@@ -173,27 +182,17 @@ pub fn replace(project_root: &Path, request: &ReplaceRequest) -> Result<Report> 
             paths.join(", ")
         );
     }
-    match request.receipt.as_deref() {
-        Some(receipt) => {
-            if let Err(error) = record.write(receipt) {
-                std::fs::remove_dir_all(&trial)
-                    .with_context(|| format!("remove the trial at '{}'", trial.display()))?;
-                return Err(error);
-            }
-        }
-        None => report.record = Some(record.yaml()?),
-    }
+    report.record = Some(record.yaml()?);
     Ok(report)
 }
 
 /// The `--path` values the record keeps: normalized, sorted, deduplicated.
 /// A value the normalizer rejects already refused in the partition.
-fn named_paths(request: &ReplaceRequest) -> Vec<String> {
-    if request.full {
+fn named_paths(request: &RebuildRequest) -> Vec<String> {
+    let RebuildScope::Paths(paths) = &request.scope else {
         return Vec::new();
-    }
-    let mut paths: Vec<String> = request
-        .paths
+    };
+    let mut paths: Vec<String> = paths
         .iter()
         .filter_map(|value| crate::config::declaration::normalize_project_path(value))
         .collect();
@@ -297,12 +296,12 @@ fn revision_declaration(
     SpecificationDeclaration::from_content(content).map_err(|error| anyhow::anyhow!("{error}"))
 }
 
-/// Refusal 8: both write targets lie outside the checkout and are created new.
-/// The trial must not exist; the receipt must not exist, lie inside the trial,
-/// or be an ancestor of it. Every path is resolved through its deepest
-/// existing ancestor, so a symlinked parent cannot alias a checkout path.
-/// Returns the absolute trial path the report and the record name.
-fn require_write_targets(project_root: &Path, request: &ReplaceRequest) -> Result<PathBuf> {
+/// Refusal 8 (spec copy target): the trial lies outside the checkout and is
+/// created new. The path is resolved through its deepest existing ancestor, so
+/// a symlinked parent cannot alias a checkout path. The manifest target checks
+/// land with the manifest slice. Returns the absolute trial path the report and
+/// the record name.
+fn require_write_targets(project_root: &Path, request: &RebuildRequest) -> Result<PathBuf> {
     let checkout = project_root
         .canonicalize()
         .with_context(|| format!("resolve the checkout '{}'", project_root.display()))?;
@@ -318,37 +317,6 @@ fn require_write_targets(project_root: &Path, request: &ReplaceRequest) -> Resul
         bail!(
             "the target '{}' already exists; a trial is written only into a new path",
             request.into.display()
-        );
-    }
-    let Some(receipt_request) = request.receipt.as_deref() else {
-        return Ok(trial);
-    };
-    let receipt = resolved_target(receipt_request, &checkout)?;
-    if receipt.starts_with(&checkout) {
-        bail!(
-            "the receipt '{}' is inside the checkout '{}'",
-            receipt_request.display(),
-            checkout.display()
-        );
-    }
-    if receipt.exists() {
-        bail!(
-            "the receipt '{}' already exists; a record is never overwritten",
-            receipt_request.display()
-        );
-    }
-    if receipt.starts_with(&trial) {
-        bail!(
-            "the receipt '{}' lies inside the trial '{}'",
-            receipt_request.display(),
-            trial.display()
-        );
-    }
-    if trial.starts_with(&receipt) {
-        bail!(
-            "the receipt '{}' is an ancestor of the trial '{}'",
-            receipt_request.display(),
-            trial.display()
         );
     }
     Ok(trial)

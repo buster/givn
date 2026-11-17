@@ -6,8 +6,6 @@
 //! hash the same shape.
 
 use std::collections::BTreeMap;
-use std::io::Write;
-use std::path::Path;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -54,18 +52,6 @@ impl TrialRecord {
     /// names.
     pub(super) fn yaml(&self) -> Result<String> {
         serde_yaml_ng::to_string(self).context("serialize the trial record")
-    }
-
-    /// Write the record, refusing to replace an existing file.
-    pub(super) fn write(&self, path: &Path) -> Result<()> {
-        let yaml = self.yaml()?;
-        let mut file = std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(path)
-            .with_context(|| format!("write the trial record '{}'", path.display()))?;
-        file.write_all(yaml.as_bytes())
-            .with_context(|| format!("write the trial record '{}'", path.display()))
     }
 }
 

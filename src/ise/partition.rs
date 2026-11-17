@@ -14,7 +14,7 @@ use crate::config::declaration::{
 use crate::e2e_boundary::{Glob, glob_matches_path_or_parent};
 use crate::scm::RevisionEntry;
 
-use super::{Counts, ReplaceRequest};
+use super::{Counts, RebuildRequest, RebuildScope};
 
 /// Every tracked path at the revision, placed by the declaration.
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -75,7 +75,7 @@ impl Partition {
 pub(super) fn partition(
     declaration: &SpecificationDeclaration,
     entries: &[RevisionEntry],
-    request: &ReplaceRequest,
+    request: &RebuildRequest,
     revision: &str,
 ) -> Result<Partition> {
     let roles = retained_roles(declaration);
@@ -105,16 +105,17 @@ pub(super) fn partition(
     retained_paths.retain(|path| !frozen_set.contains(path.as_str()));
     let retained: Vec<String> = retained_paths.into_iter().collect();
 
-    let candidates: BTreeSet<String> = if request.full {
-        entries
+    let candidates: BTreeSet<String> = match &request.scope {
+        RebuildScope::All => entries
             .iter()
             .filter(|entry| path_or_parent_matches(&source_roots, &entry.path))
             .map(|entry| entry.path.clone())
-            .collect()
-    } else {
-        let candidates = named_candidates(&tracked, &request.paths)?;
-        require_replaceable_paths(&candidates, &roles, &source_roots, revision)?;
-        candidates
+            .collect(),
+        RebuildScope::Paths(paths) => {
+            let candidates = named_candidates(&tracked, paths)?;
+            require_replaceable_paths(&candidates, &roles, &source_roots, revision)?;
+            candidates
+        }
     };
     let retained_set: BTreeSet<&str> = retained.iter().map(String::as_str).collect();
     let mut replaced: Vec<String> = candidates
@@ -339,13 +340,12 @@ mod tests {
             .expect("the fixture declaration is present")
     }
 
-    fn full_replacement() -> ReplaceRequest {
-        ReplaceRequest {
+    fn full_replacement() -> RebuildRequest {
+        RebuildRequest {
             at: None,
-            full: true,
-            paths: Vec::new(),
+            scope: RebuildScope::All,
             into: PathBuf::from("/tmp/ise-trial"),
-            receipt: None,
+            manifest: None,
             dry_run: true,
         }
     }
@@ -428,8 +428,7 @@ mod tests {
                 executable: false,
             },
         ];
-        let mut request = full_replacement();
-        request.full = true;
+        let request = full_replacement();
         let placement = partition(&declaration, &entries, &request, "abc123")
             .expect("the fixture revision partitions");
         assert_eq!(

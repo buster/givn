@@ -128,7 +128,7 @@ Feature: Clean-room preparation
     Then  the command fails and names "givn/specification.yaml" and the loader's reason
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses while the ise addon is off
     Given  a Git project with a declaration and ise off
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
@@ -136,7 +136,7 @@ Feature: Clean-room preparation
     And  the declaration is not read
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses while architecture principles are off
     Given  a Git project with ise on, architecture principles off, and a malformed declaration
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
@@ -144,28 +144,28 @@ Feature: Clean-room preparation
     And  the declaration is not read
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a dirty checkout and names every dirty path
     Given  a Git project with ise enabled, a declaration, and one modified tracked file and one untracked file
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
     Then  the command fails and names the modified tracked file and the untracked file
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a project with no version-control backend
     Given  a directory with ise enabled, a declaration, and no version-control backend
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
     Then  the command fails and names the missing backend
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a project root nested inside a Git worktree
     Given  a Git worktree whose project root is nested inside the worktree top level
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
     Then  the command fails and names the nested project root
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a checkout carrying both Git and Fossil markers
     Given  a project root with both a Git worktree marker and a Fossil checkout marker
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
@@ -179,7 +179,7 @@ Feature: Clean-room preparation
     Then  the command fails and exits 1, naming "docs/reference.md" and "rebuild-all"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses an omitted target
     Given  a Git project with ise enabled and a declaration
     When  the developer runs rebuild-all from "HEAD" with no target
@@ -424,7 +424,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "docs/glossary.md"
     And  the spec copy's "givn/specification.yaml" is the declaration committed at the selected revision
 
-  @givn.added @wip
+  @givn.added
   Scenario: A component rebuild refuses an empty path list
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     When  the developer runs "givn ise rebuild-component" with no path and a target
@@ -652,7 +652,7 @@ Feature: Clean-room preparation
     And  the spec copy omits "tests/e2e/vendor/dep"
     And  the manifest's end-to-end checksums hold a 64-hex checksum for "tests/e2e/vendor/dep"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The retired command names and flags exit 2
     Given  a Git project with ise enabled and a declaration
     When  the developer runs the retired command "givn ise replace" with a target

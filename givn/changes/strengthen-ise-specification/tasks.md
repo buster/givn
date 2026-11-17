@@ -186,7 +186,7 @@ acceptance authority.
 
 ## Setup
 
-- [ ] Land the plan on the change branch: commit the change artifacts and the
+- [x] Land the plan on the change branch: commit the change artifacts and the
       durable-doc edits that state the settled surface. Paths:
       `givn/changes/strengthen-ise-specification/`, `README.md`,
       `assets/instructions/archive.md`, `assets/instructions/ise.md`,
@@ -211,7 +211,7 @@ acceptance authority.
         -m 'docs(strengthen-ise-specification): plan the change with the settled clean-room surface'
       ```
 
-- [ ] Confirm the runner configuration is the design's, with no change needed:
+- [x] Confirm the runner configuration is the design's, with no change needed:
       `verify.command` is `./run-tests.sh --non-e2e`, `verify.e2e_command` is
       `./run-tests.sh --e2e --package e2e`, and `.fail_on_skipped()` sits on
       both cucumber builders. Record the two scopes and the delta discovery
@@ -224,8 +224,11 @@ acceptance authority.
         cargo nextest list --locked --test features_runner | grep -c '::'
       ```
       Expected: 98 scenarios in the delta, 96 regular, 2 excluded as `@e2e`.
+      Observed: 98 delta scenarios, 96 regular (2 `@e2e` excluded); scopes are
+      `./run-tests.sh --non-e2e` and `./run-tests.sh --e2e --package e2e` in
+      `givn/commands.yaml`.
 
-- [ ] Proof-of-strictness, once. Write a scratch feature outside the delta
+- [x] Proof-of-strictness, once. Write a scratch feature outside the delta
       scope with one unbound step, run it through the regular runner, and
       confirm a non-zero exit with the runner's unbound-step message. Paste the
       command and the output here. Then delete the scratch directory and
@@ -238,10 +241,14 @@ acceptance authority.
         cargo nextest run --locked --test features_runner
       ```
       ```text
-      <!-- paste: exit code, the unbound-step message, and the deleted probe -->
+      FAIL probe.feature::An unbound step fails
+        Given this step is deliberately unbound
+          Step doesn't match any function
+      Summary: 1 test run: 0 passed, 1 failed, 0 skipped; exit 100.
+      Probe deleted: /tmp/ise-strictness-probe removed.
       ```
 
-- [ ] Confirm the step-definition layout is the design's, one file per
+- [x] Confirm the step-definition layout is the design's, one file per
       capability, all permanent and none created by this change:
       `tests/steps/clean_room_preparation_steps.rs`,
       `tests/steps/trial_input_verification_steps.rs`,
@@ -254,19 +261,25 @@ acceptance authority.
       is not an accepted RED. Each batch binds its own phrases with real
       assertion bodies. Reused phrases stay as they are.
       ```text
-      <!-- record: the six files exist and are registered; no new file added -->
+      tests/steps/clean_room_preparation_steps.rs
+      tests/steps/trial_input_verification_steps.rs
+      tests/steps/specification_declaration_steps.rs
+      tests/steps/ise_clean_room_support.rs
+      e2e/tests/steps/clean_room_preparation_e2e_steps.rs
+      e2e/tests/steps/trial_input_verification_e2e_steps.rs
+      All six exist and are registered; no new step file was added.
       ```
 
-- [ ] Restore and record the passing baseline with the delta scenarios still
+- [x] Restore and record the passing baseline with the delta scenarios still
       tagged `@wip`.
       ```sh
       ./run-tests.sh --non-e2e
       ```
       ```text
-      <!-- paste: exit 0 and the passed/skipped summary -->
+      ./run-tests.sh --non-e2e exited 0; no failed or skipped scenario.
       ```
 
-- [ ] COMMIT: `<hash>` -- Batch: `setup`
+- [x] COMMIT: `76159193af` -- Batch: `setup`
       The plan commit above. The setup tasks change no production file; the
       baseline is green before batch 1 starts.
 
@@ -286,7 +299,20 @@ Files modified: `src/main.rs`, `src/cli/ise.rs`, `src/ise/mod.rs`,
       `A component rebuild refuses an empty path list` and `The retired command
       names and flags exit 2`, then the GREEN run of all nine scenarios.
       ```text
-      <!-- paste: RED commands + assertion failures; GREEN commands + pass summary -->
+      RED (narrow run per title, parser slice in place):
+      A component rebuild refuses an empty path list
+        assertion `left == right` failed: status 0, expected 2; stderr empty
+        (the empty component list wrote a spec copy).
+      The retired command names and flags exit 2
+        stderr "error: the following required arguments were not provided:
+        <--full|--path <PATH>> ..." does not name an unrecognized subcommand.
+      The six admission refusals
+        stderr "ise replace: ise is not enabled; ..." does not start with the
+        "ise rebuild-all: " prefix; the same prefix failure for
+        architecture_principles, the dirty checkout, the missing backend, the
+        nested project root, and the ambiguous version control.
+
+      GREEN (narrow run per title): 9 passed, 0 failed.
       ```
 
 - [ ] Scenario: `Preparation refuses while the ise addon is off`

@@ -84,6 +84,12 @@ pub(crate) struct IseCleanRoomState {
     pub(crate) unreadable_revision: Option<String>,
     /// The nested project root a refusal must name.
     pub(crate) nested_project_root: Option<PathBuf>,
+    /// The verb of the last rebuild command, so a refusal asserts the prefix
+    /// of the command that refused.
+    pub(crate) last_verb: Option<&'static str>,
+    /// The retired subcommand the last When invoked, so the usage error is
+    /// asserted against the name that was actually run.
+    pub(crate) retired_command: Option<String>,
 }
 
 impl IseCleanRoomState {

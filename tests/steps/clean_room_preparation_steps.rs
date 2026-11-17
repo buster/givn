@@ -1821,3 +1821,262 @@ fn would_write_block_lists_no_path_under(world: &mut GivnWorld, directory: Strin
 fn git_project_with_the_e2e_declaration(world: &mut GivnWorld) {
     world.env = Some(ise_clean_room_support::e2e_trial_project());
 }
+
+// --- command-surface: rebuild-all and rebuild-component --------------------
+
+/// The manifest target the fixture plans; the writer lands with the manifest
+/// slice.
+fn manifest_path(world: &GivnWorld) -> std::path::PathBuf {
+    world.ise_clean_room.receipt_path().to_path_buf()
+}
+
+/// The refusal prefix of the command that last ran.
+fn assert_refusal_prefix(world: &GivnWorld) {
+    let verb = world
+        .ise_clean_room
+        .last_verb
+        .expect("the When recorded the command verb");
+    let text = stderr(world);
+    let prefix = format!("{verb}: ");
+    assert!(
+        text.starts_with(&prefix),
+        "stderr {text:?} does not start with the {prefix:?} prefix"
+    );
+}
+
+/// Run one rebuild command against the planned targets and record its verb.
+fn run_rebuild(world: &mut GivnWorld, args: &[&str], verb: &'static str) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.last_verb = Some(verb);
+    let env = project_env(world);
+    let out = match world.cwd_override.clone() {
+        Some(cwd) => common::run_givn_with_envs_in(env, &cwd, args, &[]),
+        None => common::run_givn_with_envs(env, args, &[]),
+    };
+    world.last_output = Some(out);
+}
+
+#[when(regex = r#"^the developer rebuilds the whole product from "([^"]+)" into a spec copy$"#)]
+fn rebuild_whole_product_into_a_spec_copy(world: &mut GivnWorld, revision: String) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.requested_revision = Some(revision.clone());
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-all",
+            "--at",
+            revision.as_str(),
+            "--into",
+            trial.as_str(),
+        ],
+        "ise rebuild-all",
+    );
+}
+
+#[when(regex = r#"^the developer runs rebuild-all from "([^"]+)" with no target$"#)]
+fn run_rebuild_all_without_a_target(world: &mut GivnWorld, revision: String) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.requested_revision = Some(revision.clone());
+    run_rebuild(
+        world,
+        &["ise", "rebuild-all", "--at", revision.as_str()],
+        "ise rebuild-all",
+    );
+}
+
+#[when(regex = r#"^the developer runs "givn ise rebuild-component" with no path and a target$"#)]
+fn run_rebuild_component_without_a_path(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &["ise", "rebuild-component", "--into", trial.as_str()],
+        "ise rebuild-component",
+    );
+}
+
+/// One retired command line plus its target flag, as `givn` arguments.
+fn retired_args<'a>(command: &'a str, flag: &'a str, target: &'a str) -> Vec<&'a str> {
+    let mut args: Vec<&str> = command.split_whitespace().skip(1).collect();
+    args.push(flag);
+    args.push(target);
+    args
+}
+
+#[when(regex = r#"^the developer runs the retired command "([^"]+)" with a target$"#)]
+fn run_retired_command_with_a_target(world: &mut GivnWorld, command: String) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let args = retired_args(&command, "--into", trial.as_str());
+    world.ise_clean_room.retired_command = args.get(1).map(|name| (*name).to_string());
+    run_rebuild(world, &args, "ise rebuild-all");
+}
+
+#[when(regex = r#"^the developer runs the retired command "([^"]+)" with a manifest$"#)]
+fn run_retired_command_with_a_manifest(world: &mut GivnWorld, command: String) {
+    world.ise_clean_room.ensure_targets();
+    let manifest = manifest_path(world).to_string_lossy().into_owned();
+    let args = retired_args(&command, "--manifest", manifest.as_str());
+    world.ise_clean_room.retired_command = args.get(1).map(|name| (*name).to_string());
+    run_rebuild(world, &args, "ise rebuild-all");
+}
+
+#[when(regex = r#"^the developer runs "givn ise rebuild-all --full" with a target$"#)]
+fn run_rebuild_all_with_the_full_flag(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &["ise", "rebuild-all", "--full", "--into", trial.as_str()],
+        "ise rebuild-all",
+    );
+}
+
+#[then(regex = r#"^the command fails and names "([^-"][^"]*)"$"#)]
+fn the_command_fails_and_names(world: &mut GivnWorld, needle: String) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let text = stderr(world);
+    assert!(
+        text.contains(&needle),
+        "stderr {text:?} does not name {needle:?}"
+    );
+}
+
+#[then(regex = r#"^the command fails and names "--into"$"#)]
+fn the_command_fails_and_names_the_target_flag(world: &mut GivnWorld) {
+    let out = output(world);
+    assert!(
+        !out.status.success(),
+        "the command succeeded; stderr={}",
+        stderr(world)
+    );
+    let text = stderr(world);
+    assert!(
+        text.contains("--into"),
+        "stderr {text:?} does not name --into"
+    );
+}
+
+#[then(regex = r#"^the command fails and names the modified tracked file and the untracked file$"#)]
+fn the_command_fails_and_names_every_dirty_path(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let text = stderr(world);
+    for path in [
+        ise_clean_room_support::MODIFIED_PATH,
+        ise_clean_room_support::UNTRACKED_PATH,
+    ] {
+        assert!(
+            text.contains(path),
+            "stderr {text:?} does not name {path:?}"
+        );
+    }
+}
+
+#[then(regex = r#"^the command fails and names the missing backend$"#)]
+fn the_command_fails_and_names_the_missing_backend(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let text = stderr(world);
+    assert!(
+        text.contains("no Git worktree or Fossil checkout"),
+        "stderr {text:?} does not name the missing backend"
+    );
+}
+
+#[then(regex = r#"^the command fails and names the nested project root$"#)]
+fn the_command_fails_and_names_the_nested_project_root(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let root = world
+        .ise_clean_room
+        .nested_project_root
+        .as_ref()
+        .expect("the Given recorded the nested project root")
+        .display()
+        .to_string();
+    let text = stderr(world);
+    assert!(
+        text.contains(&root),
+        "stderr {text:?} does not name the nested project root {root:?}"
+    );
+}
+
+#[then(regex = r#"^the command fails and names the ambiguous version control$"#)]
+fn the_command_fails_and_names_the_ambiguous_version_control(world: &mut GivnWorld) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let text = stderr(world);
+    assert!(
+        text.contains("ambiguous version control"),
+        "stderr {text:?} does not name the ambiguous version control"
+    );
+}
+
+#[then(regex = r#"^the spec copy path and the manifest path remain absent$"#)]
+fn the_spec_copy_and_manifest_remain_absent(world: &mut GivnWorld) {
+    let trial = trial_path(world);
+    let manifest = manifest_path(world);
+    assert!(
+        !trial.exists(),
+        "the spec copy path exists: {}",
+        trial.display()
+    );
+    assert!(
+        !manifest.exists(),
+        "the manifest path exists: {}",
+        manifest.display()
+    );
+}
+
+#[then(regex = r#"^the command exits 2 and names the missing path list$"#)]
+fn the_command_exits_two_and_names_the_missing_path_list(world: &mut GivnWorld) {
+    assert_exit_two(world);
+    let text = stderr(world);
+    assert!(
+        text.contains("<PATHS>"),
+        "stderr {text:?} does not name the missing path list"
+    );
+}
+
+#[then(regex = r#"^the command exits 2 and names the unknown command$"#)]
+fn the_command_exits_two_and_names_the_unknown_command(world: &mut GivnWorld) {
+    assert_exit_two(world);
+    let command = world
+        .ise_clean_room
+        .retired_command
+        .clone()
+        .expect("the When recorded the retired command");
+    let text = stderr(world);
+    assert!(
+        text.contains("unrecognized subcommand"),
+        "stderr {text:?} does not name an unrecognized subcommand"
+    );
+    assert!(
+        text.contains(&command),
+        "stderr {text:?} does not name the retired command {command:?}"
+    );
+}
+
+#[then(regex = r#"^the command exits 2 and names the unknown flag$"#)]
+fn the_command_exits_two_and_names_the_unknown_flag(world: &mut GivnWorld) {
+    assert_exit_two(world);
+    let text = stderr(world);
+    assert!(
+        text.contains("unexpected argument") && text.contains("--full"),
+        "stderr {text:?} does not name the unexpected --full flag"
+    );
+}
+
+#[then(regex = r#"^the spec copy path remains absent$"#)]
+fn the_spec_copy_path_remains_absent(world: &mut GivnWorld) {
+    let trial = trial_path(world);
+    assert!(
+        !trial.exists(),
+        "the spec copy path exists: {}",
+        trial.display()
+    );
+}

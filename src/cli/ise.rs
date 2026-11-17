@@ -1,64 +1,42 @@
-//! `givn ise` — format the clean-room preparation and verification outcome.
+//! `givn ise` — format the clean-room rebuild outcome.
 //!
 //! The library entry points return the process exit code; only the binary
 //! wrapper in `main.rs` converts it with `std::process::exit`. All domain
-//! decisions live in `crate::ise`; this module owns the `ise replace:` and
-//! `ise verify:` prefixes, the report lines, and the exit mapping.
+//! decisions live in `crate::ise`; this module owns the `ise rebuild-all:`
+//! and `ise rebuild-component:` prefixes, the report lines, and the exit
+//! mapping.
 
 use std::path::Path;
 
-use crate::ise::{DriftLine, ReplaceRequest, Report, abbreviate};
+use crate::ise::{RebuildRequest, Report, abbreviate};
 
-/// Run `ise replace` and return its process exit code.
-pub fn replace(project_root: &Path, request: &ReplaceRequest) -> i32 {
-    match crate::ise::replace(project_root, request) {
+/// Run `ise rebuild-all` and return its process exit code.
+pub fn rebuild_all(project_root: &Path, request: &RebuildRequest) -> i32 {
+    rebuild(project_root, request, "ise rebuild-all")
+}
+
+/// Run `ise rebuild-component` and return its process exit code.
+pub fn rebuild_component(project_root: &Path, request: &RebuildRequest) -> i32 {
+    rebuild(project_root, request, "ise rebuild-component")
+}
+
+/// Run one rebuild command with the prefix of the verb that refused.
+fn rebuild(project_root: &Path, request: &RebuildRequest, verb: &str) -> i32 {
+    match crate::ise::rebuild(project_root, request) {
         Ok(report) => {
             print!("{}", render(&report));
             0
         }
         Err(error) => {
-            eprintln!("ise replace: {error:#}");
-            1
-        }
-    }
-}
-
-/// Run `ise verify` and return its process exit code.
-pub fn verify(project_root: &Path, trial: &Path, at: &Path) -> i32 {
-    match crate::ise::verify(project_root, trial, at) {
-        Ok(report) => {
-            if report.drift.is_empty() {
-                print!(
-                    "Trial: {}\nRetained: clean\nE2E: clean\n",
-                    report.trial.display()
-                );
-                return 0;
-            }
-            eprintln!("Trial: {}", report.trial.display());
-            for ((line, path), reason) in &report.drift {
-                let label = match line {
-                    DriftLine::Retained => "Retained drift",
-                    DriftLine::E2e => "E2E drift",
-                };
-                eprintln!("{label}: {path} ({reason})");
-            }
-            eprintln!(
-                "Verification failed: {} drifting path(s)",
-                report.drift.len()
-            );
-            1
-        }
-        Err(error) => {
-            eprintln!("ise verify: {error:#}");
+            eprintln!("{verb}: {error:#}");
             1
         }
     }
 }
 
 /// The report: the fixed lines with the conditional frozen-package line
-/// between `E2E digest` and `Written path`, the receipt path only when one was
-/// given, the dry run's `Would write:` block, and the record when it went to
-/// stdout.
+/// between `E2E digest` and `Written path`, the dry run's `Would write:`
+/// block, and the record when it went to stdout.
 fn render(report: &Report) -> String {
     let mut text = format!(
         "Backend: {}\n\
@@ -97,9 +75,6 @@ fn render(report: &Report) -> String {
         "Written path: {}\n",
         report.written_path.display()
     ));
-    if let Some(receipt) = &report.receipt {
-        text.push_str(&format!("Receipt path: {}\n", receipt.display()));
-    }
     if let Some(paths) = &report.would_write {
         text.push_str("Would write:\n");
         for path in paths {

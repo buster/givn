@@ -262,41 +262,38 @@ enum AttributionCommands {
 
 #[derive(Subcommand)]
 enum IseCommands {
-    /// Write a clean-room trial from one recorded revision.
-    #[command(group(
-        clap::ArgGroup::new("replacement")
-            .required(true)
-            .multiple(false)
-            .args(["full", "path"])
-    ))]
-    Replace {
+    /// Rebuild the whole product from one recorded revision.
+    RebuildAll {
         /// Revision to read (defaults to HEAD).
         #[arg(long)]
         at: Option<String>,
-        /// Replace every tracked file under the declared source roots.
-        #[arg(long)]
-        full: bool,
-        /// Replace a tracked file or a directory's tracked files (repeatable).
-        #[arg(long = "path")]
-        path: Vec<String>,
-        /// Trial directory; must lie outside the checkout and not exist.
+        /// Spec copy directory; must lie outside the checkout and not exist.
         #[arg(long)]
         into: PathBuf,
-        /// Write the trial record to this path instead of stdout.
+        /// Write the manifest to this path.
         #[arg(long)]
-        receipt: Option<PathBuf>,
+        manifest: Option<PathBuf>,
         /// Perform every read and refusal without writing.
         #[arg(long)]
         dry_run: bool,
     },
-    /// Re-check a prepared trial's frozen retained and e2e inputs.
-    Verify {
-        /// Trial record to read.
+    /// Rebuild one or more component paths from one recorded revision.
+    RebuildComponent {
+        /// Revision to read (defaults to HEAD).
         #[arg(long)]
-        trial: PathBuf,
-        /// Trial directory the record must belong to.
+        at: Option<String>,
+        /// Tracked component paths: a file or a directory's tracked files.
+        #[arg(required = true)]
+        paths: Vec<String>,
+        /// Spec copy directory; must lie outside the checkout and not exist.
         #[arg(long)]
-        at: PathBuf,
+        into: PathBuf,
+        /// Write the manifest to this path.
+        #[arg(long)]
+        manifest: Option<PathBuf>,
+        /// Perform every read and refusal without writing.
+        #[arg(long)]
+        dry_run: bool,
     },
 }
 
@@ -632,25 +629,37 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Ise { command } => {
             let project_root = std::env::current_dir()?;
             let exit_code = match command {
-                IseCommands::Replace {
+                IseCommands::RebuildAll {
                     at,
-                    full,
-                    path,
                     into,
-                    receipt,
+                    manifest,
                     dry_run,
-                } => cli::ise::replace(
+                } => cli::ise::rebuild_all(
                     &project_root,
-                    &ise::ReplaceRequest {
+                    &ise::RebuildRequest {
                         at,
-                        full,
-                        paths: path,
+                        scope: ise::RebuildScope::All,
                         into,
-                        receipt,
+                        manifest,
                         dry_run,
                     },
                 ),
-                IseCommands::Verify { trial, at } => cli::ise::verify(&project_root, &trial, &at),
+                IseCommands::RebuildComponent {
+                    at,
+                    paths,
+                    into,
+                    manifest,
+                    dry_run,
+                } => cli::ise::rebuild_component(
+                    &project_root,
+                    &ise::RebuildRequest {
+                        at,
+                        scope: ise::RebuildScope::Paths(paths),
+                        into,
+                        manifest,
+                        dry_run,
+                    },
+                ),
             };
             if exit_code != 0 {
                 std::process::exit(exit_code);
