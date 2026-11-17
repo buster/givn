@@ -8,7 +8,7 @@
 use cucumber::{given, then};
 
 use crate::common;
-use crate::steps::{GivnWorld, stderr};
+use crate::steps::{GivnWorld, output, stderr};
 
 const DECLARATION_PATH: &str = "givn/specification.yaml";
 
@@ -193,6 +193,17 @@ fn stderr_does_not_report_the_omitted_role(world: &mut GivnWorld, role: String) 
     assert!(
         !observed.contains(&missing_role),
         "stderr reports the omitted role '{role}' besides the unknown key:\n{observed}"
+    );
+}
+
+#[then(regex = r#"^the command exits 1 and names "([^"]+)"$"#)]
+fn exits_one_and_names(world: &mut GivnWorld, name: String) {
+    let out = output(world);
+    assert_eq!(out.status.code(), Some(1), "stderr={}", stderr(world));
+    let observed = stderr(world);
+    assert!(
+        observed.contains(&name),
+        "stderr does not name {name:?}:\n{observed}"
     );
 }
 

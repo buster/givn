@@ -206,7 +206,7 @@ New and changed phrases:
 | `comparison prints no line beginning "- "` | `trial_input_verification_steps.rs` | Clean report has no difference line. |
 | `comparison prints no "Specification files:" line`, `comparison prints no "Specification files: match" line` | `trial_input_verification_steps.rs` | Refusal before the report. |
 | `comparison fails and exits 1, naming the added path as a Specification change`, `... naming the manifest and "<word>"`, `... naming the manifest and the unknown field`, `... naming the manifest and the missing field`, `... naming the manifest and the malformed checksum`, `... naming the manifest and the parse error`, `... naming the manifest and the copy`, `... naming the manifest`, `... naming "<path>"`, `... naming "ise"`, `... naming "architecture_principles"` | `trial_input_verification_steps.rs` | Refusal reasons. |
-| `the command exits 1` | `specification_declaration_steps.rs` | Existing addition; asserts the process code is exactly 1. |
+| `the command exits 1 and names "<path>"` | `specification_declaration_steps.rs` | Asserts the process code is exactly 1 and stderr names the declaration. |
 
 `canonical_checksum_project()` writes the bytes the delta use case example names. It excludes `givn/config.yaml` through `.git/info/exclude`, writes the declaration and the six committed files, then commits. `remove_declaration_blob()` resolves `HEAD:givn/specification.yaml`, removes its loose object, and leaves the revision tree listing the path. Neither helper imports `crate::ise`.
 
