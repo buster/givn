@@ -632,55 +632,74 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
 `tests/steps/clean_room_preparation_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Preparation counts the
+- [x] Evidence for this batch: paste the RED run for `Preparation counts the
       files left in a removed path's directory` and `A whole-product rebuild
       keeps a Specification file under a source root`, then the GREEN run of all
       fifteen scenarios.
       ```text
-      <!-- paste: RED commands + assertion failures; GREEN commands + pass summary -->
+      RED (GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs,
+      before the production edit):
+      cargo test --locked --test features_runner -- "prepare-an-ise-test/clean-room-preparation.feature::Preparation counts the files left in a removed path's directory" --exact --nocapture
+        Then the command succeeds and prints "Files beside removed paths: 2"
+        Step panicked: stdout reports "Retained: 1 ... Not replaced: 2";
+        "Files beside removed paths: 2" is absent.
+      cargo test --locked --test features_runner -- "prepare-an-ise-test/clean-room-preparation.feature::A whole-product rebuild keeps a Specification file under a source root" --exact --nocapture
+        Then the command succeeds and prints "Specification files: 3", ...
+        Step panicked: stdout reports "Retained: 3"; "Specification files: 3"
+        is absent.
+      cargo test --locked --test features_runner -- "prepare-an-ise-test/clean-room-preparation.feature::A role that matches the declaration counts it once" --exact --nocapture
+        Then the command succeeds and prints "Specification files: 2"
+        Step panicked: stdout reports "Retained: 2"; "Specification files: 2"
+        is absent.
+
+      GREEN (narrow runs of the fifteen titles):
+      cargo nextest run --locked --test features_runner -E 'test(/clean-room-preparation\.feature::(Preparation expands a directory path|Preparation does not expand a glob-shaped path|A named path absent from the revision|Preparation counts the files left|A whole-product rebuild removes every tracked file|A whole-product rebuild keeps a Specification file|A role that matches the declaration|Preparation partitions with the declaration|Preparation writes no version-control metadata|Preparation leaves an ignored file|Preparation preserves the executable bit|Preparation reads an explicit revision|Preparation reads a Fossil revision|The spec copy carries the declaration|A whole-product rebuild keeps the declaration)/)'
+        15 tests run: 15 passed, 83 skipped.
+      cargo fmt --all -- --check: exit 0.
+      cargo clippy --workspace --all-targets --locked -- -D warnings: exit 0.
       ```
 
-- [ ] Scenario: `Preparation expands a directory path to the tracked files beneath it`
+- [x] Scenario: `Preparation expands a directory path to the tracked files beneath it`
   - Design constraints: `src/keys/parser.rs`, `src/keys/mod.rs`, `src/other.rs`;
     component path `src/keys`; Then `Source code removed: 2` and `Files beside
     removed paths: 0`, the two key files absent, `src/other.rs` present.
     Contract: directory expansion over the revision's tracked files.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation does not expand a glob-shaped path`
+- [x] Scenario: `Preparation does not expand a glob-shaped path`
   - Design constraints: component path `src/**` in a project with
     `src/one.rs` and `src/nested/two.rs`; Then `Source code removed: 0` and both
     tracked files stay in the copy. Contract: no glob expansion; the value
     resolves to no tracked file, so it removes nothing.
   - Files: `src/ise/partition.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `A named path absent from the revision removes nothing`
+- [x] Scenario: `A named path absent from the revision removes nothing`
   - Design constraints: component path `src/keys/parsr.rs` (typo); Then
     `Source code removed: 0` and `src/keys/parser.rs` stays. Contract: an absent
     path is not a refusal.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation counts the files left in a removed path's directory`
+- [x] Scenario: `Preparation counts the files left in a removed path's directory`
   - Design constraints: `src/keys/parser.rs` beside `src/keys/mod.rs` and
     `src/keys/tests.rs`; component path the parser file; Then `Files beside
     removed paths: 2` and both siblings stay in the copy. Contract: the
     containment count is the direct tracked siblings the command did not name
     and did not remove.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `A whole-product rebuild removes every tracked file under the source roots`
+- [x] Scenario: `A whole-product rebuild removes every tracked file under the source roots`
   - Design constraints: `src/one.rs` and `src/nested/two.rs`; Then
     `Specification files: 1`, `Source code kept: 0`, `Source code removed: 2`,
     the copy holds the declaration and omits both files. Contract: `All` scope
     removes every tracked file under every source root.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `A whole-product rebuild keeps a Specification file under a source root`
+- [x] Scenario: `A whole-product rebuild keeps a Specification file under a source root`
   - Design constraints: `structure: ["src/kept.rs", "src/nested/notes.md"]`, one
     source root `src/**`, tracked `src/other.rs`; Then `Specification files: 3`,
     `Source code kept: 0`, `Source code removed: 1`, `Files beside removed
@@ -688,59 +707,59 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     a Specification-role match under a source root is a Specification file, not
     kept Source code.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `A role that matches the declaration counts it once`
+- [x] Scenario: `A role that matches the declaration counts it once`
   - Design constraints: `contracts: ["givn/**"]`, tracked `givn/specs/a.md`;
     Then `Specification files: 2` and the copy holds the declaration. Contract:
     the Specification set is a union keyed by path.
   - Files: `src/ise/partition.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation partitions with the declaration at the selected revision`
+- [x] Scenario: `Preparation partitions with the declaration at the selected revision`
   - Design constraints: first revision holds `structure: ["docs/glossary.md"]`
     and both files, a later revision rewrites the declaration without the entry;
     Then the copy holds `docs/glossary.md` and its declaration is the first
     revision's bytes. Contract: the partition and the copy use one revision
     blob. Existing behaviour protected: the revision read.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation writes no version-control metadata into the spec copy`
+- [x] Scenario: `Preparation writes no version-control metadata into the spec copy`
   - Design constraints: one source root and a committed `src/kept.rs`; Then the
     command succeeds and the copy holds no `.git` and no `.fslckout` entry.
     Contract: the writer copies revision blobs, never metadata. Existing
     behaviour protected.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation leaves an ignored file out of the spec copy`
+- [x] Scenario: `Preparation leaves an ignored file out of the spec copy`
   - Design constraints: a committed `src/kept.rs` that the `structure` role keeps
     under `src/**`, plus an ignored working-tree file; Then the copy holds
     `src/kept.rs` and not the ignored file. Contract: the read is the revision,
     never the working tree. Existing behaviour protected.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation preserves the executable bit and the symlink target`
+- [x] Scenario: `Preparation preserves the executable bit and the symlink target`
   - Design constraints: committed executable `src/run.sh` and symlink `src/link`
     to `run.sh`, both kept through the `structure` role; Then the copy's script
     is executable and the link is a symlink to `run.sh`. Contract: the writer
     sets the recorded mode and writes the relative target. Existing behaviour
     protected.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation reads an explicit revision and reports it`
+- [x] Scenario: `Preparation reads an explicit revision and reports it`
   - Design constraints: first revision holds `src/kept.rs` (kept through
     `structure`), a later revision adds `src/later.rs`; `--at <first>`; Then
     `Backend: git` and `Revision:` carry the first revision and the copy omits
     `src/later.rs`. Contract: `--at` reads that revision's tree and declaration.
     Existing behaviour protected.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `Preparation reads a Fossil revision and preserves an executable file and a symlink`
+- [x] Scenario: `Preparation reads a Fossil revision and preserves an executable file and a symlink`
   - Design constraints: Fossil checkout with `allow-symlinks`, one source root,
     and committed Specification, kept, removed, executable, and symlink entries;
     Then `Backend: fossil`, the copy holds the Specification and kept files,
@@ -748,23 +767,23 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     `Backend::revision_files`/`revision_blobs` on Fossil. Existing behaviour
     protected.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `The spec copy carries the declaration when no role names it`
+- [x] Scenario: `The spec copy carries the declaration when no role names it`
   - Design constraints: one source root and no role naming the declaration;
     Then the copy holds `givn/specification.yaml`. Contract: the declaration is
     an implicit Specification entry. Existing behaviour protected; the noun is
     new.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
-- [ ] Scenario: `A whole-product rebuild keeps the declaration under a source root`
+- [x] Scenario: `A whole-product rebuild keeps the declaration under a source root`
   - Design constraints: source root `givn/**` covering the declaration, tracked
     `givn/notes.md`; Then `Specification files: 1`, `Source code removed: 1`,
     the declaration held and `givn/notes.md` omitted. Contract: the declaration
     is never counted as removed.
   - Files: `src/ise/partition.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `107dfb71513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
 
 ### Batch 6: `report-and-manifest`
 
