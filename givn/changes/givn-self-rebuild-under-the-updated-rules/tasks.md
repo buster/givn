@@ -415,7 +415,7 @@ Every command runs from the repository root. `attempt-1` is the only attempt
 unless a difference reroutes to the builder or the tests; a rerun writes a new
 `attempt-<N>` directory and never overwrites an earlier one.
 
-- [ ] Write the spec copy from the trial revision
+- [x] Write the spec copy from the trial revision
   - Paths: `evidence/ise/attempt-1/rebuild-report.txt`,
     `evidence/ise/attempt-1/manifest.yaml`. The copy and the manifest stay
     outside the checkout at `/tmp/givn-ise-self-rebuild-<stamp>` and
@@ -447,9 +447,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
   - Design constraints: D5 (explicit `--at`), D6 (whole-product rebuild,
     `Dry-Run Ise`); `--dry-run` is not passed because it writes no copy for a
     builder.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Verify the copy carries every declared build input
+- [x] Verify the copy carries every declared build input
   - Paths: the copy only; record the checks in
     `evidence/ise/attempt-1/builder-notes.md` under `## Copy ownership`.
   - Run:
@@ -479,9 +479,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     `## External boundary cases` (`A declared build input is missing from the
     copy`); the preparing attempt owns `rebuild-report.txt`, `manifest.yaml`,
     and `compare-before.txt`.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Compare the spec copy with the manifest before the build
+- [x] Compare the spec copy with the manifest before the build
   - Paths: `evidence/ise/attempt-1/compare-before.txt`.
   - Run:
     ```sh
@@ -494,9 +494,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     match`; no added or removed path line.
   - Design constraints: D3 and D6; the comparison prints two subject lines and
     refuses an added file under a declared Specification path.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Build the replacement in the clean-room sandbox
+- [x] Build the replacement in the clean-room sandbox
   - Paths: `evidence/ise/attempt-1/builder-notes.md`; the copy's `src/**` and
     `tests/**`.
   - Run: start a fresh agent whose only workspace is the copy and whose only
@@ -520,9 +520,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
   - Design constraints: D6 (the builder reads no product source outside the
     copy and the declared inputs), the design's test-target rule, and the
     design's `## External boundary cases` rows.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Compare after the build and record the rebuilt version
+- [x] Compare after the build and record the rebuilt version
   - Paths: `evidence/ise/attempt-1/compare-after.txt`,
     `evidence/ise/attempt-1/rebuilt-version.txt`.
   - Run:
@@ -541,9 +541,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     the SHA-256 is 64 lowercase hex.
   - Design constraints: design `## Frozen acceptance`; the version is the
     former product-version row's discriminator.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Run the frozen End-to-end acceptance
+- [x] Run the frozen End-to-end acceptance
   - Paths: `evidence/ise/attempt-1/e2e-run.log`,
     `evidence/ise/attempt-1/e2e-result.json`.
   - Run:
@@ -562,9 +562,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
   - Design constraints: design `## Frozen acceptance` and `## Strict Mode`;
     `GIVN_BIN` names the rebuilt binary and the checkout supplies the fixture
     and the repository files the scenarios read.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Classify every difference with one outcome
+- [x] Classify every difference with one outcome
   - Paths: `evidence/ise/attempt-1/gap-table.md`,
     `evidence/ise/attempt-1/spec-gaps.md`.
   - Acceptance: one row per difference with the frozen scenario title, the
@@ -581,9 +581,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     recorded with no edit in this change. No difference is closed as drift.
   - Design constraints: D8 (classify before repair); the design's
     `## Gap triage` table and routes.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Record the Neighbor record and the scan disposition
+- [x] Record the Neighbor record and the scan disposition
   - Paths: `evidence/ise/attempt-1/neighbor-record.md`.
   - Acceptance: one row per file changed outside the declared Specification or
     the replaced unit and one row per consolidation, with the reason; an empty
@@ -597,9 +597,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     record, not a gate.
   - Design constraints: D7; the spelling `Neighbor record` follows
     `docs/glossary.md` and the served `ise` instruction.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Confirm the five former Specification defects are resolved
+- [x] Confirm the five former Specification defects are resolved
   - Paths: `evidence/ise/attempt-1/spec-gaps.md` and `gap-table.md`.
   - Acceptance: the final table holds no `specification defect` row for the
     four attribution-asset surfaces (OpenCode, Claude, omp, Maki embedded
@@ -613,9 +613,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     D8; the prior gap record
     `givn/archive/enable-ise-and-run-the-givn-self-rebuild/evidence/ise/spec-gaps.md`
     (5 specification defects, 64 implementation defects, 120 total).
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
-- [ ] Commit the attempt evidence and the trial revision
+- [x] Commit the attempt evidence and the trial revision
   - Paths: `givn/changes/givn-self-rebuild-under-the-updated-rules/evidence/ise/trial-revision.txt`,
     `evidence/ise/attempt-1/`, and the tick edits.
   - Change: write `trial-revision.txt` with the 40-character revision and the
@@ -625,10 +625,18 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
   - Acceptance: exit 0; the commit holds `attempt-1` and `trial-revision.txt`;
     `git status --porcelain` prints nothing; the trial revision recorded in the
     file equals the report's `Revision:` line.
+  - Repair round: every `implementation defect` returned to the builder in the
+    same trial with no corpus or Specification edit (design D8). The builder
+    edited 13 files under `src/**` in the spec copy and added none; `attempt-2`
+    records the rebuild, the frozen rerun (120 total, 41 passed, 79 failed, 0
+    skipped), the gap table, and the neighbor record. Attempt 1 stays on disk
+    with its own counts (33 passed, 87 failed). `attempt-2/spec-gaps.md` names
+    the classified attempt and lists both.
+  - Evidence: `attempt-1/` and `attempt-2/` in commit `78dfde5` and `508e776`.
   - Design constraints: the design's evidence table (`trial-revision.txt` is
     written after the run, never in the revision it names) and the served
     `tasks` evidence rule.
-  - [ ] COMMIT: `___` -- Batch: trial
+  - [x] COMMIT: `508e776` -- Batch: trial
 
 ## Batch: `verify-and-review`
 
