@@ -17,12 +17,16 @@ pub enum EntryKind {
     Submodule,
 }
 
-/// One tracked path at a revision, with the facts a clean-room write needs.
+/// One tracked path at a revision, with the facts a clean-room write and the
+/// checksum rule need.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RevisionEntry {
     pub path: String,
     pub kind: EntryKind,
     pub executable: bool,
+    /// The recorded commit id for a repository link; `None` for every other
+    /// kind. A link hashes with this id as its content bytes.
+    pub gitlink: Option<String>,
 }
 
 /// One content path plus its backend-specific identity. `gitlink` carries a

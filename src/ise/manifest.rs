@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::config::declaration::SpecificationDeclaration;
-use crate::scm::RevisionEntry;
+use crate::scm::{EntryKind, RevisionEntry};
 
 /// The manifest content scope; it names the manifest's shape, not the change
 /// verification receipt.
@@ -102,7 +102,40 @@ pub(super) fn scenario_digests(
     Ok(digests)
 }
 
-/// The rollup over sorted `path NUL checksum` pairs.
+/// One path's checksum: `sha256(path NUL kind NUL marker NUL content)`.
+///
+/// The kind is `f` (regular), `x` (executable regular), `l` (symlink), or `g`
+/// (repository link); the marker is `1` or `0`. A repository link's content is
+/// the recorded commit id, so the link and a regular file holding that text
+/// differ.
+pub(super) fn path_checksum(
+    path: &str,
+    kind: EntryKind,
+    executable: bool,
+    content: &[u8],
+) -> String {
+    let kind = match kind {
+        EntryKind::Regular if executable => "x",
+        EntryKind::Regular => "f",
+        EntryKind::Symlink => "l",
+        EntryKind::Submodule => "g",
+    };
+    let mut hasher = Sha256::new();
+    hasher.update(path.as_bytes());
+    hasher.update(b"\0");
+    hasher.update(kind.as_bytes());
+    hasher.update(b"\0");
+    hasher.update(if executable { b"1" } else { b"0" });
+    hasher.update(b"\0");
+    hasher.update(content);
+    hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+/// The rollup over sorted `path NUL checksum LF` pairs.
 pub(super) fn rollup(entries: &BTreeMap<String, String>) -> String {
     let mut hasher = Sha256::new();
     for (path, digest) in entries {
@@ -116,6 +149,21 @@ pub(super) fn rollup(entries: &BTreeMap<String, String>) -> String {
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect()
+}
+
+/// The End-to-end rollup: the union of the content map and the scenario map,
+/// keyed by path, with the scenario checksum winning when one path is in both.
+pub(super) fn end_to_end_rollup(
+    end_to_end: &BTreeMap<String, String>,
+    scenarios: &BTreeMap<String, String>,
+) -> String {
+    let mut union = end_to_end.clone();
+    union.extend(
+        scenarios
+            .iter()
+            .map(|(path, digest)| (path.clone(), digest.clone())),
+    );
+    rollup(&union)
 }
 
 /// The report's abbreviation: the first 12 lowercase hex characters and an

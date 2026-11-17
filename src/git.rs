@@ -453,6 +453,7 @@ impl Worktree {
             let mut parts = meta.split_whitespace();
             let mode = parts.next().unwrap_or("");
             let kind = parts.next().unwrap_or("");
+            let object = parts.next().unwrap_or("");
             let entry_kind = if kind == "commit" {
                 crate::scm::EntryKind::Submodule
             } else if mode == "120000" {
@@ -460,10 +461,14 @@ impl Worktree {
             } else {
                 crate::scm::EntryKind::Regular
             };
+            let gitlink = (entry_kind == crate::scm::EntryKind::Submodule)
+                .then(|| object.to_string())
+                .filter(|object| !object.is_empty());
             files.push(crate::scm::RevisionEntry {
                 path,
                 kind: entry_kind,
                 executable: entry_kind == crate::scm::EntryKind::Regular && mode == "100755",
+                gitlink,
             });
         }
         Ok(files)

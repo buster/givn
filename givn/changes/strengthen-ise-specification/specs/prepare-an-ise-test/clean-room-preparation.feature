@@ -610,7 +610,7 @@ Feature: Clean-room preparation
     Then  the command fails and exits 1, naming "src/abs" and its absolute target
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation records the canonical checksums for a pinned fixture
     Given  the pinned canonical checksum fixture
     When  the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest
@@ -634,7 +634,7 @@ Feature: Clean-room preparation
       | path | checksum |
       | givn/specs/demo.feature | 791f7b34866c710ad541e06fb1d354d3ed4fedd7c46404465183d0a68d88006c |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation records the canonical checksums for a richer feature
     Given  the pinned richer checksum fixture
     When  the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest
@@ -643,7 +643,7 @@ Feature: Clean-room preparation
     And  the manifest's specification checksum is "c1102713bbf0a24482eaf6e3b8ff5b787ffa32d9ff414dc1c9434cba7a192e0e"
     And  the manifest's end-to-end checksum is "2c16dfedf4203acf3a1d2f67340b4897d5e1c04c26a8d212fa95f1b8e0eb2844"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation checksums a repository link in the End-to-end set
     Given  a Git project with ise enabled and a declaration whose "e2e" role names "tests/e2e"
     And  a committed revision with "tests/e2e/Cargo.toml" and a repository link at "tests/e2e/vendor/dep"

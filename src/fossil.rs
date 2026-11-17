@@ -553,6 +553,7 @@ fn parse_manifest(manifest: &str, revision: &str) -> Result<Vec<crate::scm::Revi
             path: decode_manifest_path(raw_path),
             kind,
             executable,
+            gitlink: None,
         });
     }
     Ok(entries)

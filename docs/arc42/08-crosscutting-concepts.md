@@ -1475,8 +1475,9 @@ duplicate-free union of the feature's and the scenario's tags with every tag
 beginning `givn.` and the tag `wip` removed; a step is `[trimmed keyword,
 Given|When|Then, text, docstring, table]`, where `And`, `But`, and `*` inherit
 the preceding type (or `Given` when none precedes), the text has trailing
-whitespace removed, the docstring keeps the delimiter-adjacent line breaks with
-the common indentation removed, and the table is its rows with the Gherkin
+whitespace removed, the docstring has the common indentation removed and loses
+the line break that follows the opening delimiter and the line break before the
+closing delimiter, and the table is its rows with the Gherkin
 escapes decoded; `examples` is one `[tags, table]` pair per `Examples:` block,
 with the same tag filter. The JSON is UTF-8 with no insignificant whitespace,
 `"` and `\` escaped, the short control escapes, every other code point below

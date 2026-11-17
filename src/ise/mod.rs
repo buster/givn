@@ -5,7 +5,7 @@
 //! write that a verifier inspects. The CLI adapter in `crate::cli::ise`
 //! formats the outcome; only the adapter knows about exit codes.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
@@ -101,13 +101,18 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
         .as_ref()
         .map(|path| resolved_target(path, &checkout))
         .transpose()?;
-    require_copy_set(&copy_set(&placement), &admission.entries)?;
-
     let copy_paths = placement.copy_paths();
+    require_copy_set(&copy_paths, &admission.entries)?;
+
     let revision_paths: Vec<&str> = admission
         .entries
         .iter()
         .map(|entry| entry.path.as_str())
+        .collect();
+    let entries_by_path: BTreeMap<&str, &RevisionEntry> = admission
+        .entries
+        .iter()
+        .map(|entry| (entry.path.as_str(), entry))
         .collect();
     let e2e_paths: Vec<String> =
         crate::e2e_boundary::e2e_file_set(&admission.declaration, &revision_paths)
@@ -115,7 +120,20 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
             .filter(|path| path != DECLARATION_PATH)
             .collect();
     let feature_paths = partition::behavior_features(&admission.declaration, &revision_paths);
-    let read_paths = content_paths(&copy_paths, &feature_paths);
+    let mut read_paths: BTreeSet<String> = copy_paths.iter().cloned().collect();
+    read_paths.extend(feature_paths.iter().cloned());
+    read_paths.extend(
+        e2e_paths
+            .iter()
+            .filter(|path| {
+                !matches!(
+                    entries_by_path.get(path.as_str()).map(|entry| entry.kind),
+                    Some(EntryKind::Submodule)
+                )
+            })
+            .cloned(),
+    );
+    let read_paths: Vec<String> = read_paths.into_iter().collect();
     let blobs: BTreeMap<String, Vec<u8>> = admission
         .backend
         .revision_blobs(&admission.revision, &read_paths)
@@ -127,21 +145,27 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
         })?
         .into_iter()
         .collect();
-    let scenario_paths: Vec<String> =
-        manifest::scenario_digests(&admission.declaration, &admission.entries, &blobs)?
-            .into_keys()
-            .collect();
+    let scenarios = manifest::scenario_digests(&admission.declaration, &admission.entries, &blobs)?;
 
     let mut end_to_end_files: Vec<String> =
-        e2e_paths.iter().chain(&scenario_paths).cloned().collect();
+        e2e_paths.iter().chain(scenarios.keys()).cloned().collect();
     end_to_end_files.sort();
     end_to_end_files.dedup();
 
-    // The checksum slice fills the maps; until then both rollups cover the
-    // recorded, empty maps.
-    let checksums = manifest::Checksums::default();
+    let mut checksums = manifest::Checksums::default();
+    for path in placement.retained_paths() {
+        checksums
+            .specification
+            .insert(path.clone(), checksum_for(path, &entries_by_path, &blobs)?);
+    }
+    for path in &end_to_end_files {
+        checksums
+            .end_to_end
+            .insert(path.clone(), checksum_for(path, &entries_by_path, &blobs)?);
+    }
     let specification_checksum = manifest::rollup(&checksums.specification);
-    let end_to_end_checksum = manifest::rollup(&checksums.scenarios);
+    let end_to_end_checksum = manifest::end_to_end_rollup(&checksums.end_to_end, &scenarios);
+    checksums.scenarios = scenarios;
 
     let counts = placement.counts();
     let report = Report {
@@ -200,27 +224,32 @@ fn manifest_counts(counts: Counts) -> manifest::Counts {
     }
 }
 
-/// The union of the copy set and the frozen set: every revision path the trial
-/// may copy or the record names, so a repository link in either set refuses by
-/// name before any content is read.
-fn copy_set(placement: &partition::Partition) -> Vec<String> {
-    let mut paths: Vec<String> = placement
-        .copy_paths()
-        .into_iter()
-        .chain(placement.frozen_paths().iter().cloned())
-        .collect();
-    paths.sort();
-    paths.dedup();
-    paths
-}
-
-/// The union of the copy set and the scenario features: every revision entry
-/// the writer or the scenario digest reads.
-fn content_paths(copy: &[String], features: &[String]) -> Vec<String> {
-    let mut paths: Vec<String> = copy.iter().chain(features).cloned().collect();
-    paths.sort();
-    paths.dedup();
-    paths
+/// One recorded path's checksum. A repository link hashes its recorded commit
+/// id as kind `g`; every other path hashes the bytes the backend returned.
+fn checksum_for(
+    path: &str,
+    entries: &BTreeMap<&str, &RevisionEntry>,
+    blobs: &BTreeMap<String, Vec<u8>>,
+) -> Result<String> {
+    let entry = entries
+        .get(path)
+        .with_context(|| format!("the revision does not list '{path}'"))?;
+    let content: &[u8] = match entry.kind {
+        EntryKind::Submodule => entry
+            .gitlink
+            .as_deref()
+            .with_context(|| format!("the revision records no commit id for '{path}'"))?
+            .as_bytes(),
+        _ => blobs
+            .get(path)
+            .with_context(|| format!("the revision returned no content for '{path}'"))?,
+    };
+    Ok(manifest::path_checksum(
+        path,
+        entry.kind,
+        entry.executable,
+        content,
+    ))
 }
 
 /// The ordered admission checks: add-ons, backend, dirty checkout, revision,
@@ -366,7 +395,9 @@ fn resolved_target(path: &Path, checkout: &Path) -> Result<PathBuf> {
 }
 
 /// Refusal 9: the copy set carries no repository link and no version-control
-/// marker at any depth. The check runs before any content is read or written.
+/// marker at any depth. The End-to-end set is not part of the copy set, so a
+/// link there is hashed as kind `g` instead of refused. The check runs before
+/// any content is read or written.
 fn require_copy_set(paths: &[String], entries: &[RevisionEntry]) -> Result<()> {
     for path in paths {
         if path
@@ -689,6 +720,7 @@ mod tests {
             path: "vendor/lib".to_string(),
             kind: EntryKind::Submodule,
             executable: false,
+            gitlink: Some("0000000000000000000000000000000000000000".to_string()),
         }];
         let error = require_copy_set(&["vendor/lib".to_string()], &entries)
             .expect_err("a repository link is refused");
@@ -704,6 +736,7 @@ mod tests {
             path: "src/kept.rs".to_string(),
             kind: EntryKind::Regular,
             executable: false,
+            gitlink: None,
         }];
         require_copy_set(&["src/kept.rs".to_string()], &entries)
             .expect("a regular file is copied, not refused");

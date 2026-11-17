@@ -68,6 +68,43 @@ pub(crate) const KEPT_SOURCE_PATH: &str = "src/other.rs";
 /// The replaced source file the Fossil entry-kind fixture commits.
 pub(crate) const REPLACED_SOURCE_PATH: &str = "src/keys/parser.rs";
 
+/// The End-to-end repository link the checksum fixture commits.
+pub(crate) const E2E_LINK_PATH: &str = "tests/e2e/vendor/dep";
+/// The canonical checksum fixture's feature: one `@e2e` scenario, one step.
+pub(crate) const CANONICAL_FEATURE_CONTENT: &str =
+    "Feature: demo\n\n  @e2e\n  Scenario: demo\n    Given nothing\n";
+/// The richer checksum fixture's feature: a background, a docstring with
+/// delimiter-adjacent line breaks, escaped table cells, and an outline.
+pub(crate) const RICH_FEATURE_CONTENT: &str = r#"Feature: rich
+
+  Background:
+    Given a background step
+
+  @e2e
+  Scenario: plain scenario
+    Given a docstring step
+      """
+      line one
+        indented
+      line four
+      """
+    And a table step
+      | name  | value |
+      | pipe  | a\|b  |
+      | slash | a\\b  |
+      | new   | a\nb  |
+
+  @e2e
+  Scenario Outline: outline scenario
+    Given a value <value>
+    Then the value is <value>
+
+    Examples: values
+      | value |
+      | one   |
+      | two   |
+"#;
+
 /// Per-scenario state for the `clean-room-preparation` fixtures.
 #[derive(Debug, Default)]
 pub(crate) struct IseCleanRoomState {
@@ -278,6 +315,35 @@ pub(crate) fn contracts_project() -> common::TestEnv {
     ))
 }
 
+/// The pinned canonical checksum fixture: the declaration and the six
+/// committed files the use case names, with `givn/config.yaml` excluded.
+pub(crate) fn canonical_checksum_project() -> common::TestEnv {
+    let env = bare_ise_project(&default_declaration());
+    commit_files(
+        &env,
+        &[
+            (DEMO_FEATURE_PATH, CANONICAL_FEATURE_CONTENT),
+            ("docs/glossary.md", "glossary\n"),
+            (REFERENCE_PATH, "reference\n"),
+            ("docs/arc42/02-architecture-constraints.md", "constraints\n"),
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+            ("src/kept.rs", "kept\n"),
+        ],
+        "fixture: canonical checksums",
+    );
+    env
+}
+
+/// The richer checksum fixture: the canonical project with the feature
+/// replaced by the background, docstring, table, and outline bytes.
+pub(crate) fn rich_checksum_project() -> common::TestEnv {
+    let env = canonical_checksum_project();
+    std::fs::write(env.path(DEMO_FEATURE_PATH), RICH_FEATURE_CONTENT)
+        .expect("rewrite the richer feature");
+    common::git_commit_all(&env, "fixture: richer checksum feature");
+    env
+}
+
 /// Commit the retained feature the role fixtures name.
 pub(crate) fn commit_demo_feature(env: &common::TestEnv) {
     commit_files(
@@ -364,6 +430,34 @@ pub(crate) fn commit_repository_link(env: &common::TestEnv) {
         "git commit of the repository link failed: {}",
         String::from_utf8_lossy(&commit.stderr)
     );
+}
+
+/// Commit the End-to-end package manifest and a `160000` entry beneath it, so
+/// the End-to-end set carries one regular file and one repository link. The
+/// empty directory keeps the checkout clean: Git ignores directories, so the
+/// recorded link reads as present.
+pub(crate) fn commit_e2e_package_with_repository_link(env: &common::TestEnv) {
+    commit_files(
+        env,
+        &[("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n")],
+        "fixture: end-to-end package",
+    );
+    let target = head_revision(env);
+    let info = format!("160000,{target},{E2E_LINK_PATH}");
+    let index = common::git(env, &["update-index", "--add", "--cacheinfo", &info]);
+    assert!(
+        index.status.success(),
+        "git update-index for the end-to-end link failed: {}",
+        String::from_utf8_lossy(&index.stderr)
+    );
+    let commit = common::git(env, &["commit", "-q", "-m", "fixture: end-to-end link"]);
+    assert!(
+        commit.status.success(),
+        "git commit of the end-to-end link failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
+    std::fs::create_dir_all(env.path(E2E_LINK_PATH))
+        .expect("create the empty directory the recorded link reads from");
 }
 
 /// A project whose `structure` role retains the nested repository marker.

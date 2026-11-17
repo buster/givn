@@ -21,12 +21,20 @@ fn steps(steps: &[Step]) -> Value {
                     step.keyword.trim(),
                     format!("{:?}", step.ty),
                     step.value,
-                    step.docstring,
+                    step.docstring.as_deref().map(docstring_content),
                     step.table.as_ref().map(|table| &table.rows)
                 ])
             })
             .collect::<Vec<_>>()
     )
+}
+
+/// The docstring's content: the parser removes the delimiters' indentation and
+/// keeps the line break that follows the opening delimiter and the one before
+/// the closing delimiter; the executable content drops exactly those two.
+fn docstring_content(docstring: &str) -> &str {
+    let docstring = docstring.strip_prefix('\n').unwrap_or(docstring);
+    docstring.strip_suffix('\n').unwrap_or(docstring)
 }
 
 pub fn background_content(background: Option<&Background>) -> Value {

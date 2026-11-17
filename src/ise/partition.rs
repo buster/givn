@@ -24,7 +24,6 @@ pub(super) struct Partition {
     kept_source: Vec<String>,
     replaced: Vec<String>,
     outside: Vec<String>,
-    frozen: Vec<String>,
     not_replaced: usize,
 }
 
@@ -62,12 +61,6 @@ impl Partition {
     /// files, recorded without checksums.
     pub(super) fn kept_source_paths(&self) -> &[String] {
         &self.kept_source
-    }
-
-    /// The sorted frozen paths: the resolved `e2e` package minus the
-    /// declaration. The trial never copies one.
-    pub(super) fn frozen_paths(&self) -> &[String] {
-        &self.frozen
     }
 
     /// The sorted tracked paths this replacement removes.
@@ -164,7 +157,6 @@ pub(super) fn partition(
         kept_source,
         replaced,
         outside,
-        frozen,
         not_replaced,
     })
 }
@@ -380,11 +372,13 @@ mod tests {
                 path: DECLARATION_PATH.to_string(),
                 kind: EntryKind::Regular,
                 executable: false,
+                gitlink: None,
             },
             RevisionEntry {
                 path: "givn/specs/a.md".to_string(),
                 kind: EntryKind::Regular,
                 executable: false,
+                gitlink: None,
             },
         ];
         let placement = partition(&declaration, &entries, &full_replacement(), "abc123")
@@ -419,31 +413,30 @@ mod tests {
                 path: DECLARATION_PATH.to_string(),
                 kind: EntryKind::Regular,
                 executable: false,
+                gitlink: None,
             },
             RevisionEntry {
                 path: "src/e2e/Cargo.toml".to_string(),
                 kind: EntryKind::Regular,
                 executable: false,
+                gitlink: None,
             },
             RevisionEntry {
                 path: "src/e2e/tests/keys.rs".to_string(),
                 kind: EntryKind::Regular,
                 executable: false,
+                gitlink: None,
             },
             RevisionEntry {
                 path: "src/kept.rs".to_string(),
                 kind: EntryKind::Regular,
                 executable: false,
+                gitlink: None,
             },
         ];
         let request = full_replacement();
         let placement = partition(&declaration, &entries, &request, "abc123")
             .expect("the fixture revision partitions");
-        assert_eq!(
-            placement.frozen_paths(),
-            ["src/e2e/Cargo.toml", "src/e2e/tests/keys.rs"],
-            "the resolved package is not the frozen set"
-        );
         assert_eq!(
             placement.retained_paths(),
             [DECLARATION_PATH.to_string()],

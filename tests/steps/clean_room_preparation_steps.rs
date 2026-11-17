@@ -2946,3 +2946,118 @@ fn the_manifest_removed_paths_are(world: &mut GivnWorld, step: &Step) {
         "the manifest's removed paths are wrong"
     );
 }
+
+// --- checksums --------------------------------------------------------------
+
+#[given(regex = r#"^the pinned canonical checksum fixture$"#)]
+fn the_pinned_canonical_checksum_fixture(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::canonical_checksum_project());
+}
+
+#[given(regex = r#"^the pinned richer checksum fixture$"#)]
+fn the_pinned_richer_checksum_fixture(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::rich_checksum_project());
+}
+
+#[given(
+    regex = r#"^a committed revision with "tests/e2e/Cargo\.toml" and a repository link at "tests/e2e/vendor/dep"$"#
+)]
+fn commit_e2e_package_with_repository_link(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_e2e_package_with_repository_link(project_env(world));
+}
+
+fn manifest_checksums(world: &GivnWorld, map: &str) -> std::collections::BTreeMap<String, String> {
+    let manifest = record_document(world);
+    manifest
+        .get("checksums")
+        .and_then(|checksums| checksums.get(map))
+        .and_then(|value| value.as_mapping())
+        .unwrap_or_else(|| panic!("the manifest has no 'checksums.{map}' map"))
+        .iter()
+        .map(|(path, digest)| {
+            (
+                path.as_str()
+                    .unwrap_or_else(|| panic!("checksums.{map} holds a non-string path"))
+                    .to_string(),
+                digest
+                    .as_str()
+                    .unwrap_or_else(|| panic!("checksums.{map} holds a non-string checksum"))
+                    .to_string(),
+            )
+        })
+        .collect()
+}
+
+fn manifest_string(world: &GivnWorld, key: &str) -> String {
+    record_document(world)
+        .get(key)
+        .and_then(serde_yaml_ng::Value::as_str)
+        .unwrap_or_else(|| panic!("the manifest has no '{key}' string"))
+        .to_string()
+}
+
+fn assert_checksum_table(world: &GivnWorld, map: &str, step: &Step) {
+    let expected: std::collections::BTreeMap<String, String> = step
+        .table()
+        .expect("the step carries a checksum table")
+        .rows
+        .iter()
+        .skip(1)
+        .map(|row| match row.as_slice() {
+            [path, checksum] => (path.clone(), checksum.clone()),
+            other => panic!("a checksum row needs two cells, got {other:?}"),
+        })
+        .collect();
+    let actual = manifest_checksums(world, map);
+    assert_eq!(actual, expected, "the manifest's {map} checksums are wrong");
+}
+
+#[then(regex = r#"^the manifest's scenario checksum for "([^"]+)" is "([^"]+)"$"#)]
+fn the_manifest_scenario_checksum_for(world: &mut GivnWorld, path: String, checksum: String) {
+    let map = manifest_checksums(world, "scenarios");
+    assert_eq!(
+        map.get(&path),
+        Some(&checksum),
+        "scenario checksums {map:?} do not hold {checksum:?} for {path:?}"
+    );
+}
+
+#[then(regex = r#"^the manifest's specification checksum is "([^"]+)"$"#)]
+fn the_manifest_specification_checksum_is(world: &mut GivnWorld, checksum: String) {
+    assert_eq!(manifest_string(world, "specification_checksum"), checksum);
+}
+
+#[then(regex = r#"^the manifest's end-to-end checksum is "([^"]+)"$"#)]
+fn the_manifest_end_to_end_checksum_is(world: &mut GivnWorld, checksum: String) {
+    assert_eq!(manifest_string(world, "end_to_end_checksum"), checksum);
+}
+
+#[then(regex = r#"^the manifest's specification checksums are:$"#)]
+fn the_manifest_specification_checksums_are(world: &mut GivnWorld, step: &Step) {
+    assert_checksum_table(world, "specification", step);
+}
+
+#[then(regex = r#"^the manifest's end-to-end checksums are:$"#)]
+fn the_manifest_end_to_end_checksums_are(world: &mut GivnWorld, step: &Step) {
+    assert_checksum_table(world, "end_to_end", step);
+}
+
+#[then(regex = r#"^the manifest's scenario checksums are:$"#)]
+fn the_manifest_scenario_checksums_are(world: &mut GivnWorld, step: &Step) {
+    assert_checksum_table(world, "scenarios", step);
+}
+
+#[then(regex = r#"^the manifest's end-to-end checksums hold a 64-hex checksum for "([^"]+)"$"#)]
+fn the_manifest_end_to_end_checksums_hold_one(world: &mut GivnWorld, path: String) {
+    let map = manifest_checksums(world, "end_to_end");
+    let checksum = map
+        .get(&path)
+        .unwrap_or_else(|| panic!("checksums.end_to_end has no row for {path:?}: {map:?}"));
+    assert!(
+        checksum.len() == 64
+            && checksum
+                .bytes()
+                .all(|byte| matches!(byte, b'0'..=b'9' | b'a'..=b'f')),
+        "the checksum {checksum:?} for {path:?} is not 64 lowercase hex characters"
+    );
+}
