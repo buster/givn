@@ -1,0 +1,951 @@
+scope: ise-manifest/v1
+revision: 746e660b97028991ecd273595e28047f21d8262d
+removed_paths:
+- src/cli/addon_report.rs
+- src/cli/addons.rs
+- src/cli/agents_block.rs
+- src/cli/archive.rs
+- src/cli/attribution.rs
+- src/cli/check.rs
+- src/cli/commit.rs
+- src/cli/coverage_gate.rs
+- src/cli/eject.rs
+- src/cli/git.rs
+- src/cli/graph.rs
+- src/cli/history.rs
+- src/cli/init.rs
+- src/cli/instructions.rs
+- src/cli/ise.rs
+- src/cli/lint/hygiene.rs
+- src/cli/lint/mod.rs
+- src/cli/lint/specification.rs
+- src/cli/migration.rs
+- src/cli/missing_run_command.rs
+- src/cli/missing_testrunner.rs
+- src/cli/mod.rs
+- src/cli/new.rs
+- src/cli/outline.rs
+- src/cli/project_hint.rs
+- src/cli/readme.rs
+- src/cli/run.rs
+- src/cli/run_block.rs
+- src/cli/skills.rs
+- src/cli/spec.rs
+- src/cli/status.rs
+- src/cli/test_result.rs
+- src/cli/timeline.rs
+- src/cli/upgrade.rs
+- src/cobertura.rs
+- src/config/addons.rs
+- src/config/cascade.rs
+- src/config/declaration.rs
+- src/config/embedded.rs
+- src/config/extensions.rs
+- src/config/lock.rs
+- src/config/manifest.rs
+- src/config/mod.rs
+- src/config/overlay.rs
+- src/config/render.rs
+- src/e2e_boundary/conditions.rs
+- src/e2e_boundary/hash.rs
+- src/e2e_boundary/imports.rs
+- src/e2e_boundary/manifest.rs
+- src/e2e_boundary/mod.rs
+- src/e2e_boundary/paths.rs
+- src/error.rs
+- src/fossil.rs
+- src/gherkin/content.rs
+- src/gherkin/delta.rs
+- src/gherkin/interaction.rs
+- src/gherkin/merge.rs
+- src/gherkin/mod.rs
+- src/gherkin/parse.rs
+- src/gherkin/usecase_md.rs
+- src/git.rs
+- src/history.rs
+- src/hooks.rs
+- src/integrity_hook.rs
+- src/ise/compare.rs
+- src/ise/manifest.rs
+- src/ise/mod.rs
+- src/ise/partition.rs
+- src/lib.rs
+- src/main.rs
+- src/outline/analyzer.rs
+- src/outline/classify.rs
+- src/outline/metrics.rs
+- src/outline/mod.rs
+- src/outline/model.rs
+- src/outline/python_adapter/extractor.py
+- src/outline/python_adapter/mod.rs
+- src/outline/report.rs
+- src/outline/resolve.rs
+- src/outline/scan.rs
+- src/outline/syn_adapter/facts.rs
+- src/outline/syn_adapter/file_builder.rs
+- src/outline/syn_adapter/impl_index.rs
+- src/outline/syn_adapter/mod.rs
+- src/outline/syn_adapter/spans.rs
+- src/outline/syn_adapter/syntax.rs
+- src/outline/tree_sitter_adapter/mod.rs
+- src/outline/tree_sitter_eval/mod.rs
+- src/overlap/analysis.rs
+- src/overlap/disposition.rs
+- src/overlap/fingerprint.rs
+- src/overlap/mod.rs
+- src/proof.rs
+- src/review_context.rs
+- src/scm.rs
+- src/skills/mod.rs
+- src/skills/render.rs
+- src/skills/rules.rs
+- src/skills/targets.rs
+- src/spec/corpus.rs
+- src/spec/coverage.rs
+- src/spec/merge_plan.rs
+- src/spec/mod.rs
+- src/spec/owner.rs
+- src/spec/projection.rs
+- src/spec/route.rs
+- src/spec/routing_table.rs
+- src/spec/tree.rs
+- src/state.rs
+- src/subprocess.rs
+- tests/commit_hooks.rs
+- tests/common/instruction_references.rs
+- tests/common/mod.rs
+- tests/common/reference_check.rs
+- tests/common/terminal_evidence.rs
+- tests/features_runner.rs
+- tests/ready_fixture.rs
+- tests/steps/addon_artifact_report_steps.rs
+- tests/steps/adr_qualification_gate_steps.rs
+- tests/steps/agent_activity_reporting_steps.rs
+- tests/steps/arc42_review_alignment_steps.rs
+- tests/steps/archive_proof_steps.rs
+- tests/steps/archive_proof_support.rs
+- tests/steps/change_strategy_steps.rs
+- tests/steps/choose_project_license_steps.rs
+- tests/steps/clean_room_preparation_steps.rs
+- tests/steps/coverage_readme_example_steps.rs
+- tests/steps/coverage_script_workflow_steps.rs
+- tests/steps/deduplicate_change_dir_detection_steps.rs
+- tests/steps/default_all_addons_steps.rs
+- tests/steps/development_record_steps.rs
+- tests/steps/development_report_steps.rs
+- tests/steps/development_timeline_support.rs
+- tests/steps/e2e_boundary_support.rs
+- tests/steps/enable_optional_addons_ise_steps.rs
+- tests/steps/enforce_post_merge_e2e_gate_steps.rs
+- tests/steps/extract_coverage_gate_steps.rs
+- tests/steps/fix_domain_modeling_skill_trigger_steps.rs
+- tests/steps/fix_uppercase_checkbox_parsing_steps.rs
+- tests/steps/grouped_merge_steps.rs
+- tests/steps/init_agent_target_selection_steps.rs
+- tests/steps/initialize_a_project_steps.rs
+- tests/steps/instruction_extension_steps.rs
+- tests/steps/instruction_integrity_steps.rs
+- tests/steps/interaction_projection_steps.rs
+- tests/steps/ise_clean_room_support.rs
+- tests/steps/llm_attribution_e2e_steps.rs
+- tests/steps/llm_attribution_installation_steps.rs
+- tests/steps/llm_attribution_steps.rs
+- tests/steps/local_only_rules_steps.rs
+- tests/steps/mod.rs
+- tests/steps/outline_report_steps.rs
+- tests/steps/outline_report_support.rs
+- tests/steps/preserve_docstrings_on_archive_steps.rs
+- tests/steps/prose_consolidation_steps.rs
+- tests/steps/readme_coverage_badge_steps.rs
+- tests/steps/readme_enforcement_steps.rs
+- tests/steps/release_0_3_0_steps.rs
+- tests/steps/release_steps.rs
+- tests/steps/remove_dead_skip_list_code_steps.rs
+- tests/steps/repository_ownership_fixtures_steps.rs
+- tests/steps/repository_ownership_fixtures_support.rs
+- tests/steps/require_durable_retained_paths_steps.rs
+- tests/steps/require_merged_step_definitions_steps.rs
+- tests/steps/review_disposition_gates_steps.rs
+- tests/steps/run_command_steps.rs
+- tests/steps/run_declaration_fixtures_support.rs
+- tests/steps/run_execution_steps.rs
+- tests/steps/run_execution_support.rs
+- tests/steps/run_readme_steps.rs
+- tests/steps/run_upgrade_steps.rs
+- tests/steps/scm_backend_selection_steps.rs
+- tests/steps/serve_extended_rules_steps.rs
+- tests/steps/skill_rewrites_steps.rs
+- tests/steps/spec_discovery_deterministic_steps.rs
+- tests/steps/spec_gap_steps.rs
+- tests/steps/spec_overlap_gates_steps.rs
+- tests/steps/specification_declaration_steps.rs
+- tests/steps/specification_health_steps.rs
+- tests/steps/template_conditional_rendering_steps.rs
+- tests/steps/template_conditional_rendering_support.rs
+- tests/steps/trial_input_verification_steps.rs
+- tests/steps/validate_artifact_id_input_steps.rs
+- tests/steps/validate_change_id_input_steps.rs
+- tests/steps/visual_design_contract_steps.rs
+- tests/steps/visual_review_gate_steps.rs
+- tests/steps/workflow_enforcement_steps.rs
+specification_files:
+- Cargo.lock
+- Cargo.toml
+- assets/addons/arc42-docs/chapters/01-introduction-and-goals.md
+- assets/addons/arc42-docs/chapters/02-architecture-constraints.md
+- assets/addons/arc42-docs/chapters/03-context-and-scope.md
+- assets/addons/arc42-docs/chapters/04-solution-strategy.md
+- assets/addons/arc42-docs/chapters/05-building-block-view.md
+- assets/addons/arc42-docs/chapters/06-runtime-view.md
+- assets/addons/arc42-docs/chapters/07-deployment-view.md
+- assets/addons/arc42-docs/chapters/08-crosscutting-concepts.md
+- assets/addons/arc42-docs/chapters/09-architecture-decisions.md
+- assets/addons/arc42-docs/chapters/10-quality-requirements.md
+- assets/addons/arc42-docs/chapters/11-risks-and-technical-debt.md
+- assets/addons/arc42-docs/chapters/12-glossary.md
+- assets/addons/arc42-docs/chapters/README.md
+- assets/addons/arc42-docs/chapters/adr/adr-template.md
+- assets/addons/arc42-docs/impact-assessment-template.md
+- assets/addons/arc42-docs/instructions.md
+- assets/addons/communication-policy/policy.md
+- assets/addons/coverage/instructions.md
+- assets/addons/coverage/template.md
+- assets/addons/readme/README.md.tmpl
+- assets/agent-integrations/claude/givn-attribution.sh
+- assets/agent-integrations/claude/givn-timeline.sh
+- assets/agent-integrations/maki/givn-attribution.lua
+- assets/agent-integrations/maki/givn-timeline.lua
+- assets/agent-integrations/maki/plugin-before-attribution.toml
+- assets/agent-integrations/maki/plugin.toml
+- assets/agent-integrations/omp/givn-attribution.js
+- assets/agent-integrations/omp/givn-timeline.js
+- assets/agent-integrations/opencode/givn-attribution.js
+- assets/agent-integrations/opencode/givn-timeline.js
+- assets/agents-project-hint.md
+- assets/commands.yaml.tmpl
+- assets/config.yaml.tmpl
+- assets/default-manifest.yaml
+- assets/hooks/commit-msg
+- assets/hooks/git-commit-msg-launcher
+- assets/instructions/architecture-principles.md
+- assets/instructions/archive.md
+- assets/instructions/challenge.md
+- assets/instructions/characterize.md
+- assets/instructions/design-review.md
+- assets/instructions/design.md
+- assets/instructions/dev-principles.md
+- assets/instructions/dialog-examples.md
+- assets/instructions/dialog.md
+- assets/instructions/domain-modeling.md
+- assets/instructions/ideation.md
+- assets/instructions/ise.md
+- assets/instructions/proposal.md
+- assets/instructions/reverse-engineer.md
+- assets/instructions/review-reverse.md
+- assets/instructions/review.md
+- assets/instructions/specs-reverse.md
+- assets/instructions/specs.md
+- assets/instructions/start.md
+- assets/instructions/steps-go.md
+- assets/instructions/steps-java.md
+- assets/instructions/steps-node.md
+- assets/instructions/steps-python.md
+- assets/instructions/steps-ruby.md
+- assets/instructions/steps-rust.md
+- assets/instructions/steps.md
+- assets/instructions/tasks-reverse.md
+- assets/instructions/tasks.md
+- assets/migrations/catalog.yaml
+- assets/migrations/fixtures/synthetic/design.md
+- assets/migrations/fixtures/synthetic/proposal.md
+- assets/run.yaml.tmpl
+- assets/skills/givn-archive/SKILL.md.tmpl
+- assets/skills/givn-challenge/SKILL.md.tmpl
+- assets/skills/givn-characterize/SKILL.md.tmpl
+- assets/skills/givn-design-review/SKILL.md.tmpl
+- assets/skills/givn-design/SKILL.md.tmpl
+- assets/skills/givn-dev-principles/SKILL.md.tmpl
+- assets/skills/givn-domain-modeling/SKILL.md.tmpl
+- assets/skills/givn-ideation/SKILL.md.tmpl
+- assets/skills/givn-implement/SKILL.md.tmpl
+- assets/skills/givn-propose/SKILL.md.tmpl
+- assets/skills/givn-reverse-engineer/SKILL.md.tmpl
+- assets/skills/givn-review/SKILL.md.tmpl
+- assets/skills/givn-spec/SKILL.md.tmpl
+- assets/skills/givn-start/SKILL.md.tmpl
+- assets/skills/givn-steps/SKILL.md.tmpl
+- assets/skills/givn-tasks/SKILL.md.tmpl
+- assets/specification.yaml.tmpl
+- assets/templates/design-review.md
+- assets/templates/design.md
+- assets/templates/domain-model.md
+- assets/templates/glossary.md
+- assets/templates/persona.md
+- assets/templates/proposal.md
+- assets/templates/review.md
+- assets/templates/spec.feature
+- assets/templates/tasks.md
+- assets/timeline/report.html
+- docs/arc42/02-architecture-constraints.md
+- docs/domain-model.md
+- docs/glossary.md
+- docs/reference.md
+- givn/specification.yaml
+- givn/specs/.retired.yaml
+- givn/specs/archive-change/archive-proof.feature
+- givn/specs/archive-change/enforce-post-merge-e2e-gate.feature
+- givn/specs/archive-change/extract-coverage-gate.feature
+- givn/specs/archive-change/grouped-merge-for-new-capabilities.feature
+- givn/specs/archive-change/preserve-scenario-docstrings.feature
+- givn/specs/archive-change/require-durable-retained-paths.feature
+- givn/specs/archive-change/require-merged-step-definitions.feature
+- givn/specs/archive-change/usecase.md
+- givn/specs/assess-code-structure/outline-report.feature
+- givn/specs/assess-code-structure/usecase.md
+- givn/specs/author-change/usecase.md
+- givn/specs/create-change/change-release-note.feature
+- givn/specs/create-change/change-strategy.feature
+- givn/specs/create-change/create-a-change.feature
+- givn/specs/create-change/prose-consolidation.feature
+- givn/specs/create-change/spec-gap.feature
+- givn/specs/create-change/usecase.md
+- givn/specs/create-change/visual-design-contract.feature
+- givn/specs/declare-the-specification/specification-declaration.feature
+- givn/specs/declare-the-specification/usecase.md
+- givn/specs/discover-specifications/keep-audit-output-clean.feature
+- givn/specs/discover-specifications/spec-duplicates.feature
+- givn/specs/discover-specifications/usecase.md
+- givn/specs/extend-an-instruction/instruction-extension.feature
+- givn/specs/extend-an-instruction/usecase.md
+- givn/specs/fragments/adr-qualification-gate.feature
+- givn/specs/fragments/attribute-commits.feature
+- givn/specs/fragments/choose-project-license.feature
+- givn/specs/fragments/coverage-readme-example.feature
+- givn/specs/fragments/customize-the-lifecycle-graph.feature
+- givn/specs/fragments/detect-the-project-repository.feature
+- givn/specs/fragments/enable-commit-attribution.feature
+- givn/specs/fragments/find-existing-scenarios.feature
+- givn/specs/fragments/fragment.md
+- givn/specs/fragments/generate-ideation-guidance.feature
+- givn/specs/fragments/guide-domain-modeling.feature
+- givn/specs/fragments/instruction-integrity.feature
+- givn/specs/fragments/local-only-transition.feature
+- givn/specs/fragments/match-guidance-to-enabled-addons.feature
+- givn/specs/fragments/measure-coverage-per-project.feature
+- givn/specs/fragments/publication-cleanliness.feature
+- givn/specs/fragments/refresh-generated-guidance.feature
+- givn/specs/fragments/review-architecture-documentation.feature
+- givn/specs/fragments/route-a-change.feature
+- givn/specs/fragments/rules-policy.feature
+- givn/specs/fragments/show-coverage-in-the-readme.feature
+- givn/specs/fragments/verify-repository-ownership.feature
+- givn/specs/initialize-project/enable-optional-addons.feature
+- givn/specs/initialize-project/initialize-a-project.feature
+- givn/specs/initialize-project/usecase.md
+- givn/specs/inspect-change-state/read-task-progress.feature
+- givn/specs/inspect-change-state/report-change-status.feature
+- givn/specs/inspect-change-state/show-skipped-artifacts.feature
+- givn/specs/inspect-change-state/usecase.md
+- givn/specs/inspect-change-state/validate-change-ids.feature
+- givn/specs/inspect-development-history/agent-activity-reporting.feature
+- givn/specs/inspect-development-history/development-record.feature
+- givn/specs/inspect-development-history/development-report.feature
+- givn/specs/inspect-development-history/usecase.md
+- givn/specs/keep-documentation-current/readme-enforcement.feature
+- givn/specs/keep-documentation-current/usecase.md
+- givn/specs/maintain-project/usecase.md
+- givn/specs/make-usecases-canonical/canonical-usecase-contract.feature
+- givn/specs/make-usecases-canonical/usecase.md
+- givn/specs/obtain-effective-guidance/serve-extended-rules.feature
+- givn/specs/obtain-effective-guidance/usecase.md
+- givn/specs/operate-product/declare-the-product-start.feature
+- givn/specs/operate-product/start-the-declared-product.feature
+- givn/specs/operate-product/usecase.md
+- givn/specs/prepare-an-ise-test/clean-room-preparation.feature
+- givn/specs/prepare-an-ise-test/trial-input-verification.feature
+- givn/specs/prepare-an-ise-test/usecase.md
+- givn/specs/publish-a-release/describe-the-release.feature
+- givn/specs/publish-a-release/usecase.md
+- givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature
+- givn/specs/upgrade-a-project/usecase.md
+- givn/specs/verify-change/check-specification-health.feature
+- givn/specs/verify-change/givn-workflow-enforcement.feature
+- givn/specs/verify-change/resolve-change-directories.feature
+- givn/specs/verify-change/review-disposition-gates.feature
+- givn/specs/verify-change/spec-overlap-gates.feature
+- givn/specs/verify-change/usecase.md
+- givn/specs/verify-change/validate-artifact-ids.feature
+- givn/specs/verify-change/visual-review-gate.feature
+- rust-toolchain.toml
+source_kept_files: []
+end_to_end_files:
+- e2e/Cargo.lock
+- e2e/Cargo.toml
+- e2e/browser/.gitignore
+- e2e/browser/browser-driver.mjs
+- e2e/browser/package-lock.json
+- e2e/browser/package.json
+- e2e/tests/e2e_runner.rs
+- e2e/tests/harness/binary.rs
+- e2e/tests/harness/browser.rs
+- e2e/tests/harness/history_record.rs
+- e2e/tests/harness/mod.rs
+- e2e/tests/harness/proof_fixture.rs
+- e2e/tests/harness/terminal_evidence.rs
+- e2e/tests/harness/timing.rs
+- e2e/tests/steps/addon_artifact_report_e2e_steps.rs
+- e2e/tests/steps/adr_qualification_gate_e2e_steps.rs
+- e2e/tests/steps/agent_activity_reporting_e2e_steps.rs
+- e2e/tests/steps/arc42_review_alignment_steps.rs
+- e2e/tests/steps/archive_proof_e2e_steps.rs
+- e2e/tests/steps/archive_proof_steps.rs
+- e2e/tests/steps/archive_proof_support.rs
+- e2e/tests/steps/change_strategy_e2e_steps.rs
+- e2e/tests/steps/clean_room_preparation_e2e_steps.rs
+- e2e/tests/steps/clean_room_preparation_steps.rs
+- e2e/tests/steps/coverage_readme_example_steps.rs
+- e2e/tests/steps/coverage_script_workflow_e2e_steps.rs
+- e2e/tests/steps/coverage_script_workflow_steps.rs
+- e2e/tests/steps/deduplicate_change_dir_detection_steps.rs
+- e2e/tests/steps/default_all_addons_steps.rs
+- e2e/tests/steps/development_record_e2e_steps.rs
+- e2e/tests/steps/development_record_steps.rs
+- e2e/tests/steps/development_report_e2e_steps.rs
+- e2e/tests/steps/development_report_steps.rs
+- e2e/tests/steps/development_timeline_support.rs
+- e2e/tests/steps/enable_optional_addons_ise_e2e_steps.rs
+- e2e/tests/steps/enable_optional_addons_ise_steps.rs
+- e2e/tests/steps/enforce_post_merge_e2e_gate_steps.rs
+- e2e/tests/steps/extract_coverage_gate_steps.rs
+- e2e/tests/steps/fix_domain_modeling_skill_trigger_e2e_steps.rs
+- e2e/tests/steps/fix_domain_modeling_skill_trigger_steps.rs
+- e2e/tests/steps/fix_uppercase_checkbox_parsing_steps.rs
+- e2e/tests/steps/grouped_merge_steps.rs
+- e2e/tests/steps/init_agent_target_selection_steps.rs
+- e2e/tests/steps/initialize_a_project_e2e_steps.rs
+- e2e/tests/steps/instruction_extension_e2e_steps.rs
+- e2e/tests/steps/instruction_extension_steps.rs
+- e2e/tests/steps/instruction_integrity_e2e_steps.rs
+- e2e/tests/steps/instruction_integrity_steps.rs
+- e2e/tests/steps/ise_clean_room_support.rs
+- e2e/tests/steps/llm_attribution_e2e_steps.rs
+- e2e/tests/steps/llm_attribution_installation_e2e_steps.rs
+- e2e/tests/steps/llm_attribution_installation_steps.rs
+- e2e/tests/steps/llm_attribution_steps.rs
+- e2e/tests/steps/mod.rs
+- e2e/tests/steps/outline_report_e2e_steps.rs
+- e2e/tests/steps/outline_report_steps.rs
+- e2e/tests/steps/outline_report_support.rs
+- e2e/tests/steps/preserve_docstrings_on_archive_steps.rs
+- e2e/tests/steps/prose_consolidation_e2e_steps.rs
+- e2e/tests/steps/prose_consolidation_steps.rs
+- e2e/tests/steps/readme_coverage_badge_steps.rs
+- e2e/tests/steps/readme_enforcement_e2e_steps.rs
+- e2e/tests/steps/readme_enforcement_steps.rs
+- e2e/tests/steps/release_0_3_0_e2e_steps.rs
+- e2e/tests/steps/release_0_3_0_steps.rs
+- e2e/tests/steps/release_e2e_steps.rs
+- e2e/tests/steps/release_steps.rs
+- e2e/tests/steps/remove_dead_skip_list_code_steps.rs
+- e2e/tests/steps/repository_ownership_fixtures_steps.rs
+- e2e/tests/steps/repository_ownership_fixtures_support.rs
+- e2e/tests/steps/require_durable_retained_paths_e2e_steps.rs
+- e2e/tests/steps/require_durable_retained_paths_steps.rs
+- e2e/tests/steps/require_merged_step_definitions_e2e_steps.rs
+- e2e/tests/steps/require_merged_step_definitions_steps.rs
+- e2e/tests/steps/review_disposition_gates_steps.rs
+- e2e/tests/steps/run_command_steps.rs
+- e2e/tests/steps/run_declaration_fixtures_support.rs
+- e2e/tests/steps/run_execution_e2e_steps.rs
+- e2e/tests/steps/run_execution_steps.rs
+- e2e/tests/steps/run_execution_support.rs
+- e2e/tests/steps/run_upgrade_steps.rs
+- e2e/tests/steps/scm_backend_selection_e2e_steps.rs
+- e2e/tests/steps/scm_backend_selection_steps.rs
+- e2e/tests/steps/serve_extended_rules_steps.rs
+- e2e/tests/steps/skill_rewrites_steps.rs
+- e2e/tests/steps/spec_discovery_deterministic_steps.rs
+- e2e/tests/steps/spec_gap_e2e_steps.rs
+- e2e/tests/steps/spec_gap_steps.rs
+- e2e/tests/steps/spec_overlap_gates_steps.rs
+- e2e/tests/steps/specification_declaration_e2e_steps.rs
+- e2e/tests/steps/template_conditional_rendering_e2e_steps.rs
+- e2e/tests/steps/template_conditional_rendering_steps.rs
+- e2e/tests/steps/template_conditional_rendering_support.rs
+- e2e/tests/steps/trial_input_verification_e2e_steps.rs
+- e2e/tests/steps/trial_input_verification_steps.rs
+- e2e/tests/steps/validate_artifact_id_input_steps.rs
+- e2e/tests/steps/validate_change_id_input_steps.rs
+- e2e/tests/steps/visual_review_gate_steps.rs
+- e2e/tests/steps/workflow_enforcement_e2e_steps.rs
+- e2e/tests/steps/workflow_enforcement_steps.rs
+- givn/specs/archive-change/archive-proof.feature
+- givn/specs/archive-change/enforce-post-merge-e2e-gate.feature
+- givn/specs/archive-change/extract-coverage-gate.feature
+- givn/specs/archive-change/grouped-merge-for-new-capabilities.feature
+- givn/specs/archive-change/preserve-scenario-docstrings.feature
+- givn/specs/archive-change/require-durable-retained-paths.feature
+- givn/specs/archive-change/require-merged-step-definitions.feature
+- givn/specs/assess-code-structure/outline-report.feature
+- givn/specs/create-change/change-release-note.feature
+- givn/specs/create-change/change-strategy.feature
+- givn/specs/create-change/prose-consolidation.feature
+- givn/specs/create-change/spec-gap.feature
+- givn/specs/create-change/visual-design-contract.feature
+- givn/specs/declare-the-specification/specification-declaration.feature
+- givn/specs/discover-specifications/keep-audit-output-clean.feature
+- givn/specs/discover-specifications/spec-duplicates.feature
+- givn/specs/extend-an-instruction/instruction-extension.feature
+- givn/specs/fragments/adr-qualification-gate.feature
+- givn/specs/fragments/attribute-commits.feature
+- givn/specs/fragments/coverage-readme-example.feature
+- givn/specs/fragments/detect-the-project-repository.feature
+- givn/specs/fragments/enable-commit-attribution.feature
+- givn/specs/fragments/find-existing-scenarios.feature
+- givn/specs/fragments/guide-domain-modeling.feature
+- givn/specs/fragments/instruction-integrity.feature
+- givn/specs/fragments/match-guidance-to-enabled-addons.feature
+- givn/specs/fragments/measure-coverage-per-project.feature
+- givn/specs/fragments/refresh-generated-guidance.feature
+- givn/specs/fragments/review-architecture-documentation.feature
+- givn/specs/fragments/route-a-change.feature
+- givn/specs/fragments/show-coverage-in-the-readme.feature
+- givn/specs/fragments/verify-repository-ownership.feature
+- givn/specs/initialize-project/enable-optional-addons.feature
+- givn/specs/initialize-project/initialize-a-project.feature
+- givn/specs/inspect-change-state/read-task-progress.feature
+- givn/specs/inspect-change-state/report-change-status.feature
+- givn/specs/inspect-change-state/show-skipped-artifacts.feature
+- givn/specs/inspect-change-state/validate-change-ids.feature
+- givn/specs/inspect-development-history/agent-activity-reporting.feature
+- givn/specs/inspect-development-history/development-record.feature
+- givn/specs/inspect-development-history/development-report.feature
+- givn/specs/keep-documentation-current/readme-enforcement.feature
+- givn/specs/make-usecases-canonical/canonical-usecase-contract.feature
+- givn/specs/obtain-effective-guidance/serve-extended-rules.feature
+- givn/specs/operate-product/declare-the-product-start.feature
+- givn/specs/operate-product/start-the-declared-product.feature
+- givn/specs/prepare-an-ise-test/clean-room-preparation.feature
+- givn/specs/prepare-an-ise-test/trial-input-verification.feature
+- givn/specs/publish-a-release/describe-the-release.feature
+- givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature
+- givn/specs/verify-change/check-specification-health.feature
+- givn/specs/verify-change/givn-workflow-enforcement.feature
+- givn/specs/verify-change/resolve-change-directories.feature
+- givn/specs/verify-change/spec-overlap-gates.feature
+- givn/specs/verify-change/validate-artifact-ids.feature
+- givn/specs/verify-change/visual-review-gate.feature
+counts:
+  specification_files: 188
+  source_kept: 0
+  source_removed: 187
+  outside_spec_copy: 2526
+  files_beside_removed_paths: 0
+checksums:
+  specification:
+    Cargo.lock: 788d3cd167025a75e50b285cf2d084c5ed26f83926d1360f04b0714d49366948
+    Cargo.toml: e602335601acba416b38e6db1d5bf839ebe0d555f1466b856851abfa92632602
+    assets/addons/arc42-docs/chapters/01-introduction-and-goals.md: 2c6614fbb2ba574eb4e09e2e3e0eec3bb45c7d54d629523bfcfb9b5cce780174
+    assets/addons/arc42-docs/chapters/02-architecture-constraints.md: 9fbab99374e5432236507657bc9c54b75d25b9a61643d391447628cbffac15ed
+    assets/addons/arc42-docs/chapters/03-context-and-scope.md: 8331c0916740c33860afbb3b1b228d0813db39a810f5ae3a8431a6560139d00d
+    assets/addons/arc42-docs/chapters/04-solution-strategy.md: 1c07aed4d995444cfb51b5f1998e2223a84e19683c4bbb98cce8a1b246a5a7ed
+    assets/addons/arc42-docs/chapters/05-building-block-view.md: 1de263d9c8475495a5531ddfea94decf0f7aad6640e4f29f75a0fa2c309bb247
+    assets/addons/arc42-docs/chapters/06-runtime-view.md: afe1a02aef94268e3fe25cda999a471d5d093482bef11e4963957c32816b67eb
+    assets/addons/arc42-docs/chapters/07-deployment-view.md: 3e161f4d1fd10107319e69776fc3637451ccd136b490036c0f212d283accc419
+    assets/addons/arc42-docs/chapters/08-crosscutting-concepts.md: 1f64384d157a6cd2b4826f3d68bac9def3b69d4ed1d86fb9506fbb3d03845f58
+    assets/addons/arc42-docs/chapters/09-architecture-decisions.md: 42ff271c051c64a9d2f56dbbd0a8dd748214f991a1a5950283149c984d69116a
+    assets/addons/arc42-docs/chapters/10-quality-requirements.md: 1282db46625681e4e78a021007b04f2db4b161b0520163ca61da3c28d381dfa5
+    assets/addons/arc42-docs/chapters/11-risks-and-technical-debt.md: 0c659fa3ef233759751be65ee34a1621db8152ec902cdf3ac52d302fe0238d47
+    assets/addons/arc42-docs/chapters/12-glossary.md: 08f02ec857214e9e83d866ff951d2a3ce2884084da646832e8723770c8dd76a4
+    assets/addons/arc42-docs/chapters/README.md: 8173e1b79822848a43aa0621656e5fe0ba187dc37c5c642b607266a8a732301d
+    assets/addons/arc42-docs/chapters/adr/adr-template.md: 5f375e190e76aa738d456f4a550d0861ce12d84d4ef85f5dc50a4ab2f037141d
+    assets/addons/arc42-docs/impact-assessment-template.md: 904d79eb4dd010f5abf13a06a384af20732dfc6533e8b28d1aa211bbd4cf776b
+    assets/addons/arc42-docs/instructions.md: 0f2d89807601dc9b997c00904b418fe1b9d601919acdd000599af2e54e99fca8
+    assets/addons/communication-policy/policy.md: 8171e0d2b652c1c89682e2908090eac223be1f88d59fce6a818d33987d933f37
+    assets/addons/coverage/instructions.md: 448eb52f20faff67666c616825a5bccde170dc41dd9202c47875eb2999fd9b88
+    assets/addons/coverage/template.md: a739f9c00dfccf85e7b680ed0e1bbb347318f3dc91ac168998640680beac16ac
+    assets/addons/readme/README.md.tmpl: d87986fbb3f82ee6327f78c358409cb7a852b1568f4b5978567823d29c5c633a
+    assets/agent-integrations/claude/givn-attribution.sh: 98b9157bfa91314f55a01362863f64e6825a177858f020bef1c98bd4cd143c20
+    assets/agent-integrations/claude/givn-timeline.sh: dad1f11aae6f09e6ec7cd71ecf1db5a0e94a9f3c5dbddf9e0ad4b24dde7ed682
+    assets/agent-integrations/maki/givn-attribution.lua: 9b7d34b27fbc23e43f4d383f98c54eb29636046a4711085c680dbcb1009f1b6b
+    assets/agent-integrations/maki/givn-timeline.lua: 7d1c8f24e56618ce8f38a28d836536a433c2a0b9da0aee5e1791d5830196bd91
+    assets/agent-integrations/maki/plugin-before-attribution.toml: 1f288c070381ff48eba051f6e9776c8826a32cb1ef72bb8d1077d07ea137eba6
+    assets/agent-integrations/maki/plugin.toml: faa1d8eba2e2c4a462973df5c8d6d3086d39032dea60867934275fe0f78736f3
+    assets/agent-integrations/omp/givn-attribution.js: 2d0baef07b431b3de5ca83c33f4f53982bc59f2c1a465e0702c5944510b497a9
+    assets/agent-integrations/omp/givn-timeline.js: c7e9b5c45673c56c90f6d001d9c56d3632303e605dd5301e4dfb20140dce77b8
+    assets/agent-integrations/opencode/givn-attribution.js: 8e71f9620de823bf916c5e613c861c5a29b411d3c83f27d6d1c5da312736ca12
+    assets/agent-integrations/opencode/givn-timeline.js: 7ed30a9aa6762d017eb665d6f8d727b02ae07c9a24ddfcfea5d739c7ae7f9abd
+    assets/agents-project-hint.md: 132ff491456179614bc871bd1bd509c9dafd8113221350cd9e3b15cb9f3e9719
+    assets/commands.yaml.tmpl: 42f581dfc38d2efbd62eae0ab9c986925f4c27c4f9c41ba78cffa73f222eaabf
+    assets/config.yaml.tmpl: 8b7e3f50b1445b229589677076175459371b4b1a8bb57a2cc339ce91d135584b
+    assets/default-manifest.yaml: 7ddd5189ec0b8b49d78d96e9c0345116e113ac4c84d2abe084d866f925007519
+    assets/hooks/commit-msg: c0a2e0d1f185cbdec6f42209119b72167000638ad3aeb28de5f2497e9b545ad3
+    assets/hooks/git-commit-msg-launcher: 477488d55b0b75898969932c99df47de182a72e9b368dd2fec7f573f7619464b
+    assets/instructions/architecture-principles.md: de1a6339be8467c26fc5f1d0731651398048a7581b227505fd45dee4f55710fc
+    assets/instructions/archive.md: d8b4e8c8f128bbd114fe31226d259a15de4f8c04b27c3f44c929c3ab11dba8bf
+    assets/instructions/challenge.md: 97179485c0dac2acfb309dee31cddf2358cc3bfd2a3547a5a5064df40cbcda19
+    assets/instructions/characterize.md: d2c1975b1ab9e010208a50ecded75de193ee965654b58db2c898b06eee6728aa
+    assets/instructions/design-review.md: 10981b991779a0669a38544a02c4d7dad0e8e4403e0cc8c865dc16b31c68fff5
+    assets/instructions/design.md: fee7f5ebd4fa63b04893deaa392605709459f3b52078d2c7a44ada208ad081fb
+    assets/instructions/dev-principles.md: 4513656522eb58e37f203908613c35f0c085d1ac8416ce46f0d06e3cd4faf8aa
+    assets/instructions/dialog-examples.md: c93a918934f46d86ff1866e2afb8fa5c7335eeae65082b087bce8b3dd13b999f
+    assets/instructions/dialog.md: dd774170933e6d5a3ef3a006e3b5e76397a4d8961c47d2c1d36dcd07d32882eb
+    assets/instructions/domain-modeling.md: eb534bc1df9d4fd0362bb212b6415dd6797e03ef3aab58f7d8b58521fb32637f
+    assets/instructions/ideation.md: f4cebdf89b33b13d4b4dd3ee70c66ef7e107e853f37e6c5529f2a9eb18ab81af
+    assets/instructions/ise.md: b0ad16e380064818dcd73285b4abb5db5e2ac6179c26bf713ae4b7b7572df37f
+    assets/instructions/proposal.md: abd56edaf355afc1c2b0e533a96dc2dcac36b04104f58813057fe95ad7f9a5f8
+    assets/instructions/reverse-engineer.md: b6c9f9110ed5a71c68c58903bd2da4b844263536fb29c51fa8160ca26d0b4d90
+    assets/instructions/review-reverse.md: 77321e765679356b6ac6f9c2eb5d6d779206f26c2809521f7fe94eaa356ba32f
+    assets/instructions/review.md: 8786465791c37ddd9c1918cff356a2f6bbe1bef0307ca758078eedc72797bb4a
+    assets/instructions/specs-reverse.md: ff502961e8d1a00ea2c1334128f4912bfb2c3f84bffa5edfaa377c06d87ea364
+    assets/instructions/specs.md: fc7321311db47ee734f4d413e29924f13c9482cc999213f8e304e523fe3fcacb
+    assets/instructions/start.md: 4a4b503ce3b3dcbe51136814610a6a2244a7a1f2c9f38f3f6fa455dda40f8fd2
+    assets/instructions/steps-go.md: 436c72dac8704c9b274c92607cd3f1ec8ac622d498725913f2112545fc50bf13
+    assets/instructions/steps-java.md: 7ff5e45741bd8f9d8e5bbfbfb073d0b0438ae94ce413f3f1f1e6e22e7dfae5b3
+    assets/instructions/steps-node.md: 63badb68337091ce0b18a6e885f5a3dba7156afe099c3960501b91c8ee46d3f1
+    assets/instructions/steps-python.md: 2ef25ac359d948c36d0a635d82064b3a016b54dc2745b49ce5e6141a42eea3d0
+    assets/instructions/steps-ruby.md: 22ebdb214b33c60e1729af35aeeada45d2646cd844aeb6b1efc1b063b4623760
+    assets/instructions/steps-rust.md: c5b536faadd200366329bfa5d3e830287e820fcb5894343f0fc4d6a71bceafc0
+    assets/instructions/steps.md: b3694936168f02de5277c8f34a7078d068264e24d33647e102b2c3c14c857548
+    assets/instructions/tasks-reverse.md: f9e355ccdf66a46c5e6a2b3213c48f0a29bab8599edfe475a0d375410ce0d29a
+    assets/instructions/tasks.md: 0ccc957428100d77781dab58ddf2e68ccfe861d37ceaaafc18696a22f35b532b
+    assets/migrations/catalog.yaml: 41f8f7af7b93c1d50dc268fddec212929d83625ac2372452b1bdde1894bc4d80
+    assets/migrations/fixtures/synthetic/design.md: 8c0bcc79571acd3d551a21621f849902178ff1c6b09b0259cd9c823fdf7535a0
+    assets/migrations/fixtures/synthetic/proposal.md: ac9eabffebb8e0b8ec742d9655550849d54bde7b105d3ac0548a3d99eed3da6b
+    assets/run.yaml.tmpl: 2d497d907ea5c86de6dc96aea4515851e2299f7f5d11711946ada824f4243c69
+    assets/skills/givn-archive/SKILL.md.tmpl: e3f067e360552b3639b0db151e3af58f785cb2407a4911731310517ba9f1a6bb
+    assets/skills/givn-challenge/SKILL.md.tmpl: 203aadd6b56c52a67bbd455c33592b15f4b2d4d268b9284725eb96f25a7b7267
+    assets/skills/givn-characterize/SKILL.md.tmpl: 6779cae7c0486341babcbcdd5f0bf30cc98be9d5a0b4e888516c5ccf23c56c09
+    assets/skills/givn-design-review/SKILL.md.tmpl: 7d3b3c57e11fd794db3f6699f8539af5789fbe887a6dd6ea219653b92076fa9b
+    assets/skills/givn-design/SKILL.md.tmpl: 98621ffc14e5c25e127054e98358751d3d79821e8f0bb5ca3a53255a8e5cbc5f
+    assets/skills/givn-dev-principles/SKILL.md.tmpl: 1a2587ba835a3079236e2007d91db3fa1d7d9d7bddc11c8dcab011c3b09d86cd
+    assets/skills/givn-domain-modeling/SKILL.md.tmpl: 8e40bd1c8444dee9d4399e1699904a4d4eca218533037c41f539a619babdb1de
+    assets/skills/givn-ideation/SKILL.md.tmpl: a2fe38ab94bd5dfaf6899ad307d5087fae8eda832650e8e0252beba09e7d0e44
+    assets/skills/givn-implement/SKILL.md.tmpl: 418069d1af96b28d614c770a6d0921a04d62f86a70b5e5da16f0bfac609ed6f2
+    assets/skills/givn-propose/SKILL.md.tmpl: 6b22ba04bd8c9f3f0b6dee891aba5e2ff00e772986d9e1744acd7babc0d6d14f
+    assets/skills/givn-reverse-engineer/SKILL.md.tmpl: e17c942adf8dec88c0ce0d4a0ffc8476ccdbc718c15c22fff4addf62de0d3944
+    assets/skills/givn-review/SKILL.md.tmpl: 0c12091fc3da233dc0c6e63c33b810d909d63f534e2351dc8c580606ec0673ce
+    assets/skills/givn-spec/SKILL.md.tmpl: 843fc5884d7cfe169fa8f2e6c32575cc807adcd78a1bf27b58bde023559eddac
+    assets/skills/givn-start/SKILL.md.tmpl: 075a308d0aadebad4856b196f3b8799065704af9832ee57d049af5350ffa5d9d
+    assets/skills/givn-steps/SKILL.md.tmpl: 7cb7fb2d445330da6eedc20321e3489ee4e88b8573249d155e7a746c03e65d6f
+    assets/skills/givn-tasks/SKILL.md.tmpl: 2f1d2438d97e9d824c5c40c6631bf941969601a126ad01d072fcded78de19f6e
+    assets/specification.yaml.tmpl: 89c128a5fee3cf4e6ca0e708a46f7107fd7131b367e8e9f4068c86f801724cd1
+    assets/templates/design-review.md: 0466fb2d3fb66ed81cafe63013330c7c1ca7165660590aa3267c144ea1095e9b
+    assets/templates/design.md: e122813365e6e6362375de29d528dc2dd652ecd7fdddc14df27f9e025059fe73
+    assets/templates/domain-model.md: c825eea9eb1511d04bffaca1d122f181c7397d1e435450075df299c601b32637
+    assets/templates/glossary.md: 628f13c337536a2de25fecbcffd02b1bc81918c1da5e3cbded5efaa450ceff79
+    assets/templates/persona.md: 892d6a9abed1766427691e9bba62b1962fffbff0bca3a5fc3942a8354de83353
+    assets/templates/proposal.md: 79e0ab50b89ec7b63b1237bb8cb341ca14ac2b958412c7c4f20c8cc00586e607
+    assets/templates/review.md: dc28025a2f0893ca12013194282d5b384dafa2e346e0c976f98d1211431c0a0f
+    assets/templates/spec.feature: 642b22f9ecc9f95e318be6c85c4d0605fb88d52c6acd61803acfe7a1fbea2497
+    assets/templates/tasks.md: e07009f73877d36db39f9cc18bf8007c684e426fd34f0dafaf6efe818778de62
+    assets/timeline/report.html: 1c27eea6c239bdc0687f38c60cf7a5ca3033ee04c1f2266d2cad57105a3432e2
+    docs/arc42/02-architecture-constraints.md: 760508327c726161ea98b2122a4e58359339c377f0668aac9fd8b41fd46bb666
+    docs/domain-model.md: ce714974cdabc9a61f3438de07da0babdd21b134528b4e3fdd325ec4e665d998
+    docs/glossary.md: a5006c8d646d28926c29ebdd8f31a4886b637b6e53d61e8d2e19f056d559762e
+    docs/reference.md: e74f4437108044704f38b760baea39a0a5c7a0ed1bf17ba18eb2ef657d22ae65
+    givn/specification.yaml: f549886ae2fe8ec3df43d86744b5ee28e2a1577d03fef23995b7b4fabd55d151
+    givn/specs/.retired.yaml: cee6541beb44a8aac1b4e19664a70a292644fa3c93b5b8fb1d63f22f2dfe400e
+    givn/specs/archive-change/archive-proof.feature: 0247d93229940cc4cdc6b15e17dcc4b43f3e2ff2298a72a94cf221dfba1ca380
+    givn/specs/archive-change/enforce-post-merge-e2e-gate.feature: fb00329bfcf3dc3487e354a805703104998be099a517cd3260222bf820fd48fe
+    givn/specs/archive-change/extract-coverage-gate.feature: 4adafa5c7fd5a1937200157c5ca80ff7b670eeda58988bcbbe257beff6c92737
+    givn/specs/archive-change/grouped-merge-for-new-capabilities.feature: 7cf7e5cfe30331aa4909c7d236e7973d4fcb5dbab846e9f17ef4a69b445782ed
+    givn/specs/archive-change/preserve-scenario-docstrings.feature: 8b9e771fbf70be052cb5fc8da17baa7ed71bcd722dbb32b95dbf48f12f30f032
+    givn/specs/archive-change/require-durable-retained-paths.feature: a4484ed3164ffca60cc6679620f305c0670848a5176f9c7ac71a9151f4cc8012
+    givn/specs/archive-change/require-merged-step-definitions.feature: 6aab5080373577d083ee1c66424de6afa2fd1ff0b10ff81ea1bf355fc84b7869
+    givn/specs/archive-change/usecase.md: e9ec4ad0b493383469346ae40d5647c0d605603e2cc04f912be9247af72aab31
+    givn/specs/assess-code-structure/outline-report.feature: 582e60e7b0de1fe8412909a7eda414cdf36f07a89ac0dc2c5a7445bcadc90f4e
+    givn/specs/assess-code-structure/usecase.md: b5091b23dba68de1549e0272951ba161e9e30ac1be0458c3e4897d0c7d677910
+    givn/specs/author-change/usecase.md: 2cd1ae56157ccffb12c043e8391d2d5ab8472f759a0d76de0e24a36a763d1f44
+    givn/specs/create-change/change-release-note.feature: edcc03d0559cdaa166654e28895c4a20670f45d66b4aa9a3fb1d01a3c85717b6
+    givn/specs/create-change/change-strategy.feature: 703985b99063c463389868e4bb7396be9fe7a9a6f7dc5852a7e638de61c629e4
+    givn/specs/create-change/create-a-change.feature: efef9a421c7ec47ab87757b4d03cccdce9563520b0841b5f71824fd3af0bc0ef
+    givn/specs/create-change/prose-consolidation.feature: b3ae08467e039fca48a831cffdad8953e014d75799f5643186e533a3b230cc75
+    givn/specs/create-change/spec-gap.feature: 2c7c2af41a383003cceb1c891f0cca2b7b3cee67087c5fd877437fbc1596bd34
+    givn/specs/create-change/usecase.md: da9ee55281230adeec27bc3141440edbf39871a64a6d91829b2af685872946ea
+    givn/specs/create-change/visual-design-contract.feature: 9b70c7ae2afb201f07be4163ac0b2b05fb661d2af3f1e0e59277774ec8045eab
+    givn/specs/declare-the-specification/specification-declaration.feature: be303d09571a96dc26416f688a8ad35243a64514f3412dc8f04c4f4211c014d1
+    givn/specs/declare-the-specification/usecase.md: cb43be94835d121cdf3b150e01e7dc622eb6eb58975500a41e66c4359609dffe
+    givn/specs/discover-specifications/keep-audit-output-clean.feature: 6a1932337021fa49e11b1d3eaa2fa47c4fb30f2db1c19ef5372778d54fb3c1b1
+    givn/specs/discover-specifications/spec-duplicates.feature: b7e90953d1b88a17e278d6c366e1e54e648a9b0241d8594afe6a2e9965a4b3b9
+    givn/specs/discover-specifications/usecase.md: c5bf8ead9960e8021737215737354413b7ac3edcc60220bca2f7f5fd38346001
+    givn/specs/extend-an-instruction/instruction-extension.feature: 618f0f29fdc73f64aeacbf366a3c9fcbc982bbd129c3c7c6ac4944d24452f003
+    givn/specs/extend-an-instruction/usecase.md: 73b2ced9b5300a3bd2b6ce7e059ee08769c3352ba37ff7de8518709367210b1e
+    givn/specs/fragments/adr-qualification-gate.feature: dcd47f785d7dfc37c0b3575d9c82d233129d8cf2cd92295dfb1aee1df3a2d2d4
+    givn/specs/fragments/attribute-commits.feature: 346fd8bcaad33c2521991fbb58244dd6c4f7b3912c215075b42f0af08042ab17
+    givn/specs/fragments/choose-project-license.feature: 2a6bb9504bb128c99fb1bd4afffbb341777c9c21fbb78f0cfdada17a3194a84a
+    givn/specs/fragments/coverage-readme-example.feature: 059a2ca7f5d3249a4381d37ba48b213104be0407d1e1860592b6fa468f151178
+    givn/specs/fragments/customize-the-lifecycle-graph.feature: 822af39de4d561c773e2a3c9cd5bc9915d8b5c2468a502db572c5ed293bcf934
+    givn/specs/fragments/detect-the-project-repository.feature: d8dbce5fc8002dc4902b5ffc1a760783673cb76840ba4c99519623aef668a212
+    givn/specs/fragments/enable-commit-attribution.feature: 7795d3f9813db3006a6f1109cfd15a4b296a7fb64fc2ad9886eaec2217bf7118
+    givn/specs/fragments/find-existing-scenarios.feature: ece8e67551ef6a732db22fbffa191df64e507b85ceb5009841ff11b977e3d78b
+    givn/specs/fragments/fragment.md: 4161fc21171a26d94e8c9c820b77051036b87673953a054048bd73f974bc19a9
+    givn/specs/fragments/generate-ideation-guidance.feature: 4f82312449d075021b0f93fbff2787dcfc39d5fb4160f5bf229b8c5ae12a6d56
+    givn/specs/fragments/guide-domain-modeling.feature: 8728f586e7933d7f0312e89e04e0c30611efbfd99da19ef89058a8c89633d980
+    givn/specs/fragments/instruction-integrity.feature: 90621004c9576e9403d936a3fb0f9a6a6682d76fb50b42c8561e5627cc15daac
+    givn/specs/fragments/local-only-transition.feature: aff50505a1f80515c5b242adc5d702bdaac169b6eb54420c3411fb8771156956
+    givn/specs/fragments/match-guidance-to-enabled-addons.feature: d1ec741977217f5957d9a3d2c781897c266ec758e3a578683e4eaf4bcab1774d
+    givn/specs/fragments/measure-coverage-per-project.feature: d13fe7d01ec734a276e12391c8c61095bbc951b5409466a268fef10183d0a82e
+    givn/specs/fragments/publication-cleanliness.feature: bc80024bbb2c54f6709084ded6bd0d58341e1dbab361068b38763e861396d899
+    givn/specs/fragments/refresh-generated-guidance.feature: f216f2de1e798d9d35818df91dd6bf40458103430e99073fb5ed3e622f7c0a9c
+    givn/specs/fragments/review-architecture-documentation.feature: 0169e33d615940f28a05f8747e00575990989a633f01637a555ff9d1d64732cf
+    givn/specs/fragments/route-a-change.feature: 1699a13a6b7a0f2c0ffa23864c53c4238d2800611a3a3a8bbf45f0644e65d11c
+    givn/specs/fragments/rules-policy.feature: da60eff5dd04bca74ced484754e754c323a384b402dffb69190fececed934258
+    givn/specs/fragments/show-coverage-in-the-readme.feature: 9e11ab0cf57a5a2e15c8ca649b8c855805bbb5cec294664035ce66bc1a7440b4
+    givn/specs/fragments/verify-repository-ownership.feature: ff774ed882ef03be9de16ab61e012fa2179b459f293fab6f475a835f1a26aa83
+    givn/specs/initialize-project/enable-optional-addons.feature: b5829e6cd282936a23625edd75d387c4f91452d5000e17de413aacdcc8291a39
+    givn/specs/initialize-project/initialize-a-project.feature: 1bb6cd2dc613098a2cc1417e556d231ac54f75276471f1e531f08b90676f2387
+    givn/specs/initialize-project/usecase.md: de37dcd744fb405f752f7b6d029dc5f0c7ac77e22dd6c561c86fd555d370ec4b
+    givn/specs/inspect-change-state/read-task-progress.feature: bd043c1eb6daaabfaa3e25ae15a2ac4a1ffda1e1f9306c6da5d3be0cf6499c1c
+    givn/specs/inspect-change-state/report-change-status.feature: 0a822264893f5a427cd8ca737ab6697da2c426e88e89ee9b1118296c5985246c
+    givn/specs/inspect-change-state/show-skipped-artifacts.feature: a0ae9f556e55e811242fe45e9b534701d38a042b6152c789142d610592d97d77
+    givn/specs/inspect-change-state/usecase.md: 4da02e7a20045010073e6451496adf7ff25690ed75ce7137dbbe9125be48c558
+    givn/specs/inspect-change-state/validate-change-ids.feature: 445253296c915473fd16a41529d1945e2b68d0e9316f9972018acf7069c077a5
+    givn/specs/inspect-development-history/agent-activity-reporting.feature: b76050f7a7b99cc1b8914aa32113446b35ebcf2e72d815981eb84d9610513ca7
+    givn/specs/inspect-development-history/development-record.feature: 5c679b8eddd5bac37ae8352d867bdd2e0e4cfb22a11f81db2441057b55b6679f
+    givn/specs/inspect-development-history/development-report.feature: 1929efc2603ceaad19b65e62d57e4e7df421dc8e8497612fc2e1836bafeb27d4
+    givn/specs/inspect-development-history/usecase.md: b37bfe6c9f8486f0c46da2713d06545041313a21e111190a43663ca7bea015be
+    givn/specs/keep-documentation-current/readme-enforcement.feature: 2b85fe0b79963b303082c89b6dac42f416efa06ef05aa9b7e2e083a0f2b0fb2e
+    givn/specs/keep-documentation-current/usecase.md: 210c05fefefd1d93d49995a7fb4fb1002a85d31bb58962e747da9048c256cd36
+    givn/specs/maintain-project/usecase.md: ba1208ce3c8f5908d84a5ff3511128bb26a5d2ac2a971770a3fdc3d3c5fc2b29
+    givn/specs/make-usecases-canonical/canonical-usecase-contract.feature: c642d916c1b2d04fb437d7f84426538a0cf00ad4fcf8e19b6da91320947eaa01
+    givn/specs/make-usecases-canonical/usecase.md: a6ad30baca3666417a6c3ae82fb3148a4fd19db2c8a13ddd213071bebc02807d
+    givn/specs/obtain-effective-guidance/serve-extended-rules.feature: 78b7d254de82e6efda4ff6978e5361f5453f18bfe9cb8ee7085186591410a8dd
+    givn/specs/obtain-effective-guidance/usecase.md: 5aff0ff8c232f3b78016770b96ebdabbd7c818303539b1e6382450e0880a013d
+    givn/specs/operate-product/declare-the-product-start.feature: 2d04479fedb8c45c2db62a862aef6351e844d35639389c16a770619a0367abab
+    givn/specs/operate-product/start-the-declared-product.feature: abf9d84204052f348ce3223b6b43f466cae83372eab76e558a936f33b8ea20ae
+    givn/specs/operate-product/usecase.md: 619446b01d6541fe71fc483f1174851898f94e36c578f1508a79eb8d26b71787
+    givn/specs/prepare-an-ise-test/clean-room-preparation.feature: 09a06d6cac5cd15c2449d3b89eb722230988d5f1266cbea99b6b909afa9b9ff7
+    givn/specs/prepare-an-ise-test/trial-input-verification.feature: f67919b99058241dfdfe8aeb10810f6d85f18d44e1fad1660b5b46f7f72d6c44
+    givn/specs/prepare-an-ise-test/usecase.md: 129cdfe15b1f36a02df9e8dade620310349002e16077afcbb09ec86eec812473
+    givn/specs/publish-a-release/describe-the-release.feature: 900468d5aeec471b18292508c411da10c351c9f02ebc33693a8b9f8188fb1295
+    givn/specs/publish-a-release/usecase.md: 2d9713710ed9da038a33c42a4e94ca80eb323ae1ccd07e99ca61a94512e4e3b8
+    givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature: 9186a86f850a5d2414da02c0e31499a07c0b2fd4dfd97b01502b762498c8d470
+    givn/specs/upgrade-a-project/usecase.md: 7e2d92bedafb25a78cd829ad64c6c73f4bfda962ea43d9c6dc06dabd1fa4ddca
+    givn/specs/verify-change/check-specification-health.feature: e27f3829d0e188249a985b5e39cdfba53b8abeadfda80fca61d759279ac30611
+    givn/specs/verify-change/givn-workflow-enforcement.feature: e3833ab8d9979c52660a5d757027395c950221bccff5bc7993ba7c9aca875b64
+    givn/specs/verify-change/resolve-change-directories.feature: 761c42e421d9a2ddfe5784e820c9f7e704548d8af1fd65ff239b2fb271c28509
+    givn/specs/verify-change/review-disposition-gates.feature: ea45d50a1c2441773b5dd8c954062e8d0910916d5671466413bc8c253132f963
+    givn/specs/verify-change/spec-overlap-gates.feature: c1fc071e694dc5bd11ea647f27579771fd6adda48bee93526f82679c3c724aca
+    givn/specs/verify-change/usecase.md: c58a28c52a30c82422995eca50b92a948e6e9c44c482ca00e6d070b00ac64ff9
+    givn/specs/verify-change/validate-artifact-ids.feature: 7b8d5f636b6a33687a9df3f39eebc82a786b510061a3d042c31d9be2a6ec2571
+    givn/specs/verify-change/visual-review-gate.feature: c48167b15d6b03ce2c8a6ab0ef8b8198ff1602264585a38ac830581665f41b5e
+    rust-toolchain.toml: 9ce353b703566b9386ef01c1a4a20388fe57dcfd45be7a7efa372b2bbf17094e
+  end_to_end:
+    e2e/Cargo.lock: 0838f645e1ce263473b1b11fa223ba5a07aaa4922ec42eaacb38e7d05a217e2c
+    e2e/Cargo.toml: ad0b907111b818fd4bd4c1d1c68f35737751061a53a310624beb68ce8b6663c0
+    e2e/browser/.gitignore: 3e9ab2cb8192efd407af477ecff8791f9ff053abee23ac70b3accc42a6e39d2d
+    e2e/browser/browser-driver.mjs: 5b711c5152757ff8d95a170109b1ae6e58c68dbc8a4375dc20c381f232c75608
+    e2e/browser/package-lock.json: e077151f20675da5e94c2ee737a12c0b2c7cdf1b3a14814031c340ea8239b1fb
+    e2e/browser/package.json: b9a5f11d42f47cacf323104d39e0551b88121c35d151c000ba781742b91cb81b
+    e2e/tests/e2e_runner.rs: 5e51bd9b3e46453c3e46ad2e764515be216042c859643d269089cdeb06c8dd00
+    e2e/tests/harness/binary.rs: d8b39dd5ac8a5f6d8223614832769c905e9d33723a3c7acdf5550ef9dca7e71a
+    e2e/tests/harness/browser.rs: 73ae20b83c5f9c58d9fc09f31b51a85e1981471c34b369ae62166ffffedf499a
+    e2e/tests/harness/history_record.rs: 2cfd2261709ef0b83eb10d0830db1c482f054d253fc9b7e9ef8eba3c72f55b41
+    e2e/tests/harness/mod.rs: 1fa2f3425bc4a555296435041cf0b385100f27afda98ed0646ec17651307a688
+    e2e/tests/harness/proof_fixture.rs: 3162c888ac4ef767f68a9e57c4e8f7498d141652b0ef1a13c89e2de46043c96c
+    e2e/tests/harness/terminal_evidence.rs: 4f2e8bdc15679b2153829460865478d402bde6738e567946d8a9185cf2551cf4
+    e2e/tests/harness/timing.rs: e67222bfef2e898f9ae73edb374e432f0094212a2edffda3967ea81fec122a15
+    e2e/tests/steps/addon_artifact_report_e2e_steps.rs: 0b48ca8885a136aed6e9bd29ae8a00a965d65b3cd9efc6ae90f0509bdd73a501
+    e2e/tests/steps/adr_qualification_gate_e2e_steps.rs: 4eeb2624c5f3907e16846b616e6886d26fbddfc576c992f92982a710108d2756
+    e2e/tests/steps/agent_activity_reporting_e2e_steps.rs: 47f1d697d788e3846fec25b0cf1e220ca6e2aebfc803257bc00c04c58ffcbba1
+    e2e/tests/steps/arc42_review_alignment_steps.rs: f21afcfad5ae5b83c1cb72c6d4fe6a956d1491a46465f5473256236e39bd2037
+    e2e/tests/steps/archive_proof_e2e_steps.rs: 75b3d515b9b68dacab5f906ae3692c08f89a41873f8cbf2a232530fa4445ed1a
+    e2e/tests/steps/archive_proof_steps.rs: 54c631e42b4a84c131aee9ac0ae5be5bbaf6405db8e8f27ad31564c1bc9cb332
+    e2e/tests/steps/archive_proof_support.rs: 4a2b4abfddb8d19e583d951375fde02ba9b0b89ddfabd0b45c6ca62b98b9bc6e
+    e2e/tests/steps/change_strategy_e2e_steps.rs: 18e57c3cd8697735f6a66d0cfe085c560dad40cfbb6aa003ab649fbc5d71a15b
+    e2e/tests/steps/clean_room_preparation_e2e_steps.rs: 12198e7f898eeb7dc6192ee0d00791b4391ea9756a96c82460e1c24e0a2790e4
+    e2e/tests/steps/clean_room_preparation_steps.rs: 4492d9b8448357952aebd27b094a4d3a4c582df4d8df3d95a61afc6b4097dba6
+    e2e/tests/steps/coverage_readme_example_steps.rs: 1333a07459dc1f47508273cc6f21a640e83bbb8f0118164078fba8458b831a44
+    e2e/tests/steps/coverage_script_workflow_e2e_steps.rs: 994723973ff878408c5fcfeda1735b533e4ab37249a2f1aa77ebab7eae02b526
+    e2e/tests/steps/coverage_script_workflow_steps.rs: a3a659145b595cb12aebf30fdf74a2600a9dae3f3f19f956bf413bd191a8769c
+    e2e/tests/steps/deduplicate_change_dir_detection_steps.rs: 00c372a56e73be37659346570cac23fb02d0ac480c4bb645895bf656673aec6d
+    e2e/tests/steps/default_all_addons_steps.rs: 55f6e087a33c9e3954475bbbb2bd4d73f9fa7324ef7a8bbd30e182ce749557c1
+    e2e/tests/steps/development_record_e2e_steps.rs: 10fd89b4f9796a573ef9f1ec5a8197c3972680999b7f14d663ecc537fe23acac
+    e2e/tests/steps/development_record_steps.rs: 44f04687fd348d02098108f3741e7cc48b050ca7e3d3b20764ca41dcb9adb023
+    e2e/tests/steps/development_report_e2e_steps.rs: 4e837fcfc84a264b0f238ea49631d8c51d53a4e400bb536b76e679511bffc17f
+    e2e/tests/steps/development_report_steps.rs: 035e1a117a6e85e539af9a40dc811c0adb502bd6a17404dbd7bfb0aaa8ba1371
+    e2e/tests/steps/development_timeline_support.rs: 6606292430972d331576fd4c6edfe8bcde9c7010ab9d29692a364161e16fd95b
+    e2e/tests/steps/enable_optional_addons_ise_e2e_steps.rs: 868d124702bfc330b31ec5d79719d651e10e3bce68041a897a275110e8041a68
+    e2e/tests/steps/enable_optional_addons_ise_steps.rs: 55207d722846f87f3e59e5f4ac51117c5c30ed729d74d83aa64752bd2fd4510f
+    e2e/tests/steps/enforce_post_merge_e2e_gate_steps.rs: ea80489a3d1b6f9d5c83d81240532c0e9f3c60cb3686667dff34e02bf129ed87
+    e2e/tests/steps/extract_coverage_gate_steps.rs: da40f29c5e8764ba7da0efdb233f3ffb795a6e205054beb11658c507f2aef125
+    e2e/tests/steps/fix_domain_modeling_skill_trigger_e2e_steps.rs: acb326c076c73f31496927759662505abf69861f0f002ad57f9a3f114079b705
+    e2e/tests/steps/fix_domain_modeling_skill_trigger_steps.rs: 810ccbdac3a972a4dc04a3a7c89f3c4539d122a292ab031bd3e5e19fb1b31f4b
+    e2e/tests/steps/fix_uppercase_checkbox_parsing_steps.rs: 90764742169114d6b1db10f5f32711c56ca475ecd7e581f771d06ec93acdd964
+    e2e/tests/steps/grouped_merge_steps.rs: 79294318932d11c71f69e8f42028d2391918764559ce3ca1b55acd87afb1f9c8
+    e2e/tests/steps/init_agent_target_selection_steps.rs: 98222c51a883abc04db8543d77ebb9f1ec0dd50a3a0f1dcc3c25761a84079828
+    e2e/tests/steps/initialize_a_project_e2e_steps.rs: dfc5b2767a20fd1b9604c1c7cc9c07dd42bbe9785ebc62587ef80646f800b96d
+    e2e/tests/steps/instruction_extension_e2e_steps.rs: fc100c8c0d350be5e28071c9ad8946b0c2c154fa1b39363104498aae1ea46efb
+    e2e/tests/steps/instruction_extension_steps.rs: bca8135721bf2bc21792b5492ea4723b29eeb949f37189a95347d6d84d0a88c2
+    e2e/tests/steps/instruction_integrity_e2e_steps.rs: b5ce2959be343ffabf90c5e50dce776ab87d237134ae68e461b6a9a0efd9757c
+    e2e/tests/steps/instruction_integrity_steps.rs: 174e69987d20fbd157511ec6c7ab4eaef463096adae7d23910b7731e885af631
+    e2e/tests/steps/ise_clean_room_support.rs: 4d330d92db74b8e3202820bd697983233600dae69ef5edffbf813b6e55c8d4ac
+    e2e/tests/steps/llm_attribution_e2e_steps.rs: 5bb676fe43d52f0d256040443af54e1b6027f7705de00de7d06466467dd422bd
+    e2e/tests/steps/llm_attribution_installation_e2e_steps.rs: 767b527739542407c6ec3263fd4a91f4cb51ddaf866dae5f80f4cc0c293547b8
+    e2e/tests/steps/llm_attribution_installation_steps.rs: 998e2694309e5a471d05006c69fd7416d6f855f0af28d0bbf6fb9cc09961b288
+    e2e/tests/steps/llm_attribution_steps.rs: bc98f9cd67cc870f746900e6a0d0094f36cdff171405c2cac6c842024cac4ce4
+    e2e/tests/steps/mod.rs: db81b08f11ab114a2b1de23d109786f3709fe2205962bb0830b44c3d584f6085
+    e2e/tests/steps/outline_report_e2e_steps.rs: e5aab111cfb2c2d0594a926a43c7b2ceec12bc57a0eeec8dc09661f699ead4b4
+    e2e/tests/steps/outline_report_steps.rs: 4d89aa46a0b48ba7d280c03e215113cadafadda283ec3cacc2d26c6ffa615d8c
+    e2e/tests/steps/outline_report_support.rs: 25dbf8092b4f037b2fbf49e2f251e8b6fc72571a0e60e54b712bf3ba351d7d0a
+    e2e/tests/steps/preserve_docstrings_on_archive_steps.rs: dd6d11e70767b5620d82df483b8dd0ab61f407498cd0fe9608ad41472860a67e
+    e2e/tests/steps/prose_consolidation_e2e_steps.rs: 48e1be2a5a56830eedb93575f335ce57ba1d80d3df4333b21004b6a357888543
+    e2e/tests/steps/prose_consolidation_steps.rs: abc152b09567febafb1cf10f83f7cae242b212509978d9e666d1de31b869e2e4
+    e2e/tests/steps/readme_coverage_badge_steps.rs: 99a4a42edf78010b7de5de8f6aa38e115c47742345a3b964065a99de08d77b57
+    e2e/tests/steps/readme_enforcement_e2e_steps.rs: 3b4d30bc3c7634862698b6e3ddb019fa887bb64a68a3eb63abae2df198a87356
+    e2e/tests/steps/readme_enforcement_steps.rs: a4f24825fee9c02bee62726b1553610524b3a934a63b2f01f557998747b07373
+    e2e/tests/steps/release_0_3_0_e2e_steps.rs: 22911de9d0f32610737f3a1a50cf0557da7442817000fc343dfa6ba7a2c995eb
+    e2e/tests/steps/release_0_3_0_steps.rs: bbce157ea45548913e18160792991e8c2976e07d32fea55140901e5203f72027
+    e2e/tests/steps/release_e2e_steps.rs: 7bc6ae1386817381ed239525fd37201f90873d71ccadb75d56a0f69224da2010
+    e2e/tests/steps/release_steps.rs: e81eee775089b2bd53823111c589698c68517b0fa62f6b4c40f55ef7b89f4dd7
+    e2e/tests/steps/remove_dead_skip_list_code_steps.rs: 389b7762907da3db9074220366b8887cb4ed7ce963c3820786f64c636e54bfa3
+    e2e/tests/steps/repository_ownership_fixtures_steps.rs: 5e74581d96cd437788a18200e780882766579920c59fea2409c98ffa08b42425
+    e2e/tests/steps/repository_ownership_fixtures_support.rs: 3b80fc29a54f489d95e3ad3300d5a4319916c581d92d74828fe7ef3fe6ffd0e9
+    e2e/tests/steps/require_durable_retained_paths_e2e_steps.rs: 76b32948002a09033917bc1e05ba9b47edf036d9f20a8a35d781fcc536e7e5dc
+    e2e/tests/steps/require_durable_retained_paths_steps.rs: 22dcbd63a2bd04d4ef997174d0db67f5fdb110a034d07d20ed5fbe74a86423c2
+    e2e/tests/steps/require_merged_step_definitions_e2e_steps.rs: 7c6efd026fe20f81ab93a60a01de67897877f10c737d11d64d4ba7ba95c8e8d6
+    e2e/tests/steps/require_merged_step_definitions_steps.rs: 4b8f64f11885072505ea3fe8b9e9e31be2016707a4fdc5ac95f6a37a086bb235
+    e2e/tests/steps/review_disposition_gates_steps.rs: cd4c59a33bae96f13a63964ce548a0050fffed470de4b0c525e22cf25bc3e338
+    e2e/tests/steps/run_command_steps.rs: f8ce5c31556cd3fde892978c186d3383aa6cc360fd548daa730bce42768dc952
+    e2e/tests/steps/run_declaration_fixtures_support.rs: 3adc3536195eb7ea2970c76e790bca8fa4426cff33056492e388565a59b7b78a
+    e2e/tests/steps/run_execution_e2e_steps.rs: 5825d3ae4eb4109f981ef191d03447e3c4dd53a25bacce8c61e7b8af57937b8d
+    e2e/tests/steps/run_execution_steps.rs: f83d6cb0815a91e3b54563a4a846ee36a53c5ada2fc128ef5cfe7d7aed6901ef
+    e2e/tests/steps/run_execution_support.rs: c06b28389807021df7c8d621e1240fb1ffcb674ac32301f238fc4417a24bfe37
+    e2e/tests/steps/run_upgrade_steps.rs: d7453a6cea24dffad49381f6811a7b727dae252983b5bc3b20bfe5e010ba3729
+    e2e/tests/steps/scm_backend_selection_e2e_steps.rs: 61395e9b9c904d4806529986c57481796686d0d7db224be6fc85fd484d58584f
+    e2e/tests/steps/scm_backend_selection_steps.rs: 8976a9c9f9d212adcaad7b4a1f1035358c7730b95fb874cedb550478acb96e0d
+    e2e/tests/steps/serve_extended_rules_steps.rs: eea77cbfe1d6bcc40da3b315ddca46c3621d06311585392914fc73fa168ad1aa
+    e2e/tests/steps/skill_rewrites_steps.rs: d5416eab0e513a586f5d02e5038ba3889aa963cd0010ff84e84a9d8c1194820c
+    e2e/tests/steps/spec_discovery_deterministic_steps.rs: d08017dab5e4e9a607c14f9a14bef71e9eb4e2e5a5cc33874ac1dbad70f4f667
+    e2e/tests/steps/spec_gap_e2e_steps.rs: ebce242e74ee565fd72a6167db1aca14e10c2f62dc32d9b48b65e2e29148a7d0
+    e2e/tests/steps/spec_gap_steps.rs: 39e9063f4ab6a068b1e95b53868ecf386f57b6f229b0a19cedc43dd3a90eb8c7
+    e2e/tests/steps/spec_overlap_gates_steps.rs: b004d0974312495631340760098aa8ba8b12cee9985dd6852b98e03cf8c72c19
+    e2e/tests/steps/specification_declaration_e2e_steps.rs: fafdd486428acdb96a625a84cb761278721ca90765fd447a7ba5e40b7cb99184
+    e2e/tests/steps/template_conditional_rendering_e2e_steps.rs: e633c208e2ea5cbca268dfaa785348e04167301f7c5578531de1747b52b51283
+    e2e/tests/steps/template_conditional_rendering_steps.rs: d72e7a376272cf9471ab8ea52350f6bb1179596a4e10add923f52d289f413e47
+    e2e/tests/steps/template_conditional_rendering_support.rs: ba5506a8c7b0db54bc99e1c6934d519cefe8e1e73bfc3f5f829e7d3ece1a65d0
+    e2e/tests/steps/trial_input_verification_e2e_steps.rs: 49dee8fd76f76032aaabaf6536cc2ff97ebca357d89f6bf3dfc6cca70f9d1f6f
+    e2e/tests/steps/trial_input_verification_steps.rs: c4ac45fbbe848ae1aa6e9efa3f8771d8eb5684e80ad9cdd97cf90313301716c8
+    e2e/tests/steps/validate_artifact_id_input_steps.rs: e20b6110e953d102ed2ec78124502d5f668e7ff34e298ed336733c29c1cdb71c
+    e2e/tests/steps/validate_change_id_input_steps.rs: 9feb4916570e9deb48f1f9a0f29617b2080c64478bca123b43c13e4ca044b689
+    e2e/tests/steps/visual_review_gate_steps.rs: 5a137dba9462f739d491f3a680e2337fa1104f8e5638ff64902efd9a6c033c50
+    e2e/tests/steps/workflow_enforcement_e2e_steps.rs: 0bbb0a341268d9bcb5ebd649fffc16fe09ea895d4dc4bd82a938da69762319a1
+    e2e/tests/steps/workflow_enforcement_steps.rs: 6e57e244e99931895cc3f1afebaceaf482cb2745cbe971edb1cab3972e852408
+    givn/specs/archive-change/archive-proof.feature: 0247d93229940cc4cdc6b15e17dcc4b43f3e2ff2298a72a94cf221dfba1ca380
+    givn/specs/archive-change/enforce-post-merge-e2e-gate.feature: fb00329bfcf3dc3487e354a805703104998be099a517cd3260222bf820fd48fe
+    givn/specs/archive-change/extract-coverage-gate.feature: 4adafa5c7fd5a1937200157c5ca80ff7b670eeda58988bcbbe257beff6c92737
+    givn/specs/archive-change/grouped-merge-for-new-capabilities.feature: 7cf7e5cfe30331aa4909c7d236e7973d4fcb5dbab846e9f17ef4a69b445782ed
+    givn/specs/archive-change/preserve-scenario-docstrings.feature: 8b9e771fbf70be052cb5fc8da17baa7ed71bcd722dbb32b95dbf48f12f30f032
+    givn/specs/archive-change/require-durable-retained-paths.feature: a4484ed3164ffca60cc6679620f305c0670848a5176f9c7ac71a9151f4cc8012
+    givn/specs/archive-change/require-merged-step-definitions.feature: 6aab5080373577d083ee1c66424de6afa2fd1ff0b10ff81ea1bf355fc84b7869
+    givn/specs/assess-code-structure/outline-report.feature: 582e60e7b0de1fe8412909a7eda414cdf36f07a89ac0dc2c5a7445bcadc90f4e
+    givn/specs/create-change/change-release-note.feature: edcc03d0559cdaa166654e28895c4a20670f45d66b4aa9a3fb1d01a3c85717b6
+    givn/specs/create-change/change-strategy.feature: 703985b99063c463389868e4bb7396be9fe7a9a6f7dc5852a7e638de61c629e4
+    givn/specs/create-change/prose-consolidation.feature: b3ae08467e039fca48a831cffdad8953e014d75799f5643186e533a3b230cc75
+    givn/specs/create-change/spec-gap.feature: 2c7c2af41a383003cceb1c891f0cca2b7b3cee67087c5fd877437fbc1596bd34
+    givn/specs/create-change/visual-design-contract.feature: 9b70c7ae2afb201f07be4163ac0b2b05fb661d2af3f1e0e59277774ec8045eab
+    givn/specs/declare-the-specification/specification-declaration.feature: be303d09571a96dc26416f688a8ad35243a64514f3412dc8f04c4f4211c014d1
+    givn/specs/discover-specifications/keep-audit-output-clean.feature: 6a1932337021fa49e11b1d3eaa2fa47c4fb30f2db1c19ef5372778d54fb3c1b1
+    givn/specs/discover-specifications/spec-duplicates.feature: b7e90953d1b88a17e278d6c366e1e54e648a9b0241d8594afe6a2e9965a4b3b9
+    givn/specs/extend-an-instruction/instruction-extension.feature: 618f0f29fdc73f64aeacbf366a3c9fcbc982bbd129c3c7c6ac4944d24452f003
+    givn/specs/fragments/adr-qualification-gate.feature: dcd47f785d7dfc37c0b3575d9c82d233129d8cf2cd92295dfb1aee1df3a2d2d4
+    givn/specs/fragments/attribute-commits.feature: 346fd8bcaad33c2521991fbb58244dd6c4f7b3912c215075b42f0af08042ab17
+    givn/specs/fragments/coverage-readme-example.feature: 059a2ca7f5d3249a4381d37ba48b213104be0407d1e1860592b6fa468f151178
+    givn/specs/fragments/detect-the-project-repository.feature: d8dbce5fc8002dc4902b5ffc1a760783673cb76840ba4c99519623aef668a212
+    givn/specs/fragments/enable-commit-attribution.feature: 7795d3f9813db3006a6f1109cfd15a4b296a7fb64fc2ad9886eaec2217bf7118
+    givn/specs/fragments/find-existing-scenarios.feature: ece8e67551ef6a732db22fbffa191df64e507b85ceb5009841ff11b977e3d78b
+    givn/specs/fragments/guide-domain-modeling.feature: 8728f586e7933d7f0312e89e04e0c30611efbfd99da19ef89058a8c89633d980
+    givn/specs/fragments/instruction-integrity.feature: 90621004c9576e9403d936a3fb0f9a6a6682d76fb50b42c8561e5627cc15daac
+    givn/specs/fragments/match-guidance-to-enabled-addons.feature: d1ec741977217f5957d9a3d2c781897c266ec758e3a578683e4eaf4bcab1774d
+    givn/specs/fragments/measure-coverage-per-project.feature: d13fe7d01ec734a276e12391c8c61095bbc951b5409466a268fef10183d0a82e
+    givn/specs/fragments/refresh-generated-guidance.feature: f216f2de1e798d9d35818df91dd6bf40458103430e99073fb5ed3e622f7c0a9c
+    givn/specs/fragments/review-architecture-documentation.feature: 0169e33d615940f28a05f8747e00575990989a633f01637a555ff9d1d64732cf
+    givn/specs/fragments/route-a-change.feature: 1699a13a6b7a0f2c0ffa23864c53c4238d2800611a3a3a8bbf45f0644e65d11c
+    givn/specs/fragments/show-coverage-in-the-readme.feature: 9e11ab0cf57a5a2e15c8ca649b8c855805bbb5cec294664035ce66bc1a7440b4
+    givn/specs/fragments/verify-repository-ownership.feature: ff774ed882ef03be9de16ab61e012fa2179b459f293fab6f475a835f1a26aa83
+    givn/specs/initialize-project/enable-optional-addons.feature: b5829e6cd282936a23625edd75d387c4f91452d5000e17de413aacdcc8291a39
+    givn/specs/initialize-project/initialize-a-project.feature: 1bb6cd2dc613098a2cc1417e556d231ac54f75276471f1e531f08b90676f2387
+    givn/specs/inspect-change-state/read-task-progress.feature: bd043c1eb6daaabfaa3e25ae15a2ac4a1ffda1e1f9306c6da5d3be0cf6499c1c
+    givn/specs/inspect-change-state/report-change-status.feature: 0a822264893f5a427cd8ca737ab6697da2c426e88e89ee9b1118296c5985246c
+    givn/specs/inspect-change-state/show-skipped-artifacts.feature: a0ae9f556e55e811242fe45e9b534701d38a042b6152c789142d610592d97d77
+    givn/specs/inspect-change-state/validate-change-ids.feature: 445253296c915473fd16a41529d1945e2b68d0e9316f9972018acf7069c077a5
+    givn/specs/inspect-development-history/agent-activity-reporting.feature: b76050f7a7b99cc1b8914aa32113446b35ebcf2e72d815981eb84d9610513ca7
+    givn/specs/inspect-development-history/development-record.feature: 5c679b8eddd5bac37ae8352d867bdd2e0e4cfb22a11f81db2441057b55b6679f
+    givn/specs/inspect-development-history/development-report.feature: 1929efc2603ceaad19b65e62d57e4e7df421dc8e8497612fc2e1836bafeb27d4
+    givn/specs/keep-documentation-current/readme-enforcement.feature: 2b85fe0b79963b303082c89b6dac42f416efa06ef05aa9b7e2e083a0f2b0fb2e
+    givn/specs/make-usecases-canonical/canonical-usecase-contract.feature: c642d916c1b2d04fb437d7f84426538a0cf00ad4fcf8e19b6da91320947eaa01
+    givn/specs/obtain-effective-guidance/serve-extended-rules.feature: 78b7d254de82e6efda4ff6978e5361f5453f18bfe9cb8ee7085186591410a8dd
+    givn/specs/operate-product/declare-the-product-start.feature: 2d04479fedb8c45c2db62a862aef6351e844d35639389c16a770619a0367abab
+    givn/specs/operate-product/start-the-declared-product.feature: abf9d84204052f348ce3223b6b43f466cae83372eab76e558a936f33b8ea20ae
+    givn/specs/prepare-an-ise-test/clean-room-preparation.feature: 09a06d6cac5cd15c2449d3b89eb722230988d5f1266cbea99b6b909afa9b9ff7
+    givn/specs/prepare-an-ise-test/trial-input-verification.feature: f67919b99058241dfdfe8aeb10810f6d85f18d44e1fad1660b5b46f7f72d6c44
+    givn/specs/publish-a-release/describe-the-release.feature: 900468d5aeec471b18292508c411da10c351c9f02ebc33693a8b9f8188fb1295
+    givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature: 9186a86f850a5d2414da02c0e31499a07c0b2fd4dfd97b01502b762498c8d470
+    givn/specs/verify-change/check-specification-health.feature: e27f3829d0e188249a985b5e39cdfba53b8abeadfda80fca61d759279ac30611
+    givn/specs/verify-change/givn-workflow-enforcement.feature: e3833ab8d9979c52660a5d757027395c950221bccff5bc7993ba7c9aca875b64
+    givn/specs/verify-change/resolve-change-directories.feature: 761c42e421d9a2ddfe5784e820c9f7e704548d8af1fd65ff239b2fb271c28509
+    givn/specs/verify-change/spec-overlap-gates.feature: c1fc071e694dc5bd11ea647f27579771fd6adda48bee93526f82679c3c724aca
+    givn/specs/verify-change/validate-artifact-ids.feature: 7b8d5f636b6a33687a9df3f39eebc82a786b510061a3d042c31d9be2a6ec2571
+    givn/specs/verify-change/visual-review-gate.feature: c48167b15d6b03ce2c8a6ab0ef8b8198ff1602264585a38ac830581665f41b5e
+  scenarios:
+    givn/specs/archive-change/archive-proof.feature: fed0da6c25e3f0ec778fce5cf40e696b79375211beca33f091c72ce75073d92f
+    givn/specs/archive-change/enforce-post-merge-e2e-gate.feature: e4169e8d6e1e6ce84b30e5c73dd8c82da80bef600b7ca82bc0b524a4e2c4a55f
+    givn/specs/archive-change/extract-coverage-gate.feature: fa168cf296f6d4646a3b7942e617627d7c497db0abae5cdb38140ccaaf6ea8a4
+    givn/specs/archive-change/grouped-merge-for-new-capabilities.feature: 3832e4ce8a165f9c5f512cf9a19643165674337e479566a53a054b2d47cf7c37
+    givn/specs/archive-change/preserve-scenario-docstrings.feature: fc3efd2189de8ca7fc1cd65b24b1f85490610989b5f0e4f94c81abf0416da5c0
+    givn/specs/archive-change/require-durable-retained-paths.feature: d766c3c82a1d4e2dd85e2401565988000d82e0807f6033fdd551a2463178ac53
+    givn/specs/archive-change/require-merged-step-definitions.feature: 7f18bcf6d7ded86023d6c2583af5512559e2d4c2a7c2b7004c5a33fbe58a895e
+    givn/specs/assess-code-structure/outline-report.feature: 5105184efe21082f5456692d8ad3fc9b64256464b5647a2eca0b058bbcd2f494
+    givn/specs/create-change/change-release-note.feature: 67f513a2950d97dc6c85028d875cfdc8923990ac9b9f14f5b6b34ae4f2f008e9
+    givn/specs/create-change/change-strategy.feature: 0b645ed1abd420e55cf1294400011e9249dacc60a11ef090b8e93d6daee2e7d9
+    givn/specs/create-change/prose-consolidation.feature: 03c4f57abf8ee8cce7fcd4fcc9c2060c90aea4edaa815742f4169d797de57dc3
+    givn/specs/create-change/spec-gap.feature: 0cc66174f49c577dafff558155c06dcec6e9157afa5416e19ff1c7c797a8be55
+    givn/specs/create-change/visual-design-contract.feature: a809457c960aed2ebe165a88fc9dbbe35f93b0ebb3e9ef4a2d794e614290f105
+    givn/specs/declare-the-specification/specification-declaration.feature: f84eb407afff8474054ea4c9bfcc15cad01319eb1c74793094a2bb806c933925
+    givn/specs/discover-specifications/keep-audit-output-clean.feature: ed4532a98bc11c8c5facd619718465ec0bb6a4026287b9cb13a1d8d27fc40b8c
+    givn/specs/discover-specifications/spec-duplicates.feature: b542afb07ee6e61b93be320f48f9c5d9f149f8b1c80b3d51fb32e88bff82963c
+    givn/specs/extend-an-instruction/instruction-extension.feature: b028265fe2f803a8ced79dff4da7832cd5930b68f0a0fff5734181e40e858e7d
+    givn/specs/fragments/adr-qualification-gate.feature: e38d0042f9c41716104096a9ede45f96b34fea81ce6a4baf4a53678851267db3
+    givn/specs/fragments/attribute-commits.feature: cc30049ba7bd6e75cf1b9a9b646e0ce300c404c40941a743fdf48d29c4c29b2a
+    givn/specs/fragments/coverage-readme-example.feature: a19dfaf1e4e2afa884719e3b5310d0a0bc63ceb22dcb1aa305c74cc72e28ce40
+    givn/specs/fragments/detect-the-project-repository.feature: b729746068b1e804411f26eff06ee7a4f417b0fe8557a3697431f68f32cbefbc
+    givn/specs/fragments/enable-commit-attribution.feature: b290e4361f012198ecea9da57671fb955b05c2887ea068a7f26868590b5b1daf
+    givn/specs/fragments/find-existing-scenarios.feature: f4942278535548289e0f4d5bc5703a04504e99b7f7be3cb8f731843f1c96c0c6
+    givn/specs/fragments/guide-domain-modeling.feature: 1e8bf199d9870cea290b3ac2be86c82f338ab299cfeba618c2406f7afacc6eed
+    givn/specs/fragments/instruction-integrity.feature: ac3194468b8133fc71abf054996f642c7e120977d5a7b2635677af2bc285cd27
+    givn/specs/fragments/match-guidance-to-enabled-addons.feature: f25822e1180eb71734a551df446496d52422c466bd1f7fc29719f483f6e72e2d
+    givn/specs/fragments/measure-coverage-per-project.feature: 49840044e502d08b05007de0e726a7acb317792abfcd14c812b4917d0d5798b0
+    givn/specs/fragments/refresh-generated-guidance.feature: 7a90f89f0d1f1e20c81d13c12ba41a18a71d5b1d5e5ddda4e72b46935ff7d739
+    givn/specs/fragments/review-architecture-documentation.feature: 8f6e2f9747d0b0b76bb4ffa267e0e67509d7ffcbdc20274381c6665e00eb060c
+    givn/specs/fragments/route-a-change.feature: 20c62afce0595e71f6e2710958cad36c9e55862b23e908e57a0a0d63936e4742
+    givn/specs/fragments/show-coverage-in-the-readme.feature: dbf2c91e15b9937a38919989ba72f5043cb3356f7ce4016c7976aefd80c9c0cc
+    givn/specs/fragments/verify-repository-ownership.feature: c7b9eca44009d733c36c8e4ea7615129e47c6208406ba87076b4a3ee1a69e4da
+    givn/specs/initialize-project/enable-optional-addons.feature: 45c66936deee023314865ce2f9d651906739cb5c82a327f75cdf4000814a5f07
+    givn/specs/initialize-project/initialize-a-project.feature: 2e70298f94d4fb33dd308de9ff3d88961652b399cf794f74916ee5d226bc9a95
+    givn/specs/inspect-change-state/read-task-progress.feature: 557e73f5c69fdfda778544df2f038c864c895de10572d06bc3500a774df930ed
+    givn/specs/inspect-change-state/report-change-status.feature: def64cd4bb63415acdc848a21c21d7eb2c20763c36ffe80d0fb7921e732b7c76
+    givn/specs/inspect-change-state/show-skipped-artifacts.feature: 73326437412f6b317a3f8dfd45240c87e904008a4040404db8d6649990845215
+    givn/specs/inspect-change-state/validate-change-ids.feature: f1861e1427cafb5a7c6be67849627c1b069dd92ba43bdbd08a6817df11fae095
+    givn/specs/inspect-development-history/agent-activity-reporting.feature: c92d26f5b359c585422a848c52fd35f0eb3c1d5845ba9473abfd0d47f67b7332
+    givn/specs/inspect-development-history/development-record.feature: c3a47980d185a82efa914a09a3b46d377e107d35ab2d0b193dd7f12e84f34496
+    givn/specs/inspect-development-history/development-report.feature: a7546a9a6164c4c55b85fe34f7a3184fcec242801ee9b45b62534160dda03519
+    givn/specs/keep-documentation-current/readme-enforcement.feature: 915e05a12c970c01884ae7eafe1318c1cdb641150b5a3a8ce5505b27f275fca7
+    givn/specs/make-usecases-canonical/canonical-usecase-contract.feature: e79d76486bf6f8c8c69cf7f2368e321e048e4002edbc7f78927274dea463a300
+    givn/specs/obtain-effective-guidance/serve-extended-rules.feature: 786c649eee88d04757f74e15dc2499b313b752d16f9924dd17ae7f9b28312a9b
+    givn/specs/operate-product/declare-the-product-start.feature: 01f2df74f9007ff85a8517df7ca42c8d18d3efa6997fa58a1f6b729a4f1fc26c
+    givn/specs/operate-product/start-the-declared-product.feature: 996aeee04154a443cfe68687286d7f17d6369839fb3278da2e7362bef9aa7beb
+    givn/specs/prepare-an-ise-test/clean-room-preparation.feature: c9c255a84cadf31758adbd54a4e0b00075bebf2fdb1cd05701eb2cd7bbb05ef6
+    givn/specs/prepare-an-ise-test/trial-input-verification.feature: 4326739ac71d71fdac69ef00c0ebf88cdca7720a4ab71b0978d22f1a02359667
+    givn/specs/publish-a-release/describe-the-release.feature: 1aa5a17625e9acc7b4a984581e6aa284674add4796e2a8a66658a11885c27ea8
+    givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature: bab7f4b4029dfcdf63af87092445429df7ff4ddffcc47d46fd4d75870b6738b9
+    givn/specs/verify-change/check-specification-health.feature: 43d8f1e6be2ee63b1388d078c2cd3f053c8a47cdf3ff207b10e9fa840137ecbe
+    givn/specs/verify-change/givn-workflow-enforcement.feature: bd84ac95a2587fea53259cac7173da3b96f81fcadbbfc1ec88f68af52490dec9
+    givn/specs/verify-change/resolve-change-directories.feature: b75f0c52bbb2444b94986ca86f20b5dfe114de871f4cd8a605e918f591eea6a5
+    givn/specs/verify-change/spec-overlap-gates.feature: b23c107aa7199ad506f939b101df27aca8f8f1ccacb6f2256214b2654c670a12
+    givn/specs/verify-change/validate-artifact-ids.feature: 87b9d23eeefaf8991c77b0a20331d22fda3292b037a0abec3f56247084ea0b38
+    givn/specs/verify-change/visual-review-gate.feature: 42ff7d2626cb54567b1f5d710549bf45f0e3a8b1d098b77b44ba19b5fdcc1fc1
+specification_checksum: 9fbe86f7781a4271d6dbfb7f74e9e2e6ae703dda1d9e4a8c6c0d19fcab007a23
+end_to_end_checksum: b763420cbaf765ae3b5647d13d77c7b13faf8dfde14ec520d150410eae7eaa44
+copy_directory: /tmp/givn-ise-self-rebuild-20261117T204903Z
+givn_version: 0.9.20

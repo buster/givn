@@ -1,0 +1,17 @@
+Trial revision: 746e660b97028991ecd273595e28047f21d8262d
+
+Commands that resolve it:
+
+    git rev-parse HEAD
+    # HEAD at the pre-trial boundary receipt commit:
+    # 746e660b97028991ecd273595e28047f21d8262d
+
+    git log -1 --format=%H -- givn/specification.yaml
+    # the declaration commit the trial revision carries:
+    # a524d14315118df56d52539b3cc06d9c041cbacb
+
+The `Revision:` line in `evidence/ise/attempt-1/rebuild-report.txt` equals the
+trial revision. The spec copy, the manifest, and the rebuilt binary for this
+attempt are outside the checkout at
+`/tmp/givn-ise-self-rebuild-20261117T204903Z` and
+`/tmp/givn-ise-self-rebuild-20261117T204903Z.yaml`.

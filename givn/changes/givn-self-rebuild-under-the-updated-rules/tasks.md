@@ -349,7 +349,7 @@ Every command runs from the repository root. Evidence paths are relative to
     not a store, and the sandbox binds `~/.cargo/registry` and `~/.cargo/git`.
   - [x] COMMIT: `6799399` -- Batch: pre-trial
 
-- [ ] Commit the pre-trial inputs
+- [x] Commit the pre-trial inputs
   - Paths: `evidence/ise/declaration-lint.txt`,
     `evidence/ise/declaration.diff`, `evidence/ise/e2e-dependencies.txt`,
     `evidence/ise/spec-coverage.json`, `evidence/ise/e2e-inventory.md`,
@@ -374,9 +374,9 @@ Batch: pre-trial'
   - Design constraints: D5 (the trial reads the C4 commit, passed explicitly);
     the design's evidence table (author checks stay under `evidence/ise/`). The
     commit moves no declaration entry and no chapter content.
-  - [ ] COMMIT: `___` -- Batch: pre-trial
+  - [x] COMMIT: `6799399` -- Batch: pre-trial
 
-- [ ] Prove the boundary preflight and write the receipt
+- [x] Prove the boundary preflight and write the receipt
   - Paths: `evidence/ise/boundary-check.txt`,
     `verification/tasks-verification.json`, `verification/tasks-result.json`.
   - Precondition: C3 exists and the tree is clean; `givn check tasks` refuses a
@@ -407,7 +407,7 @@ Batch: pre-trial'
   - Design constraints: design `## Pre-trial checks` (boundary row) and
     `## Verification` item 3; the receipt is suite evidence, the transcript is
     the boundary evidence.
-  - [ ] COMMIT: `___` -- Batch: pre-trial
+  - [x] COMMIT: `746e660` -- Batch: pre-trial
 
 ## Batch: `trial`
 
