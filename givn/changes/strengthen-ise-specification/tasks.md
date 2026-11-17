@@ -1465,73 +1465,124 @@ Files modified: `src/ise/compare.rs`, `src/ise/manifest.rs`,
 `tests/steps/trial_input_verification_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Comparison refuses a
+- [x] Evidence for this batch: paste the RED run for `Comparison refuses a
       manifest whose scope is not ise-manifest/v1` and `Comparison refuses a
       manifest with an unknown field`, then the GREEN run of all nine scenarios.
       ```text
-      <!-- paste: RED commands + assertion failures; GREEN commands + pass summary -->
+      RED: GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs cargo test --locked --test features_runner -- "prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a manifest whose scope is not ise-manifest/v1" --exact --nocapture
+        Scenario: Comparison refuses a manifest whose scope is not ise-manifest/v1
+         ✔  Given a prepared spec copy whose manifest names the scope "ise-trial/v1"
+         ✔  When the verifier compares the spec copy with the manifest
+         ✘  Then comparison fails and exits 1, naming the manifest and "ise-manifest/v1"
+            Step panicked. Captured output: assertion `left == right` failed: stderr=
+              left: Some(0)
+             right: Some(1)
+        1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+
+      RED: ...::Comparison refuses a manifest with an unknown field
+         ✘  Then comparison fails and exits 1, naming the manifest and the unknown field
+            Step panicked. Captured output: assertion `left == right` failed: stderr=
+              left: Some(0)
+             right: Some(1)
+        1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+
+      RED: ...::Comparison refuses a manifest with a missing field
+         ✘  Then comparison fails and exits 1, naming the manifest and the missing field
+            Step panicked. Captured output: assertion `left == right` failed: stderr=
+              left: Some(0)
+             right: Some(1)
+        1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+
+      RED: the remaining four fail on the same permissive reader; the two add-on
+      refusals are protected and pass before the implementation:
+         ✘  Comparison refuses a manifest with a malformed checksum: stderr "" does not carry the `ise compare:` prefix
+         ✘  Comparison refuses an unreadable manifest: stderr "ise compare: read the manifest '...': did not find expected node content at line 2 column 1, while parsing a flow node" does not name "not readable YAML"
+         ✘  Comparison refuses a manifest whose copy directory is not the copy: left Some(0), right Some(1)
+         ✘  Comparison refuses a manifest inside the copy: left Some(0), right Some(1)
+         ✔  Comparison refuses while the ise addon is off
+         ✔  Comparison refuses while architecture principles are off
+
+      GREEN: the nine scenarios, one run each:
+        PASS  Comparison refuses while the ise addon is off
+        PASS  Comparison refuses while architecture principles are off
+        PASS  Comparison refuses a manifest whose scope is not ise-manifest/v1
+        PASS  Comparison refuses a manifest with an unknown field
+        PASS  Comparison refuses a manifest with a missing field
+        PASS  Comparison refuses a manifest with a malformed checksum
+        PASS  Comparison refuses an unreadable manifest
+        PASS  Comparison refuses a manifest whose copy directory is not the copy
+        PASS  Comparison refuses a manifest inside the copy
+        === passed=9 failed=0
+
+      GREEN: GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @givn.removed and not @wip"
+        2 features
+        95 scenarios (95 passed)
+        506 steps (506 passed)
+
+      cargo fmt --all -- --check: clean
+      cargo clippy --workspace --all-targets --locked -- -D warnings: clean
       ```
 
-- [ ] Scenario: `Comparison refuses while the ise addon is off`
+- [x] Scenario: `Comparison refuses while the ise addon is off`
   - Design constraints: the project disables `ise` after preparation; Then exit
     1, stderr names `ise`, and no `Specification files:` line prints. Contract:
     the add-on pair is checked before the manifest read.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses while architecture principles are off`
+- [x] Scenario: `Comparison refuses while architecture principles are off`
   - Design constraints: the project disables `architecture_principles` after
     preparation; Then exit 1, stderr names `architecture_principles`, and no
     subject line prints.
   - Files: `src/ise/compare.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses a manifest whose scope is not ise-manifest/v1`
+- [x] Scenario: `Comparison refuses a manifest whose scope is not ise-manifest/v1`
   - Design constraints: rewrite the manifest scope to `ise-trial/v1`; Then exit
     1, stderr names the manifest and `ise-manifest/v1`, and no subject line
     prints. Contract: the scope is refused by name and not migrated.
   - Files: `src/ise/manifest.rs`, `src/ise/compare.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses a manifest with an unknown field`
+- [x] Scenario: `Comparison refuses a manifest with an unknown field`
   - Design constraints: add an unknown top-level field; Then exit 1, stderr
     names the manifest and the field. Contract: `deny_unknown_fields`.
   - Files: `src/ise/manifest.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses a manifest with a missing field`
+- [x] Scenario: `Comparison refuses a manifest with a missing field`
   - Design constraints: remove the `counts` field; Then exit 1, stderr names the
     manifest and `counts`. Contract: every listed field is required in this
     scope.
   - Files: `src/ise/manifest.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses a manifest with a malformed checksum`
+- [x] Scenario: `Comparison refuses a manifest with a malformed checksum`
   - Design constraints: put a non-64-hex value in the Specification checksums
     map; Then exit 1, stderr names the manifest and the malformed checksum.
     Contract: every checksum and rollup is validated before any comparison.
   - Files: `src/ise/manifest.rs`, `src/ise/compare.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses an unreadable manifest`
+- [x] Scenario: `Comparison refuses an unreadable manifest`
   - Design constraints: write bytes that are not valid YAML; Then exit 1, stderr
     names the manifest and the parse error.
   - Files: `src/ise/manifest.rs`, `src/ise/compare.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses a manifest whose copy directory is not the copy`
+- [x] Scenario: `Comparison refuses a manifest whose copy directory is not the copy`
   - Design constraints: rewrite `copy_directory` to another directory; Then exit
     1, stderr names the manifest and the copy. Contract: the manifest must belong
     to the given copy.
   - Files: `src/ise/compare.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
-- [ ] Scenario: `Comparison refuses a manifest inside the copy`
+- [x] Scenario: `Comparison refuses a manifest inside the copy`
   - Design constraints: the manifest is stored inside the copy; Then exit 1,
     stderr names the manifest, and no subject line prints. Contract: the
     manifest is evidence outside the copy.
   - Files: `src/ise/compare.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-refusals`
+  - [x] COMMIT: `9cba2cff` -- Batch: `compare-refusals`
 
 ### Batch 12: `declaration-boundary`
 
