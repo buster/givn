@@ -110,7 +110,7 @@ Feature: Spec-copy verification
   Scenario: A frozen role that covers the declaration re-checks clean
     Given the retired scenario is replaced by "Verifier compares the spec copy with the manifest"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Verifier compares the spec copy with the manifest
     Given  a prepared spec copy with a manifest
     When  the verifier compares the spec copy with the manifest
@@ -118,7 +118,7 @@ Feature: Spec-copy verification
     And  comparison exits zero
     And  comparison prints no line beginning "- "
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names a changed Specification file in the copy
     Given  a prepared spec copy with a manifest
     When  the agent edits the Specification file "givn/specs/demo/spec.feature" the spec copy was written with
@@ -128,7 +128,7 @@ Feature: Spec-copy verification
     And  comparison prints "End-to-end tests: match"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names a missing Specification file in the copy
     Given  a prepared spec copy with a manifest
     When  the agent deletes the Specification file "givn/specs/demo/spec.feature" the spec copy was written with
@@ -138,7 +138,7 @@ Feature: Spec-copy verification
     And  comparison prints "End-to-end tests: match"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison reports no difference after the agent adds Source code
     Given  a prepared spec copy with a manifest
     When  the agent adds a rebuild file at a removed path
@@ -146,7 +146,7 @@ Feature: Spec-copy verification
     Then  comparison prints "Specification files: match" and "End-to-end tests: match"
     And  comparison exits zero
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison reports no difference after a kept Source code file is edited
     Given  a prepared spec copy with a manifest
     When  the agent edits the kept Source code file "src/keys/steps.rs" the spec copy was written with
@@ -154,7 +154,7 @@ Feature: Spec-copy verification
     Then  comparison prints "Specification files: match" and "End-to-end tests: match"
     And  comparison exits zero
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a file added under a declared Specification path
     Given  a prepared spec copy with a manifest
     When  the agent adds a file under a declared Specification path
@@ -162,7 +162,7 @@ Feature: Spec-copy verification
     Then  comparison fails and exits 1, naming the added path as a Specification change
     And  comparison prints no "Specification files: match" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a file added under an End-to-end role
     Given  a prepared spec copy with a manifest
     When  the agent adds a file under the declared End-to-end role
@@ -170,7 +170,7 @@ Feature: Spec-copy verification
     Then  comparison fails and exits 1, naming the added path as a Specification change
     And  comparison prints no "Specification files: match" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a deleted kept Source code file
     Given  a prepared spec copy with a manifest
     When  the agent deletes the kept Source code file "src/keys/steps.rs" the spec copy was written with
@@ -286,7 +286,7 @@ Feature: Spec-copy verification
     And  comparison prints "- tests/e2e/steps/keys.rs"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison prints one line for a path drifting in the copy and the checkout
     Given  a prepared spec copy with a manifest
     When  the agent edits the Specification file "docs/reference.md" the spec copy was written with

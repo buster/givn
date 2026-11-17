@@ -131,6 +131,9 @@ pub(crate) struct IseCleanRoomState {
     /// The retired subcommand the last When invoked, so the usage error is
     /// asserted against the name that was actually run.
     pub(crate) retired_command: Option<String>,
+    /// The path an add-file When wrote into the spec copy, so the refusal
+    /// asserts the path that was actually added.
+    pub(crate) added_copy_path: Option<String>,
 }
 
 impl IseCleanRoomState {

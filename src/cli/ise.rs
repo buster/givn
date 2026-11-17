@@ -8,7 +8,9 @@
 
 use std::path::Path;
 
-use crate::ise::{RebuildRequest, Report, abbreviate};
+use crate::ise::{
+    CompareReport, CompareRequest, Difference, DifferenceKind, RebuildRequest, Report, abbreviate,
+};
 
 /// Run `ise rebuild-all` and return its process exit code.
 pub fn rebuild_all(project_root: &Path, request: &RebuildRequest) -> i32 {
@@ -31,6 +33,69 @@ fn rebuild(project_root: &Path, request: &RebuildRequest, verb: &str) -> i32 {
             eprintln!("{verb}: {error:#}");
             1
         }
+    }
+}
+
+/// Run `ise compare` and return its process exit code.
+pub fn compare(project_root: &Path, request: &CompareRequest) -> i32 {
+    match crate::ise::compare(project_root, request) {
+        Ok(report) => {
+            print!("{}", render_comparison(&report));
+            if report.is_clean() { 0 } else { 1 }
+        }
+        Err(error) => {
+            eprintln!("ise compare: {error:#}");
+            1
+        }
+    }
+}
+
+/// The two subject lines and their difference lines. A subject with no
+/// difference prints `match` alone; the other prints its non-zero counts in
+/// the fixed order changed, missing, added.
+fn render_comparison(report: &CompareReport) -> String {
+    let mut text = String::new();
+    for (subject, differences) in [
+        ("Specification files", &report.specification),
+        ("End-to-end tests", &report.end_to_end),
+    ] {
+        text.push_str(&format!("{subject}: {}\n", comparison_counts(differences)));
+        for difference in differences {
+            let marker = if difference.kind == DifferenceKind::Added {
+                '+'
+            } else {
+                '-'
+            };
+            text.push_str(&format!("{marker} {}\n", difference.path));
+            if let Some(note) = difference.note {
+                text.push_str(note);
+                text.push('\n');
+            }
+        }
+    }
+    text
+}
+
+/// The subject's count summary, or `match` when it holds no difference.
+fn comparison_counts(differences: &[Difference]) -> String {
+    let counts: Vec<String> = [
+        (DifferenceKind::Changed, "changed"),
+        (DifferenceKind::Missing, "missing"),
+        (DifferenceKind::Added, "added"),
+    ]
+    .into_iter()
+    .filter_map(|(kind, label)| {
+        let count = differences
+            .iter()
+            .filter(|difference| difference.kind == kind)
+            .count();
+        (count > 0).then(|| format!("{count} {label}"))
+    })
+    .collect();
+    if counts.is_empty() {
+        "match".to_string()
+    } else {
+        counts.join(", ")
     }
 }
 

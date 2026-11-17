@@ -295,6 +295,15 @@ enum IseCommands {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Compare a prepared spec copy with the manifest that recorded it.
+    Compare {
+        /// The manifest the preparation wrote.
+        #[arg(long)]
+        manifest: PathBuf,
+        /// The spec copy the manifest describes.
+        #[arg(long)]
+        copy: PathBuf,
+    },
 }
 
 /// The `history` command's subcommands: the read view is the command itself.
@@ -660,6 +669,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         dry_run,
                     },
                 ),
+                IseCommands::Compare { manifest, copy } => {
+                    cli::ise::compare(&project_root, &ise::CompareRequest { manifest, copy })
+                }
             };
             if exit_code != 0 {
                 std::process::exit(exit_code);

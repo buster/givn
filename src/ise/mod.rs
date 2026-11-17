@@ -17,9 +17,11 @@ use crate::config::manifest::Manifest;
 use crate::config::overlay::load_effective_at;
 use crate::scm::{Backend, EntryKind, RevisionEntry};
 
+mod compare;
 mod manifest;
 mod partition;
 
+pub use compare::{CompareReport, CompareRequest, Difference, DifferenceKind, compare};
 pub(crate) use manifest::abbreviate;
 
 /// What one rebuild command replaces.

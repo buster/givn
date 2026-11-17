@@ -646,3 +646,236 @@ fn write_transcript(world: &GivnWorld) {
     );
     std::fs::write(dir.join("transcript.txt"), text).expect("write the transcript");
 }
+
+// --- Batch 9: compare-report ----------------------------------------------
+
+/// The added file under the copy's declared `behavior` role.
+const ADDED_SPECIFICATION_PATH: &str = "givn/specs/extra.feature";
+/// The added file under the copy's declared `e2e` role.
+const ADDED_E2E_COPY_PATH: &str = "tests/e2e/steps/extra.rs";
+
+/// Build one spec copy from HEAD with a manifest, replacing the parser.
+fn prepare_spec_copy(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::verify_trial_project());
+    ise_clean_room_support::commit_verify_trial_revision(project_env(world));
+    world.ise_clean_room.ensure_targets();
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let args = [
+        "ise",
+        "rebuild-component",
+        REPLACED_SOURCE_PATH,
+        "--at",
+        "HEAD",
+        "--into",
+        copy.as_str(),
+        "--manifest",
+        manifest.as_str(),
+    ];
+    let out = common::run_givn(project_env(world), &args);
+    assert!(
+        out.status.success(),
+        "preparing the spec copy failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+fn add_to_copy(world: &GivnWorld, path: &str, content: &str) {
+    let target = trial(world).join(path);
+    if let Some(parent) = target.parent() {
+        std::fs::create_dir_all(parent).expect("create the added file's parent");
+    }
+    std::fs::write(&target, content).expect("write the added file");
+}
+
+fn assert_stdout_line(world: &GivnWorld, expected: &str) {
+    let text = stdout(world);
+    assert!(
+        text.lines().any(|printed| printed == expected),
+        "stdout {text:?} does not print the line {expected:?}"
+    );
+}
+
+#[given(regex = r#"^a prepared spec copy with a manifest$"#)]
+fn prepared_spec_copy(world: &mut GivnWorld) {
+    prepare_spec_copy(world);
+}
+
+#[when(regex = r#"^the verifier compares the spec copy with the manifest$"#)]
+fn verifier_compares(world: &mut GivnWorld) {
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let out = common::run_givn(
+        project_env(world),
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.as_str(),
+            "--copy",
+            copy.as_str(),
+        ],
+    );
+    world.last_output = Some(out);
+}
+
+#[when(
+    regex = r#"^the agent edits the Specification file "([^"]+)" the spec copy was written with$"#
+)]
+fn agent_edits_the_copy_specification_file(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::append_bytes(&trial(world).join(path));
+}
+
+#[when(
+    regex = r#"^the agent deletes the Specification file "([^"]+)" the spec copy was written with$"#
+)]
+fn agent_deletes_the_copy_specification_file(world: &mut GivnWorld, path: String) {
+    std::fs::remove_file(trial(world).join(path)).expect("delete the Specification file");
+}
+
+#[when(regex = r#"^the agent adds a rebuild file at a removed path$"#)]
+fn agent_adds_a_rebuild_file(world: &mut GivnWorld) {
+    add_to_copy(world, REPLACED_SOURCE_PATH, "pub fn rebuilt() {}\n");
+}
+
+#[when(
+    regex = r#"^the agent edits the kept Source code file "([^"]+)" the spec copy was written with$"#
+)]
+fn agent_edits_the_kept_source_file(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::append_bytes(&trial(world).join(path));
+}
+
+#[when(regex = r#"^the agent adds a file under a declared Specification path$"#)]
+fn agent_adds_under_a_specification_path(world: &mut GivnWorld) {
+    add_to_copy(world, ADDED_SPECIFICATION_PATH, "Feature: extra\n");
+    world.ise_clean_room.added_copy_path = Some(ADDED_SPECIFICATION_PATH.to_string());
+}
+
+#[when(regex = r#"^the agent adds a file under the declared End-to-end role$"#)]
+fn agent_adds_under_the_e2e_role(world: &mut GivnWorld) {
+    add_to_copy(world, ADDED_E2E_COPY_PATH, "// extra e2e steps\n");
+    world.ise_clean_room.added_copy_path = Some(ADDED_E2E_COPY_PATH.to_string());
+}
+
+#[when(
+    regex = r#"^the agent deletes the kept Source code file "([^"]+)" the spec copy was written with$"#
+)]
+fn agent_deletes_the_kept_source_file(world: &mut GivnWorld, path: String) {
+    std::fs::remove_file(trial(world).join(path)).expect("delete the kept Source code file");
+}
+
+#[when(regex = r#"^the developer edits the Specification file "([^"]+)" in the checkout$"#)]
+fn developer_edits_the_checkout_specification_file(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::append_bytes(&project_env(world).path(&path));
+}
+
+#[then(regex = r#"^comparison prints "([^"]+)" and "([^"]+)"$"#)]
+fn comparison_prints_two_lines(world: &mut GivnWorld, first: String, second: String) {
+    assert_stdout_line(world, &first);
+    assert_stdout_line(world, &second);
+}
+
+#[then(regex = r#"^comparison prints "([^"]+)"$"#)]
+fn comparison_prints_one_line(world: &mut GivnWorld, expected: String) {
+    assert_stdout_line(world, &expected);
+}
+
+#[then(regex = r#"^comparison exits zero$"#)]
+fn comparison_exits_zero(world: &mut GivnWorld) {
+    assert_eq!(
+        output(world).status.code(),
+        Some(0),
+        "stderr={}",
+        stderr(world)
+    );
+}
+
+#[then(regex = r#"^comparison exits 1$"#)]
+fn comparison_exits_one(world: &mut GivnWorld) {
+    assert_eq!(
+        output(world).status.code(),
+        Some(1),
+        "stderr={}",
+        stderr(world)
+    );
+}
+
+#[then(
+    regex = r#"^comparison fails and exits 1, naming the added path as a Specification change$"#
+)]
+fn comparison_refuses_the_added_path(world: &mut GivnWorld) {
+    assert_eq!(
+        output(world).status.code(),
+        Some(1),
+        "stderr={}",
+        stderr(world)
+    );
+    let path = world
+        .ise_clean_room
+        .added_copy_path
+        .clone()
+        .expect("the When added a file to the copy");
+    let text = stderr(world);
+    assert!(
+        text.contains(&path),
+        "stderr {text:?} does not name the added path {path:?}"
+    );
+    assert!(
+        text.contains("Specification"),
+        "stderr {text:?} does not name the Specification change"
+    );
+}
+
+#[then(regex = r#"^comparison prints no "([^"]+)" line$"#)]
+fn comparison_prints_no_such_line(world: &mut GivnWorld, needle: String) {
+    let text = stdout(world);
+    assert!(
+        !text.lines().any(|printed| printed == needle),
+        "stdout {text:?} prints the line {needle:?}"
+    );
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming "([^"]+)"$"#)]
+fn comparison_fails_and_names(world: &mut GivnWorld, name: String) {
+    assert_eq!(
+        output(world).status.code(),
+        Some(1),
+        "stderr={}",
+        stderr(world)
+    );
+    let text = stderr(world);
+    assert!(
+        text.contains(&name),
+        "stderr {text:?} does not name {name:?}"
+    );
+}
+
+#[then(regex = r#"^comparison prints exactly one "([^"]+)" line under the "([^"]+)" subject$"#)]
+fn comparison_prints_one_line_under_the_subject(
+    world: &mut GivnWorld,
+    expected: String,
+    subject: String,
+) {
+    let text = stdout(world);
+    let lines: Vec<&str> = text.lines().collect();
+    let header = format!("{subject}:");
+    let start = lines
+        .iter()
+        .position(|line| line.starts_with(&header))
+        .unwrap_or_else(|| panic!("stdout {text:?} prints no {header:?} line"));
+    let end = lines
+        .iter()
+        .skip(start + 1)
+        .position(|line| line.starts_with("End-to-end tests:"))
+        .map(|offset| start + 1 + offset)
+        .unwrap_or(lines.len());
+    let count = lines[start + 1..end]
+        .iter()
+        .filter(|line| **line == expected.as_str())
+        .count();
+    assert_eq!(
+        count, 1,
+        "stdout {text:?} prints {count} {expected:?} lines under the {subject:?} subject"
+    );
+}
