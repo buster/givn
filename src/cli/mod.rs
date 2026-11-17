@@ -1,3 +1,4 @@
+pub mod addon_report;
 pub mod addons;
 pub mod agents_block;
 pub mod attribution;

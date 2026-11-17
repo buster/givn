@@ -878,7 +878,7 @@ fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
     assert!(!marker.trim().is_empty());
 }
 
-#[then("the final register has 31 accepted decisions and no proposed decisions")]
+#[then("the final register has 32 accepted decisions and no proposed decisions")]
 fn final_register_has_frozen_package_adr(world: &mut GivnWorld) {
     let register = guidance(world);
     let accepted = register
@@ -889,9 +889,9 @@ fn final_register_has_frozen_package_adr(world: &mut GivnWorld) {
         .lines()
         .filter(|line| line.contains("| proposed |"))
         .count();
-    assert_eq!(accepted, 31, "unexpected accepted ADR count");
+    assert_eq!(accepted, 32, "unexpected accepted ADR count");
     assert_eq!(proposed, 0, "unexpected proposed ADR count");
-    for id in ["[ADR-078]", "[ADR-079]"] {
+    for id in ["[ADR-078]", "[ADR-079]", "[ADR-080]"] {
         let row = register
             .lines()
             .find(|line| line.contains(id))
@@ -906,24 +906,9 @@ fn final_register_has_frozen_package_adr(world: &mut GivnWorld) {
         .find(|line| line.contains("accepted records and no proposed records"))
         .unwrap_or_else(|| panic!("the register carries no accepted-records summary"));
     assert!(
-        summary.contains("31 accepted records"),
+        summary.contains("32 accepted records"),
         "the register summary disagrees with its accepted-row count: {summary}"
     );
-}
-
-#[then("the final register has 27 accepted decisions and no proposed decisions")]
-fn final_register_has_scm_backend_adr(world: &mut GivnWorld) {
-    let register = guidance(world);
-    let accepted = register
-        .lines()
-        .filter(|line| line.contains("| accepted |"))
-        .count();
-    let proposed = register
-        .lines()
-        .filter(|line| line.contains("| proposed |"))
-        .count();
-    assert_eq!(accepted, 27, "unexpected accepted ADR count");
-    assert_eq!(proposed, 0, "unexpected proposed ADR count");
 }
 
 #[then("the final register has 24 accepted decisions and no proposed decisions")]

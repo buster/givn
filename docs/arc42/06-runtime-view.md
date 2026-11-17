@@ -589,8 +589,20 @@ opt-in addon: enabling it requires `architecture_principles`, disabling
 `architecture_principles` is refused while `ise` is on, and the first effective
 enable writes `givn/specification.yaml` when the file is absent. A second enable,
 or an enable on a project that edited the declaration, reports the existing file
-and leaves it byte-for-byte. `enable arc42` sets the flag, scaffolds missing
-fixed-path chapter files and `docs/glossary.md`, and expands the effective graph;
+and leaves it byte-for-byte.
+
+The listing also compares each addon's stored setting against its **addon
+materialization**: the declared paths it scaffolds and, for a skill addon, the
+generated skill directory in every selected agent target. Each addon reports
+`present`, `missing`, or `partial`, plus the retired addon keys found in
+`givn/config.yaml`. A difference prints one literal suggestion
+(`givn addons enable <id>`, `givn skills sync`, or the config key replacement);
+the command executes none of them and writes nothing, including the change
+lock. An enabled addon with `missing` artifacts exits 1; files present for a
+disabled addon and retired keys exit 0.
+
+`enable arc42` sets the flag, scaffolds missing fixed-path chapter files and
+`docs/glossary.md`, and expands the effective graph;
 `disable arc42` leaves existing docs in place. `enable domain_modeling` sets the
 flag and creates missing `docs/glossary.md` and `docs/domain-model.md`;
 `disable domain_modeling` removes the generated skill but leaves the documents.

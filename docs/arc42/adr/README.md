@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-31 accepted records and no proposed records. The fifteen semantic-engine
+32 accepted records and no proposed records. The fifteen semantic-engine
 records were superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and
 moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -64,6 +64,7 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-077](ADR-077-stack-instructions.md) | accepted | Serve stack mechanics on demand from per-stack instructions | durable guidance composition contract; instruction id and load-condition boundary |
 | [ADR-078](ADR-078-frozen-package-outside-the-trial.md) | accepted | Keep the frozen End-to-end (E2E) test package outside the clean-room trial | builder-versus-verifier authority boundary; durable record and compatibility boundary |
 | [ADR-079](ADR-079-standalone-acceptance-package.md) | accepted | Keep the black-box acceptance suite in a standalone workspace package | acceptance-authority and dependency-direction boundary; independent-package build contract |
+| [ADR-080](ADR-080-addon-materialization-declaration.md) | accepted | Declare each addon's materialization on its registry entry | ownership boundary between the registry and its consumers; compile-time exhaustiveness |
 
 ## Relationships
 

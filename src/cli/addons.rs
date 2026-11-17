@@ -5,17 +5,34 @@
 use anyhow::{Result, bail};
 use std::io::IsTerminal;
 
-use crate::config::addons::{AddonSpec, KNOWN_ADDONS};
+use crate::config::addons::{AddonSpec, KNOWN_ADDONS, Materialization};
 
-/// `givn addons list` — print all known addons and their effective enabled state.
+/// `givn addons list` — print all known addons with their effective enabled
+/// state and their observed materialization (ADR-080).
 ///
 /// The listing resolves the same effective manifest every other command uses:
 /// the embedded defaults, then the project overlay. An omitted addon in a
 /// partial block therefore reports its resolved default, not "absent".
-pub fn run_list() -> Result<()> {
+///
+/// Returns true when an enabled addon's materialization is broken, which
+/// `main` maps to exit status 1. The report itself writes nothing.
+pub fn run_list() -> Result<bool> {
     let project_root = std::env::current_dir()?;
     let config_path = project_root.join("givn/config.yaml");
     let manifest = crate::config::overlay::load_effective()?;
+    let targets = crate::config::overlay::load_skills_targets(&project_root)?;
+    // Without a configuration there is no project to observe: the listing
+    // keeps the existing advice and reports no materialization.
+    let mut report = if config_path.exists() {
+        crate::cli::addon_report::build(&project_root, &manifest, &targets)?
+    } else {
+        crate::cli::addon_report::Report::default()
+    };
+    let locked: Vec<String> = crate::config::lock::locked_active_changes(&project_root)?
+        .into_iter()
+        .map(|(id, _)| id)
+        .collect();
+    crate::cli::addon_report::annotate_lock(&mut report, &locked);
 
     println!("Available addons:\n");
     for addon in KNOWN_ADDONS {
@@ -28,6 +45,22 @@ pub fn run_list() -> Result<()> {
         };
         println!("  [{state}]  {id}");
         println!("            {description}");
+        if let Some(entry) = report.entries.iter().find(|entry| entry.id == id) {
+            println!(
+                "{}",
+                crate::cli::addon_report::observed_line(&entry.observed)
+            );
+            if let Some(suggestion) = &entry.suggestion {
+                println!("              suggestion: {suggestion}");
+            }
+        }
+        println!();
+    }
+    for (retired, replacement) in &report.retired {
+        println!("  [retired ]  {retired}  (replaced by {replacement})");
+        println!(
+            "              suggestion: replace `addons.{retired}` with `addons.{replacement}` in givn/config.yaml"
+        );
         println!();
     }
 
@@ -42,7 +75,7 @@ pub fn run_list() -> Result<()> {
         println!("to toggle an addon. Changes are written to givn/config.yaml.");
     }
 
-    Ok(())
+    Ok(report.has_failure())
 }
 
 /// `givn addons enable <name>` — set addon to true in givn/config.yaml, run
@@ -94,10 +127,12 @@ pub fn enable_scaffold(name: &str) -> Result<()> {
 /// `givn init --force` uses this after restoring the project's explicit addon
 /// choices, so a disabled addon is never scaffolded.
 pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
+    // Dispatch on the declared materialization so the enable path and
+    // `givn addons list` (ADR-080) cannot disagree about an addon's files.
+
     // Addon-specific scaffolding.
     if name == "arc42" {
-        scaffold_arc42()?;
-        scaffold_glossary()?;
+        materialize(name)?;
         println!("The '{name}' artifact is now part of the effective workflow.");
         println!("It will appear after 'design' in `givn status`.");
         println!();
@@ -105,8 +140,7 @@ pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
         println!("  givn status              — see the updated workflow");
         println!("  givn eject {name}:instruction   — customise the instruction (optional)");
     } else if name == "domain_modeling" {
-        scaffold_glossary()?;
-        scaffold_domain_model()?;
+        materialize(name)?;
         println!("The standalone domain documents follow the `domain_modeling` addon.");
         println!("The generated skill is refreshed on the next `givn skills sync`.");
         println!();
@@ -132,9 +166,37 @@ pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
         println!("  Edit givn/commands.yaml to set coverage.measure_command");
         println!("  and coverage.merge_command to use your project scripts.");
     } else if name == "ise" {
-        scaffold_declaration()?;
+        materialize(name)?;
     }
 
+    Ok(())
+}
+
+/// Materialize exactly what the addon's registry entry declares.
+///
+/// The declaration is the input, so an addon that gains a path is scaffolded
+/// and reported from one value (ADR-080).
+fn materialize(name: &str) -> Result<()> {
+    let Some(addon) = KNOWN_ADDONS.iter().find(|addon| addon.id == name) else {
+        return Ok(());
+    };
+    let files: &[&str] = match addon.materialization {
+        Materialization::Files(files) | Materialization::FilesAndSkill { files, .. } => files,
+        Materialization::ManagedBlock { .. } | Materialization::None => &[],
+    };
+    for path in files {
+        if *path == "docs/arc42" {
+            scaffold_arc42()?;
+        } else if *path == "docs/glossary.md" {
+            scaffold_glossary()?;
+        } else if *path == "docs/domain-model.md" {
+            scaffold_domain_model()?;
+        } else if *path == "README.md" {
+            crate::cli::readme::scaffold_readme()?;
+        } else if *path == crate::config::declaration::DECLARATION_PATH {
+            scaffold_declaration()?;
+        }
+    }
     Ok(())
 }
 

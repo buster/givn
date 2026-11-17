@@ -151,6 +151,7 @@ built-in rules or implicit commits.
 | enable-optional-addons | enable an optional addon (the `ise` prerequisite check and the declaration scaffold are variants) | Consumer enables the outline addon and it is listed as enabled |
 | enable-optional-addons | disable an optional addon (the reverse prerequisite refusal is a variant) | A consumer disables a required addon and the refusal names ise |
 | enable-optional-addons | list the registered addons | A consumer lists addons and each declared default is reported |
+| enable-optional-addons | list addons with their materialized files | Consumer lists addons and sees each addon's materialized files reported |
 
 ## Includes
 
