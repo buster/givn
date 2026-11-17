@@ -194,7 +194,7 @@ Feature: Clean-room preparation
     Then  the command fails and names the target
     And  the checkout holds no spec copy directory and no manifest
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a repository link in the copy set
     Given  a Git project with ise enabled and a declaration whose "structure" role names "vendor/lib"
     And  a committed revision with a repository link at "vendor/lib"
@@ -202,7 +202,7 @@ Feature: Clean-room preparation
     Then  the command fails and names "vendor/lib"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a nested repository marker in the copy set
     Given  a Git project with ise enabled and a declaration whose "structure" role names "nested/_FOSSIL_"
     And  a committed revision with "nested/_FOSSIL_"
@@ -594,7 +594,7 @@ Feature: Clean-room preparation
     Then  the command fails and names the existing manifest
     And  the existing manifest is left unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a symlink whose target resolves outside the spec copy
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with a symlink "src/out" to "../../outside"
@@ -602,7 +602,7 @@ Feature: Clean-room preparation
     Then  the command fails and exits 1, naming "src/out" and "../../outside"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an absolute symlink target
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/run.sh" and a symlink "src/abs" to an absolute target inside the spec copy

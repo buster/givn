@@ -84,6 +84,8 @@ pub(crate) struct IseCleanRoomState {
     pub(crate) unreadable_revision: Option<String>,
     /// The nested project root a refusal must name.
     pub(crate) nested_project_root: Option<PathBuf>,
+    /// The absolute symlink target the fixture committed; a refusal names it.
+    pub(crate) absolute_symlink_target: Option<String>,
     /// The verb of the last rebuild command, so a refusal asserts the prefix
     /// of the command that refused.
     pub(crate) last_verb: Option<&'static str>,
@@ -390,6 +392,43 @@ pub(crate) fn commit_executable_and_symlink(env: &common::TestEnv) {
 #[cfg(not(unix))]
 pub(crate) fn commit_executable_and_symlink(_env: &common::TestEnv) {
     panic!("the entry-kind fixture requires symlink support");
+}
+
+/// Write the regular files and one symlink at `link` targeting `target`, then
+/// commit the whole tree. Returns the new revision identifier.
+#[cfg(unix)]
+pub(crate) fn commit_symlink(
+    env: &common::TestEnv,
+    files: &[(&str, &str)],
+    link: &str,
+    target: &str,
+) -> String {
+    for (path, content) in files {
+        let file = env.path(path);
+        if let Some(parent) = file.parent() {
+            std::fs::create_dir_all(parent).expect("create the fixture parent directory");
+        }
+        std::fs::write(&file, content).expect("write the fixture file");
+    }
+    let link = env.path(link);
+    if let Some(parent) = link.parent() {
+        std::fs::create_dir_all(parent).expect("create the fixture symlink's parent directory");
+    }
+    std::os::unix::fs::symlink(target, &link).expect("create the fixture symlink");
+    common::git_commit_all(env, "fixture: symlink");
+    head_revision(env)
+}
+
+/// The symlink fixture needs symlink support; refuse on a host without it
+/// rather than assert a target the fixture could not build.
+#[cfg(not(unix))]
+pub(crate) fn commit_symlink(
+    _env: &common::TestEnv,
+    _files: &[(&str, &str)],
+    _link: &str,
+    _target: &str,
+) -> String {
+    panic!("the symlink fixture requires symlink support");
 }
 
 /// A Fossil checkout with `ise` enabled, `allow-symlinks on`, and a

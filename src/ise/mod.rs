@@ -473,6 +473,61 @@ impl TrialWriter for FileWriter {
     }
 }
 
+/// Refusal 12: no symlink leaves the spec copy. An absolute target always
+/// refuses; a relative target refuses when resolving it against the link's
+/// parent directory leaves the copy. The check runs before the trial
+/// directory exists, so a refusal writes nothing.
+fn require_symlink_targets(files: &[TrialFile]) -> Result<()> {
+    for file in files {
+        if file.kind != EntryKind::Symlink {
+            continue;
+        }
+        let target = std::str::from_utf8(&file.bytes).map_err(|error| {
+            anyhow::anyhow!(
+                "'{}' is a symlink whose target is not UTF-8: {error}",
+                file.path
+            )
+        })?;
+        let target_path = Path::new(target);
+        if target_path.is_absolute() {
+            bail!(
+                "'{}' is a symlink to the absolute target '{target}'; a clean-room trial copies no absolute symlink target",
+                file.path
+            );
+        }
+        let parent = Path::new(&file.path)
+            .parent()
+            .unwrap_or_else(|| Path::new(""));
+        if resolves_outside(parent, target_path) {
+            bail!(
+                "'{}' is a symlink to '{target}', which resolves outside the spec copy; a clean-room trial copies no symlink that leaves the spec copy",
+                file.path
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Resolve `target` against `parent` without touching the filesystem: a
+/// `..` that walks above the copy root leaves the copy.
+fn resolves_outside(parent: &Path, target: &Path) -> bool {
+    use std::path::Component;
+
+    let mut depth: usize = 0;
+    for component in parent.components().chain(target.components()) {
+        match component {
+            Component::Normal(_) => depth += 1,
+            Component::CurDir => {}
+            Component::ParentDir => match depth.checked_sub(1) {
+                Some(remaining) => depth = remaining,
+                None => return true,
+            },
+            Component::RootDir | Component::Prefix(_) => return true,
+        }
+    }
+    false
+}
+
 /// Create the trial, write every file, then re-read and compare each one. A
 /// mismatch removes the trial, so no partial evidence survives.
 fn write_trial(
@@ -480,6 +535,7 @@ fn write_trial(
     files: &[TrialFile],
     writer: &dyn TrialWriter,
 ) -> Result<WriteOutcome> {
+    require_symlink_targets(files)?;
     if let Some(parent) = trial
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -648,5 +704,16 @@ mod tests {
         }];
         require_copy_set(&["src/kept.rs".to_string()], &entries)
             .expect("a regular file is copied, not refused");
+    }
+
+    #[test]
+    fn a_relative_symlink_target_resolves_against_the_link_parent() {
+        assert!(resolves_outside(
+            Path::new("src"),
+            Path::new("../../outside")
+        ));
+        assert!(resolves_outside(Path::new(""), Path::new("..")));
+        assert!(!resolves_outside(Path::new("src"), Path::new("../sibling")));
+        assert!(!resolves_outside(Path::new("src"), Path::new("run.sh")));
     }
 }

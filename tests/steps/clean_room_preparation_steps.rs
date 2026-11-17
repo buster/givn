@@ -2296,3 +2296,60 @@ fn the_command_fails_and_names_the_specification_file(world: &mut GivnWorld, pat
         "stderr {text:?} keeps the retired retained vocabulary"
     );
 }
+
+// --- copy-set: repository links, nested markers, and symlink targets -------
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "structure" role names "vendor/lib"$"#
+)]
+fn git_project_with_a_vendor_link_structure_role(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::repository_link_project());
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "structure" role names "nested/_FOSSIL_"$"#
+)]
+fn git_project_with_a_nested_marker_structure_role(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::nested_marker_project());
+}
+
+#[given(regex = r#"^a committed revision with a symlink "src/out" to "\.\./\.\./outside"$"#)]
+fn commit_revision_with_a_symlink_outside_the_copy(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration("\"src/out\"", "\"src/**\""),
+    );
+    ise_clean_room_support::commit_symlink(env, &[], "src/out", "../../outside");
+}
+
+#[given(
+    regex = r#"^a committed revision with "src/run\.sh" and a symlink "src/abs" to an absolute target inside the spec copy$"#
+)]
+fn commit_revision_with_an_absolute_symlink(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let target = trial_path(world).join("src/run.sh");
+    let target = target.to_string_lossy().into_owned();
+    world.ise_clean_room.absolute_symlink_target = Some(target.clone());
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration("\"src/run.sh\", \"src/abs\"", "\"src/**\""),
+    );
+    ise_clean_room_support::commit_symlink(
+        env,
+        &[("src/run.sh", "#!/bin/sh\necho fixture\n")],
+        "src/abs",
+        &target,
+    );
+}
+
+#[then(regex = r#"^the command fails and exits 1, naming "src/abs" and its absolute target$"#)]
+fn the_command_fails_and_names_the_absolute_symlink_target(world: &mut GivnWorld) {
+    let target = world
+        .ise_clean_room
+        .absolute_symlink_target
+        .clone()
+        .expect("the Given recorded the absolute target");
+    assert_refusal_names(world, &["src/abs", &target]);
+}
