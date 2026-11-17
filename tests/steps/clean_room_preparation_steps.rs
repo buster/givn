@@ -3061,3 +3061,207 @@ fn the_manifest_end_to_end_checksums_hold_one(world: &mut GivnWorld, path: Strin
         "the checksum {checksum:?} for {path:?} is not 64 lowercase hex characters"
     );
 }
+
+// --- write-targets: spec copy and manifest ---------------------------------
+
+#[given(regex = r#"^a manifest file that already exists$"#)]
+fn a_manifest_file_that_already_exists(world: &mut GivnWorld) {
+    ise_clean_room_support::existing_manifest(&mut world.ise_clean_room);
+}
+
+#[given(regex = r#"^a manifest path whose parent directory is a regular file$"#)]
+fn a_manifest_path_whose_parent_is_a_file(world: &mut GivnWorld) {
+    ise_clean_room_support::blocked_receipt(&mut world.ise_clean_room);
+}
+
+#[when(regex = r#"^the developer runs rebuild-all into a directory inside the checkout$"#)]
+fn run_rebuild_all_into_the_checkout(world: &mut GivnWorld) {
+    world.ise_clean_room.ensure_targets();
+    let checkout = project_env(world).root().to_path_buf();
+    world.ise_clean_room.trial_path = Some(checkout.join("trial"));
+    run_rebuild_all_into_the_recorded_target(world);
+}
+
+#[when(regex = r#"^the developer runs rebuild-all into that target$"#)]
+fn run_rebuild_all_into_the_recorded_target(world: &mut GivnWorld) {
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-all",
+            "--at",
+            "HEAD",
+            "--into",
+            trial.as_str(),
+        ],
+        "ise rebuild-all",
+    );
+}
+
+#[when(regex = r#"^the developer runs rebuild-all through the symlinked target$"#)]
+fn run_rebuild_all_through_the_symlinked_target(world: &mut GivnWorld) {
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-all",
+            "--at",
+            "HEAD",
+            "--into",
+            trial.as_str(),
+        ],
+        "ise rebuild-all",
+    );
+}
+
+/// Run `rebuild-all` with the manifest the fixture planned.
+fn rebuild_whole_product_with_the_planned_manifest(world: &mut GivnWorld, revision: &str) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.requested_revision = Some(revision.to_string());
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let manifest = manifest_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-all",
+            "--at",
+            revision,
+            "--into",
+            trial.as_str(),
+            "--manifest",
+            manifest.as_str(),
+        ],
+        "ise rebuild-all",
+    );
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the whole product from "([^"]+)" into a spec copy with a manifest inside the spec copy$"#
+)]
+fn rebuild_with_a_manifest_inside_the_spec_copy(world: &mut GivnWorld, revision: String) {
+    ise_clean_room_support::manifest_inside_the_spec_copy(&mut world.ise_clean_room);
+    rebuild_whole_product_with_the_planned_manifest(world, &revision);
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the whole product from "([^"]+)" into a spec copy with a manifest inside the checkout$"#
+)]
+fn rebuild_with_a_manifest_inside_the_checkout(world: &mut GivnWorld, revision: String) {
+    let checkout = project_env(world).root().to_path_buf();
+    ise_clean_room_support::manifest_inside_the_checkout(&mut world.ise_clean_room, &checkout);
+    rebuild_whole_product_with_the_planned_manifest(world, &revision);
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the whole product from "([^"]+)" into a spec copy whose manifest path is an ancestor of the spec copy$"#
+)]
+fn rebuild_with_a_manifest_ancestor_of_the_spec_copy(world: &mut GivnWorld, revision: String) {
+    ise_clean_room_support::manifest_ancestor_of_the_spec_copy(&mut world.ise_clean_room);
+    rebuild_whole_product_with_the_planned_manifest(world, &revision);
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the whole product from "([^"]+)" into a spec copy with that manifest$"#
+)]
+fn rebuild_with_that_manifest(world: &mut GivnWorld, revision: String) {
+    rebuild_whole_product_with_the_planned_manifest(world, &revision);
+}
+
+#[then(regex = r#"^the command fails and names the target$"#)]
+fn the_command_fails_and_names_the_target(world: &mut GivnWorld) {
+    let target = trial_path(world).to_string_lossy().into_owned();
+    assert_refusal_names(world, &[target.as_str()]);
+}
+
+#[then(regex = r#"^the command fails and names the existing target$"#)]
+fn the_command_fails_and_names_the_existing_target(world: &mut GivnWorld) {
+    assert_failure_refuses_existing(world, &trial_path(world));
+    assert_refusal_prefix(world);
+}
+
+#[then(regex = r#"^the command fails and names the manifest$"#)]
+fn the_command_fails_and_names_the_manifest(world: &mut GivnWorld) {
+    let manifest = manifest_path(world).to_string_lossy().into_owned();
+    assert_refusal_names(world, &[manifest.as_str()]);
+}
+
+#[then(regex = r#"^the command fails and names the existing manifest$"#)]
+fn the_command_fails_and_names_the_existing_manifest(world: &mut GivnWorld) {
+    assert_failure_refuses_existing(world, &manifest_path(world));
+    assert_refusal_prefix(world);
+}
+
+#[then(regex = r#"^the command fails and names the manifest path$"#)]
+fn the_command_fails_and_names_the_manifest_path(world: &mut GivnWorld) {
+    assert_failure_names_path(world, &manifest_path(world));
+    assert_refusal_prefix(world);
+}
+
+#[then(regex = r#"^the checkout holds no spec copy directory$"#)]
+fn the_checkout_holds_no_spec_copy_directory(world: &mut GivnWorld) {
+    let checkout = project_env(world).root().to_path_buf();
+    let copy = checkout.join("trial");
+    assert!(
+        !copy.exists(),
+        "the checkout holds a spec copy directory at {}",
+        copy.display()
+    );
+}
+
+#[then(regex = r#"^the checkout holds no spec copy directory and no manifest$"#)]
+fn the_checkout_holds_no_spec_copy_directory_and_no_manifest(world: &mut GivnWorld) {
+    let checkout = project_env(world).root().to_path_buf();
+    let copy = checkout.join("trial");
+    assert!(
+        !copy.exists(),
+        "the checkout holds a spec copy directory at {}",
+        copy.display()
+    );
+    let manifest = checkout.join("manifest.yaml");
+    assert!(
+        !manifest.exists(),
+        "the checkout holds a manifest at {}",
+        manifest.display()
+    );
+}
+
+#[then(regex = r#"^the checkout holds no manifest$"#)]
+fn the_checkout_holds_no_manifest(world: &mut GivnWorld) {
+    let manifest = manifest_path(world);
+    let checkout = project_env(world).root().to_path_buf();
+    assert!(
+        manifest.starts_with(&checkout),
+        "the fixture manifest {} lies outside the checkout",
+        manifest.display()
+    );
+    assert!(
+        !manifest.exists(),
+        "the checkout holds a manifest at {}",
+        manifest.display()
+    );
+}
+
+#[then(regex = r#"^the existing manifest is left unchanged$"#)]
+fn the_existing_manifest_is_left_unchanged(world: &mut GivnWorld) {
+    let manifest = manifest_path(world);
+    let bytes = std::fs::read(&manifest).expect("read the existing manifest");
+    assert_eq!(
+        bytes,
+        ise_clean_room_support::MANIFEST_CONTENT.as_bytes(),
+        "the existing manifest {} changed",
+        manifest.display()
+    );
+}
+
+#[then(regex = r#"^the spec copy directory it created is removed$"#)]
+fn the_spec_copy_directory_it_created_is_removed(world: &mut GivnWorld) {
+    let copy = trial_path(world);
+    assert!(
+        !copy.exists(),
+        "the spec copy directory remains at {}",
+        copy.display()
+    );
+}

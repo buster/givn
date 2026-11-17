@@ -47,6 +47,8 @@ pub(crate) const SOURCE_CONTENT: &str = "pub fn one() {}\n";
 pub(crate) const TARGET_FILE_CONTENT: &str = "existing target\n";
 /// The bytes the existing-receipt fixture writes.
 pub(crate) const RECEIPT_CONTENT: &str = "schema: 1\n";
+/// The bytes the existing-manifest fixture writes.
+pub(crate) const MANIFEST_CONTENT: &str = "scope: ise-manifest/v1\n";
 /// The declared `structure` entry a repository-link revision carries.
 pub(crate) const VENDOR_LINK_PATH: &str = "vendor/lib";
 /// The nested repository marker a revision can carry.
@@ -380,6 +382,43 @@ pub(crate) fn existing_target_file(state: &mut IseCleanRoomState) {
 pub(crate) fn existing_receipt(state: &mut IseCleanRoomState) {
     state.ensure_targets();
     std::fs::write(state.receipt_path(), RECEIPT_CONTENT).expect("write the existing receipt");
+}
+
+/// Create the manifest target as an existing regular file holding known bytes.
+pub(crate) fn existing_manifest(state: &mut IseCleanRoomState) {
+    state.ensure_targets();
+    std::fs::write(state.receipt_path(), MANIFEST_CONTENT).expect("write the existing manifest");
+}
+
+/// Name the manifest as `<copy>/manifest.yaml`, so it lies inside the spec copy
+/// the command would create.
+pub(crate) fn manifest_inside_the_spec_copy(state: &mut IseCleanRoomState) {
+    state.ensure_targets();
+    let copy = state.trial_path().to_path_buf();
+    state.receipt_path = Some(copy.join("manifest.yaml"));
+}
+
+/// Name the manifest as `<checkout>/manifest.yaml`, so the command would write
+/// into the checkout it reads.
+pub(crate) fn manifest_inside_the_checkout(state: &mut IseCleanRoomState, checkout: &Path) {
+    state.ensure_targets();
+    state.receipt_path = Some(checkout.join("manifest.yaml"));
+}
+
+/// Point the manifest at `<container>/parent` and the copy at
+/// `<container>/parent/trial`, so the manifest is a missing ancestor of the
+/// copy and the copy would be created inside the manifest path.
+pub(crate) fn manifest_ancestor_of_the_spec_copy(state: &mut IseCleanRoomState) {
+    state.ensure_targets();
+    let container = state
+        .targets
+        .as_ref()
+        .expect("the targets exist")
+        .path()
+        .to_path_buf();
+    let parent = container.join("parent");
+    state.trial_path = Some(parent.join("trial"));
+    state.receipt_path = Some(parent);
 }
 
 /// Point the trial at `<container>/link/trial`, where `link` is a symlink to

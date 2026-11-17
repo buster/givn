@@ -95,12 +95,7 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
         request,
         &admission.revision,
     )?;
-    let (copy_directory, checkout) = require_write_targets(project_root, request)?;
-    let manifest_path = request
-        .manifest
-        .as_ref()
-        .map(|path| resolved_target(path, &checkout))
-        .transpose()?;
+    let (copy_directory, manifest_path) = require_write_targets(project_root, request)?;
     let copy_paths = placement.copy_paths();
     require_copy_set(&copy_paths, &admission.entries)?;
 
@@ -208,9 +203,24 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
             copy_directory: copy_directory.to_string_lossy().into_owned(),
             givn_version: env!("CARGO_PKG_VERSION").to_string(),
         };
-        document.write(path)?;
+        if let Err(error) = document.write(path) {
+            remove_created_copy(&copy_directory, path)?;
+            return Err(error);
+        }
     }
     Ok(report)
+}
+
+/// A failed manifest write leaves no spec copy behind: the copy this command
+/// created is removed before the refusal surfaces.
+fn remove_created_copy(copy: &Path, manifest: &Path) -> Result<()> {
+    std::fs::remove_dir_all(copy).with_context(|| {
+        format!(
+            "remove the spec copy '{}' after the manifest '{}' could not be written",
+            copy.display(),
+            manifest.display()
+        )
+    })
 }
 
 /// The placement counts as the manifest's five named counts.
@@ -327,34 +337,68 @@ fn revision_declaration(
     SpecificationDeclaration::from_content(content).map_err(|error| anyhow::anyhow!("{error}"))
 }
 
-/// Refusal 8 (spec copy target): the trial lies outside the checkout and is
-/// created new. The path is resolved through its deepest existing ancestor, so
-/// a symlinked parent cannot alias a checkout path. The manifest target checks
-/// land with the manifest slice. Returns the absolute trial path the report
-/// and the manifest name, and the resolved checkout the manifest resolves
-/// against.
+/// Refusal 8 (write targets): the spec copy and the manifest lie outside the
+/// checkout and are created new; the manifest is not inside the copy and the
+/// copy is not created inside the manifest path. Each path is resolved through
+/// its deepest existing ancestor, so a symlinked parent cannot alias a
+/// checkout path. Returns the absolute copy path and the absolute manifest
+/// path the report and the manifest name.
 fn require_write_targets(
     project_root: &Path,
     request: &RebuildRequest,
-) -> Result<(PathBuf, PathBuf)> {
+) -> Result<(PathBuf, Option<PathBuf>)> {
     let checkout = project_root
         .canonicalize()
         .with_context(|| format!("resolve the checkout '{}'", project_root.display()))?;
-    let trial = resolved_target(&request.into, &checkout)?;
-    if trial.starts_with(&checkout) {
+    let copy = resolved_target(&request.into, &checkout)?;
+    let manifest = request
+        .manifest
+        .as_ref()
+        .map(|path| resolved_target(path, &checkout))
+        .transpose()?;
+    if copy.starts_with(&checkout) {
         bail!(
             "the target '{}' is inside the checkout '{}'",
             request.into.display(),
             checkout.display()
         );
     }
-    if trial.exists() {
+    if copy.exists() {
         bail!(
-            "the target '{}' already exists; a trial is written only into a new path",
+            "the target '{}' already exists; a spec copy is written only into a new path",
             request.into.display()
         );
     }
-    Ok((trial, checkout))
+    if let (Some(manifest), Some(supplied)) = (&manifest, request.manifest.as_ref()) {
+        if manifest.starts_with(&checkout) {
+            bail!(
+                "the manifest '{}' is inside the checkout '{}'; the checkout is never written",
+                supplied.display(),
+                checkout.display()
+            );
+        }
+        if manifest.exists() {
+            bail!(
+                "the manifest '{}' already exists; a manifest is written only to a new path",
+                supplied.display()
+            );
+        }
+        if manifest.starts_with(&copy) {
+            bail!(
+                "the manifest '{}' is inside the spec copy '{}'",
+                supplied.display(),
+                copy.display()
+            );
+        }
+        if copy.starts_with(manifest) {
+            bail!(
+                "the manifest '{}' is an ancestor of the spec copy '{}'",
+                supplied.display(),
+                copy.display()
+            );
+        }
+    }
+    Ok((copy, manifest))
 }
 
 /// The absolute form of a write target: every existing ancestor is

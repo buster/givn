@@ -187,7 +187,7 @@ Feature: Clean-room preparation
     And  the command exits 2
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a target inside the checkout
     Given  a Git project with ise enabled and a declaration
     When  the developer runs rebuild-all into a directory inside the checkout
@@ -262,7 +262,7 @@ Feature: Clean-room preparation
   Scenario: Preparation refuses when the record cannot be written
     Given the retired scenario is replaced by "Preparation refuses when the manifest cannot be written"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses when the manifest cannot be written
     Given  a Git project with ise enabled and a declaration
     And  a manifest path whose parent directory is a regular file
@@ -382,7 +382,7 @@ Feature: Clean-room preparation
     Then  the command succeeds and prints "Files beside removed paths: 2"
     And  the spec copy holds "src/keys/mod.rs" and "src/keys/tests.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an existing spec copy directory
     Given  a Git project with ise enabled and a declaration
     And  a target directory that already exists
@@ -390,7 +390,7 @@ Feature: Clean-room preparation
     Then  the command fails and names the existing target
     And  the existing directory is left unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an existing spec copy file
     Given  a Git project with ise enabled and a declaration
     And  a target path that exists as a regular file
@@ -398,7 +398,7 @@ Feature: Clean-room preparation
     Then  the command fails and names the existing target
     And  the existing file is left unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a spec copy target symlinked into the checkout
     Given  a Git project with ise enabled and a declaration
     And  a symlink outside the checkout that points into the checkout
@@ -565,28 +565,28 @@ Feature: Clean-room preparation
     And  the spec copy holds "givn/specification.yaml"
     And  the spec copy omits "givn/notes.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a manifest inside the spec copy
     Given  a Git project with ise enabled and a declaration
     When  the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest inside the spec copy
     Then  the command fails and names the manifest
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a manifest inside the checkout
     Given  a Git project with ise enabled and a declaration
     When  the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest inside the checkout
     Then  the command fails and names the manifest
     And  the checkout holds no manifest
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a manifest that is an ancestor of the spec copy
     Given  a Git project with ise enabled and a declaration
     When  the developer rebuilds the whole product from "HEAD" into a spec copy whose manifest path is an ancestor of the spec copy
     Then  the command fails and names the manifest
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses an existing manifest
     Given  a Git project with ise enabled and a declaration
     And  a manifest file that already exists
