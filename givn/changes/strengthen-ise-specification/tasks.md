@@ -561,49 +561,70 @@ Files modified: `src/ise/partition.rs`, `src/cli/ise.rs`,
 
 ### Batch 4: `copy-set`
 
-Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`,
-`tests/steps/clean_room_preparation_steps.rs`,
+Files modified:
+`givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/clean-room-preparation.feature`,
+`src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Preparation refuses a
+- [x] Evidence for this batch: paste the RED run for `Preparation refuses a
       symlink whose target resolves outside the spec copy` and the GREEN run of
       all four scenarios.
       ```text
-      <!-- paste: RED command + assertion failure; GREEN commands + pass summary -->
+      RED (GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs,
+      before the production edit):
+      cargo test --test features_runner -- "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a symlink whose target resolves outside the spec copy" --exact --nocapture
+        Then the command fails and exits 1, naming "src/out" and "../../outside"
+        Step panicked. Captured output: assertion `left == right` failed:
+        stderr= left: Some(0) right: Some(1)
+      cargo test --test features_runner -- "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an absolute symlink target" --exact --nocapture
+        Then the command fails and exits 1, naming "src/abs" and its absolute target
+        Step panicked. Captured output: assertion `left == right` failed:
+        stderr= left: Some(0) right: Some(1)
+      Both failures show the pre-batch writer copying the symlink and exiting 0.
+      The two protected copy-set scenarios passed on that run: each asserts
+      exit 1, the refusal prefix, and the file name.
+
+      GREEN (narrow run per title, after the production edit):
+        4 scenarios (4 passed), 0 failed; 5 steps green per scenario.
+      cargo fmt --all -- --check: exit 0.
+      cargo clippy --workspace --all-targets --locked -- -D warnings: exit 0.
       ```
 
-- [ ] Scenario: `Preparation refuses a repository link in the copy set`
+- [x] Scenario: `Preparation refuses a repository link in the copy set`
   - Design constraints: `structure: ["vendor/lib"]` and a gitlink at
     `vendor/lib`; Then exit 1, stderr names `vendor/lib`, and both targets stay
     absent. Contract: `require_copy_set` refuses a gitlink in the copy set.
-  - Files: `src/ise/partition.rs`, `src/ise/mod.rs`,
+  - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `copy-set`
+  - [x] COMMIT: `f0d326915f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
 
-- [ ] Scenario: `Preparation refuses a nested repository marker in the copy set`
+- [x] Scenario: `Preparation refuses a nested repository marker in the copy set`
   - Design constraints: `structure: ["nested/_FOSSIL_"]` and a committed
     `nested/_FOSSIL_`; Then exit 1 and stderr names the path. Contract:
     `require_copy_set` refuses a nested repository marker.
-  - Files: `src/ise/partition.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `copy-set`
+  - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
+    `tests/steps/ise_clean_room_support.rs`.
+  - [x] COMMIT: `f0d326915f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
 
-- [ ] Scenario: `Preparation refuses a symlink whose target resolves outside the spec copy`
-  - Design constraints: committed symlink `src/out` to `../../outside`, source
-    root `src/**`; Then exit 1, stderr names `src/out` and `../../outside`, and
-    both targets stay absent. Contract: the relative target is resolved against
-    the link's parent inside the copy; leaving the copy refuses before any
-    write.
-  - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `copy-set`
+- [x] Scenario: `Preparation refuses a symlink whose target resolves outside the spec copy`
+  - Design constraints: committed symlink `src/out` declared through the
+    `structure` role to `../../outside`, source root `src/**`; Then exit 1,
+    stderr names `src/out` and `../../outside`, and both targets stay absent.
+    Contract: the relative target is resolved against the link's parent inside
+    the copy; leaving the copy refuses before any write.
+  - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
+    `tests/steps/ise_clean_room_support.rs`.
+  - [x] COMMIT: `f0d326915f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
 
-- [ ] Scenario: `Preparation refuses an absolute symlink target`
-  - Design constraints: committed `src/run.sh` and symlink `src/abs` whose
-    absolute target points inside the planned copy; Then exit 1, stderr names
-    `src/abs` and the absolute target text, and both targets stay absent.
-    Contract: an absolute target always refuses, even when it resolves inside
-    the copy.
-  - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `copy-set`
+- [x] Scenario: `Preparation refuses an absolute symlink target`
+  - Design constraints: committed `src/run.sh` and symlink `src/abs` declared
+    through the `structure` role, whose absolute target points inside the
+    planned copy; Then exit 1, stderr names `src/abs` and the absolute target
+    text, and both targets stay absent. Contract: an absolute target always
+    refuses, even when it resolves inside the copy.
+  - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
+    `tests/steps/ise_clean_room_support.rs`.
+  - [x] COMMIT: `f0d326915f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
 
 ### Batch 5: `partition-and-copy`
 
