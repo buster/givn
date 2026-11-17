@@ -1,0 +1,983 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running tests/e2e_runner.rs (/home/buster/.paseo/worktrees/008cxm4u/modern-mule/target/e2e-package/debug/deps/e2e_runner-6aed3b12b9ad785e)
+Feature: Archive Proof
+  Scenario Outline: Consumer archives a completed change and receives a proven archive
+   ✔  Given a committed Git project with a completed change "proof-real" ready to archive
+   ✔  And the project reports scenario counts for every verification scope
+   ✔  When the user invokes `givn archive --change proof-real`
+   ✔  Then the command succeeds
+   ✔  And the archive at givn/archive/proof-real/ carries a proven verification receipt
+  Scenario Outline: Consumer archives a completed change and receives a proven archive
+   ✔  Given a committed Fossil project with a completed change "proof-real" ready to archive
+   ✔  And the project reports scenario counts for every verification scope
+   ✔  When the user invokes `givn archive --change proof-real`
+   ✔  Then the command succeeds
+   ✔  And the archive at givn/archive/proof-real/ carries a proven verification receipt
+  Scenario: Consumer repairs a blocked archive and the rerun proves it
+   ✔  Given a committed givn project with an unproven candidate whose scopes passed but finalization publication failed
+   ✔  And the publication blocker is repaired without changing relevant verification inputs
+   ✔  When the user invokes `givn archive --change proof-repair`
+   ✔  Then the command succeeds and terminal output reports a proven archive
+   ✔  And the archive carries a proven receipt reusing its passed scope evidence
+   ✔  And no verification suite runs again
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Consumer inspects an unproven archive candidate
+   ✔  Given a committed givn project with an unproven archive candidate "proof-pending"
+   ✔  When the user invokes `givn status`
+   ✔  Then stdout lists "proof-pending" as an unproven archive
+   ✔  And stdout routes the developer to resume it with `givn archive --change proof-pending`
+  Scenario: Consumer archives a change after documentation-only review edits and the proof is reused
+   ✔  Given a clean committed change with a green change verification receipt recorded at an earlier revision
+   ✔  And the developer commits only proposal, design, design-review, tasks, review, arc42, use-case narrative, README, and evidence edits after that revision
+   ✔  And the verify command records every invocation with its scope and features path
+   ✔  When the developer runs `givn archive --change review-proof-demo`
+   ✔  Then the command exits 0
+   ✔  And the archive is proven
+   ✔  And the change suite was not invoked again
+   ✔  And the merged regular scope ran once with features path "givn/specs"
+   ✔  And stdout says the change verification receipt was reused
+   ✔  And the archive terminal transcript is captured for this scenario
+Feature: Enforce Post-Merge E2E Gate
+  Scenario: Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+   ✔  Given a committed givn project with verify.e2e_command unconfigured in givn/commands.yaml
+   ✔  And a change "real-e2e-merge" with all artifacts done, whose delta spec has an @e2e scenario
+   ✔  And the permanent spec directory givn/specs/ has no @e2e scenario
+   ✔  When the user invokes `givn archive --change real-e2e-merge`
+   ✔  Then the command fails
+   ✔  And stderr says the e2e runner is not configured for permanent specs with @e2e coverage
+   ✔  And stderr names givn/commands.yaml as the e2e runner's configuration file
+   ✔  And the change directory still exists under givn/changes/
+   ✔  And no archive candidate exists for "real-e2e-merge"
+Feature: Extract Coverage Gate
+  Scenario: Consumer archives a change with coverage enabled and the coverage summary appears in README
+   ✔  Given a givn project with coverage enabled and valid coverage commands that produce Cobertura XML
+   ✔  And a completed change "cov-real" with all required artifacts
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn archive --change cov-real`
+   ✔  Then the command succeeds
+   ✔  And the README.md contains a coverage summary fence
+   ✔  And the change directory has been moved to givn/archive/
+Feature: grouped-merge-for-new-capabilities
+  Scenario: Consumer archives a new capability and the merged spec lands in its declared use case
+   ✔  Given a givn project with a completed change declaring a capability NEW in "some-group"
+   ✔  And its supported delta feature has Background setup, inherited execution tags and a Scenario Outline with a docstring, table and Examples
+   ✔  And all applicable archive verification passes
+   ✔  When the consumer invokes `givn archive --change grouped-new`
+   ✔  Then the command succeeds and terminal output reports a proven archive
+   ✔  And the feature is published under "givn/specs/some-group" rather than a capability-named use-case directory
+   ✔  And the published feature retains its complete supported executable content and tag inheritance
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Preserve scenario docstrings on archive
+  Scenario: Consumer archives a modified scenario and the permanent spec keeps the docstring
+   ✔  Given a givn project with a completed change "real-modify" whose delta modifies scenario "Existing behaviour" within capability "real-cap" and gives a step the docstring:
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn archive --change real-modify`
+   ✔  Then the command succeeds
+   ✔  And the permanent spec file for "real-cap" contains the text "docstring-present-after-real-archive"
+Feature: Require Durable Retained Paths
+  Scenario: Consumer archives a change whose declared retained paths survive the move
+   ✔  Given a givn project with a completed change "durable-paths" ready to archive
+   ✔  And an effective declaration whose limits role names "givn/archive/durable-paths/design.md"
+   ✔  When the user runs `givn archive --change durable-paths`
+   ✔  Then the command exits 0
+   ✔  And the change directory has been moved to givn/archive/
+   ✔  And the archived change contains "design.md"
+Feature: Require Merged Step Definitions
+  Scenario: Consumer archives a change whose delta step definitions are already in the permanent test tree
+   ✔  Given a givn project with a completed change "merged-steps" ready to archive
+   ✔  And the change's spec tree binds "an imported catalog" in "steps/catalog_steps.py"
+   ✔  And a permanent step-definition file "tests/steps/catalog_steps.py" binds "an imported catalog"
+   ✔  When the user invokes `givn archive --change merged-steps`
+   ✔  Then the command exits 0
+   ✔  And the change directory has been moved to givn/archive/
+   ✔  And the archived change still contains the step-definition file "specs/steps/catalog_steps.py"
+Feature: Outline report
+  Scenario: A developer runs a outline report and sees the classified units
+   ✔  Given a Givn project with the outline experiment enabled
+   ✔  And a production source unit that is over the readable size
+   ✔  When the developer runs "givn outline report"
+   ✔  Then the command exits with code 0
+   ✔  And the report classifies the unit as a god type
+   ✔  And the report labels the finding as advisory rather than a review or archive verdict
+   ✔  And the report records no recommendation
+   ✔  And the report writes no baseline file
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Change release note
+  Scenario: A new change's proposal carries the release-note field
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn new shared-note`
+   ✔  Then the command exits 0
+   ✔  And the file "givn/changes/shared-note/proposal.md" contains "release note"
+  Scenario: The proposal guidance requires a release note
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "shared-note" exists with artifact "proposal"
+   ✔  When the user runs `givn instructions proposal --change shared-note`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "release note"
+   ✔  And stdout contains "carries the release note as its message subject"
+  Scenario: The generated implementation guidance shares the release note
+   ✔  Given a givn project with all agent skill targets enabled and an active change
+   ✔  When the user runs `givn skills sync`
+   ✔  Then the command exits 0
+   ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+   ✔  And the generated givn-implement guidance directs the implementer to the tasks instruction
+   ✔  And the generated givn-tasks guidance directs the task author to the tasks instruction
+   ✔  And the served tasks instruction contains "carries the release note as its message subject"
+   ✔  And the served tasks instruction contains "the scenario title goes in the message body"
+   ✔  And generated guidance does not contain "message references the scenario title"
+   ✔  And the file "AGENTS.md" contains "carries the release note as its message subject"
+Feature: change-strategy
+  Scenario: The design guidance requires one recorded change strategy
+   ✔  Given a Givn project with the ise addon enabled and the skills synchronized
+   ✔  When the consumer requests the design guidance for an active change
+   ✔  Then the command exits 0
+   ✔  And the served design guidance requires exactly one change strategy as a `Decides D` entry
+   ✔  And the served design guidance names "incremental modification", "Constant Ise", and a whole-product rebuild
+   ✔  And the served design guidance requires the affected consumers, the persisted state, and the rebuild boundary
+   ✔  And the terminal transcript is captured for this scenario
+Feature: prose-consolidation
+  Scenario: Canonical E2E policy is emitted by specs instructions
+   ✔  Given a givn project
+   ✔  When the user runs `givn instructions specs --change visual-ui-review`
+   ✔  Then stdout contains "one E2E evidence scenario per distinct real user action"
+   ✔  And stdout does not contain "one `@e2e` scenario per User Interaction Inventory entry"
+   ✔  And stdout contains "final-state screenshot"
+   ✔  And stdout contains "Samsung S24"
+   ✔  And stdout contains "Full HD"
+  Scenario: Generated guidance points to the canonical E2E policy
+   ✔  Given a Givn project with all agent skill targets and optional guidance enabled
+   ✔  When the consumer synchronizes the selected agent guidance through the Givn CLI
+   ✔  Then the generated givn-spec skill directs the author to the canonical specs instruction
+   ✔  And managed bootstrap guidance owns loading the effective dialog policy before the first question once per context
+   ✔  And thin skills contain no repeated dialog-loading or delegation boilerplate
+   ✔  And detailed dialog examples remain available through the policy's companion index
+   ✔  And synchronization reports skills without separately generated commands
+   ✔  And the terminal transcript is captured for this scenario
+Feature: spec-gap
+  Scenario: The review guidance requires one spec gap outcome before any fix
+   ✔  Given a Givn project with the ise addon enabled and the skills synchronized
+   ✔  When the consumer requests the review guidance for an active change
+   ✔  Then the command exits 0
+   ✔  And the served review guidance requires exactly one spec gap outcome before any fix
+   ✔  And the served review guidance names "E2E test defect", "implementation defect", "specification defect", and "acceptable undocumented change"
+   ✔  And the served review guidance states that only "specification defect" is a gap in the Specification
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Visual Design Contract
+  Scenario: Author requests the visual design contract guidance
+   ✔  Given a givn project
+   ✔  When the user runs `givn instructions design --change visual-ui-review`
+   ✔  Then stdout contains "Visual Design Contract"
+   ✔  And stdout contains "style-level"
+   ✔  And stdout contains "not pixel"
+   ✔  And stdout contains "docs/design/"
+   ✔  And stdout contains "design tokens"
+   ✔  And stdout contains "component states"
+   ✔  And stdout contains "rendered reference"
+  Scenario: Synchronized guidance defines the contract approval and capture mechanics
+   ✔  Given a givn project with all agent skill targets enabled
+   ✔  When the user runs `givn skills sync`
+   ✔  Then the generated givn-design-review guidance directs the reviewer to the design-review instruction
+   ✔  And the served design-review instruction contains "Visual Design Contract"
+   ✔  And the served design-review instruction contains "propose"
+   ✔  And the served design-review instruction contains "user approves"
+   ✔  And the served design-review instruction contains "rendered options"
+   ✔  And the generated givn-steps guidance directs the step writer to the steps instruction
+   ✔  And the served steps instruction contains "evidence/visual"
+   ✔  And the served steps instruction contains "final-state"
+   ✔  And the served steps instruction contains "animations are frozen"
+   ✔  And the served steps instruction contains "reports/"
+Feature: specification-declaration
+  Scenario: The declared roles are read by the project-health pass
+   ✔  Given an ise-enabled project selecting opencode with a declaration naming the five roles and two source roots
+   ✔  When the consumer runs `givn lint`
+   ✔  Then the command exits 0
+   ✔  And stderr contains no declaration-schema error
+   ✔  And stderr contains the declared-path advisory for the contracts role
+   ✔  And the terminal transcript is captured for this scenario
+Feature: keep-audit-output-clean
+  Scenario: The JSON duplicate audit is valid JSON without progress wording
+   ✔  Given a spec discovery project whose corpus contains one feature with two identical scenarios
+   ✔  When the user audits the permanent corpus with `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And stdout is a JSON array
+   ✔  And stdout stays free of "embedding" and "download" wording
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Exact duplicates in one feature are reported together
+   ✔  Given a spec discovery project whose corpus contains one feature with two scenarios having literally equal supported executable content
+   ✔  When the user audits the permanent corpus with `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "exact_duplicate"
+   ✔  And stdout contains "scanned permanent corpus"
+   ✔  And stdout contains both audit endpoints
+   ✔  And the terminal transcript is captured for this scenario
+Feature: A project extends an instruction's built-in rules
+  Scenario: A developer records an extension and it governs the next guidance request
+   ✔  Given a Givn project with an active change
+   ✔  And the developer records the rule "Keep proposals under 500 words" for the proposal instruction in the project's configuration
+   ✔  When the agent requests the proposal instructions through the Givn CLI
+   ✔  Then the served content carries the project's rule in the marked extension section
+   ✔  And the built-in proposal rules stay unchanged
+  Scenario: An upgrade preserves the extension and the next request serves it
+   ✔  Given a committed Givn project with an active change and an extension for the proposal instruction
+   ✔  When the consumer upgrades the project through the Givn CLI
+   ✔  And the agent requests the proposal instructions through the Givn CLI
+   ✔  Then the upgrade revision carries no extension content
+   ✔  And the served content carries the project's rule beside the current built-in rules
+Feature: Strict qualification and canonical routing of architecture decisions
+  Scenario: An author requests the strict ADR guidance through the Givn CLI
+   ✔  Given an initialized ADR qualification project with active change `adr-qualification-gate`
+   ✔  When the author requests the Arc42 ADR guidance through the Givn CLI
+   ✔  Then the CLI exits with status 0
+   ✔  And the output explains qualification by architectural commitment real alternatives lasting consequence and existing-ADR search
+   ✔  And the output routes the result to a new amended superseding or non-ADR artifact
+   ✔  And the output requires qualification once in the change assessment
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Attribute commits
+  Scenario: Consumer initializes a project and receives shared attribution plumbing
+   ✔  Given a new Git project with `core.hooksPath` set to `.githooks`
+   ✔  And an existing user commit-msg hook that writes a marker
+   ✔  When the consumer runs `givn init --agents opencode,claude,omp,maki`
+   ✔  Then the command exits 0 and reports installed attribution plumbing
+   ✔  And the checked-in attribution hook and selected harness integrations exist
+   ✔  And a subsequent human Git commit succeeds and runs the user hook exactly once without recursive dispatch
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: An attributed commit exposes the current LLM and harness
+   ✔  Given a Git project with complete commit attribution context
+   ✔  And changed "batch.txt" beside unrelated staged and unstaged work
+   ✔  When the consumer runs `givn commit batch.txt -m "fix parser"`
+   ✔  Then the command succeeds and reports the created revision
+   ✔  And its committer identifies "openai/gpt-5.6-luna" and "opencode"
+   ✔  And its message contains only the managed co-author attribution
+   ✔  And the revision contains only the supplied path
+   ✔  And unrelated index entries and working changes remain unchanged
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: OpenCode prepares attribution using its selected model
+   ✔  Given a project with the generated OpenCode attribution integration
+   ✔  When OpenCode supplies the selected provider "openai" and model "gpt-5.6-luna" for session "session-1"
+   ✔  And OpenCode prepares the environment for a shell in session "session-1"
+   ✔  Then the shell environment identifies LLM "openai/gpt-5.6-luna"
+   ✔  And the shell environment identifies reasoning mode "high"
+   ✔  And the shell environment identifies harness "opencode"
+   ✔  And the shell environment identifies committer "LLM: openai/gpt-5.6-luna via opencode"
+  Scenario: Claude attributes a commit using its current model
+   ✔  Given a project with the generated Claude attribution integration
+   ✔  When Claude provides current model "claude-sonnet-5" in its session transcript
+   ✔  And Claude prepares an RTK-wrapped Bash commit command with message "claude attribution"
+   ✔  Then the attributed Claude commit succeeds
+   ✔  And its Claude committer identifies "claude-sonnet-5" and "claude-code"
+   ✔  And its Claude message identifies LLM "claude-sonnet-5"
+   ✔  And its Claude message identifies the co-author attribution
+  Scenario: omp attributes a commit using its current model
+   ✔  Given a project with the generated omp attribution integration
+   ✔  And omp's current model is "deepseek/deepseek-flash" at reasoning mode "high"
+   ✔  When omp prepares and runs a Bash revision command with message "omp attribution"
+   ✔  Then the attributed omp commit succeeds
+   ✔  And its omp committer identifies "deepseek/deepseek-flash" and "omp"
+   ✔  And its omp message identifies LLM "deepseek/deepseek-flash"
+   ✔  And its omp message identifies reasoning mode "high"
+  Scenario: Maki attributes a commit using its current model
+   ✔  Given a project with the generated Maki attribution integration
+   ✔  And Maki's current model is "deepseek/deepseek-flash" at reasoning mode "high"
+   ✔  When Maki prepares and runs a revision command with message "maki attribution"
+   ✔  Then the attributed Maki commit succeeds
+   ✔  And its Maki committer identifies "deepseek/deepseek-flash" and "maki"
+   ✔  And its Maki message identifies LLM "deepseek/deepseek-flash"
+   ✔  And its Maki message identifies reasoning mode "high"
+Feature: Coverage README guidance
+  Scenario: Coverage-enabled project receives a complete README coverage example
+   ✔  Given a givn project with the coverage addon enabled
+   ✔  When the user runs `givn skills sync`
+   ✔  Then the served coverage guidance shows a README coverage example with a badge, report link, non-E2E and E2E totals, and reproduction commands
+Feature: Detect the project repository
+  Scenario: A Git worktree at the project root selects the Git backend
+   ✔  Given a Git project whose project root is the worktree top level
+   ✔  And a managed file is missing from the project
+   ✔  When the consumer runs `givn upgrade`
+   ✔  Then the command exits 0
+   ✔  And the managed upgrade publishes a revision
+Feature: Enable commit attribution
+  Scenario: Consumer sees the commit attribution installation report
+   ✔  Given a new Git project with `core.hooksPath` set to `.githooks` and a user commit-msg hook
+   ✔  When the consumer runs `givn init --agents opencode,claude,omp,maki`
+   ✔  Then the command exits 0
+   ✔  And stdout reports the shared Git hook and each selected harness attribution integration
+   ✔  And the report states that the existing user hook was preserved
+   ✔  And the installed hook does not dispatch itself
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Consumer upgrades an existing project with attribution plumbing missing
+   ✔  Given a clean initialized Git project using `.githooks` with attribution plumbing missing and a preserved user hook
+   ✔  When the consumer runs `givn upgrade`
+   ✔  Then the command exits 0 and reports refreshed attribution plumbing
+   ✔  And the managed upgrade revision contains the hook and selected attribution integrations
+   ✔  And a repeated installation preserves the user hook without duplicating dispatch
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Consumer initializes a Fossil project and receives the givn commit path without a hook
+   ✔  Given a Fossil checkout without a givn/ directory
+   ✔  When the consumer initializes Givn with an explicit agent target
+   ✔  Then the command exits 0
+   ✔  And stdout names `givn commit` with explicit file paths as the attribution path
+   ✔  And no .githooks directory exists
+   ✔  And generated guidance states that raw Fossil commits are not stamped
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Find existing scenarios
+  Scenario: Lexical search locates a permanent scenario by a step text token
+   ✔  Given a spec discovery project whose corpus contains a scenario mentioning "shovel-unique-token"
+   ✔  When the user searches the permanent corpus for "shovel-unique-token" with `givn spec find`
+   ✔  Then the command exits 0
+   ✔  And stdout contains the matching scenario title
+   ✔  And stdout identifies the owning use case and capability
+  Scenario: The spec tree reports per-use-case counts and the use-case narrative
+   ✔  Given a spec discovery project with two use cases and a usecase.md narrative
+   ✔  When the user inspects the corpus with `givn spec tree`
+   ✔  Then the command exits 0
+   ✔  And stdout contains both use-case names
+   ✔  And stdout contains the scenario count and the e2e count per capability
+   ✔  And stdout contains the use-case actor line
+Feature: Guide domain modeling
+  Scenario: An agent synchronizes skills and the domain skill is routed
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent synchronizes skills through the Givn CLI
+   ✔  Then the generated domain skill names the domain-modeling skill
+   ✔  And the generated skill loads during every workflow step of a change
+   ✔  And the generated givn-domain-modeling guidance directs the domain modeler to the domain-modeling instruction
+   ✔  And the generated skill instructs maintaining the project's glossary
+   ✔  And the served domain-modeling instruction contains "maintaining the project's glossary"
+   ✔  And the generated skill does not describe the givn change lifecycle
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: An agent requests next-step guidance and is routed to the domain skill
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent requests the next-step guidance through the Givn CLI
+   ✔  Then the guidance says to load the domain-modeling skill now
+  Scenario: An agent requests the specs guidance and is routed to the domain skill
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent requests the specs instructions through the Givn CLI
+   ✔  Then the guidance says to load the domain-modeling skill now
+  Scenario: An agent requests the design guidance and is routed to the domain skill
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent requests the design instructions through the Givn CLI
+   ✔  Then the guidance says to load the domain-modeling skill now
+Feature: Instruction and skill guidance remains complete and machine-readable
+  Scenario: An agent requests machine-readable artifact guidance
+   ✔  Given a Givn project with an active change
+   ✔  When the agent requests the specs instructions as JSON through the Givn CLI
+   ✔  Then the response is valid JSON with artifact paths prerequisites and instructions
+  Scenario: Author starts a session with the universal dialog obligation
+   ✔  Given an initialized Givn project without an active change
+   ✔  When the author requests the normal Givn startup instructions through the Givn CLI
+   ✔  Then the startup guidance requires loading the effective dialog policy before the context's first user-facing question
+   ✔  And the bootstrap owns that obligation independently of optional addons and named skills
+   ✔  And the policy is loaded once per context and reloaded if lost
+   ✔  And the startup guidance says to load givn-start for new or unclassified work
+   ✔  And the startup guidance names givn new as the direct alternative
+   ✔  And the terminal startup output recommends givn-start and the direct change command
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Match guidance to enabled addons
+  Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+   ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+   ✔  When a consumer synchronizes skills through the Givn CLI
+   ✔  Then the served review instruction omits the Arc42 implementation conformance section
+   ✔  And the served review instruction omits the Ubiquitous language conformance section
+   ✔  And the generated review skill carries no Arc42 implementation conformance section
+   ✔  And the generated review skill carries no Ubiquitous language conformance section
+   ✔  And no generated domain-modeling skill exists
+   ✔  And no generated skill mentions any disabled addon
+   ✔  And no Givn command files are generated
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A consumer enables the addons a generated section needs and the guidance gains it
+   ✔  Given a Givn project with the arc42 and domain-modeling addons disabled and the skills synchronized
+   ✔  When a consumer enables the arc42 and domain-modeling addons through the Givn CLI
+   ✔  Then the served review instruction contains the Arc42 implementation conformance section
+   ✔  And the served review instruction contains the Ubiquitous language conformance section
+   ✔  And the served design-review instruction contains the Architecture documentation (arc42) branch
+   ✔  And a generated domain-modeling skill exists
+   ✔  And the generated review skill directs the reviewer to the review instruction
+   ✔  And no generated review command exists
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Measure coverage per project
+  Scenario: An initialized project documents reusable test and coverage scripts
+   ✔  Given a fresh givn project
+   ✔  When the user runs `givn init --agents opencode`
+   ✔  Then givn/commands.yaml contains `measure_command: "./measure-coverage.sh"`
+   ✔  And givn/commands.yaml contains `merge_command: "./merge-coverages.sh"`
+   ✔  And the README documents the configured runner and coverage scripts
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Archiving publishes line and branch badges from the merged report
+   ✔  Given a givn project with script-based coverage commands
+   ✔  And a completed change "merged-coverage" with all required artifacts
+   ✔  When the user archives the change
+   ✔  Then the archive succeeds
+   ✔  And the merged Cobertura report contains line coverage `95/100` and branch coverage `19/20`
+   ✔  And the README places line and branch badges directly below its title
+   ✔  And the README coverage summary contains line coverage `95% (95/100)` and branch coverage `95% (19/20)`
+   ✔  And the README coverage summary links the merged report and names the configured scripts
+Feature: Refresh generated guidance
+  Scenario: Synchronized guidance explains how to resolve the deterministic gates
+   ✔  Given a givn project with all agent skill targets enabled
+   ✔  When the user runs `givn skills sync`
+   ✔  Then synchronization reports skills rather than skills and agent commands
+   ✔  And generated review design and steps skills direct readers to their canonical instructions
+   ✔  And the served review instruction retains split-or-keep while treating shape matches as advisory
+   ✔  And the served design and steps instructions retain black-box behavior and distinct requirement coverage
+   ✔  And generated skills contain no repeated dialog-loading or delegation policy blocks
+   ✔  And no separately authored agent commands are generated
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Review architecture documentation
+  Scenario: Arc42-enabled review instructions require conformance evidence
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn new arc42-review-alignment-test`
+   ✔  And the user runs `givn instructions review --change arc42-review-alignment-test`
+   ✔  Then the command succeeds
+   ✔  And the returned guidance compares Arc42 design tasks and completed implementation against available evidence
+   ✔  And the guidance requires recording and resolving material conformance mismatches
+   ✔  And the guidance does not require an unwritten review verdict or future archive receipt as evidence
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: The review template includes the Arc42 conformance block
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn eject review:template`
+   ✔  Then the command succeeds
+   ✔  And the ejected template records Arc42 implementation conformance against design tasks and completed implementation
+   ✔  And the template records evidence and material mismatches
+   ✔  And the template contains no outline verdict phrase
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Generated review guidance stays aligned after skill sync
+   ✔  Given a project root with givn/ initialised
+   ✔  And an existing change named "review-alignment"
+   ✔  When the user runs `givn skills sync`
+   ✔  Then the command succeeds
+   ✔  And the generated review skill directs the reviewer to the review instruction
+   ✔  And the generated review skill carries no Arc42 implementation conformance section
+   ✔  And the served review instruction contains "Arc42 implementation conformance"
+Feature: Route a change to existing behavior
+  Scenario: Routing a proposal prints ranked candidates with evidence
+   ✔  Given a spec discovery project whose corpus contains a capability that invokes `givn lint`
+   ✔  And an active change whose proposal describes extending the lint command
+   ✔  When the user routes the change with `givn spec route --change`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "ranked candidates"
+   ✔  And stdout contains the capability that invokes `givn lint`
+   ✔  And stdout contains an evidence line
+Feature: Show coverage in the README
+  Scenario: Coverage-enabled project is guided to place the coverage badge directly after the README title
+   ✔  Given a givn project with the coverage addon enabled
+   ✔  When the user runs `givn skills sync`
+   ✔  Then the served coverage guidance places the coverage badge directly after the README title
+   ✔  And the served coverage guidance keeps the totals and reproduction commands
+Feature: Verify repository ownership
+  Scenario: Repository-wide review accepts explicit overlap dispositions
+   ✔  Given an isolated ownership fixture with dispositions for every overlap finding
+   ✔  When the maintainer invokes the fixture review command
+   ✔  Then the fixture command exits 0
+   ✔  And fixture stdout contains "overlap dispositions passed"
+   ✔  And fixture stdout contains "net delta: 1 added, 0 modified, 1 removed"
+  Scenario: Archive publishes consolidated permanent specifications
+   ✔  Given an isolated ownership fixture with dispositions for every overlap finding
+   ✔  When the maintainer invokes the fixture archive command
+   ✔  Then the fixture command exits 0
+   ✔  And fixture stdout contains "Archived 'fixture-consolidation'"
+   ✔  And the fixture permanent specification tree contains no duplicate scenario titles
+   ✔  And the fixture permanent specification tree contains "Canonical retained behavior"
+   ✔  And the fixture permanent specification tree does not contain "Obsolete behavior"
+Feature: enable-optional-addons
+  Scenario: Consumer enables the outline addon and it is listed as enabled
+   ✔  Given an initialized addon-free project with outline disabled
+   ✔  When the consumer runs `givn addons enable outline`
+   ✔  Then the command exits 0 and reports that outline is enabled
+   ✔  And `givn addons list` reports the effective outline state as enabled
+   ✔  And unrelated addon opt-outs remain unchanged
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A consumer lists addons and each declared default is reported
+   ✔  Given a project root without a givn/ directory
+   ✔  When the consumer runs `givn init --agents opencode`
+   ✔  And the consumer runs `givn addons list`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "[disabled]  ise"
+   ✔  And stdout contains "[enabled ]  outline"
+   ✔  And stdout contains "each omitted key resolves that addon's declared default"
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A consumer disables a required addon and the refusal names ise
+   ✔  Given an ise-enabled project selecting opencode
+   ✔  When the consumer runs `givn addons disable architecture_principles`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains "addon 'architecture_principles' is required by 'ise'; disable 'ise' first"
+   ✔  And the active addon settings keep "architecture_principles" enabled
+   ✔  And the active addon settings keep "ise" enabled
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Consumer lists addons and sees each addon's materialized files reported
+   ✔  Given an initialized project with scaffolding materialized
+   ✔  When the consumer lists the addons
+   ✔  Then the command exits 0
+   ✔  And the listing reports arc42 as enabled with artifacts present
+Feature: initialize-a-project
+  Scenario: Consumer selects agent targets during interactive init
+   ✔  Given a project root without a givn/ directory
+   ✔  When the consumer selects opencode and claude in the real terminal init prompt
+   ✔  Then the terminal displays a labeled agent-target selection and confirms the selected integrations
+   ✔  And the command exits 0
+   ✔  And givn skills targets in givn/config.yaml equal "opencode, claude"
+   ✔  And the file ".opencode/skills/givn-propose/SKILL.md" exists
+   ✔  And the file ".claude/skills/givn-propose/SKILL.md" exists
+   ✔  And the directory ".agents/skills/givn-propose" does not exist
+   ✔  And the active addon settings enable exactly "arc42, communication_policy, readme, coverage, domain_modeling, dev_principles, architecture_principles, challenge, outline"
+   ✔  And the active addon settings do not name "ise"
+   ✔  And the file "givn/specification.yaml" does not exist
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Consumer runs init non-interactively and gets opencode skills
+   ✔  Given a project root without a givn/ directory
+   ✔  And human-authored agent instructions outside the managed block
+   ✔  When the consumer runs `givn init --no-addons --agents opencode`
+   ✔  Then the command exits 0 and reports installed skills and disabled optional addons
+   ✔  And the installed givn-propose skill directs the author to `givn instructions proposal`
+   ✔  And no Givn command file is generated
+   ✔  And the managed startup block requires loading the effective dialog policy before the first question in each context independently of addons
+   ✔  And the file ".opencode/skills/givn-start/SKILL.md" exists
+   ✔  And the file ".opencode/skills/givn-explore/SKILL.md" does not exist
+  Scenario: Consumer re-syncs skills after init and the selection is honoured
+   ✔  Given an initialized project selecting opencode and claude
+   ✔  And an older managed startup block beside human-authored instructions
+   ✔  And recognizable Givn-generated legacy commands beside custom commands
+   ✔  When the consumer runs `givn skills sync`
+   ✔  Then the command exits 0 and reports the selected skill destinations
+   ✔  And only selected targets receive skills
+   ✔  And recognizable generated legacy commands are removed without generating replacements
+   ✔  And custom commands and human-authored instructions remain byte-for-byte unchanged
+   ✔  And the startup block is refreshed once without changing the persisted selection or unrelated configuration
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Read task progress
+  Scenario: Consumer runs givn status on a change with uppercase checkboxes
+   ✔  Given a givn project with a change "e2e-upper-check" containing tasks.md with content "- [X] hello world\n- [ ] not done"
+   ✔  When the user invokes `givn status --change e2e-upper-check`
+   ✔  Then stdout contains "1/2 tasks"
+   ✔  And the command exits 0
+Feature: report-change-status
+  Scenario: Detail mode — active change with all required done (text)
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "done" exists with all required artifacts complete
+   ✔  And the change has no verification receipt
+   ✔  When the user invokes `givn status --change done`
+   ✔  Then the command exits 0
+   ✔  And stdout reports that required artifacts are complete
+   ✔  And stdout reports verification as not checked
+   ✔  And stdout does not claim "ready-to-archive" or "Ready to archive"
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Show skipped artifacts
+  Scenario: Consumer runs givn status on a change with skipped artifacts and sees them correctly
+   ✔  Given a givn project with a change "skip-real" that has proposal.md and a .givn-skip file listing "design"
+   ✔  When the user invokes `givn status --change skip-real`
+   ✔  Then the command succeeds
+   ✔  And stdout shows design as skipped
+Feature: Validate change ids
+  Scenario: Consumer invokes givn status with a path traversal change id and gets a clear error
+   ✔  Given a givn project with a change "my-change" and proposal.md
+   ✔  When the user invokes `givn status --change "../etc"`
+   ✔  Then the command fails
+   ✔  And stderr says the change id must be kebab-case
+Feature: Agent Activity Reporting
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "omp" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✔  When the installed reporter reports a completed tool call, a subagent, and a question wait
+   ✔  And the consumer runs `givn history --change demo --json`
+   ✔  Then the command exits 0 and the machine-readable record names the reported activity
+   ✔  And the reporter describes the record as best-effort rather than complete
+   ✔  And local recording paths are gitignored and absent from tracked files and repository history
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "opencode" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✔  When the installed reporter reports a completed tool call, a subagent, and a question wait
+   ✔  And the consumer runs `givn history --change demo --json`
+   ✔  Then the command exits 0 and the machine-readable record names the reported activity
+   ✔  And the reporter describes the record as best-effort rather than complete
+   ✔  And local recording paths are gitignored and absent from tracked files and repository history
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "claude" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✔  When the installed reporter reports a completed tool call, a subagent, and a question wait
+   ✔  And the consumer runs `givn history --change demo --json`
+   ✔  Then the command exits 0 and the machine-readable record names the reported activity
+   ✔  And the reporter describes the record as best-effort rather than complete
+   ✔  And local recording paths are gitignored and absent from tracked files and repository history
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "maki" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✔  When the installed reporter reports a completed tool call, a subagent, and a question wait
+   ✔  And the consumer runs `givn history --change demo --json`
+   ✔  Then the command exits 0 and the machine-readable record names the reported activity
+   ✔  And the reporter describes the record as best-effort rather than complete
+   ✔  And local recording paths are gitignored and absent from tracked files and repository history
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Development Record
+  Scenario: Consumer runs a lifecycle step and reads its recorded actions
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✔  When the user runs `givn status --change demo`
+   ✔  And the user runs `givn history --change demo --json`
+   ✔  Then the command exits 0
+   ✔  And the machine-readable record names the status command for "demo"
+   ✔  And the machine-readable record carries a duration for that command
+  Scenario: Consumer reads the development record as machine-readable output
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "demo" with a recorded history
+   ✔  When the user runs `givn history --change demo --json`
+   ✔  Then the command exits 0
+   ✔  And the output names every recorded entry with its kind, its scope, and its duration
+Feature: Development Report
+  Scenario: Consumer generates the development report for a change
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+   ✔  When the user runs `givn timeline --change demo --out report.html`
+   ✔  Then the command exits 0
+   ✔  And the command prints the path of the written report
+   ✔  And the report file exists and names the workflow phases
+   ✔  And the report file places the step recorded after that transition in the "implement" phase
+  Scenario Outline: Consumer opens the generated development report in a browser
+   ✔  Given a change "demo" with a recorded history
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✔  Then the browser shows the report heading and the current workflow state
+   ✔  And the browser shows the workflow phases top to bottom
+   ✔  And the browser shows the longest recorded step with its duration
+   ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+  Scenario Outline: Consumer opens the generated development report in a browser
+   ✔  Given a topic "demo" with a recorded history
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✔  Then the browser shows the report heading and the current workflow state
+   ✔  And the browser shows the workflow phases top to bottom
+   ✔  And the browser shows the longest recorded step with its duration
+   ✔  And the browser lays the page out in one column without page-level horizontal scrolling at the mobile viewport
+  Scenario: Consumer expands a workflow phase and sees its lanes
+   ✔  Given an open development report with a recorded history holding parallel sessions
+   ✔  When the consumer expands the "implement" phase
+   ✔  Then the browser shows that phase's vertical timeline with time flowing down
+   ✔  And the browser shows one lane per session beside each other
+   ✔  And the browser shows the Fit, 1 h, and 15 m zoom controls
+  Scenario: Consumer reads a change's linked ideation group
+   ✔  Given a change "demo" whose proposal links the ideation topic "ideas"
+   ✔  And the topic's record holds the markers for personas and event storming
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✔  Then the browser shows the linked ideation group before the change workflow
+   ✔  And the group names the ideation phases
+   ✔  And the consumer expands the group's personas phase
+   ✔  Then the browser shows that phase's vertical lanes
+  Scenario: Consumer selects a timeline element and reads its details
+   ✔  Given an open development report with a recorded history holding parallel sessions
+   ✔  When the consumer selects the "Architect.Scout" lane
+   ✔  Then the browser shows that lane's log
+   ✔  And the log names the lane's start, its duration, and its outcome
+   ✔  And the log names the entry's tool call id
+   ✔  And the log renders the entry's content in its bounded content region
+  Scenario: Consumer zooms the timeline to a shorter time range
+   ✔  Given an open development report with a recorded history
+   ✔  When the consumer zooms the expanded phase's timeline in
+   ✔  Then the browser shows a narrower time range than before
+  Scenario: Consumer opens the report of a scope with no recorded activity
+   ✔  Given a change "demo" with no recorded activity
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✔  Then the browser shows the empty state for "demo"
+   ✔  And the browser draws no workflow phase for it
+Feature: README enforcement
+  Scenario: Scaffolding marks the unfilled sections
+   ✔  Given a project root without a givn/ directory
+   ✔  When the user runs `givn init --agents opencode`
+   ✔  Then the file "README.md" exists
+   ✔  And the README has the description open placeholder
+   ✔  And the README has the license open placeholder
+   ✔  And the README has the development managed block
+  Scenario: The check passes on a complete README
+   ✔  Given a project root with givn/ initialised
+   ✔  And a complete README
+   ✔  When the user invokes `givn readme check`
+   ✔  Then the command exits 0
+  Scenario: Archiving refreshes the development block
+   ✔  Given a project root with givn/ initialised
+   ✔  And a stale development managed block with exactly one ordered opening and closing marker
+   ✔  And user-authored prose before and after the managed block
+   ✔  And a givn project providing its own workflow scripts
+   ✔  And a completed change "readme-demo"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn archive --change readme-demo`
+   ✔  Then the command succeeds
+   ✔  And the development block lists the configured commands
+   ✔  And the user-authored prose before and after the managed block is byte-for-byte unchanged
+   ✔  And the archived change directory exists
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A recorded impact decision passes the review
+   ✔  Given a project root with givn/ initialised
+   ✔  And verify commands are no-ops
+   ✔  And a reviewable change "readme-demo"
+   ✔  And its review records the impact "none"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check review --change readme-demo`
+   ✔  Then the command exits 0
+  Scenario: Instructions surface an unfinished README
+   ✔  Given a project root with givn/ initialised
+   ✔  And a scaffolded README
+   ✔  When the user invokes `givn instructions`
+   ✔  Then the instructions mention the unfinished README
+Feature: Canonical use-case contract
+  Scenario: Use-case tree reports explicit use-case ownership
+   ✔  Given a spec discovery project with two use cases and a usecase.md narrative
+   ✔  When the user inspects the corpus with `givn spec tree`
+   ✔  Then the command exits 0
+   ✔  And stdout contains both use-case names
+   ✔  And stdout contains the use-case actor line
+Feature: The served instruction carries the built-in rules and the project's extension
+  Scenario: An agent receives the extended rules through the Givn CLI
+   ✔  Given a Givn project with an active change
+   ✔  And the project records an extension for the proposal instruction
+   ✔  When the agent requests the proposal instructions through the Givn CLI
+   ✔  Then the command exits 0
+   ✔  And the served content carries the built-in proposal rules
+   ✔  And the served content carries the project's rule in the marked extension section
+Feature: Declare the product start
+  Scenario: Scaffolding ships an unconfigured run declaration
+   ✔  Given a project root without a givn/ directory
+   ✔  When the user runs `givn init --agents opencode`
+   ✔  Then the file "givn/commands.yaml" exists
+   ✔  And the commands file has run.command set to the sentinel
+   ✔  And the README has the run managed block
+   ✔  And the README has the run open placeholder
+  Scenario: The review check reports an unconfigured run declaration
+   ✔  Given a project root with givn/ initialised
+   ✔  And verify commands are no-ops
+   ✔  And a reviewable change "run-demo"
+   ✔  And its review records the impact "none"
+   ✔  When the user runs `givn check review --change run-demo`
+   ✔  Then the command exits non-zero
+   ✔  And stdout mentions "run.command is unset"
+   ✔  And stdout mentions "run.product_type is unset"
+  Scenario: Archive passes once the run declaration is complete
+   ✔  Given a project root with givn/ initialised
+   ✔  And a complete README
+   ✔  And verify commands are no-ops with a complete server run declaration
+   ✔  And givn addon "coverage" is "false"
+   ✔  And a completed change "run-demo"
+   ✔  When the user runs `givn archive --change run-demo`
+   ✔  Then the command exits 0
+   ✔  And the archived change directory "run-demo" exists
+  Scenario: Upgrade backfills the run declaration into an existing project
+   ✔  Given a git-managed project with givn initialised
+   ✔  And the commands file has no run declaration
+   ✔  When the user runs `givn upgrade`
+   ✔  Then the command exits 0
+   ✔  And the file "givn/commands.yaml" contains "run:"
+   ✔  And stdout mentions "fill it in"
+  Scenario: The check names a damaged run managed block
+   ✔  Given a project root with givn/ initialised
+   ✔  And a README with a broken run managed block
+   ✔  When the user runs `givn readme check`
+   ✔  Then the command exits non-zero
+   ✔  And stdout mentions "run managed block"
+  Scenario: The sentinel start command prints setup guidance
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn missing-run-command`
+   ✔  Then the command exits non-zero
+   ✔  And stderr mentions "run.command is unset"
+Feature: Start the declared product
+  Scenario: The started server reports readiness and forwards a clean exit
+   ✔  Given a server declaration with a readiness deadline whose server becomes ready before that deadline and exits cleanly
+   ✔  When the consumer runs `givn run`
+   ✔  Then the command exits 0
+   ✔  And stdout reports readiness at the declared port and readiness path
+   ✔  And the reported ready outcome follows a successful response through the declared boundary
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A caller-provided port is handed to the product
+   ✔  Given a project with a server run declaration that becomes ready and exits cleanly
+   ✔  When the user runs givn run with a caller-provided port
+   ✔  Then the command exits 0
+   ✔  And the ready line names the caller-provided port
+  Scenario: Print mode emits the start plan without starting
+   ✔  Given a project with a server run declaration with a port hand-off
+   ✔  When the user runs `givn run --print`
+   ✔  Then the command exits 0
+   ✔  And stdout is one line that exports the port hand-off and names the start command
+   ✔  And stdout does not contain "givn run: ready"
+  Scenario: An interrupt stops the started product
+   ✔  Given a project with a server run declaration that stays ready
+   ✔  When the user interrupts givn run after the ready line
+   ✔  Then the command exits 130
+   ✔  And the started product received the interrupt
+Feature: Clean-room preparation
+  Scenario: Developer rebuilds the whole product from its Specification
+   ✔  Given a Git project with ise enabled and a declaration whose "behavior" role names "givn/specs/**", whose "e2e" role names "tests/e2e", and whose source root is "src/**"
+   ✔  And a committed revision with "givn/specs/demo.feature", "tests/e2e/Cargo.toml", "tests/e2e/steps/demo.rs", "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", and "notes.md"
+   ✔  When the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest
+   ✔  Then the command succeeds and prints "Backend: git", "Specification files: 2", "Source code kept: 0", "Source code removed: 3", "Outside the spec copy: 1", and "Files beside removed paths: 0"
+   ✔  And the report prints a "Revision:" line holding the resolved 40-hex commit
+   ✔  And the report prints "End-to-end tests: not copied (2 files)"
+   ✔  And the report prints a "Specification checksum:" line and an "End-to-end checksum:" line of 12 lowercase hex characters each
+   ✔  And the report prints the copy directory and the manifest path
+   ✔  And the spec copy holds "givn/specs/demo.feature" and "givn/specification.yaml"
+   ✔  And the spec copy omits "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", "notes.md", "tests/e2e/Cargo.toml", and "tests/e2e/steps/demo.rs"
+   ✔  And the manifest records the scope, the revision, the removed paths, the five counts, the checksums, the copy directory, and the Givn version
+Feature: Trial input verification
+  Scenario: Verifier compares the spec copy with the manifest
+   ✔  Given a prepared spec copy with a manifest
+   ✔  When the verifier compares the spec copy with the manifest
+   ✔  Then comparison prints "Specification files: match" and "End-to-end tests: match"
+   ✔  And comparison exits zero
+   ✔  And comparison prints no line beginning "- "
+Feature: Givn release metadata and migration route
+  Scenario: Repeated revisions of one change yield one changelog entry
+   ✔  Given a release range with three feature revisions of one change that share the release note "Givn reports the active SCM backend in givn status"
+   ✔  And a documentation revision in the same range
+   ✔  When the maintainer generates the changelog for the release range
+   ✔  Then the changelog lists "Givn reports the active SCM backend in givn status" exactly once
+   ✔  And the changelog lists no documentation entry
+Feature: Managed upgrade and legacy project migration
+  Scenario: A clean project without migration requirements receives one managed upgrade commit
+   ✔  Given a clean Git project with stale generated integration and a committed checkpoint
+   ✔  And its current-format configuration was prepared manually with the last 0.x version marker
+   ✔  And the installed Givn version is 0.9.10
+   ✔  When the consumer runs `givn upgrade`
+   ✔  Then the command exits successfully and reports the managed upgrade revision
+   ✔  And the project config identifies the current Givn version
+   ✔  And exactly one allowlist-only managed revision exists and no migration change is created
+   ✔  And no automatic configuration migration or embedded 0.x migration route is applied
+   ✔  And project specifications, extensions, and custom replacements are unchanged
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A completed maintenance migration can be archived without a product specification
+   ✔  Given a completed no-behavior-change maintenance migration change prepared manually in a disposable project
+   ✔  And its review and archive gates are satisfied without a product specification
+   ✔  When the consumer archives the maintenance migration
+   ✔  Then the command reports that the maintenance migration was archived successfully
+   ✔  And the permanent specification tree contains no migration feature
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A consumer invoking a retired engine command is told it does not exist
+   ✔  Given an installed Givn binary
+   ✔  When the consumer invokes the retired `givn spec index` command
+   ✔  Then the command exits non-zero
+   ✔  And the error reports "spec index" is not an available command
+   ✔  And the error output stays free of "embedding" and "download" wording
+  Scenario: A consumer invoking the retired history rewrite command is told it does not exist
+   ✔  Given an installed Givn binary
+   ✔  When the consumer invokes the retired `givn rewrite-history` command
+   ✔  Then the command exits non-zero
+   ✔  And the error reports "rewrite-history" is not an available command
+Feature: check-specification-health
+  Scenario: All clean .feature files report a clean summary on stdout
+   ✔  Given a project root with givn/ initialised
+   ✔  And a structurally valid specification corpus with one clean feature
+   ✔  When the user invokes `givn lint`
+   ✔  Then the command exits 0
+   ✔  And stdout contains a line "givn lint: 1 file(s) checked — clean"
+   ✔  And the terminal transcript is captured for this scenario
+Feature: givn Workflow Enforcement
+  Scenario: Consumer runs migration coverage check and sees passed evidence
+   ✔  Given a migration evidence change with matching behavior snapshots
+   ✔  When the consumer runs the migration coverage check
+   ✔  Then the command exits 0
+   ✔  And stdout contains "migration coverage passed"
+  Scenario: Consumer runs check tasks and receives a change verification receipt
+   ✔  Given a clean committed givn project with a change whose delta specs pass
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check tasks --change verify-demo`
+   ✔  Then the command succeeds
+   ✔  And stdout reports passed change-scoped verification
+   ✔  And the change contains a passed receipt bound to the revision, selected features, runner command and relevant inputs captured before execution
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: The result helper writes four counts without a scope
+   ✔  Given a givn project with a result file path
+   ✔  When the user runs the result helper for 3 total and 3 passed
+   ✔  Then the command exits 0
+   ✔  And the result file contains total 3, passed 3, failed 0 and skipped 0 without a scope
+  Scenario: Consumer runs review and receives every use-case schema problem in one pass
+   ✔  Given a clean committed change whose delta capability is routed "NEW in review-diagnostics-demo"
+   ✔  And the use-case contract has a case-mismatched title, an unknown "## Guarantees" heading, a capability line that is not a bullet, an interaction that names an undeclared capability, and an example line that is not a bullet
+   ✔  When the developer runs `givn check review --change review-diagnostics-demo`
+   ✔  Then the command exits non-zero
+   ✔  And stderr reports the title, the unknown heading, the capability line, the undeclared interaction, and the example line together in one review run
+   ✔  And stderr reports each distinct document problem once
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Consumer invokes bare check and receives explicit non-executing guidance
+   ✔  Given a givn project whose configured hooks and verification commands record execution
+   ✔  When the consumer invokes `givn check`
+   ✔  Then terminal output explains that no checks were executed
+   ✔  And terminal output lists explicit check commands and labels which execute runners
+   ✔  And no configured hook or runner executes
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Resolve change directories
+  Scenario: Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected
+   ✔  Given a givn project with a change "detect-int" that has design.md with a valid Step Definitions table and tasks.md where every COMMIT hash is a valid 40-character hex string
+   ✔  And givn addon "outline" is "false"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check review --change detect-int`
+   ✔  Then the command succeeds
+   ✔  And stdout confirms integrity checks passed
+  Scenario: Integrity check detects a placeholder COMMIT hash in tasks.md and fails
+   ✔  Given a givn project with a change "bad-hash" that has design.md with a valid Step Definitions table and tasks.md containing a placeholder COMMIT hash "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check review --change bad-hash`
+   ✔  Then the command exits non-zero
+   ✔  And stderr reports the placeholder hash as invalid
+Feature: spec-overlap-gates
+  Scenario: A duplicate title across two permanent spec files is a hard error
+   ✔  Given a project root with givn/ initialised
+   ✔  And a .feature file at "givn/specs/alpha/alpha.feature" with:
+   ✔  And a .feature file at "givn/specs/beta/beta.feature" with:
+   ✔  When the user runs `givn lint`
+   ✔  Then the command exits 3
+   ✔  And stderr contains "duplicate scenario title"
+   ✔  And stderr contains "alpha.feature"
+   ✔  And stderr contains "beta.feature"
+   ✔  And stderr contains "The same behaviour twice"
+  Scenario: The json output reports duplicate-title findings machine-readably
+   ✔  Given a project root with givn/ initialised
+   ✔  And a .feature file at "givn/specs/alpha/alpha.feature" with:
+   ✔  And a .feature file at "givn/specs/beta/beta.feature" with:
+   ✔  When the user runs `givn lint --json`
+   ✔  Then the command exits 3
+   ✔  And stdout is valid JSON
+   ✔  And stdout contains "duplicate_title"
+   ✔  And stdout contains "titles"
+   ✔  And stdout contains "Twin title"
+Feature: Validate artifact ids
+  Scenario: Consumer invokes givn check with an unknown artifact and gets a helpful error
+   ✔  Given a givn project with a standard manifest
+   ✔  When the user invokes `givn check bogus-artifact`
+   ✔  Then the command fails
+   ✔  And stderr contains "unknown artifact"
+Feature: Visual Review Gate
+  Scenario: A visual change with complete evidence passes review
+   ✔  Given a givn project with a change that has passed design-review
+   ✔  And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"
+   ✔  And the change's delta spec contains an @e2e scenario "Consumer opens the dashboard"
+   ✔  And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "mobile"
+   ✔  And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "desktop"
+   ✔  And the change's review.md contains "VISUAL-REVIEW: PASS"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user runs `givn check review --change test-change`
+   ✔  Then the command exits 0
+  Scenario: Review guidance requires the visual verdict and persona lenses
+   ✔  Given a givn project
+   ✔  When the user runs `givn instructions review --change visual-ui-review`
+   ✔  Then stdout contains "VISUAL-REVIEW: PASS"
+   ✔  And stdout contains "confirmed Persona"
+   ✔  And stdout contains "vision"
+   ✔  And stdout contains "transcript"
+[Summary]
+56 features
+120 scenarios (120 passed)
+784 steps (784 passed)
+r "Consumer opens the dashboard" at viewport "desktop"
+   ✔  And the change's review.md contains "VISUAL-REVIEW: PASS"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user runs `givn check review --change test-change`
+   ✔  Then the command exits 0
+  Scenario: Review guidance requires the visual verdict and persona lenses
+   ✔  Given a givn project
+   ✔  When the user runs `givn instructions review --change visual-ui-review`
+   ✔  Then stdout contains "VISUAL-REVIEW: PASS"
+   ✔  And stdout contains "confirmed Persona"
+   ✔  And stdout contains "vision"
+   ✔  And stdout contains "transcript"
+[Summary]
+56 features
+120 scenarios (120 passed)
+784 steps (784 passed)

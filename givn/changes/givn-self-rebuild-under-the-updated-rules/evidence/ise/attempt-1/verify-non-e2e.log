@@ -1,0 +1,159 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.10s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+────────────
+ Nextest run ID 90772c9a-b3de-4441-a952-325b1e6a64e6 with nextest profile: default
+    Starting 1115 tests across 1 binary (115 tests skipped)
+        PASS [   2.343s] (   1/1115) givn::features_runner archive-change/archive-proof.feature::A Fossil checkout without the fossil executable is refused by name
+        PASS [   2.362s] (   2/1115) givn::features_runner archive-change/archive-proof.feature::A change present as both active and archived without a receipt is refused as corrupt
+        PASS [   2.474s] (   3/1115) givn::features_runner archive-change/archive-proof.feature::A change present as both active and archived is refused as corrupt
+        PASS [   2.631s] (   4/1115) givn::features_runner archive-change/archive-proof.feature::A changed relevant input invalidates each affected scope before reuse
+        PASS [   2.714s] (   5/1115) givn::features_runner archive-change/archive-proof.feature::A legacy archive without a receipt refuses another archive run
+        PASS [   2.743s] (   6/1115) givn::features_runner archive-change/archive-proof.feature::A failed archive move keeps the change retryable
+        PASS [   2.740s] (   7/1115) givn::features_runner archive-change/archive-proof.feature::A rejected candidate revision on Git leaves the merge staged
+        PASS [   2.903s] (   8/1115) givn::features_runner archive-change/archive-proof.feature::A Fossil edited file blocks the archive
+        PASS [   3.115s] (   9/1115) givn::features_runner archive-change/archive-proof.feature::A Fossil EXTRA file blocks the archive
+        PASS [   3.262s] (  10/1115) givn::features_runner archive-change/archive-proof.feature::A rejected candidate revision on Fossil leaves the merged state uncommitted
+        PASS [   4.126s] (  11/1115) givn::features_runner archive-change/archive-proof.feature::A rejected candidate revision leaves the archive unproven and repairable
+        PASS [   4.639s] (  12/1115) givn::features_runner archive-change/archive-proof.feature::A proven archive records a verification receipt binding the tested revision
+        PASS [   2.577s] (  13/1115) givn::features_runner archive-change/archive-proof.feature::A stale passing scope result cannot prove a new archive execution
+        PASS [   2.426s] (  14/1115) givn::features_runner archive-change/archive-proof.feature::An inconsistent no-behavior-change archive exemption is refused before mutation
+        PASS [   2.684s] (  15/1115) givn::features_runner archive-change/archive-proof.feature::An already proven archive refuses another archive run
+        PASS [   3.103s] (  16/1115) givn::features_runner archive-change/archive-proof.feature::A rejected finalization publication leaves the archive unproven
+        PASS [   2.777s] (  17/1115) givn::features_runner archive-change/archive-proof.feature::An interrupted archive move is surfaced by project status
+        PASS [   2.841s] (  18/1115) givn::features_runner archive-change/archive-proof.feature::An in-flight delta file is retried without duplicating its scenarios
+        PASS [   2.991s] (  19/1115) givn::features_runner archive-change/archive-proof.feature::An interrupted archive move resumes from an identical pending candidate
+        PASS [   2.809s] (  20/1115) givn::features_runner archive-change/archive-proof.feature::An interrupted merge resumes from its pending candidate
+        PASS [   2.884s] (  21/1115) givn::features_runner archive-change/archive-proof.feature::An unproven archive candidate is surfaced by project status
+        PASS [   2.462s] (  22/1115) givn::features_runner archive-change/archive-proof.feature::An untracked file blocks the archive
+        PASS [   2.418s] (  23/1115) givn::features_runner archive-change/archive-proof.feature::Archive refuses a merged candidate whose interaction inventory is inconsistent
+        PASS [   3.049s] (  24/1115) givn::features_runner archive-change/archive-proof.feature::Archive publishes a consistent projected interaction inventory
+        PASS [   2.651s] (  25/1115) givn::features_runner archive-change/archive-proof.feature::Archive refuses a projected interaction-inventory mismatch before moving the change
+        PASS [   2.537s] (  26/1115) givn::features_runner archive-change/archive-proof.feature::Archive refuses a stale change verification receipt before merging
+        PASS [   2.262s] (  27/1115) givn::features_runner archive-change/archive-proof.feature::Archive requires a version-controlled project
+        PASS [   2.646s] (  28/1115) givn::features_runner archive-change/archive-proof.feature::Archive requires a committed project state
+        PASS [   6.026s] (  29/1115) givn::features_runner archive-change/archive-proof.feature::A scope result that does not prove the suite blocks proof
+        PASS [   2.512s] (  30/1115) givn::features_runner archive-change/archive-proof.feature::Archive requires the project root to be the checkout root
+        PASS [   3.272s] (  31/1115) givn::features_runner archive-change/archive-proof.feature::Archive refuses a proof after tested content changed
+        PASS [   2.684s] (  32/1115) givn::features_runner archive-change/archive-proof.feature::Archive reuses a proof committed with its receipt
+        PASS [   3.870s] (  33/1115) givn::features_runner archive-change/archive-proof.feature::Archive publishes the merged candidate before running the full suite
+        PASS [   2.776s] (  34/1115) givn::features_runner archive-change/archive-proof.feature::Archive reuses the change receipt and runs only the merged suite
+        PASS [   2.805s] (  35/1115) givn::features_runner archive-change/archive-proof.feature::Archive-directory evidence exemptions remain broad during proof reuse
+        PASS [   2.929s] (  36/1115) givn::features_runner archive-change/archive-proof.feature::CLI interaction transcripts are declared evidence
+        PASS [   2.743s] (  37/1115) givn::features_runner archive-change/archive-proof.feature::Each verification scope runs once against the merged permanent specs
+        PASS [   2.771s] (  38/1115) givn::features_runner archive-change/archive-proof.feature::Evidence-only recovery reuses successful scopes and runs only the failed scope
+        PASS [   2.510s] (  39/1115) givn::features_runner archive-change/archive-proof.feature::No-behavior-change archive retains merged-candidate verification
+        PASS [   2.567s] (  40/1115) givn::features_runner archive-change/archive-proof.feature::Instructions route an unproven archive candidate to its resume command
+        PASS [   3.082s] (  41/1115) givn::features_runner archive-change/archive-proof.feature::Change evidence does not block the archive
+        PASS [   2.878s] (  42/1115) givn::features_runner archive-change/archive-proof.feature::Finalization refuses a tree change outside the declared evidence
+        PASS [   2.783s] (  43/1115) givn::features_runner archive-change/archive-proof.feature::Retry uses cheap input checks rather than blanket review revalidation
+        PASS [   2.782s] (  44/1115) givn::features_runner archive-change/archive-proof.feature::Scope inputs are captured before archive verification and checked afterward
+        PASS [   2.669s] (  45/1115) givn::features_runner archive-change/archive-proof.feature::The end-to-end scope is not applicable when no end-to-end scenario is merged
+        PASS [   2.584s] (  46/1115) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::A failing end-to-end scope leaves the candidate unproven
+        PASS [   2.632s] (  47/1115) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured
+        PASS [   4.691s] (  48/1115) givn::features_runner archive-change/archive-proof.feature::Repairing a failed candidate forward proves it without repeating the merge
+        PASS [   2.663s] (  49/1115) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured
+        PASS [   2.558s] (  50/1115) givn::features_runner archive-change/extract-coverage-gate.feature::A coverage failure leaves the archive candidate unproven
+        PASS [   2.552s] (  51/1115) givn::features_runner archive-change/extract-coverage-gate.feature::A coverage failure proves on rerun after the repair
+        PASS [   2.660s] (  52/1115) givn::features_runner archive-change/extract-coverage-gate.feature::A successful coverage command cannot reuse an old report
+        PASS [   2.789s] (  53/1115) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured
+        PASS [   2.784s] (  54/1115) givn::features_runner archive-change/extract-coverage-gate.feature::Archive with coverage addon enabled still runs the coverage gate
+        PASS [   2.515s] (  55/1115) givn::features_runner archive-change/extract-coverage-gate.feature::Equal coverage from honest scope executions does not block proof
+        PASS [   2.705s] (  56/1115) givn::features_runner archive-change/extract-coverage-gate.feature::Evidence-only finalization retry reuses valid coverage
+        PASS [   2.947s] (  57/1115) givn::features_runner archive-change/extract-coverage-gate.feature::Fresh coverage reports must be valid
+        PASS [   2.526s] (  58/1115) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::A new capability preserves its supported feature structure
+        PASS [   2.338s] (  59/1115) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::An unsupported Rule in one new capability prevents every delta mutation
+        PASS [   2.404s] (  60/1115) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Archive is blocked when a new capability has no declared routing decision
+        PASS [   2.372s] (  61/1115) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Nothing is merged when one delta file of a change has no routing decision
+        PASS [   2.510s] (  62/1115) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Retiring a use case's last capability removes the use-case directory and its narrative
+        PASS [   2.375s] (  63/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A conflicting Background replacement is refused before archive mutation
+        PASS [   2.461s] (  64/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A modified scenario keeps its step data table after archiving
+        PASS [   2.517s] (  65/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A modified scenario keeps its step docstring after archiving
+        PASS [   2.477s] (  66/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A supported Scenario Outline retains every Examples block
+        PASS [   2.406s] (  67/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::An added scenario keeps its step docstring after archiving
+        PASS [   2.492s] (  68/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::An explicit non-English Gherkin dialect is refused before archive mutation
+        PASS [   2.469s] (  69/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::An unsupported Rule is refused before archive mutation
+        PASS [   2.607s] (  70/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::Merging a modified scenario preserves its supported Background setup
+        PASS [   2.483s] (  71/1115) givn::features_runner archive-change/require-durable-retained-paths.feature::A project with ise off archives without reading the declaration
+        PASS [   2.578s] (  72/1115) givn::features_runner archive-change/preserve-scenario-docstrings.feature::Supported execution tags retain their inheritance on archive
+        PASS [   2.909s] (  73/1115) givn::features_runner archive-change/require-durable-retained-paths.feature::A retained root that also covers the archive location is unaffected
+        PASS [   2.806s] (  74/1115) givn::features_runner archive-change/require-durable-retained-paths.feature::Archive is blocked when the declaration cannot be loaded
+        PASS [   2.343s] (  75/1115) givn::features_runner archive-change/require-merged-step-definitions.feature::Archive is blocked when a delta step definition is missing from the permanent test tree
+        PASS [   2.603s] (  76/1115) givn::features_runner archive-change/require-merged-step-definitions.feature::An unproven archive candidate with a missing step definition is not verified again
+        PASS [   2.860s] (  77/1115) givn::features_runner archive-change/require-durable-retained-paths.feature::The refusal reports at most twenty isolated retained paths
+        PASS [   3.539s] (  78/1115) givn::features_runner archive-change/require-durable-retained-paths.feature::Archive is blocked when a declared retained path moves with the change
+        PASS [   2.615s] (  79/1115) givn::features_runner archive-change/require-merged-step-definitions.feature::The refusal lists a bounded number of missing step phrases and a remainder count
+        PASS [   2.194s] (  80/1115) givn::features_runner assess-code-structure/outline-report.feature::A Java production class is reported
+        PASS [   1.894s] (  81/1115) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript arrow-function binding is reported
+        PASS [   2.151s] (  82/1115) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript arrow-function binding is named in the human report
+        PASS [   2.087s] (  83/1115) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript class field is reported
+        PASS [   2.117s] (  84/1115) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript production class and function are reported
+        PASS [   7.564s] (  85/1115) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Review and archive resolve existing capability owners consistently
+        PASS [   2.117s] (  86/1115) givn::features_runner assess-code-structure/outline-report.feature::A Python class is outlined with its methods and calls
+        PASS [   2.311s] (  87/1115) givn::features_runner assess-code-structure/outline-report.feature::A Python module without classes is a module unit
+        PASS [   2.427s] (  88/1115) givn::features_runner assess-code-structure/outline-report.feature::A Python project whose analyzer is unavailable still reports
+        PASS [   2.602s] (  89/1115) givn::features_runner assess-code-structure/outline-report.feature::A Python module outline lists its classes
+        PASS [   2.105s] (  90/1115) givn::features_runner assess-code-structure/outline-report.feature::A Rust-only project never invokes python3
+        PASS [   2.635s] (  91/1115) givn::features_runner assess-code-structure/outline-report.feature::A Rust module outline lists the types it declares
+        PASS [   2.243s] (  92/1115) givn::features_runner assess-code-structure/outline-report.feature::A TypeScript interface is reported with its own type kind
+        PASS [   2.229s] (  93/1115) givn::features_runner assess-code-structure/outline-report.feature::A TypeScript production class and function are reported
+        PASS [   2.112s] (  94/1115) givn::features_runner assess-code-structure/outline-report.feature::A call to another component is a leaf
+        PASS [   2.569s] (  95/1115) givn::features_runner assess-code-structure/outline-report.feature::A call on the unit's own receiver resolves within the unit
+        PASS [   2.033s] (  96/1115) givn::features_runner assess-code-structure/outline-report.feature::A cohesive type is not treated as a god type
+        PASS [   2.085s] (  97/1115) givn::features_runner assess-code-structure/outline-report.feature::A component outline is a call tree
+        PASS [   2.249s] (  98/1115) givn::features_runner assess-code-structure/outline-report.feature::A data-only type is not treated as a god type
+        PASS [   1.896s] (  99/1115) givn::features_runner assess-code-structure/outline-report.feature::A file that cannot be analyzed is reported and the report continues
+        PASS [   2.251s] ( 100/1115) givn::features_runner assess-code-structure/outline-report.feature::A developer reads each call's resolution in the human report
+        PASS [   2.476s] ( 101/1115) givn::features_runner assess-code-structure/outline-report.feature::A developer scopes the report to a workspace member
+        PASS [   2.125s] ( 102/1115) givn::features_runner assess-code-structure/outline-report.feature::A god type found through cohesion reports only the cohesion evidence
+        PASS [   2.223s] ( 103/1115) givn::features_runner assess-code-structure/outline-report.feature::A large type in the inspect band is a cohesive large type
+        PASS [   2.184s] ( 104/1115) givn::features_runner assess-code-structure/outline-report.feature::A long method found through complexity reports only complexity evidence
+        PASS [   2.111s] ( 105/1115) givn::features_runner assess-code-structure/outline-report.feature::A long method is a method-length finding
+        PASS [   2.747s] ( 106/1115) givn::features_runner assess-code-structure/outline-report.feature::A file's code lines exclude inline test modules
+        PASS [   2.210s] ( 107/1115) givn::features_runner assess-code-structure/outline-report.feature::A malformed Java file does not hide a valid TypeScript file
+        PASS [   2.118s] ( 108/1115) givn::features_runner assess-code-structure/outline-report.feature::A malformed JavaScript file does not hide a valid TypeScript file
+        PASS [   2.695s] ( 109/1115) givn::features_runner assess-code-structure/outline-report.feature::A method call on a named receiver resolves to that owner
+        PASS [   2.631s] ( 110/1115) givn::features_runner assess-code-structure/outline-report.feature::A method call on an unknown receiver is a name-only guess
+        PASS [   2.223s] ( 111/1115) givn::features_runner assess-code-structure/outline-report.feature::A mixed-language report discloses every supported language
+        PASS [   2.574s] ( 112/1115) givn::features_runner assess-code-structure/outline-report.feature::A method signature keeps arrays, qualified paths, and its full type detail
+        PASS [   2.036s] ( 113/1115) givn::features_runner assess-code-structure/outline-report.feature::A module over the plan limit is a module finding
+        PASS [   2.628s] ( 114/1115) givn::features_runner assess-code-structure/outline-report.feature::A module outline interleaves member types and free functions in source order
+        PASS [   2.123s] ( 115/1115) givn::features_runner assess-code-structure/outline-report.feature::A report is available in machine-readable form
+        PASS [   2.389s] ( 116/1115) givn::features_runner assess-code-structure/outline-report.feature::A project can explicitly disable the outline experiment
+        PASS [   1.999s] ( 117/1115) givn::features_runner assess-code-structure/outline-report.feature::A report is written to a file
+        PASS [   2.539s] ( 118/1115) givn::features_runner assess-code-structure/outline-report.feature::A name-only guess does not connect methods for cohesion
+        PASS [   2.557s] ( 119/1115) givn::features_runner assess-code-structure/outline-report.feature::A name-only guess is not expanded as a same-unit call
+        PASS [   2.190s] ( 120/1115) givn::features_runner assess-code-structure/outline-report.feature::A report output path that cannot be written is an error
+        PASS [   2.296s] ( 121/1115) givn::features_runner assess-code-structure/outline-report.feature::A type at the readable size limit is within limits
+        PASS [   2.058s] ( 122/1115) givn::features_runner assess-code-structure/outline-report.feature::A type with many public methods is an interface
+        PASS [   2.322s] ( 123/1115) givn::features_runner assess-code-structure/outline-report.feature::A type one line over the readable size limit is a finding
+        PASS [   2.580s] ( 124/1115) givn::features_runner assess-code-structure/outline-report.feature::A same-unit method implemented in another file is project_other_file
+        PASS [   2.535s] ( 125/1115) givn::features_runner assess-code-structure/outline-report.feature::A unit's physical lines cover only its own spans
+        PASS [   2.185s] ( 126/1115) givn::features_runner assess-code-structure/outline-report.feature::An explicitly requested scope that does not exist is an error
+        PASS [   2.647s] ( 127/1115) givn::features_runner assess-code-structure/outline-report.feature::An ambiguous method name has no resolved target
+        PASS [   2.311s] ( 128/1115) givn::features_runner assess-code-structure/outline-report.feature::An interface found through its public methods reports only public-method evidence
+        PASS [   2.332s] ( 129/1115) givn::features_runner assess-code-structure/outline-report.feature::An unsupported construct is named and not invented
+        PASS [   2.533s] ( 130/1115) givn::features_runner assess-code-structure/outline-report.feature::An interface is classified as an interface, not a god type
+        PASS [   2.628s] ( 131/1115) givn::features_runner assess-code-structure/outline-report.feature::An impl-level test method is excluded from the unit's lines
+        PASS [   2.932s] ( 132/1115) givn::features_runner assess-code-structure/outline-report.feature::An associated-function call whose qualifier contradicts the target is external
+        PASS [   2.073s] ( 133/1115) givn::features_runner assess-code-structure/outline-report.feature::Conditional code is counted as written
+        PASS [   2.175s] ( 134/1115) givn::features_runner assess-code-structure/outline-report.feature::JSX-only production sources remain unsupported
+        PASS [   2.135s] ( 135/1115) givn::features_runner assess-code-structure/outline-report.feature::Java and TypeScript test and dependency sources are excluded
+        PASS [   1.989s] ( 136/1115) givn::features_runner assess-code-structure/outline-report.feature::JavaScript production modules are reported for every supported extension
+        PASS [   2.740s] ( 137/1115) givn::features_runner assess-code-structure/outline-report.feature::Every analyzed unit has exactly one classification
+        PASS [   1.901s] ( 138/1115) givn::features_runner assess-code-structure/outline-report.feature::JavaScript test and dependency sources are excluded
+        PASS [   2.098s] ( 139/1115) givn::features_runner assess-code-structure/outline-report.feature::Loose class cohesion is omitted when it is not independently measured
+        PASS [   2.122s] ( 140/1115) givn::features_runner assess-code-structure/outline-report.feature::Test sources are not scanned
+        PASS [   1.984s] ( 141/1115) givn::features_runner assess-code-structure/outline-report.feature::The JSON report carries analyzer capabilities and limitations
+        PASS [   2.139s] ( 142/1115) givn::features_runner assess-code-structure/outline-report.feature::The JSON report carries the schema and rules versions
+        PASS [   2.179s] ( 143/1115) givn::features_runner assess-code-structure/outline-report.feature::The JSON hints count counts every non-within-limits unit
+        PASS [   2.419s] ( 144/1115) givn::features_runner assess-code-structure/outline-report.feature::The JSON report names each call's resolved target
+        PASS [   1.939s] ( 145/1115) givn::features_runner assess-code-structure/outline-report.feature::The outline report is unavailable when the experiment is disabled
+        PASS [   2.216s] ( 146/1115) givn::features_runner assess-code-structure/outline-report.feature::The outline experiment is enabled by default
+        PASS [   2.111s] ( 147/1115) givn::features_runner assess-code-structure/outline-report.feature::The report fails when the scope has no production sources
+        PASS [   1.993s] ( 148/1115) givn::features_runner assess-code-structure/outline-report.feature::The report is deterministic
+        PASS [   1.927s] ( 149/1115) givn::features_runner assess-code-structure/outline-report.feature::The same source produces the same report through either analysis engine
+        PASS [   2.091s] ( 150/1115) givn::features_runner assess-code-structure/outline-report.feature::Unavailable outline measurements are not reported as measured zero
+        PASS [   2.072s] ( 151/1115) givn::features_runner assess-code-structure/outline-report.feature::Unsupported-only Go production sources are not reported as absent
+        PASS [   2.310s] ( 152/1115) givn::features_runner create-change/change-strategy.feature::The design-review guidance keeps a rebuild without an Ise Test mode a finding
+        PASS [   2.163s] ( 153/1115) givn::features_runner create-change/create-a-change.feature::Empty id is rejected

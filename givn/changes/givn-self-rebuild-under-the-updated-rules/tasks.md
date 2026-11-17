@@ -640,7 +640,7 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
 
 ## Batch: `verify-and-review`
 
-- [ ] Run both suites on the final revision
+- [x] Run both suites on the final revision
   - Paths: `evidence/ise/attempt-1/verify-non-e2e.log`,
     `evidence/ise/attempt-1/verify-e2e.log`.
   - Run:
@@ -658,7 +658,7 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     permanent scope is green after archive in the next batch.
   - Design constraints: design `## Verification` item 6; no suite command
     changes.
-  - [ ] COMMIT: `___` -- Batch: verify-and-review
+  - [x] COMMIT: `78dfde5a` -- Batch: verify-and-review
 
 - [ ] Write the independent review
   - Paths: `givn/changes/givn-self-rebuild-under-the-updated-rules/review.md`.
