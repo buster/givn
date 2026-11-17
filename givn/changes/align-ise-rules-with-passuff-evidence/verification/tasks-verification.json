@@ -2,7 +2,7 @@
   "schema": 2,
   "change": "align-ise-rules-with-passuff-evidence",
   "status": "passed",
-  "head": "8bb50f67ed1821d4b2c6186334620c5b313affa6",
+  "head": "6af30485b9ccb48f1b64bc51ff4964c54a0e9e17",
   "features_path": "givn/changes/align-ise-rules-with-passuff-evidence/specs",
   "features_digest": "dd04dfe3304603b69a01ec15fe8af0524386137d1194e8c95c763c3d4bd30b18",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
@@ -32,5 +32,5 @@
     "skipped": 0,
     "seconds": 0.0
   },
-  "finished_at_unix": 1794943276
+  "finished_at_unix": 1794943899
 }
