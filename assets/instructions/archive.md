@@ -49,7 +49,7 @@ holds:
    missing phrases (a bounded list followed by `+N more`). The repair is to
    merge each definition into its permanent per-capability step file and rerun
    the archive.
-6. When `ise` is effective, every declared retained role entry in
+6. When `ise` is effective, every declared Specification-role entry in
    `givn/specification.yaml` still resolves after the move. An entry that
    matches a content path under `givn/changes/<id>/` survives only when it also
    matches a content path outside that move or the `givn/archive/<id>/` form of

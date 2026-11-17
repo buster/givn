@@ -29,7 +29,7 @@ flowchart LR
 | Fossil checkout marker | `.fslckout` or `_FOSSIL_` at the project root identifies a Fossil checkout; archive and managed upgrade run on it through the selected backend. |
 | Started product | Spawned by `givn run` from the declared start command; output is inherited, exit code forwarded, and signals forwarded on unix. |
 | Automation caller around givn | Reads the run declaration and drives `givn run` through its machine contract (ready line, exit codes, port hand-off); it never guesses start information. |
-| Independent verifier or harness | Runs `givn ise verify` over a prepared trial and the current checkout, reads the `ise-trial/v1` record, and names drift per path before running the frozen suite. |
+| Independent verifier or harness | Runs `givn ise compare` over a spec copy and the current checkout, reads the `ise-manifest/v1` manifest, names every Specification or End-to-end (E2E) difference per path, and then runs the frozen suite. |
 | CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
 | Coding-agent harness reporter | Each supported harness (opencode, Claude Code, omp, and Maki) runs its generated reporter inside its own runtime; it buffers that harness's activity and hands it to `givn history ingest`, keeps working when an event is rejected, and never writes the development record itself. |
 | Maki runtime | Loads `.maki/` configuration only in a folder the developer has trusted; an untrusted project leaves the reporter and attribution integration inactive by the harness's own gate. |
@@ -59,8 +59,9 @@ sync; the current optional presentation and documentation block is
 | `givn instructions dialog` / `dialog-examples` / `challenge` | out | The mandatory question policy, its worked examples, and the evidence-first challenge policy. They resolve without a lifecycle change. |
 | `givn spec find/tree/duplicates/coverage/route` | in/out | Deterministic specification queries and advisory routing. |
 | `givn check review --change <id>` | in/out | Integrity, run declaration, change-scoped lint, overlap, retirement, routing, receipt, add-on drift, and scenario-commit checks. It runs no suite and no outline gate. |
-| `givn ise replace [--at <revision>] (--full / --path <path>...) --into <dir> [--receipt <path>] [--dry-run]` | in/out | Reads one revision through the selected backend, writes a plain trial directory outside the checkout with the resolved `e2e` package absent, prints the ten fixed report lines plus the conditional `Frozen package` line and the optional receipt line, and writes or prints the `ise-trial/v1` record. Every refusal writes nothing; a missing or conflicting replacement form exits 2. |
-| `givn ise verify --trial <receipt> --at <dir>` | in/out | Confirms the record belongs to the given trial and backend, refuses a trial that holds a frozen path the record excludes, re-checks the recorded retained and `e2e` identities per path against the written trial and the current checkout, and exits nonzero on drift. |
+| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | in/out | Reads one revision through the selected backend, writes a plain spec copy outside the checkout with the End-to-end (E2E) tests absent, prints the eleven fixed report lines plus the conditional `Manifest` line, and writes the `ise-manifest/v1` manifest when `--manifest` is given. Every refusal writes nothing; an omitted target exits 2. |
+| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | in/out | Writes the spec copy with only the named component paths removed, and prints the same report and manifest. An empty path list is a usage error with exit 2. |
+| `givn ise compare --manifest <file> --copy <dir>` | in/out | Confirms the manifest's `copy_directory` is the given copy, refuses a file added under a declared Specification path, compares the recorded Specification and End-to-end (E2E) checksums with the copy and the checkout, and prints one `- <path>` line per changed or missing path and one `+ <path>` line per added path, and exits nonzero on any difference. |
 | `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development/run managed block damage or ambiguity, unmanaged or missing README; exit status reflects findings. |
 | `givn run [--port <n>] [--print]` | in/out | Starts the declared product; for servers waits for readiness, prints `givn run: ready at http://127.0.0.1:<port><ready_path>` on stdout, forwards the child's exit code, and forwards SIGINT/SIGTERM on unix. `--print` emits one sh-eval-able start line without executing. |
 | `givn upgrade` | in/out | Clean-checkout preflight through the selected backend, managed scaffold and guidance refresh, checkpoint reporting, and one allowlist-only revision when files changed. No pre-1.0 route is shipped. |
@@ -108,9 +109,9 @@ sync; the current optional presentation and documentation block is
   `spec duplicates`, `spec coverage`, `spec route`).
 - Repository-owned compiled-CLI acceptance fixtures.
 - Version-control backend selection at the project root through one seam.
-- Clean-room trial preparation and trial-input verification on Git and Fossil:
-  revision reads, the nine refusals, the plain trial directory, the
-  `ise-trial/v1` record, and per-path drift.
+- Clean-room spec copy preparation and comparison on Git and Fossil: revision
+  reads, the twelve refusals, the plain spec copy, the `ise-manifest/v1`
+  manifest, and per-path comparison differences.
 - ADR qualification guidance and canonical architecture routing.
 - The development record and report: best-effort capture of Givn commands and
   phases, one intake for harness-reported activity, and `givn timeline`.

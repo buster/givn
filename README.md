@@ -101,8 +101,9 @@ fail if the project configuration drifts from the record. An operator can use
 | `givn/commands.yaml` | Define project-specific test runner, coverage, and startup commands. |
 | `givn skills sync` | Regenerate agent skill files after changing config. |
 | `givn commit -m "<msg>" <paths...>` | Commit explicit paths for a behavior batch without sweeping in unrelated working-tree edits. |
-| `givn ise replace (--full \| --path <path>...) --into <dir>` | Write one recorded revision into a plain clean-room trial directory for an `Ise Test`, omitting the replaced paths. |
-| `givn ise verify --trial <record> --at <dir>` | Re-check a trial's frozen retained files and `e2e` package against its record and name every drifting path. |
+| `givn ise rebuild-all --into <dir> [--manifest <file>]` | Write the spec copy in which the whole product is rebuilt: every declared source root is removed from it. |
+| `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. |
+| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the manifest and the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. |
 
 ## Documentation
 

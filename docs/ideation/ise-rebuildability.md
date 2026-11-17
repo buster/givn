@@ -36,7 +36,7 @@ Those facts expose four failure modes.
 | Failure mode | Evidence | Consequence for an Ise Test |
 |---|---|---|
 | **Unprotected verification semantics** | The shared runner, the in-process calls above, and no dependency rule in the E2E target | The frozen suite can pass without touching the real interface, so a rebuild is never tested for the behavior the product exposes. |
-| **Incomplete durable Specification** | CLI flags, exit codes, persisted schemas, state migrations, and viewport budgets sit in `src/`, change history, or prose rather than in a declared retained set. | The agent cannot state what the replacement must preserve, and no file says which paths may be deleted. |
+| **Incomplete durable Specification** | CLI flags, exit codes, persisted schemas, state migrations, and viewport budgets sit in `src/`, change history, or prose rather than in a declared Specification set. | The agent cannot state what the replacement must preserve, and no file says which paths may be deleted. |
 | **All-enabled addons and divided instruction ownership** | Nine addons default to `true`; the four core step instructions carried every runner's rows. In `givn-harness` the `v0.9.15` guidance addition kept the Catopia hidden grade at `25/25` while scenario volume fell from `130` to `76` and coverage from `87.3/79.9` to `67.7/60.8`. | Enabling `ise` without a stack-instruction split leaves a rule with more than one apparent owner and adds prose; the split keeps one owner per rule. |
 | **No separation between co-evolution and frozen reconstruction** | Givn instructions assume specifications, tests, and code change together. | A rebuild has no clean-room protocol, no frozen acceptance authority, and no classification of differences. |
 
@@ -67,12 +67,12 @@ The kept/discarded table decides what survives a rebuild.
 | **Internal unit tests** | Discarded: tests coupled to private structure. | They are named paths in the deletion set. Givn never infers a unit test from `#[cfg(test)]`, `test_*.py`, a Maven test root, or a file-name convention. |
 | **Component tests** | Scenarios kept, test setup rewritten. | The `.feature` scenarios stay in the Specification; step definitions, fakes, and harness are implementation and may be rewritten with the stack. |
 | **End-to-end (E2E) tests** | Kept unchanged: they must pass against the rebuild without changes. | The declared `e2e` package is frozen as acceptance authority: the black-box suite plus its runner configuration. |
-| **Behavior and invariants; contracts and schemas; technical limits; automated black-box tests** | Belong to the spec. | The five retained roles of the declared Specification: `behavior`, `structure`, `contracts`, `limits`, `e2e`. |
+| **Behavior and invariants; contracts and schemas; technical limits; automated black-box tests** | Belong to the spec. | The five Specification roles of the declared Specification: `behavior`, `structure`, `contracts`, `limits`, `e2e`. |
 
 Two consequences from the source shape the model. **Data, state, and
 contracts outlive the code**, so a rebuild preserves persisted state and
 public contracts. **Completeness is proven by building, not by reviewing**,
-so the topic records a trial and its differences rather than trusting a
+so the topic records a spec copy and its differences rather than trusting a
 reading of the Specification.
 
 ## 3. The settled model
@@ -81,14 +81,14 @@ reading of the Specification.
 
 `givn/specification.yaml` declares exactly two things:
 
-- the five retained roles as path globs;
+- the five Specification roles as path globs;
 - one `source:` list of replaceable roots: production code plus component-test
   roots.
 
 It declares no component, no internal component directory, and no
-per-component file list. The replaced unit is trial input, passed to
-`givn ise replace --path <path>` (or named wholesale with `--full`), not a
-permanent project declaration.
+per-component file list. The rebuilt unit is a command input: `givn ise
+rebuild-component <path>` names its paths, or `givn ise rebuild-all` removes
+every declared source root. Neither is a permanent project declaration.
 
 | Role | What it retains | Ise source element | Example carrier |
 |---|---|---|---|
@@ -117,8 +117,8 @@ The project-health pass reports four advisory findings from `givn lint`:
 | Finding | Meaning |
 |---|---|
 | **Declared path missing** | A role glob matches no tracked path. |
-| **Path declared in two roles** | One path is retained twice. |
-| **`.feature` outside the `behavior` globs** | A scenario file is not retained. |
+| **Path declared in two roles** | One path is matched twice. |
+| **`.feature` outside the `behavior` globs** | A scenario file is not matched by a role. |
 | **`e2e` package missing or with a dependency edge into `source`** | The acceptance package cannot be frozen, or it links production code. |
 
 The findings are advisory: they do not change the lint exit code. The
@@ -152,112 +152,137 @@ implementation: they are never frozen and never diff-counted.
 The change verification receipt binds three values: the `e2e` package
 digests, the E2E runner command digest, and the running Givn version. Archive
 freshness compares them, so a weakened black-box suite changes the receipt.
-For an Ise Test, the frozen digest covers the `@e2e` scenarios selected by tag
-plus every file of the `e2e` package.
+For an Ise Test, the End-to-end checksum covers the `@e2e` scenarios selected by
+tag plus every file of the `e2e` package.
 
-### 3.3 The two commands
+### 3.3 The three commands
 
-Both commands are bound to `addons.ise`. With the addon off they refuse by
-name and read no declaration. The addon requires `architecture_principles`,
-so the guidance that uses `Component` and the other established nouns always
-has its vocabulary present.
+All three commands are bound to `addons.ise`. With the addon off they refuse by
+name and read no declaration. The addon requires `architecture_principles`, so
+the guidance that uses `Component` and the other established nouns always has
+its vocabulary present.
 
 | Command | Inputs | Result |
 |---|---|---|
-| `givn ise replace [--at <revision>] (--full / --path <path>...) --into <dir> [--receipt <path>] [--dry-run]` | A revision (`HEAD` when omitted), exactly one replacement form (`--full`, or repeatable `--path` values inside the declared `source:` roots; a `--path` value is a tracked file or a directory), and a target outside the checkout. | A plain trial directory, the partition counts, the retained and E2E identities, and the trial record; a receipt path writes the record to a file. |
-| `givn ise verify --trial <receipt> --at <dir>` | A written trial record and the trial directory; the record's written path and backend must name them. | A per-path drift report for the retained set and the `e2e` package. |
+| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | A revision (`HEAD` when omitted) and a target outside the checkout. | A plain spec copy in which the whole product is rebuilt: every declared source root is removed from it. The five counts, the two checksums, and, when `--manifest` names a file, the manifest. |
+| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | A revision, at least one tracked file or directory inside the declared `source:` roots, and a target outside the checkout. | A plain spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. The same report and manifest option. |
+| `givn ise compare --manifest <file> --copy <dir>` | A written manifest and the spec copy; the manifest's `copy_directory` must name the copy. | The two subject lines and one `- <path>` or `+ <path>` line per difference. |
 
-The replacement refuses, before any write, on nine conditions.
+A rebuild refuses, before any write, on twelve conditions.
 
 | Refusal | Condition |
 |---|---|
-| 1 | The declaration is missing or malformed. |
-| 2 | The `ise` addon, or its `architecture_principles` prerequisite, is not effective. |
-| 3 | The checkout is dirty. |
-| 4 | The backend is missing, mixed, or nested. |
-| 5 | A retained path is missing at the selected revision. |
-| 6 | A `--path` value falls outside every declared `source:` root. |
-| 7 | A `--path` value, or a tracked file under a named directory, is matched by a retained role. |
-| 8 | The target is inside the checkout or already exists, or the receipt is inside the trial or an ancestor of it. |
-| 9 | A repository link or nested repository sits among the files written into the trial. |
+| 1 | The revision records the declaration but the backend returns no blob; the refusal names the path, the revision, and `returned no blob`. |
+| 2 | The declaration bytes at the revision are not UTF-8; the refusal names the path and the decoding error. |
+| 3 | The declaration at the revision is malformed; the refusal names the path and the loader's reason. |
+| 4 | The revision does not record the declaration, or a declared Specification entry matches nothing; the refusal names the path, the revision, and `does not record`, or the entry and the revision. |
+| 5 | The `ise` addon, or its `architecture_principles` prerequisite, is not effective. |
+| 6 | The checkout is dirty; the refusal names every dirty path. |
+| 7 | The backend is missing, mixed, or nested. |
+| 8 | A component path falls outside every declared `source:` root; the refusal names `rebuild-all`. |
+| 9 | A component path, or a tracked file under a named directory, is matched by a Specification role or is the declaration. |
+| 10 | The target is inside the checkout or already exists, or the manifest is inside the copy, an ancestor of it, or already exists. |
+| 11 | A repository link or nested repository sits among the files written into the spec copy. |
+| 12 | A symlink has an absolute target, even one that resolves inside the copy, or a relative target that resolves outside the spec copy. |
 
-A refusal names its condition, exits non-zero, and leaves the checkout and
-the target path unchanged. Exactly one of `--full` and `--path` is required;
-neither, both, and an omitted `--into` are usage errors (exit 2) naming the
-missing or conflicting flags. `--dry-run` performs every read, the partition,
-every refusal, the counts, and the digests, writes no directory and no
-record, and prints the ten fixed lines, the optional receipt line, and the
-`Would write:` block.
+A refusal names its condition, exits non-zero, and leaves the checkout and the
+target path unchanged. `rebuild-component` with no path and an omitted `--into`
+are usage errors (exit `2`) naming the missing path list or target. `--dry-run`
+performs every read, the partition, every refusal, the counts, and the
+checksums, writes no directory and no manifest, and prints
+`Copy directory (would write):` and, only when a manifest path was given,
+`Manifest (not written):` instead of the two write lines.
 
-The report prints ten fixed lines and, only when a receipt path was given, the
-`Receipt path` line.
+The report prints eleven fixed lines and, only when a manifest path was given,
+the `Manifest` line: twelve with the manifest path.
 
 | Line | Meaning |
 |---|---|
-| `Backend` | The selected version-control backend. |
-| `Revision` | The revision read for the trial. |
-| `Retained` | The count of retained files written. |
-| `Kept source` | The count of source files outside the replaced paths that were still written. |
-| `Replaced` | The count of tracked files actually removed by `--path` names or `--full`. |
-| `Outside the declaration` | The count of tracked files outside every declared role that were not copied. |
-| `Not replaced` | The count of tracked files in the replaced paths' directories that were not named. |
-| `Retained digest` | The tamper-evident identity of the retained set. |
-| `E2E digest` | The identity of the `@e2e` scenarios selected by tag plus every file of the `e2e` package. |
-| `Written path` | The trial directory. |
-| `Receipt path` | The record file, only when `--receipt` was given. |
+| `Backend` | The selected backend, `git` or `fossil`. |
+| `Revision` | The resolved revision the copy was read from. |
+| `Specification files` | The count of tracked files the copy was written with: the declaration and every Specification-role match the End-to-end (E2E) tests do not cover. |
+| `Source code kept` | The count of tracked files under a declared source root that the command did not remove and that are not Specification files and not End-to-end (E2E) matches. |
+| `Source code removed` | The count of tracked files the component paths, or every declared source root under `rebuild-all`, removed. |
+| `Outside the spec copy` | The count of tracked files outside every declared role and source root that the copy neither holds nor removes. |
+| `Files beside removed paths` | The direct tracked files in the removed files' parent directories that the command did not name and that are not themselves removed; a containment count, not a partition member. |
+| `Specification checksum` | The rollup of the Specification files, printed as 12 lowercase hex characters. |
+| `End-to-end checksum` | The rollup of the `@e2e` scenarios selected by tag and every file of the `e2e` package, printed as 12 lowercase hex characters. |
+| `End-to-end tests` | `not copied (<n> files)`, where `<n>` is the End-to-end (E2E) set's own size. |
+| `Copy directory` | The spec copy directory. |
+| `Manifest` | The manifest file, only when `--manifest` was given. |
 
-`Not replaced` is a containment count, never a refusal. It shows what the
-replacement unit still contains, and `--full` reports `0` because it removes
-the whole source set. `Outside the declaration` counts tracked files that are
-neither errors nor trial content.
+`Files beside removed paths` is a containment count, never a refusal. It counts
+the direct tracked files in the removed files' parent directories that the
+command did not name and that are not themselves removed; it is the same count
+under both commands, and under `rebuild-all` the files it shows are the
+Specification and End-to-end (E2E) matches in those directories. `Outside the
+spec copy` counts tracked files that are neither errors nor copy content.
 
-The trial is a plain directory outside the checkout, never a branch or a
+The spec copy is a plain directory outside the checkout, never a branch or a
 worktree. A branch carries history, and a Fossil checkout carries the
-repository database, so either would hand the agent the old Source code.
-The trial preserves relative paths, the executable bit, and symlink targets.
-It carries no version-control metadata and no ignored or untracked files,
-because preparation reads the selected revision, not the working tree.
+repository database, so either would hand the agent the old Source code. The
+copy preserves relative paths, the executable bit, and relative symlink targets
+that resolve inside the copy. It carries no version-control metadata and no
+ignored or untracked files, because a rebuild reads the selected revision, not
+the working tree.
 
-The trial record carries the revision, the named and replaced paths, the
-counts, the retained and E2E identities, the backend, and the running Givn
-version. An omitted `--receipt` prints the record to stdout only and writes
-nothing, so `givn ise verify --trial <receipt>` requires an explicit path.
-`givn ise verify` refuses a record whose written path is not the given trial,
-whose backend is not the selected backend, or whose file lies inside the
-trial.
+The manifest carries the scope, the revision, the removed paths, the
+Specification and End-to-end (E2E) path inventories, the five counts, the three
+checksum maps, the two rollups, the copy directory, and the running Givn
+version. Without `--manifest` no manifest is written and none is printed, and
+`givn ise compare` requires an explicit path. `compare` refuses a manifest whose
+`copy_directory` is not the given copy or whose file lies inside the copy.
 
-### 3.4 The freeze as a digest
+### 3.4 The spec copy rule
 
-Preparation re-reads every written file and compares it to the file recorded
-at the selected revision. It records three identities: the retained set, the
-`e2e` package, and the replaced paths. The first two are printed as
-`Retained digest` and `E2E digest`; the replaced-paths identity sits in the
-trial record. A written file that differs from its revision content fails
-preparation and writes no record.
+Four sentences decide the copy and its comparison.
 
-Only the `End-to-end (E2E)` test package is frozen as acceptance authority.
-The declared Specification is the agent's read-only input and is recorded
-by digest so the developer can prove what the agent received, but the
-End-to-end (E2E) test is what decides pass or fail. The freeze is a digest,
-not a filesystem lock: the agent receives the package as retained content and
-may not edit it, and `givn ise verify` detects an edit per path. An edited
-black-box scenario, step definition, or runner file is a different Ise Test,
-not a passing one.
+> The spec copy is written with the project's Specification files. During a
+> rebuild the agent adds files, and those are the rebuilt Source code. The agent
+> may edit Source code kept because it is the product, but it does not delete
+> any file the copy was written with. The agent does not modify any
+> Specification file the copy was written with; adding a file under a declared
+> Specification path is a Specification change, not the product, and is refused.
 
-`givn ise verify` re-checks the retained and `e2e` identities against the
-written trial and the current `e2e` package. It reports drift per path. A
-changed component step definition outside the frozen inputs produces no
-drift, because component step definitions are implementation.
+The comparison is their enforcement. It prints `Specification files` and
+`End-to-end tests`, each `match` or its `changed`, `missing`, and `added`
+counts, one `- <path>` line per changed or missing path and one `+ <path>` line
+per added path, and exits `1` on any difference. It re-checks the manifest's
+Specification paths against the copy, and against the checkout except a feature
+path carrying a selected `@e2e` scenario, which the End-to-end (E2E) line owns
+on the checkout side; the copy side still compares that file's bytes under
+`Specification files`. It refuses a file the copy
+adds under a declared Specification path, and refuses a copy that lost a path
+the manifest lists among the Source code kept. It counts a checkout path
+matched by a declared Specification role as an added Specification file, except
+a content path in the checkout's declared End-to-end (E2E) set or a feature
+path carrying a selected `@e2e` scenario, which it counts as an added End-to-end
+test; E2E-set membership or a selected `@e2e` scenario owns the path on the
+checkout side, so one line prints even when another Specification role also
+matches it. A checkout
+Specification file that differs prints `Specification changed after the copy was
+written`.
+
+The End-to-end (E2E) package and the selected `@e2e` scenarios decide the
+`End-to-end tests` line; a recorded Specification file is still compared with
+the checkout under `Specification files`, except the feature path that carries
+a selected `@e2e` scenario, which the End-to-end (E2E) line owns there. The
+declared Specification is recorded by checksum
+so the developer can prove what the agent received, but the End-to-end (E2E)
+test is what decides pass or fail. An edited black-box scenario, step
+definition, or runner file is a different Ise Test, not a passing one. A
+changed component step definition outside those inputs produces no difference,
+because component step definitions are implementation.
 
 ### 3.5 Qualification before freeze
 
 A new E2E scenario enters the frozen set only after it was observed failing
 against the pre-change implementation for the intended reason. The freeze is
-a per-trial boundary, not a ban on correcting the test before the trial
+a per-Ise-Test boundary, not a ban on correcting the test before the Ise Test
 starts.
 
-A test defect found mid-trial is a `Spec gap: E2E test defect`. It stops the
-trial. The E2E test is corrected, and the trial restarts. The `e2e` package
+A test defect found mid-rebuild is a `Spec gap: E2E test defect`. It stops the
+Ise Test. The E2E test is corrected, and the Ise Test restarts. The `e2e` package
 is part of the Specification, so correcting the test is a Specification
 correction, not an exception to the freeze. The result is never accepted
 under a changed test.
@@ -293,7 +318,7 @@ one outcome, recorded before any fix.
 
 | Outcome | What is wrong | Route |
 |---|---|---|
-| **`E2E test defect`** | The test. | Correct the E2E test; the trial stops and restarts. A corrective change edits the E2E suite. |
+| **`E2E test defect`** | The test. | Correct the E2E test; the Ise Test stops and restarts. A corrective change edits the E2E suite. |
 | **`implementation defect`** | The build. | Return to the agent inside the Ise Test. No corpus or suite edit. |
 | **`specification defect`** | The Specification. | Open a corrective change that adds the missing rule, then rebuild. |
 | **`acceptable undocumented change`** | Nothing that matters. | Record the difference in the corpus. No silent drift. |
@@ -306,9 +331,10 @@ names the artifact that is wrong, not who found it.
 ## 5. What Givn does not do
 
 - **No unit-test inference.** Deletion is set arithmetic on the files named
-  with `--path` and on the source-root union under `--full`, each inside a
-  declared `source:` root. Givn does not read `#[cfg(test)]`, `test_*.py`, a
-  Maven test root, or a file-name convention, and it never expands a glob.
+  with `rebuild-component` and on the source-root union under `rebuild-all`,
+  each inside a declared `source:` root. Givn does not read `#[cfg(test)]`,
+  `test_*.py`, a Maven test root, or a file-name convention, and it never
+  expands a glob.
 - **No component list.** `givn/specification.yaml` has no `components:` key
   and no per-component file list. Internal components and their files do not
   belong in a permanent project declaration.
@@ -320,18 +346,18 @@ names the artifact that is wrong, not who found it.
   Review asks one question: name the neighboring components changed outside
   the replaced component and say why. No gate, receipt field, or diff count
   enforces it.
-- **No branch or worktree.** The trial is a plain directory outside the
+- **No branch or worktree.** The spec copy is a plain directory outside the
   checkout. A branch carries history and a Fossil checkout carries the
   repository database.
 - **No containment of the agent.** Givn withholds the replaced Source code
-  and history from the trial and records what it handed over. It does not
+  and history from the spec copy and records what it handed over. It does not
   sandbox the agent's process or prove what the agent read. Isolating the
   agent's context is the caller's obligation, with the harness or the
   developer.
 - **No built-in rebuild orchestration for other repositories.** Givn prepares
   the clean room and re-checks its frozen inputs. It does not build the
   replacement or run the frozen tests for `givn-harness` or Passuff. Those
-  repositories run their own phases against the same two commands.
+  repositories run their own phases against the same three commands.
 
 ## 6. The decision record
 
@@ -343,7 +369,7 @@ rejected alternatives stay in
 |---|---|---|---|
 | `Q1` | Entry-point sequence | Ideation in Givn first, paired with the Catopia harness track, then Passuff. | Passuff-first, because it delays the domain design and automated signal. |
 | `Q2` | Frame | Goal, four Givn capability areas, companion tracks, five exclusions, and four stakeholder types confirmed. | Committing to a CLI surface before Event Storming fixed the contract ahead of the use cases. |
-| `Q3` | CLI surface | `givn ise replace` and `givn ise verify`, bound to `addons.ise`. | Check-only enforcement, which leaves the clean room to each project's script. |
+| `Q3` | CLI surface | `givn ise rebuild-all`, `givn ise rebuild-component`, and `givn ise compare`, bound to `addons.ise`. | Check-only enforcement, which leaves the clean room to each project's script. |
 | `Q4` | Declaration site | Dedicated `givn/specification.yaml` with five roles and a `source:` list, no component list. | A block in `givn/config.yaml` (the lenient top level hides a misspelled block) and convention (cannot express the `source` partition). |
 | `Q5` | E2E boundary | One `e2e` package holding the runner and every `@e2e` step definition, no production link, unbound or skipped step fails, feature files shared. | Keeping the tag's in-process library allowance, and splitting the suite into multiple targets. |
 | `Q6` | Addon coupling | `ise` requires `architecture_principles` in both directions. | No prerequisite (an `ise`-only project), and auto-enabling the prerequisite. |
@@ -372,9 +398,9 @@ The phase detail, the dependency graph, and every gate live in
 | Phase group | Repository | Deliverable | Deciding gate |
 |---|---|---|---|
 | `P0` Handoff | `givn` | Topic document, confirmed terms, promoted personas, change seeds. | Every seed passes to `/givn-propose` without the topic conversation. |
-| `S1` to `S5` | `givn` | The `ise` addon and declaration, the advisory findings, the `@e2e` gate and receipt identity, the two commands, and the stack-instruction split. | Fresh init omits `ise`; both prerequisite refusals print; each declaration finding exits 0; the nine refusals write nothing; the receipt binds the E2E identity; the core instruction carries no per-runner body. |
+| `S1` to `S5` | `givn` | The `ise` addon and declaration, the advisory findings, the `@e2e` gate and receipt identity, the three commands, and the stack-instruction split. | Fresh init omits `ise`; both prerequisite refusals print; each declaration finding exits 0; the twelve refusals write nothing; the receipt binds the E2E identity; the core instruction carries no per-runner body. |
 | `S6a` to `S9` | `givn-harness` | Stage snapshots, target-stage grading, state continuity, sandboxed candidate grading, versioned `ise` task variants, and Catopia E1 to E4. | `ise=on` reaches `25/25`, at least 119 regular plus 11 `@e2e` scenarios, and at least `87.33/79.85` coverage; every difference carries one `Spec gap`; a Constant Ise rebuild leaves the consumer contract unchanged. |
-| `S10` to `S12` | Passuff | A separate `e2e` package with PTY `80x24` and `120x40` and an HTTP mock, a Constant Ise trial, and a full-product `Dry-Run Ise`. | The package declares no production dependency; every seeded defect fails a named scenario; the Constant Ise trial names every changed neighboring component; the full-product trial passes or classifies every difference. |
+| `S10` to `S12` | Passuff | A separate `e2e` package with PTY `80x24` and `120x40` and an HTTP mock, a Constant Ise rebuild, and a full-product `Dry-Run Ise`. | The package declares no production dependency; every seeded defect fails a named scenario; the Constant Ise rebuild names every changed neighboring component; the full-product rebuild passes or classifies every difference. |
 | `S13` | `givn` | Givn rebuilds itself: `@e2e` steps leave the production-linked target, `ise` is enabled, and a `Dry-Run Ise` runs. | The `e2e` package has no dependency on `givn`; every retagged scenario has a reason; every gap has one outcome. |
 | `S14` | `givn` | Promotion decision for `ise`. | The evidence table is complete; without it `ise` stays opt-in. |
 
@@ -400,9 +426,9 @@ spend, is in `docs/experiments/ise-rebuild-experiment.md` in the
 | state continuity, two stages | `archived_and_passed` | 9/9 |
 
 **The protocol works for a cold rebuild.** The replicate rebuilt the executable
-surface from the retained Specification, passed the frozen verifier 15/15 and
-every graded behaviour check, and fixed the seed's `R8` failure. Its trial
-record reads `Kept source 0; Replaced 1`.
+surface from the declared Specification, passed the frozen verifier 15/15 and
+every graded behaviour check, and fixed the seed's `R8` failure. Its record
+reads `Source code kept 0; Source code removed 1`.
 
 **The End-to-end (E2E) test is weaker than the contract.** The first rebuild
 carried neither `contract.md` nor `law.md`, because the declaration left both
@@ -410,10 +436,10 @@ outside every role, and the frozen test still passed 15/15. A rebuild can pass
 with the contracts it never received.
 
 **Three protocol defects were found and fixed.** `guard-retained-paths-across-archive`
-refuses an archive that moves a declared retained path, after an agent declared
+refuses an archive that moves a declared Specification path, after an agent declared
 a change artifact as one and the archive moved it. `retain-declaration-in-trial`
-copies `givn/specification.yaml` into every trial and re-checks it per path,
-after the first trial carried no declaration. Harness `4f477bc` grades a stage
+copies `givn/specification.yaml` into every spec copy and re-checks it per path,
+after the first spec copy carried no declaration. Harness `4f477bc` grades a stage
 with `require_archive = false` in-stage, after the rebuild stage stalled
 waiting for an archive that its `require_archive = false` setting never
 produces.
@@ -424,9 +450,9 @@ replicate ran the same seed on the same binary and passed with no gap file.
 
 **Two questions stay open.** `Constant Ise` remains unmeasured, because the
 only follow-up arm recorded `incremental modification` and its snapshot holds
-no trial record; and the End-to-end (E2E) test-strength question stays open,
+no manifest; and the End-to-end (E2E) test-strength question stays open,
 because no arm tests whether the End-to-end (E2E) test, reading only the
-declared roles, can certify a rebuild that the retained Specification does not
+declared roles, can certify a rebuild that the declared Specification does not
 describe.
 
 **The S14 evidence is compiled.** The promotion tables for `ise` sit in
@@ -462,8 +488,8 @@ and no Givn self-rebuild.
 - **Static import scanning and phrase uniqueness.** Both were rejected for
   the E2E boundary. The package dependency graph and the runner's unbound or
   skipped step failure are the settled checks.
-- **Presentation choices.** The abbreviated digest in the report and the ten
-  fixed report lines (plus `Receipt path` only when a receipt is written) are
-  fixed in `S4`'s design. The command defaults (`--at` optional, exactly one
-  of `--full` and repeated `--path`, `--dry-run`, `--receipt` to stdout when
-  omitted) are settled and stated there.
+- **Presentation choices.** The 12-hex checksum in the report and the eleven
+  fixed report lines (plus `Manifest` only when a manifest is written) are
+  fixed in the command reference. The command defaults (`--at` optional,
+  `rebuild-component` requiring at least one path, `--dry-run`, no manifest
+  without `--manifest`) are settled and stated there.

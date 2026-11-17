@@ -9,6 +9,15 @@ informed: none
 
 # Keep the frozen End-to-end (E2E) test package outside the clean-room trial
 
+Historical note, 2026-11-16: the command names in this record (`givn ise
+replace`, `givn ise verify`) are the retired pre-rename names. The
+`ise-trial/v1` record shape this record describes, including its
+`excluded_roles` field, was superseded by `ise-manifest/v1` in ADR-076's
+2026-11-16 amendment, which has no `excluded_roles` field; the decision to keep
+the frozen package outside the spec copy is unchanged. ADR-076's amendment also
+names the current `givn ise rebuild-all`, `givn ise rebuild-component`, and
+`givn ise compare` surface.
+
 ## Qualification
 
 ADR-QUALIFICATION: PASS

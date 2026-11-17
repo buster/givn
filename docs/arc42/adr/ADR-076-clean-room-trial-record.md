@@ -9,6 +9,11 @@ informed: none
 
 # Bind a clean-room trial to a versioned, per-path record outside the trial
 
+Amended 2026-11-16 by `strengthen-ise-specification`: the commands are renamed,
+the record becomes the `ise-manifest/v1` manifest, and its canonical checksum
+bytes and additive-field compatibility rule are stated below. The original
+decision's ownership and placement stand.
+
 ## Qualification
 
 ADR-QUALIFICATION: PASS
@@ -146,16 +151,81 @@ changed `@e2e` scenario, and a missing path.
 - Bad, because the record duplicates the `Specification` and becomes a second
   corpus.
 
+## Amendment 2026-11-16: the manifest and the command surface
+
+The original decision fixed a versioned, per-path record. It left the byte form
+of its digests to the implementation, and its scope described a trial. The
+bounded self-rebuild produced different per-feature checksums for identical
+inputs, could not reproduce the field set from the Specification alone, and the
+operator settled three command names with the spec copy vocabulary. This
+amendment replaces the `ise-trial/v1` record with the `ise-manifest/v1`
+manifest and names the commands that write it.
+
+### Amended Decision Outcome
+
+The clean-room surface is `givn ise rebuild-all`, `givn ise rebuild-component
+<path>...`, and `givn ise compare`; the earlier names `givn ise replace` and
+`givn ise verify` are retired. The rebuild commands write a spec copy and, only
+with `--manifest <file>`, one ephemeral manifest with the fields `scope`,
+`revision`, `removed_paths`, `specification_files`, `source_kept_files`,
+`end_to_end_files`, `counts`, `checksums`, `specification_checksum`,
+`end_to_end_checksum`, `copy_directory`, and `givn_version`.
+
+The checksums are computed by the canonical rule in `docs/reference.md` and
+§8.29: one path checksum hashes the path, the entry kind (`f`, `x`, `l`, or
+`g` for a gitlink whose content is the recorded commit id), the executable
+marker, and the content bytes; a rollup hashes the sorted
+`path, NUL, checksum, LF` pairs; the per-feature scenario checksum hashes the
+feature path and each selected scenario's title and compact executable-content
+JSON. `end_to_end_files` is the sorted union of the keys of
+`checksums.end_to_end` and `checksums.scenarios`; `end_to_end_checksum` rolls up
+that union, with the scenario checksum winning when a path is in both maps. This
+scope has no optional field; a field added later is
+optional only when the scope states its default, and a field with no derivable
+default opens a new scope; an unknown or missing field and a mismatched scope
+are refused naming the manifest and the expected value. The `ise-trial/v1` shape is refused
+by name and is not migrated.
+
+Rejected: keeping `replace` and `verify` (two mechanisms named as commands);
+reading the retired record shape (two field sets and an ambiguous count
+mapping); printing the manifest (the report has no path to name).
+
+### Amendment Consequences
+
+- Good, because the commands name the action: one rebuilds the whole product,
+  one rebuilds a component, one compares.
+- Good, because a second implementation can produce byte-identical checksums
+  from the Specification alone.
+- Bad, because a script or habit that calls the retired names fails with exit
+  `2`, and a manifest written before this change must be re-prepared.
+
+### Amendment Confirmation
+
+`Developer rebuilds the whole product from its Specification` and `Developer
+rebuilds one component and leaves its neighbours` drive the two rebuild
+commands through the binary; `Preparation records the canonical checksums for
+a pinned fixture` asserts every checksum, `Preparation records the canonical
+checksums for a richer feature` pins the content-encoder branches, and
+`Verifier compares the spec copy with the manifest` drives the comparison. The design computed the pinned values
+twice, once with the production binary and once with an independent
+implementation of the stated rule.
+
 ## More Information
 
 - `givn/changes/add-ise-clean-room-commands/specs/prepare-an-ise-test/usecase.md`
   owns the observable behavior; archive merges it into the permanent corpus.
+- `strengthen-ise-specification` amended this record with the command names,
+  the `ise-manifest/v1` scope, and the canonical checksum form. The permanent
+  sources are `givn/specs/prepare-an-ise-test/usecase.md`, `docs/reference.md`,
+  and §8.29 of `docs/arc42/08-crosscutting-concepts.md`.
 - `givn/changes/add-ise-clean-room-commands/design.md` owns the identity rule,
   the record fields, and the refusals.
 - ADR-010 owns the declaration authority; ADR-070 owns the change verification
   receipt (`change-proof/v1`); ADR-071 owns the SCM seam. ADR-078 owns what the
-  trial directory contains: the frozen `e2e` package is never copied, and the
-  record's optional `excluded_roles` field names the omitted role.
+  spec copy contains: the frozen `e2e` package is never copied, and the
+  `ise-trial/v1` record's optional `excluded_roles` field named the omitted role
+  before this record's 2026-11-16 amendment replaced that shape with
+  `ise-manifest/v1`, which has no `excluded_roles` field.
 - Arc42 chapters [2](../02-architecture-constraints.md),
   [6](../06-runtime-view.md), and [8](../08-crosscutting-concepts.md) carry the
   current facts.

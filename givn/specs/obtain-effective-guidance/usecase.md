@@ -148,8 +148,9 @@ refreshing installed guidance (initialize-project, upgrade-a-project);
 addon enablement and its prerequisite refusal (initialize-project);
 session-start next-step guidance (inspect-change-state); changing the
 built-in flow; enabling `ise` on Givn itself and the self-rebuild
-(`enable-ise-on-givn-and-run-a-dry-run`); the `givn ise replace` and
-`givn ise verify` commands (`add-ise-clean-room-commands`); the stack
+(`enable-ise-on-givn-and-run-a-dry-run`); the `givn ise rebuild-all`,
+`givn ise rebuild-component`, and `givn ise compare` commands
+(`add-ise-clean-room-commands`); the stack
 mechanics' content, because the split moves rows and adds no runner.
 
 ## Diagram

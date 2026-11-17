@@ -373,7 +373,7 @@ sequenceDiagram
     D->>A: givn archive --change id
     A->>S: select backend + clean-state witness
     alt fresh archive
-        A->>A: structural gates (declared retained paths, artifacts, step-definition comparison, hooks, run declaration, README, merge preconditions)
+        A->>A: structural gates (declared Specification paths, artifacts, step-definition comparison, hooks, run declaration, README, merge preconditions)
         A->>A: write pending verification.json (merge_completed: false)
         A->>A: move givn/changes/id to givn/archive/id with one rename
         A->>A: merge use-case docs and deltas from the archived candidate
@@ -415,7 +415,7 @@ Stages:
    gate, use-case and delta prevalidation, the e2e-runner configuration check,
    and the shared change-receipt freshness check (section 6.7.1). Before the
    artifact gates, an `ise`-effective project's declaration is checked: every
-   retained role entry that matches a content path under `givn/changes/<id>/`
+   Specification-role entry that matches a content path under `givn/changes/<id>/`
    must also match a content path that stays or the archived
    `givn/archive/<id>/` form of a content path it matches, or the archive is
    refused by name before the pending receipt is written. A project with `ise`
@@ -999,22 +999,22 @@ advisory outline guide ([`docs/outline.md`](../outline.md)). Historical gate
 material remains in archived changes and ADR history; it is not current
 architecture.
 
-## 6.21 `givn ise replace` and `givn ise verify`
+## 6.21 `givn ise rebuild-all`, `givn ise rebuild-component`, and `givn ise compare`
 
-Both commands are bound to `addons.ise` and its `architecture_principles`
+All three commands are bound to `addons.ise` and its `architecture_principles`
 prerequisite in the effective project config. With either off, each refuses by
-name before reading the declaration or a record. The change's
+name before reading the declaration or a manifest. The change's
 `config-lock.yaml` is not their authority; it decides the change-scoped
 boundary gate.
 
-The parser requires exactly one of `--full` and repeated `--path`, and a
-required `--into`; neither, both, or an omitted target is a usage error (exit 2)
-that names the missing or conflicting flags.
+`rebuild-all` takes a required `--into`; `rebuild-component` also requires at
+least one path. A missing path list or target is a usage error (exit 2) that
+names it.
 
-### Replace
+### Rebuild
 
-1. Load the effective manifest. `ise` off, or its `architecture_principles`
-   prerequisite off, refuses by name before any declaration read.
+1. Load the effective manifest. `ise` off, or its prerequisite off, refuses by
+   name before any declaration read.
 2. Select the backend. The existing backend selector refuses a missing, mixed,
    or nested repository.
 3. Read the dirty entries. A dirty checkout refuses and names every path.
@@ -1023,86 +1023,110 @@ that names the missing or conflicting flags.
    manifest's `F` lines on Fossil (with `\s` decoded and a 40-hex or 64-hex
    hash accepted). The working tree is not the read source.
 5. Read the declaration recorded at that revision. A revision whose entry list
-   does not hold `givn/specification.yaml` refuses, naming the path and the
-   revision; a malformed or unreadable declaration refuses with the loader's
+   does not hold `givn/specification.yaml` refuses, naming the path, the
+   revision, and `does not record`; a recorded declaration whose blob the
+   backend cannot return refuses, naming the path, the revision, and
+   `returned no blob`; bytes that are not UTF-8 refuse, naming the path and the
+   decoding error; malformed bytes refuse, naming the path and the loader's
    reason. The parsed revision declaration is the only authority the partition
    uses.
-6. Partition the tracked paths. The frozen set is every tracked file of the
-   `e2e` role's resolved packages at that revision, except
-   `givn/specification.yaml`; those files are in no placement bucket and are
-   never copied. The retained set is the union of the four non-frozen retained
-   roles and the declaration, counted once and with no frozen path; a declared
-   non-empty entry that matches nothing refuses. Each `--path` value is
-   normalized: a tracked file contributes itself, a directory contributes every
-   tracked file beneath it, a glob-shaped value is never expanded, and a value
-   that resolves no tracked path removes nothing. Over that candidate set, the
-   declaration refuses first, then a retained-role match, then a path outside
-   every source root. `--full` contributes every tracked file under every
-   source root and the frozen set wins over both forms. Remaining source paths
-   are kept source; the rest are outside the declaration.
-7. Check the write targets. The trial and the receipt lie outside the
-   checkout; the trial and the receipt do not exist; the receipt is not inside
-   the trial and is not an ancestor of it. The containment check resolves the
-   deepest existing ancestor, so a symlinked parent cannot alias the target
-   inside the checkout.
-8. Refuse a gitlink, a submodule, or a copied path whose component is `.git`,
-   `.fslckout`, or `_FOSSIL_`, over the copy set and the frozen set, because
-   both are read from the revision.
-9. On `--dry-run`, print the report, the optional frozen line, the optional
-   receipt line, and the sorted `Would write:` paths, and stop. Nothing is
-   created.
-10. Create the trial with `create_dir`, write each file with its recorded
+6. Partition the tracked paths. The End-to-end (E2E) set is every tracked file
+   of the `e2e` role's resolved packages at that revision, except the
+   declaration; an entry that matches the project root covers the whole tracked
+   tree. The End-to-end (E2E) set's files are in no placement bucket and are
+   never copied.
+   The Specification files are the union of the four content Specification roles
+   and the declaration, counted once; a declared non-empty entry that matches
+   nothing refuses. Each component path is normalized: a tracked file
+   contributes itself, a directory contributes every tracked file beneath it, a
+   glob-shaped value is never expanded, and a value that resolves no tracked
+   path removes nothing. Over that candidate set, the declaration refuses
+   first, then a Specification-role match, then a path outside every source root (the
+   refusal names `rebuild-all`). `rebuild-all` removes every tracked file under
+   every source root, and the covered set wins over both scopes. Remaining
+   source paths that are not Specification files and not End-to-end (E2E)
+   matches are Source code kept; the rest are outside the spec copy.
+7. Check the write targets. The copy and the manifest lie outside the checkout;
+   neither exists; the manifest is not inside the copy and is not an ancestor
+   of it. The containment check resolves the deepest existing ancestor, so a
+   symlinked parent cannot alias the target inside the checkout.
+8. Refuse a gitlink or a copied path whose component is `.git`, `.fslckout`,
+   or `_FOSSIL_` in the copy set, because the copy cannot hold history. A
+   gitlink in the End-to-end (E2E) set is accepted and hashed as kind `g` with
+   the recorded commit id as its content.
+9. On `--dry-run`, print the report with `Copy directory (would write):` and,
+   only when a manifest path was given, `Manifest (not written):`, then stop.
+   Nothing is created.
+10. Create the copy with `create_dir`, write each file with its recorded
     executable bit or symlink target, and re-read every path against the
-    revision. A mismatch removes the trial and writes no record.
-11. Write the record with `create_new`, or print its YAML to stdout after the
-    report when `--receipt` is omitted. A record write failure removes the
-    trial.
+    revision. A mismatch removes the copy and writes no manifest. A symlink
+    with an absolute target, even one that resolves inside the copy, or with a
+    relative target that resolves outside it, refuses, names the link path and
+    the target, and writes nothing.
+11. Write the manifest with `create_new` when `--manifest` is given. A manifest
+    write failure removes the copy; without `--manifest`, nothing is printed
+    after the report.
 
-The report prints the ten fixed lines `Backend`, `Revision`, `Retained`,
-`Kept source`, `Replaced`, `Outside the declaration`, `Not replaced`,
-`Retained digest`, `E2E digest`, and `Written path`, then
-`Frozen package: <role>, not copied (<n> files)` when the frozen set is
-non-empty, then `Receipt path` when given. `Retained` counts the declaration and
-every non-frozen role-retained file once, so it equals the record's
-`retained_files` entry count and counts no frozen path. The two digests are the
-first 12 hex characters of the rollup followed by `…`; the record carries the
-full digests and the per-path evidence.
+The report prints the eleven fixed lines `Backend`, `Revision`, `Specification
+files`, `Source code kept`, `Source code removed`, `Outside the spec copy`,
+`Files beside removed paths`, `Specification checksum`, `End-to-end checksum`,
+`End-to-end tests`, and `Copy directory`, then `Manifest` when given: twelve with
+the manifest path. `Specification files` counts the
+declaration and every non-covered Specification file once, so it equals the
+manifest's `specification_files` length. The two checksums are the first 12 hex
+characters of the rollup; the manifest carries the full values and the per-path
+checksums.
 
-### Verify
+### Compare
 
 1. Load the effective manifest; `ise` off, or its prerequisite off, refuses
-   before any record or declaration read.
-2. Read the `ise-trial/v1` record with its strict schema. A wrong scope, an
-   unknown field, a missing field, or an unreadable file refuses and names the
-   record.
-3. Confirm the record belongs to this trial: the canonicalized `written_path`
-   equals `--at`, the record's `backend` equals the selected backend, and the
-   record path lies outside the trial; assert `replaced_digest` is a 64-hex
-   value. A mismatch refuses and names the record and the mismatch.
-4. Load the checkout's declaration. A checkout without one refuses with the
-   loader's missing-declaration message.
-5. When the record's `excluded_roles` names `e2e`, exempt
-   `givn/specification.yaml` and every path in `retained_files`, then walk the
-   trial and refuse before any identity comparison if it holds any other path
-   the recorded `e2e` set or a root the checkout's `e2e` role resolves covers,
-   naming at most twenty sorted paths and the remainder count. A record that
-   names no excluded role was prepared with the package in its retained set, so
-   this step does nothing and the retained comparison covers those files.
-6. Recompute each recorded retained path's digest from the trial, the
-   declaration included. A missing path or a mismatch is drift.
-7. Build the current tree from the backend's content paths (tracked plus
-   untracked non-ignored). That declaration is not a retained identity: it
-   only resolves the current e2e file set and the current `@e2e` scenario map,
-   so an edit that moves `e2e:` or `behavior:` changes those sets and is
-   drift, while an edit that moves only `structure:` or `limits:` does not.
-8. Compare the current e2e file set and scenario map to the record, and each
-   common path's digest. A missing path, an added path, or a changed digest is
-   drift.
-9. Print every reason once per path and exit 1, or print `Retained: clean` and
-   `E2E: clean` and exit 0.
+   before any manifest or declaration read.
+2. Read the `ise-manifest/v1` manifest with its strict schema. A wrong scope
+   (including `ise-trial/v1`), an unknown field, a missing field, a malformed
+   checksum, or an unreadable file refuses and names the manifest.
+3. Confirm the manifest belongs to this copy: the canonicalized
+   `copy_directory` equals `--copy`, and the manifest path lies outside the
+   copy. A mismatch refuses and names the manifest and the copy.
+4. Load the copy's declaration. A copy without one refuses with the loader's
+   missing-declaration message.
+5. Walk the copy. A file under a declared Specification path that the
+   manifest's `specification_files` does not list refuses before any count,
+   naming at most twenty sorted paths and the remainder count. A declared
+   Specification path is a match of any of the five roles, including `e2e`. A
+   path in `source_kept_files` that the copy lost refuses before any count,
+   naming the deleted path.
+6. Compare each recorded Specification file with the copy: a missing path or a
+   differing checksum is a difference.
+7. Build the checkout tree from the backend's content paths (tracked plus
+   untracked non-ignored) and load the checkout's declaration when it parses.
+   Compare the manifest's recorded Specification paths with the checkout,
+   except a feature path carrying a selected `@e2e` scenario: a missing path or
+   a differing checksum is a `Specification files` difference, with
+   `Specification changed after the copy was written` for the differing case. A
+   checkout content path matched by a declared Specification role that the
+   manifest does not record is an added Specification file, except a content
+   path in the checkout's declared End-to-end (E2E) set or a feature path
+   carrying a selected `@e2e` scenario, which step 8 owns even when another
+   Specification role also matches it.
+8. Compare each recorded End-to-end (E2E) path with the checkout: compare its
+   `checksums.end_to_end` content checksum and, for a feature path carrying a
+   selected `@e2e` scenario, its `checksums.scenarios` checksum; a missing path
+   or either difference is a difference, so an edit outside the selected
+   scenario is named. A checkout content path in the declared End-to-end (E2E)
+   set, or a feature carrying a selected `@e2e` scenario, that the manifest
+   does not record is an added End-to-end test. Every content path in that set
+   is owned by this step on the checkout side, even when another Specification
+   role also matches it.
+9. Print the two subject lines, one `- <path>` line per changed or missing path,
+   one `+ <path>` line per added path, and exit 1; or print both as `match` and
+   exit 0. A path that differs on both sides prints one line, counted and owned
+   by `End-to-end tests` when the checkout side owns it and by `Specification
+   files` otherwise.
 
-The frozen input is the record's retained and `e2e` identities. A file the
-builder adds to the trial after preparation is outside them, and the frozen
-E2E suite, not the digest, is the acceptance authority.
+The End-to-end (E2E) package and the selected `@e2e` scenarios are the frozen
+inputs the `End-to-end tests` line compares with the checkout. A file the
+builder adds under a source root
+is the rebuilt Source code; it is not a difference, and the comparison never
+edits the copy.
 
 *[Architecture documentation index](README.md)*
