@@ -45,8 +45,7 @@ Feature: specification-declaration
   Scenario: An unreadable declaration is refused by name
     Given  an ise-enabled project selecting opencode whose declaration path is a directory
     When  the user runs `givn lint`
-    Then  the command exits non-zero
-    And  stderr names "givn/specification.yaml"
+    Then  the command exits 1 and names "givn/specification.yaml"
 
   @specification-declaration
   Scenario: An unknown role is named before the role it replaces
