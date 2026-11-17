@@ -1,13 +1,13 @@
 Scenario: Developer rebuilds the whole product from its Specification
-argv: givn ise rebuild-all --at HEAD --into /tmp/.tmp7vj8sx/trial --manifest /tmp/.tmp7vj8sx/manifest.yaml
-cwd (fixture project root): /tmp/.tmpyB2Q8v
+argv: givn ise rebuild-all --at HEAD --into /tmp/.tmpaAGOWj/trial --manifest /tmp/.tmpaAGOWj/manifest.yaml
+cwd (fixture project root): /tmp/.tmpL0OxIy
 binary: the compiled `givn` the scenario spawns through GIVN_BIN
-revision: 2705665d67733b8a7045a11d5c2596c8f42959bd
+revision: 3c973d1c2ba8d4dd7138e7ce2273d3faadebef74
 exit code: 0
 
 --- stdout (raw) ---
 Backend: git
-Revision: 2705665d67733b8a7045a11d5c2596c8f42959bd
+Revision: 3c973d1c2ba8d4dd7138e7ce2273d3faadebef74
 Specification files: 2
 Source code kept: 0
 Source code removed: 3
@@ -16,8 +16,8 @@ Files beside removed paths: 0
 Specification checksum: 7d7a8df82f9f…
 End-to-end checksum: f41d020038de…
 End-to-end tests: not copied (2 files)
-Copy directory: /tmp/.tmp7vj8sx/trial
-Manifest: /tmp/.tmp7vj8sx/manifest.yaml
+Copy directory: /tmp/.tmpaAGOWj/trial
+Manifest: /tmp/.tmpaAGOWj/manifest.yaml
 
 --- stderr (raw) ---
 
