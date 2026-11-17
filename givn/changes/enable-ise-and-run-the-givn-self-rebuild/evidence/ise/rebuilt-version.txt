@@ -1,0 +1,3 @@
+givn 0.9.10
+f7e808d4b65f1ae8ccb43c19b66719d3e127470089fe204665644e40f9e6738f  /tmp/givn-ise-self-rebuild-20261117T133311Z/target/release/givn
+size: 3299216 bytes

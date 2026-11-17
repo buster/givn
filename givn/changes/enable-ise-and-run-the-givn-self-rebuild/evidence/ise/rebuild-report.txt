@@ -1,0 +1,12 @@
+Backend: git
+Revision: 9822ffbb29effb0de320789c2882f9a6915714b0
+Specification files: 90
+Source code kept: 0
+Source code removed: 187
+Outside the spec copy: 2567
+Files beside removed paths: 0
+Specification checksum: 08a4efa04f80
+End-to-end checksum: b763420cbaf7
+End-to-end tests: not copied (100 files)
+Copy directory: /tmp/givn-ise-self-rebuild-20261117T133311Z
+Manifest: /tmp/givn-ise-self-rebuild-20261117T133311Z.yaml

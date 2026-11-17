@@ -121,7 +121,7 @@ decision.
 
 ## Batch: pre-trial-inputs
 
-- [ ] Prove the declared End-to-end package boundary on Givn itself
+- [x] Prove the declared End-to-end package boundary on Givn itself
   - Paths: `givn/changes/enable-ise-and-run-the-givn-self-rebuild/evidence/ise/boundary-check.txt`
   - Run:
     ```sh
@@ -140,9 +140,9 @@ decision.
     path before `write_change_receipt`, so no `verification/tasks-verification.json`
     exists and this transcript is the boundary evidence. The declared-package
     preflight is `preflight_e2e_boundary`.
-  - [ ] COMMIT: `___` -- Batch: pre-trial-inputs
+  - [x] COMMIT: `9822ffbb29effb0de320789c2882f9a6915714b0` -- Batch: pre-trial-inputs
 
-- [ ] Prove the frozen package reaches no product crate
+- [x] Prove the frozen package reaches no product crate
   - Paths: `givn/changes/enable-ise-and-run-the-givn-self-rebuild/evidence/ise/e2e-dependencies.txt`
   - Run:
     ```sh
@@ -156,9 +156,9 @@ decision.
   - Design constraints: D5 (the frozen package is authority outside the trial);
     the `e2e` package links no product crate and the runner refuses a product
     package in `e2e/Cargo.lock`.
-  - [ ] COMMIT: `___` -- Batch: pre-trial-inputs
+  - [x] COMMIT: `9822ffbb29effb0de320789c2882f9a6915714b0` -- Batch: pre-trial-inputs
 
-- [ ] Export the trial inputs and author the scenario inventory
+- [x] Export the trial inputs and author the scenario inventory
   - Paths: `evidence/ise/spec-coverage.json`, `evidence/ise/e2e-inventory.md`
   - Run:
     ```sh
@@ -176,9 +176,9 @@ decision.
     count. The trial revision recomputes both values.
   - Design constraints: D4 (no delta) and D5 (the frozen authority). The
     inventory total is what `S14` compares, not the plan's older 108 or 119.
-  - [ ] COMMIT: `___` -- Batch: pre-trial-inputs
+  - [x] COMMIT: `9822ffbb29effb0de320789c2882f9a6915714b0` -- Batch: pre-trial-inputs
 
-- [ ] Verify the `S12` evidence row exists and is recorded
+- [x] Verify the `S12` evidence row exists and is recorded
   - Paths: `givn/ideation/ise-rebuildability/plan.md` (§0 and the phase table);
     `evidence/ise/spec-gaps.md` (`## Setup failures`) only when the row is absent.
   - Steps: read §0's `Outstanding` list and the `S12` phase row; resolve the
@@ -200,9 +200,9 @@ decision.
     and `S12`; §0 records `S3` to `S5` delivered and `S10` to `S12`
     outstanding as of 2026-11-16. A missing prerequisite is a setup failure, not
     a Spec gap.
-  - [ ] COMMIT: `___` -- Batch: pre-trial-inputs
+  - [x] COMMIT: `9822ffbb29effb0de320789c2882f9a6915714b0` -- Batch: pre-trial-inputs
 
-- [ ] Commit the planning layer and the pre-trial inputs, and resolve the trial revision
+- [x] Commit the planning layer and the pre-trial inputs, and resolve the trial revision
   - Paths: `givn/changes/enable-ise-and-run-the-givn-self-rebuild/` (proposal,
     design, design-review, arc42, tasks, `.givn-skip`, `config-lock.yaml`, and the
     four evidence files above), `docs/arc42/02-architecture-constraints.md`,
@@ -232,7 +232,7 @@ Batch: pre-trial-inputs'
   - Design constraints: D1 (the trial reads this commit, passed explicitly);
     D6 (the enablement is already recorded and this change rewrites neither
     `givn/config.yaml` nor the change lock).
-  - [ ] COMMIT: `___` -- Batch: pre-trial-inputs
+  - [x] COMMIT: `9822ffbb29effb0de320789c2882f9a6915714b0` -- Batch: pre-trial-inputs
 
 ## Batch: spec-copy
 
@@ -403,9 +403,13 @@ Batch: pre-trial-inputs'
     GIVN_RESULT_FILE=$PWD/givn/changes/enable-ise-and-run-the-givn-self-rebuild/evidence/ise/e2e-result.json \
     ./run-tests.sh --e2e --package e2e
     ```
-  - Acceptance: exit 0; the result file records `total` equal to the inventory
-    count (115 at the authoring revision), `passed` equal to `total`, `failed`
-    0, and `skipped` 0. Record the exact command in `spec-gaps.md` under
+  - Acceptance: exit 0; the result file records `total` 120 at the authoring
+    revision, `passed` equal to `total`, `failed` 0, and `skipped` 0. The 120
+    is 115 selected `@e2e` definitions plus 5 Scenario Outline examples; the
+    inventory names the three outlines. The baseline observation on 2026-11-17
+    against the checkout binary recorded `total` 120, `passed` 120, `failed` 0,
+    `skipped` 0. A `total` other than the recomputed 120 is a setup failure.
+    Record the exact command in `spec-gaps.md` under
     `## Trial inputs read from the checkout`, stating that `GIVN_BIN` is the
     rebuilt binary while `GIVN_READY_FIXTURE` and `GIVN_ROOT` come from the
     checkout and that the clean-room claim covers product behavior, not the

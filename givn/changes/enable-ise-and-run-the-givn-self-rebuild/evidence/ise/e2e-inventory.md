@@ -4,7 +4,16 @@ Trial-input export: `evidence/ise/spec-coverage.json` at the pre-trial revision.
 Selected `@e2e` scenarios: 115. Distinct feature paths: 56.
 
 The trial revision recomputes both values. Each row is one selected `@e2e`
-entry; the row count equals the runner's `total`.
+definition. The frozen runner counts Scenario Outline examples separately, so
+the 115 definitions expand to 120 runner scenarios at the authoring revision:
+
+| Outline | Definitions | Runner examples |
+|---|---|---|
+| `Consumer archives a completed change and receives a proven archive` | 1 | 2 |
+| `Consumer installs the agent reporter and its reported activity lands in the record` | 1 | 4 |
+| `Consumer opens the generated development report in a browser` | 1 | 2 |
+
+The 115 definitions plus the 5 extra examples equal the runner's 120.
 
 | Capability | Feature path | Scenario title |
 |---|---|---|
