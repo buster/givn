@@ -157,3 +157,137 @@
         PASS [   2.072s] ( 151/1115) givn::features_runner assess-code-structure/outline-report.feature::Unsupported-only Go production sources are not reported as absent
         PASS [   2.310s] ( 152/1115) givn::features_runner create-change/change-strategy.feature::The design-review guidance keeps a rebuild without an Ise Test mode a finding
         PASS [   2.163s] ( 153/1115) givn::features_runner create-change/create-a-change.feature::Empty id is rejected
+        PASS [   2.606s] ( 154/1115) givn::features_runner assess-code-structure/outline-report.feature::Units are sorted by classification and path
+        PASS [   2.279s] ( 155/1115) givn::features_runner create-change/create-a-change.feature::Already-existing change is rejected
+        PASS [   2.167s] ( 156/1115) givn::features_runner create-change/create-a-change.feature::Id beginning with a hyphen is rejected by argument parsing
+        PASS [   2.259s] ( 157/1115) givn::features_runner create-change/create-a-change.feature::Id beginning with a hyphen passed after the argument separator is rejected by validation
+        PASS [   2.354s] ( 158/1115) givn::features_runner create-change/create-a-change.feature::Id containing digits is accepted
+        PASS [   2.337s] ( 159/1115) givn::features_runner create-change/create-a-change.feature::Id ending with a hyphen is rejected
+        PASS [   2.173s] ( 160/1115) givn::features_runner create-change/create-a-change.feature::Id with a dot is rejected
+        PASS [   2.360s] ( 161/1115) givn::features_runner create-change/create-a-change.feature::Id with non-ASCII letters is rejected
+        PASS [   2.326s] ( 162/1115) givn::features_runner create-change/create-a-change.feature::Id with spaces is rejected
+        PASS [   2.471s] ( 163/1115) givn::features_runner create-change/create-a-change.feature::Id with underscores is rejected
+        PASS [   2.317s] ( 164/1115) givn::features_runner create-change/create-a-change.feature::Id with uppercase letters is rejected
+        PASS [   2.303s] ( 165/1115) givn::features_runner create-change/create-a-change.feature::Single-word id is accepted
+        PASS [   2.496s] ( 166/1115) givn::features_runner create-change/create-a-change.feature::Only proposal.md and the add-on lock are created in the change directory
+        PASS [   2.464s] ( 167/1115) givn::features_runner create-change/create-a-change.feature::Project override at givn/artifacts/proposal/proposal.md is used instead of the built-in template
+        PASS [   2.048s] ( 168/1115) givn::features_runner create-change/create-a-change.feature::Uninitialised project is rejected
+        PASS [   2.241s] ( 169/1115) givn::features_runner create-change/create-a-change.feature::Valid multi-word kebab-case id creates the change scaffold
+        PASS [   2.442s] ( 170/1115) givn::features_runner create-change/create-a-change.feature::proposal.md content equals the built-in template verbatim
+        PASS [   2.281s] ( 171/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy classifies a browser-rendered page as a Web UI
+        PASS [   2.200s] ( 172/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy classifies output-affecting flags as variants
+        PASS [   2.654s] ( 173/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy accepts the library public API as its real interface
+        PASS [   2.337s] ( 174/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy keeps the in-process allowance while ise is off
+        PASS [   2.179s] ( 175/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy refuses a silent deferral of a mandatory check
+        PASS [   2.135s] ( 176/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy requires a rendered-state assertion
+        PASS [   2.474s] ( 177/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy names the declared e2e package as the E2E target
+        PASS [   2.184s] ( 178/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy requires the visual baseline at every assertion
+        PASS [   2.275s] ( 179/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy requires evidence for every declared UI state
+        PASS [   2.343s] ( 180/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy uses transcripts for terminal interfaces
+        PASS [   2.779s] ( 181/1115) givn::features_runner create-change/prose-consolidation.feature::Canonical policy selects E2E scope explicitly rather than by command shape
+        PASS [   2.206s] ( 182/1115) givn::features_runner create-change/prose-consolidation.feature::Design and review instructions defer to the canonical policy
+        PASS [   2.207s] ( 183/1115) givn::features_runner create-change/prose-consolidation.feature::Disabling optional addons does not disable the dialog obligation
+        PASS [   2.053s] ( 184/1115) givn::features_runner create-change/prose-consolidation.feature::Justified E2E reclassification preserves real-interface coverage
+        PASS [   2.326s] ( 185/1115) givn::features_runner create-change/prose-consolidation.feature::Generated guidance names the commit path that works on every backend
+        PASS [   2.320s] ( 186/1115) givn::features_runner create-change/prose-consolidation.feature::Project override replaces the canonical specs instruction
+        PASS [   2.328s] ( 187/1115) givn::features_runner create-change/prose-consolidation.feature::Successful project skill and command replacements are preserved without policy injection
+        PASS [   2.400s] ( 188/1115) givn::features_runner create-change/prose-consolidation.feature::Served ise guidance states that the trial always carries the declaration
+        PASS [   2.498s] ( 189/1115) givn::features_runner create-change/prose-consolidation.feature::Served ise guidance keeps component scenarios in the Specification
+        PASS [   2.319s] ( 190/1115) givn::features_runner create-change/prose-consolidation.feature::The propose and archive commands carry the seed stamping instructions
+        PASS [   2.480s] ( 191/1115) givn::features_runner create-change/spec-gap.feature::A spec gap record names the artifact rather than its finder
+        PASS [   2.200s] ( 192/1115) givn::features_runner create-change/visual-design-contract.feature::Design guidance keeps improvements inside the style
+        PASS [   2.264s] ( 193/1115) givn::features_runner create-change/visual-design-contract.feature::Design guidance classifies a browser-rendered screen as a Web UI
+        PASS [   2.595s] ( 194/1115) givn::features_runner create-change/spec-gap.feature::An E2E test defect stops the Ise Test until the test is corrected
+        PASS [   2.238s] ( 195/1115) givn::features_runner create-change/visual-design-contract.feature::Design guidance names the default browser driver
+        PASS [   2.607s] ( 196/1115) givn::features_runner create-change/spec-gap.feature::The proposal guidance names the corrective route for each outcome
+        PASS [   2.192s] ( 197/1115) givn::features_runner create-change/visual-design-contract.feature::Design guidance names the default viewports
+        PASS [   2.317s] ( 198/1115) givn::features_runner create-change/visual-design-contract.feature::Design guidance names the user-visible persona boundary
+        PASS [   2.272s] ( 199/1115) givn::features_runner create-change/visual-design-contract.feature::Design guidance requires a driver for every Web UI matrix row
+        PASS [   2.274s] ( 200/1115) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance records the persona disposition
+        PASS [   2.311s] ( 201/1115) givn::features_runner create-change/visual-design-contract.feature::Design guidance requires breakpoints and accessibility
+        PASS [   2.361s] ( 202/1115) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance requires an approved contract
+        PASS [   2.375s] ( 203/1115) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance requires an operator question before a deferral
+        PASS [   2.344s] ( 204/1115) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance tests the opposite interface classification
+        PASS [   2.428s] ( 205/1115) givn::features_runner create-change/visual-design-contract.feature::Proposal guidance requires confirmed personas or a reasoned none
+        PASS [   2.252s] ( 206/1115) givn::features_runner create-change/visual-design-contract.feature::The design-review template carries the persona disposition table
+        PASS [   2.466s] ( 207/1115) givn::features_runner create-change/visual-design-contract.feature::Synchronized authoring guidance carries the classification, driver, and persona rules
+        PASS [   2.354s] ( 208/1115) givn::features_runner create-change/visual-design-contract.feature::The design template carries the visual contract section
+        PASS [   2.592s] ( 209/1115) givn::features_runner create-change/visual-design-contract.feature::The design template carries the state, breakpoint, and accessibility lines
+        PASS [   2.455s] ( 210/1115) givn::features_runner create-change/visual-design-contract.feature::The proposal template carries the persona confirmation line
+        PASS [   2.324s] ( 211/1115) givn::features_runner create-change/visual-design-contract.feature::The review template carries the persona disposition and deferral markers
+        PASS [   2.580s] ( 212/1115) givn::features_runner declare-the-specification/specification-declaration.feature::A declaration that is not valid YAML is refused by name
+        PASS [   2.524s] ( 213/1115) givn::features_runner declare-the-specification/specification-declaration.feature::A project with ise disabled reads no declaration
+        PASS [   2.540s] ( 214/1115) givn::features_runner declare-the-specification/specification-declaration.feature::A role that is not a list is refused by name
+        PASS [   2.051s] ( 215/1115) givn::features_runner discover-specifications/keep-audit-output-clean.feature::The text audit keeps model wording off the report channel
+        PASS [   2.090s] ( 216/1115) givn::features_runner discover-specifications/spec-duplicates.feature::A malformed permanent feature reports its path and fails the audit
+        PASS [   2.212s] ( 217/1115) givn::features_runner discover-specifications/keep-audit-output-clean.feature::Repeated audits emit stable output without progress lines
+        PASS [   2.485s] ( 218/1115) givn::features_runner declare-the-specification/specification-declaration.feature::An unknown role is named before the role it replaces
+        PASS [   2.466s] ( 219/1115) givn::features_runner declare-the-specification/specification-declaration.feature::An unreadable declaration is refused by name
+        PASS [   2.168s] ( 220/1115) givn::features_runner discover-specifications/spec-duplicates.feature::A missing permanent specifications directory is an empty corpus
+        PASS [   2.041s] ( 221/1115) givn::features_runner discover-specifications/spec-duplicates.feature::A structural subset is reported as an overlap
+        PASS [   2.115s] ( 222/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Archived scenarios are excluded from the audit
+        PASS [   2.179s] ( 223/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Auditing leaves permanent specifications unchanged
+        PASS [   2.111s] ( 224/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Different inherited setup prevents an exact duplicate label
+        PASS [   2.189s] ( 225/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Equal supported executable arguments remain exact duplicates
+        PASS [   2.069s] ( 226/1115) givn::features_runner discover-specifications/spec-duplicates.feature::JSON output lists every match with relation and endpoints
+        PASS [   2.143s] ( 227/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Exact duplicates across features are reported together
+        PASS [   2.206s] ( 228/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Normalized executable differences do not establish literal equality
+        PASS [   2.118s] ( 229/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Same assertion shape without exact behavior is reported as a structural match
+        PASS [   2.143s] ( 230/1115) givn::features_runner discover-specifications/spec-duplicates.feature::The deterministic audit works without model downloads
+        PASS [   2.256s] ( 231/1115) givn::features_runner discover-specifications/spec-duplicates.feature::Repeating an unchanged audit produces the same report
+        PASS [   5.592s] ( 232/1115) givn::features_runner declare-the-specification/specification-declaration.feature::A malformed declaration is refused by name and left unchanged
+        PASS [   2.547s] ( 233/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::A malformed extension entry is dropped with a warning
+        PASS [   2.654s] ( 234/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::A repeated instruction key keeps the last entry
+        PASS [   2.412s] ( 235/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::A whitespace-only rule entry is skipped with a warning
+        PASS [   2.515s] ( 236/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::An empty extension list is valid and adds nothing
+        PASS [   2.509s] ( 237/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::An extension extends a policy and a step instruction alike
+        PASS [   2.423s] ( 238/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::An extension for an unknown instruction is dropped with a warning
+        PASS [   2.143s] ( 239/1115) givn::features_runner fragments/adr-qualification-gate.feature::An ADR refinement is routed to amendment without duplication
+        PASS [   2.205s] ( 240/1115) givn::features_runner fragments/adr-qualification-gate.feature::All effective guidance sources use the same ADR policy
+        PASS [   2.220s] ( 241/1115) givn::features_runner fragments/adr-qualification-gate.feature::An architectural replacement preserves supersession history
+        PASS [   2.650s] ( 242/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::Changing an extension changes the next served content and touches nothing else
+        PASS [   2.490s] ( 243/1115) givn::features_runner extend-an-instruction/instruction-extension.feature::Removing an extension restores the built-in rules alone
+        PASS [   2.584s] ( 244/1115) givn::features_runner fragments/adr-qualification-gate.feature::A reviewer requests design-review guidance through the Givn CLI
+        PASS [   2.154s] ( 245/1115) givn::features_runner fragments/adr-qualification-gate.feature::Arc42 impact does not by itself require an ADR
+        PASS [   2.195s] ( 246/1115) givn::features_runner fragments/adr-qualification-gate.feature::Design-review requires the cheaper-home challenge for a new ADR
+        PASS [   2.135s] ( 247/1115) givn::features_runner fragments/adr-qualification-gate.feature::Ordinary ADR downsides are not automatically risk debt
+        PASS [   2.356s] ( 248/1115) givn::features_runner fragments/adr-qualification-gate.feature::Shared guidance alone does not qualify an ADR
+        PASS [   2.196s] ( 249/1115) givn::features_runner fragments/adr-qualification-gate.feature::The ADR guidance requires an adversarial qualification record
+        PASS [   2.229s] ( 250/1115) givn::features_runner fragments/adr-qualification-gate.feature::The ADR register has one canonical ownership contract
+        PASS [   2.160s] ( 251/1115) givn::features_runner fragments/adr-qualification-gate.feature::The ADR template ships with no pre-passed qualification values
+        PASS [   2.165s] ( 252/1115) givn::features_runner fragments/adr-qualification-gate.feature::The change assessment records ADR disposition separately from chapter impact
+        PASS [   2.294s] ( 253/1115) givn::features_runner fragments/adr-qualification-gate.feature::The chapter-selection guidance does not normalize row 9
+        PASS [   2.249s] ( 254/1115) givn::features_runner fragments/adr-qualification-gate.feature::The design template keeps decision justification in the design
+        PASS [   2.301s] ( 255/1115) givn::features_runner fragments/adr-qualification-gate.feature::The guidance carries the three falsification tests
+        PASS [   2.442s] ( 256/1115) givn::features_runner fragments/adr-qualification-gate.feature::The guidance defines strict qualification as an all-gates contract
+        PASS [   2.360s] ( 257/1115) givn::features_runner fragments/adr-qualification-gate.feature::The guidance forbids invented ADR evidence
+        PASS [   2.277s] ( 258/1115) givn::features_runner fragments/adr-qualification-gate.feature::The guidance requires an existing-ADR check before drafting
+        PASS [   2.288s] ( 259/1115) givn::features_runner fragments/adr-qualification-gate.feature::The guidance routes normal design decisions to one canonical artifact
+        PASS [   2.178s] ( 260/1115) givn::features_runner fragments/adr-qualification-gate.feature::The impact assessment records the verdict before drafting
+        PASS [   2.206s] ( 261/1115) givn::features_runner fragments/adr-qualification-gate.feature::The migration preserves independent architecture history across three proposed decisions
+        PASS [   2.431s] ( 262/1115) givn::features_runner fragments/attribute-commits.feature::A human commit remains usable without attribution context
+        PASS [   2.498s] ( 263/1115) givn::features_runner fragments/attribute-commits.feature::A partial attribution context does not block a commit
+        PASS [   2.318s] ( 264/1115) givn::features_runner fragments/attribute-commits.feature::An unavailable optional attribution helper does not fail a human commit
+        PASS [   2.523s] ( 265/1115) givn::features_runner fragments/attribute-commits.feature::An existing commit hook runs before Givn attribution
+        PASS [   2.974s] ( 266/1115) givn::features_runner fragments/attribute-commits.feature::A commit without explicit paths fails before staging
+        PASS [   2.893s] ( 267/1115) givn::features_runner fragments/attribute-commits.feature::An explicit selected tracked deletion is committed successfully
+        PASS [   2.505s] ( 268/1115) givn::features_runner fragments/attribute-commits.feature::Attribution follows a model change between commits
+        PASS [   2.350s] ( 269/1115) givn::features_runner fragments/attribute-commits.feature::Git commits the selected working content without consuming an older staged version
+        PASS [   2.412s] ( 270/1115) givn::features_runner fragments/attribute-commits.feature::Maki leaves a command that creates no revision unchanged
+        PASS [   2.483s] ( 271/1115) givn::features_runner fragments/attribute-commits.feature::Maki marks a missing reasoning mode as unavailable
+        PASS [   2.471s] ( 272/1115) givn::features_runner fragments/attribute-commits.feature::Maki marks a partial attribution context as unavailable
+        PASS [   2.532s] ( 273/1115) givn::features_runner fragments/attribute-commits.feature::Maki prepares attribution for a revision command
+        PASS [   2.076s] ( 274/1115) givn::features_runner fragments/attribute-commits.feature::OpenCode leaves attribution unavailable when no model is observed
+        PASS [   2.162s] ( 275/1115) givn::features_runner fragments/attribute-commits.feature::OpenCode attributes a command to the session that issued it
+        PASS [   2.524s] ( 276/1115) givn::features_runner fragments/attribute-commits.feature::Maki resolves attribution from the session without an interactive UI
+        PASS [   2.409s] ( 277/1115) givn::features_runner fragments/attribute-commits.feature::The SCM-neutral commit path attributes a Git revision
+        PASS [   2.655s] ( 278/1115) givn::features_runner fragments/attribute-commits.feature::The SCM-neutral commit path attributes a Fossil check-in
+        PASS [   2.494s] ( 279/1115) givn::features_runner fragments/attribute-commits.feature::The commit wrapper without attribution context leaves the message unchanged
+        PASS [   3.080s] ( 280/1115) givn::features_runner fragments/attribute-commits.feature::Repeated hook installation never dispatches its own launcher
+        PASS [   2.852s] ( 281/1115) givn::features_runner fragments/attribute-commits.feature::The commit wrapper records only the named paths on Fossil
+        PASS [   2.125s] ( 282/1115) givn::features_runner fragments/choose-project-license.feature::Consumer inspects the project license in Cargo.toml and README
+        PASS [   2.215s] ( 283/1115) givn::features_runner fragments/choose-project-license.feature::Cargo.toml declares GPL-3.0-or-later license
+        PASS [   2.549s] ( 284/1115) givn::features_runner fragments/attribute-commits.feature::omp leaves a command that creates no revision unchanged
+        PASS [   2.143s] ( 285/1115) givn::features_runner fragments/choose-project-license.feature::README.md declares the project license
+        PASS [   3.108s] ( 286/1115) givn::features_runner fragments/attribute-commits.feature::Unrelated staged additions and deletions survive an explicit Git commit
+        PASS [   2.559s] ( 287/1115) givn::features_runner fragments/attribute-commits.feature::omp marks a partial attribution context as unavailable
