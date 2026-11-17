@@ -2,7 +2,7 @@
 
 Feature: prose-consolidation
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Served ise guidance keeps component scenarios in the Specification
     Given  a Givn project with ise effective
     When  the author reads the served ise guidance

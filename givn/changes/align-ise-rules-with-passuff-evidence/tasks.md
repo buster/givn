@@ -129,7 +129,10 @@ or removed; both delta files stay tagged `@givn.delta`; no file under
     line's later tick edit.
   - Design constraints: served `tasks` instruction commit rule; served
     `implement` instruction plan commit. No production file changes.
-  - [ ] COMMIT: `___` -- Batch: setup
+  - Evidence: `givn commit givn/changes/align-ise-rules-with-passuff-evidence`
+    printed `committed revision a0dc6c025c4976fdd137c56e5e4101f7c2b90aa2 on the
+    Git backend`; `git rev-parse HEAD` printed the same revision.
+  - [x] COMMIT: `a0dc6c025c4976fdd137c56e5e4101f7c2b90aa2` -- Batch: setup
 
 - [ ] Confirm the runner configuration and the delta discovery count
   - Paths: none; paste the evidence into this task.
@@ -144,6 +147,22 @@ or removed; both delta files stay tagged `@givn.delta`; no file under
     `verify.e2e_command` is `./run-tests.sh --e2e --package e2e`; both builders
     call `.fail_on_skipped()`; the delta discovery count is 9, all regular,
     because the change adds no `@e2e` scenario. No configuration file changes.
+  - Evidence:
+    ```text
+    $ sed -n '/^verify:/,/^$/p' givn/commands.yaml
+    verify:
+      command: "./run-tests.sh --non-e2e"
+      e2e_command: "./run-tests.sh --e2e --package e2e"
+
+    $ grep -n 'fail_on_skipped' tests/features_runner.rs e2e/tests/e2e_runner.rs
+    tests/features_runner.rs:55:        .fail_on_skipped()
+    tests/features_runner.rs:155:        .fail_on_skipped()
+    e2e/tests/e2e_runner.rs:46:        .fail_on_skipped()
+
+    $ GIVN_FEATURES=givn/changes/align-ise-rules-with-passuff-evidence/specs \
+        cargo nextest list --locked --test features_runner | grep -c '::'
+    9
+    ```
   - Design constraints: design `## Test runner and strict mode` and the
     design's E2E smoke test infrastructure section; the change adds no runner
     configuration.
@@ -164,6 +183,37 @@ or removed; both delta files stay tagged `@givn.delta`; no file under
     Delete the probe (`rm -rf /tmp/ise-strictness-probe`) and re-run
     `./run-tests.sh --non-e2e`; it exits 0 with the delta scenarios still
     tagged `@wip`. Do not proceed while the probe exits 0.
+  - Evidence:
+    ```text
+    $ mkdir -p /tmp/ise-strictness-probe
+    $ printf 'Feature: Strictness probe\n  Scenario: An unbound step fails\n    Given this step is deliberately unbound\n' \
+        > /tmp/ise-strictness-probe/probe.feature
+    $ GIVN_FEATURES=/tmp/ise-strictness-probe cargo nextest run --locked --test features_runner
+        FAIL [   0.922s] (1/1) givn::features_runner probe.feature::An unbound step fails
+        Feature: Strictness probe
+          Scenario: An unbound step fails
+           ✘  Given this step is deliberately unbound
+              Step failed:
+              Defined: tmp/ise-strictness-probe/probe.feature:3:5
+              Step doesn't match any function
+        [Summary]
+        1 feature
+        1 scenario (1 failed)
+        1 step (1 failed)
+            Summary [   0.923s] 1 test run: 0 passed, 1 failed, 0 skipped
+    exit 100
+
+    $ rm -rf /tmp/ise-strictness-probe
+    $ ./run-tests.sh --non-e2e
+            Summary [ 209.882s] 1108 tests run: 1108 passed, 115 skipped
+    exit 0
+    ```
+    The 115 nextest-skipped units are the `@e2e` complement the regular tag
+    expression excludes; no runner step is skipped. The first full run of this
+    command failed `agent-activity-reporting.feature::A paused Maki subagent
+    stays open until it finishes`, which passes in isolation (`1 scenario (1
+    passed)`, exit 0) and passed in the rerun above; that scenario is unrelated
+    to this change.
   - Design constraints: served `tasks` instruction proof-of-strictness rule;
     `tests/features_runner.rs` sets `.fail_on_skipped()` and fails a skipped
     step, so an empty or undefined step can never report PASS.
@@ -197,6 +247,52 @@ identical text and the pre-archive permanent scope is green.
     step. The delta RED run fails all nine scenarios on their asserted
     sentences. After the asset edits the delta run prints 9 passed, 0 failed,
     0 skipped, and exits 0. No `0 scenarios` summary is accepted as evidence.
+  - Evidence:
+    ```text
+    # RED, bindings in place and assets unedited
+    $ GIVN_FEATURES=givn/changes/align-ise-rules-with-passuff-evidence/specs \
+        cargo test --locked --test features_runner -- \
+        'givn/changes/align-ise-rules-with-passuff-evidence/specs/fragments/instruction-integrity.feature::The ise instruction makes the declaration cover every build input' \
+        --exact --nocapture
+    Feature: Instruction and skill guidance remains complete and machine-readable
+      Scenario: The ise instruction makes the declaration cover every build input
+       ✔  Given a Givn project with the ise addon enabled and the skills synchronized
+       ✔  When the consumer requests the `ise` instruction
+       ✔  Then the command exits 0
+       ✘  And the served instruction names the build manifest, the lockfile, the toolchain pin, a structural template, a schema or migration asset, and served instruction text as build inputs
+          Matched: tests/steps/instruction_integrity_steps.rs:3801:1
+          Step panicked. Captured output: the served text is missing "build input": # Instruction: ise ...
+    [Summary]
+    1 feature
+    1 scenario (1 failed)
+    4 steps (3 passed, 1 failed)
+    exit 101
+
+    # Delta RED, same unedited assets
+    $ GIVN_FEATURES=givn/changes/align-ise-rules-with-passuff-evidence/specs \
+        ./run-tests.sh --non-e2e
+       ✘  And the served instruction names the build manifest, ...
+       ✘  And the served instruction names the dependency cache and the installed toolchain as environment inputs, never declared files
+       ✘  Then the guidance states that the @e2e scenarios stay in the Specification with their exact titles
+       ✘  And the served instruction treats an asset the rebuild generates ...
+       ✘  And the served instruction records every file changed outside the declared Specification or the replaced unit
+       ✘  And the served instruction requires the builder to read no product source outside the spec copy and the declared inputs
+       ✘  And the served instruction states that a contract the frozen tests rely on enumerates every value it fixes
+       ✘  And the served review guidance asks for the files changed outside the declared Specification or the replaced unit
+       ✘  And the served instruction states that a Dry-Run Ise trial promotes nothing
+         Summary [   1.587s] 9 tests run: 0 passed, 9 failed, 0 skipped
+    exit 100
+
+    # Delta GREEN after the asset edits
+    $ GIVN_FEATURES=givn/changes/align-ise-rules-with-passuff-evidence/specs \
+        ./run-tests.sh --non-e2e
+         Summary [   1.647s] 9 tests run: 9 passed, 0 skipped
+    exit 0
+    ```
+    The first delta GREEN attempt failed one step bound to "not a specification
+    defect": the served sentence carries the term in backticks, so the binding
+    asserts "it is not a `specification defect`", which keeps the term and the
+    required classification.
   - Design constraints: design `## Verification plan` items 1 to 3 and the
     batch-map RED proof; the bindings land before the asset edits so the RED is
     the missing sentence, not a missing binding.

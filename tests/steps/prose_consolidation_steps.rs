@@ -651,6 +651,32 @@ fn policy_feature_files_stay_shared(world: &mut GivnWorld) {
     );
 }
 
+#[then(
+    "the guidance states that the @e2e scenarios stay in the Specification with their exact titles"
+)]
+fn guidance_e2e_scenarios_stay_in_specification(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains(
+            "stay in the Specification under the `behavior` role with their exact titles"
+        ),
+        "the served ise guidance does not keep the @e2e scenarios in the Specification: {content}"
+    );
+}
+
+#[then(
+    "the guidance states that the declared e2e package holds the runner and every @e2e step definition"
+)]
+fn guidance_declared_e2e_package_holds_runner(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains(
+            "the declared `e2e` package, which holds the runner and every `@e2e` step definition"
+        ),
+        "the served ise guidance does not name the declared e2e package as the runner home: {content}"
+    );
+}
+
 #[then("the guidance states that component scenarios stay in the Specification unchanged")]
 fn guidance_component_scenarios_stay_in_specification(world: &mut GivnWorld) {
     let content = loaded_guidance(world);

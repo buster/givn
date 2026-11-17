@@ -358,7 +358,9 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the review guidance
     Then  the command exits 0
-    And  the served review guidance asks for the neighboring components changed outside the replaced component and the reason
+    And  the served review guidance asks for the files changed outside the declared Specification or the replaced unit
+    And  the served review guidance asks for every consolidation the rebuild made
+    And  the served review guidance asks for the reason for each
     And  the served review guidance states that the answer is a review question, never a gate
 
   @instruction-integrity

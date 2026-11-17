@@ -238,9 +238,10 @@ difference.
   test, and restart the trial from the corrected suite. The `e2e` package is
   part of the Specification, so the corrected test is a Specification
   correction, not an exception to the freeze.
-- **Neighboring components.** Ask which components changed outside the
-  replaced component, and the reason for each change. Record the answer. This
-  is one review question, never a gate.
+- **Neighbors and consolidations.** Ask which files changed outside the
+  declared Specification or the replaced unit, and every consolidation the
+  rebuild made, with the reason for each. Record the answer. This is one review
+  question, never a gate.
 
 {{/if}}
 {{#if addons.arc42}}
