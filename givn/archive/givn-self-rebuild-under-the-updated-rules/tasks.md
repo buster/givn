@@ -753,7 +753,7 @@ Batch: archive-and-dogfood'
     merged-step rule (the delta adds no step file, so every new phrase is
     already bound in the permanent `tests/steps/` tree); `S14` owns the
     promotion decision.
-  - [x] COMMIT: `6f79cb71` -- Batch: archive-and-dogfood
+  - [x] COMMIT: `3d009b61` -- Batch: archive-and-dogfood
 
 - [x] Record the post-archive suites and the self-dogfood transcript
   - Paths: `givn/archive/givn-self-rebuild-under-the-updated-rules/evidence/ise/self-dogfood.txt`.
