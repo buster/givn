@@ -4,31 +4,38 @@ Review kind: independent
 Author: strengthen-ise-specification author (omp)
 Reviewer context: omp independent design-review context (deepseek-flash, tenth review, 2026-11-17)
 
+Reviewed revision: `673da7dde218650211e0c97a73051a5d561f826e` (HEAD), with
+`design.md` at blob `88aca6d1500e401c05b2372c9f534c4e269c3dec`, unchanged since
+the design review at `ec4b9d71`.
+
 ## Scope and result
 
 The change rewrites the clean-room command surface, cuts the trial record to the
 `ise-manifest/v1` manifest, states the canonical checksum bytes, and adds the
-`compare` report. I re-read the proposal, the design, the delta specs, the
-tasks, the design review, the arc42 assessment, the durable arc42 chapters, the
-reference, the served `ise` instruction, and the implementation diff
-`76159193..HEAD`. I ran the task gate, the delta non-e2e scope, the delta e2e
-scope, the permanent e2e tier, and eight mutation probes.
+`compare` report. This review re-read the FAIL findings, the repaired proposal,
+design, delta specs, tasks, design review, arc42 assessment, durable chapters,
+reference, served `ise` instruction, and the implementation `76159193..HEAD`.
+It re-ran the task gate, the delta non-e2e scope, the delta e2e scope, the
+permanent e2e tier, and three mutation probes on the repaired rules.
 
-The implementation is broadly conformant and the checksum rule reproduces the
-pinned values from the stated bytes. Seven blocking findings remain: one public
-report line carries an unstated ellipsis, a deleted declaration is refused
-instead of reported, the delta use case states the opposite docstring rule from
-the reference and the golden fixture, the design review predates the design it
-was supposed to review, the retired record shape is not refused by name, and
-one scenario batch records a tag-only commit. `REVIEW: FAIL` follows the
-findings.
+All seven blockers are closed. The checksum line prints 12 lowercase hex
+characters with no ellipsis; an absent or unreadable copy declaration
+contributes no roles and the recorded path is reported `missing` or `changed`;
+the delta use case states the reference's docstring rule; the design review at
+`ec4b9d71` covers the 158-scenario delta and the current `design.md` blob; a
+retired `ise-trial/v1` record is refused by name; batch 12 records a commit
+carrying the regression assertion; and the routing table declares all five
+delta capabilities. `REVIEW: PASS` follows the evidence.
 
 ## Implementation evidence check
 
 ### `@e2e` tag integrity
 
-- The delta has 156 scenarios: 56 `@givn.removed`, 30 `@givn.modified`, 70
-  `@givn.added` (100 executable after the 56 retired placeholders are removed).
+- The delta has 158 scenarios: 56 `@givn.removed`, 30 `@givn.modified`, 72
+  `@givn.added` (102 executable after the 56 retired placeholders are removed).
+  The two repair scenarios (`Comparison names a missing declaration in the
+  copy`, `Comparison refuses a retired ise-trial/v1 record by scope`) are
+  regular `@givn.added` entries.
 - Two delta scenarios are `@e2e`: `Developer rebuilds the whole product from its
   Specification` and `Verifier compares the spec copy with the manifest`. Both
   replace permanent `@e2e` scenarios named by `@givn.removed`; no `@e2e` tag
@@ -39,18 +46,19 @@ findings.
 ### Step bodies
 
 `0` empty or trivial step bodies found across the seven changed step files:
-`tests/steps/clean_room_preparation_steps.rs` (217 bindings),
-`tests/steps/trial_input_verification_steps.rs` (71),
-`tests/steps/prose_consolidation_steps.rs` (63),
-`tests/steps/instruction_integrity_steps.rs` (244),
-`tests/steps/specification_declaration_steps.rs` (9),
-`e2e/tests/steps/clean_room_preparation_e2e_steps.rs` (18), and
-`e2e/tests/steps/trial_input_verification_e2e_steps.rs` (6). No `todo!()`,
+`tests/steps/clean_room_preparation_steps.rs` (261 bindings),
+`tests/steps/trial_input_verification_steps.rs` (99),
+`tests/steps/prose_consolidation_steps.rs` (75),
+`tests/steps/instruction_integrity_steps.rs` (260),
+`tests/steps/specification_declaration_steps.rs` (10),
+`e2e/tests/steps/clean_room_preparation_e2e_steps.rs` (22), and
+`e2e/tests/steps/trial_input_verification_e2e_steps.rs` (7). No `todo!()`,
 `unimplemented!()`, or stub body remains.
 
 ### Checked scenarios and commits
 
-All 224 tasks are checked. The recorded batch revisions are:
+All 237 tasks are checked; the delta holds 102 working scenarios (72 added,
+30 modified). The recorded batch revisions are:
 
 | Batch | Revision | Content |
 |---|---|---|
@@ -66,12 +74,15 @@ All 224 tasks are checked. The recorded batch revisions are:
 | compare-report | `6965c0d3` | compare report and copy-side checks |
 | compare-checkout | `7c52e968` | checkout content paths and added paths |
 | compare-refusals | `a9f3e8ce` | strict manifest reader |
-| declaration-boundary | `f21807f8` | tag removal only (finding B6) |
+| declaration-boundary | `44168260` | exit-code-and-name assertion binding, tag removal |
 | cross-capability-rebinding | `73bcd1bc0e` | two delta features, e2e fixture rebinding |
+| review-blockers | `8c8ddbc7` | optional copy declaration, retired-scope pre-check, 12-hex line, docstring sentence, routing rows |
 
-The commits for batches 1-11 and 13 contain production code or step
-definitions/regression tests. Batch 12's commit changes only
-`@givn.modified @wip` to `@givn.modified`; see B6.
+Every batch commit contains production code or a step definition/regression
+test. `git show 44168260` adds the `the command exits 1 and names "<path>"`
+binding in `tests/steps/specification_declaration_steps.rs` and the matching
+`design.md` row; `givn check review` reports the scenario-commit check green
+over 102 scenarios.
 
 ### Promised components and contracts
 
@@ -100,17 +111,19 @@ and `evidence/visual/verifier-compares-the-spec-copy-with-the-manifest/transcrip
 ### Scope selection
 
 `verify.e2e_command` is `./run-tests.sh --e2e --package e2e`; `run-tests.sh`
-exports `GIVN_RESULT_SCOPE=e2e` before the e2e runner. The change receipt
-records the regular scope (`98` passed, `0` failed, `0` skipped) and the e2e
-scope (`2` passed, `0` failed, `0` skipped). The permanent e2e tier passes
-`119` scenarios and `781` steps.
+exports `GIVN_RESULT_SCOPE=e2e` before the e2e runner. The change receipt at
+`673da7dd` records the regular scope (`100` passed, `0` failed, `0` skipped)
+and the e2e scope (`2` passed, `0` failed, `0` skipped). The delta scopes pass
+(`100` passed with `2` skipped under `not @e2e`; `2` passed for `@e2e`), and
+the permanent e2e tier passes `119` scenarios and `781` steps.
 
 ### Design match
 
 The runner, step-file layout, and framework match design.md. The report line
-and the docstring rule do not; see B1 and B3. The delta use case is the
-specification the archive merges, so its contradiction with the reference is a
-finding, not a documentation wording choice.
+prints the stated 12 lowercase hex characters with no ellipsis, and the delta
+use case states the reference's docstring rule. The e2e step reads the bare
+value and asserts its length and lowercase hex, so a second implementation
+that follows the stated rule passes the frozen suite.
 
 ### Interaction coverage
 
@@ -141,182 +154,44 @@ covered by the delta.
 
 ### Spec gap outcome
 
-`Spec gap outcome: implementation defect`. The as-built behavior contradicts
-the merged Specification at B1, B2, and B5; B3 corrects the delta use case to
-the rule the reference and the golden fixture already state. One outcome is
-recorded before any fix.
+`Spec gap outcome: implementation defect`. Before the repair, the as-built
+behavior contradicted the merged Specification at B1, B2, and B5; B3 corrected
+the delta use case to the rule the reference and the golden fixture already
+state. One outcome was recorded before any fix.
 
 ## Probes and outcomes
 
-| # | Batch | Mutation | Scenario run | Observed result |
-|---|---|---|---|---|
-| P1 | 13 | `assets/instructions/ise.md`: `always carries` -> `sometimes carries` | `Served ise guidance states that the trial always carries the declaration` | FAILED: `the served ise guidance does not state that the spec copy always carries the declaration` |
-| P2 | 7 | `src/ise/manifest.rs`: drop the `kind` byte from `path_checksum` | `Preparation records the canonical checksums for a pinned fixture` | FAILED: `specification_checksum` observed `96f6b5f9...`, expected `35444598...` |
-| P3 | 5 | `src/ise/partition.rs`: remove the Specification-role precedence filter | `A whole-product rebuild keeps a Specification file under a source root` | FAILED: report printed `Source code removed: 3`, expected `1` |
-| P4 | 2 | `src/ise/mod.rs`: print `does not record` in the no-blob branch | `Preparation refuses a declaration the revision records but cannot read` | FAILED: stderr did not carry `returned no blob` |
-| P5 | 1 | `src/cli/ise.rs`: use the `ise replace` prefix | `Preparation refuses while the ise addon is off` | FAILED: stderr did not start with `ise rebuild-all: ` |
-| P6 | 9 | `src/cli/ise.rs`: print `+` for every difference kind | `Comparison names a changed Specification file in the copy` | FAILED: stdout printed `+ givn/specs/demo/spec.feature`, expected `-` |
-| P7 | 10 | `src/ise/compare.rs`: return no added checkout paths | `Comparison names an added End-to-end file in the checkout` | FAILED: stdout printed `End-to-end tests: match`, expected `1 added` |
-| P8 | 11 | `src/ise/manifest.rs`: accept every checksum value | `Comparison refuses a manifest with a malformed checksum` | FAILED: no `ise compare:` refusal, command did not exit 1 with the manifest named |
+The three repair probes run at `673da7dd` mutate the repaired rules. Every
+probe was reverted with `git checkout -- <path>`; the working tree was clean
+after each revert.
 
-Every probe was reverted with `git checkout -- <path>`; the working tree is
-clean after the review except for this artifact.
+| # | Mutation | Scenario run | Observed result |
+|---|---|---|---|
+| P1 | `src/ise/manifest.rs`: `abbreviate` appends `…` | `Developer rebuilds the whole product from its Specification` (`@e2e`) | FAILED: `Specification checksum: "7d7a8df82f9f…" is not 12 hex characters` (length 15, expected 12) |
+| P2 | `src/ise/compare.rs`: refuse a copy whose declaration is absent instead of treating it as no roles | `Comparison names a missing declaration in the copy` | FAILED: stdout `""` does not print `Specification files: 1 missing` |
+| P3 | `src/ise/manifest.rs`: drop the `scope`/`content_scope` pre-check | `Comparison refuses a retired ise-trial/v1 record by scope` | FAILED: stderr `... does not match ise-manifest/v1: unknown field 'schema', expected one of ...` does not name `ise-trial/v1` |
 
-## Findings
+The eight probes from the earlier review at `6e55ba9a` are prior-revision
+evidence; their targets outside the repaired lines (`partition.rs`, the
+`cli::ise` prefixes, the compare difference kinds, the checkout added paths,
+the checksum format guard, and the served instruction) are unchanged by the
+repair.
 
-### B1 (blocker) - the checksum report line carries an unstated ellipsis
+## Finding dispositions
 
-- **Location.** `src/ise/manifest.rs:239` `abbreviate` returns the first 12 hex
-  characters plus `…`; `src/cli/ise.rs:128-130` prints it;
-  `e2e/tests/steps/clean_room_preparation_e2e_steps.rs:367-385`
-  (`report_prints_the_checksum_lines`) strips `…` and fails a line without it.
-- **Contradicting source.** `docs/reference.md:513`: "The report prints the
-  first 12 lowercase hex characters; the manifest keeps the full value."
-  `docs/reference.md:417` shows `Specification checksum: 4f1c9a2b7d01` with no
-  ellipsis. `design.md` Step Definitions says "Exact 12-hex match, no
-  ellipsis." The delta scenario `clean-room-preparation.feature:337` says "12
-  lowercase hex characters each", with no ellipsis.
-- **Probe.** A real rebuild on a temporary project printed
-  `Specification checksum: 2de041d8fd87…`; the committed e2e transcript prints
-  `7d7a8df82f9f…`.
-- **Effect.** A second implementation that prints the stated 12 hex characters
-  fails the frozen e2e suite; the suite currently certifies the unstated
-  character.
-- **Small fix.** Delete the ellipsis from `abbreviate` and from the e2e step;
-  the old `report_abbreviates_the_digests` binding (whose permanent scenario
-  the delta removes) also expects the ellipsis and must be removed with it.
-- **Classification.** implementation defect; bucket 2 (the assertion must match
-  the Specification).
+Every blocker from the prior review is closed. The repair batch is
+`8c8ddbc7` (`review-blockers`) except B4 (`design-review.md` at `673da7dd`)
+and B6 (batch 12, `44168260`).
 
-### B2 (blocker) - a deleted copy declaration is refused, not reported missing
-
-- **Location.** `src/ise/compare.rs:70` calls `copy_declaration(&copy)?` before
-  the comparison; `copy_declaration` at `:300` reads
-  `<copy>/givn/specification.yaml` with `read_to_string` and propagates the
-  error.
-- **Contradicting source.** `docs/reference.md:693-696`: "The copy's declaration
-  is compared like every other Specification file, so an edited or deleted
-  declaration is a difference naming the path." The delta use case example
-  (`specs/prepare-an-ise-test/usecase.md:143`) says deleting
-  `givn/specification.yaml` reports `Specification files: 1 missing`.
-- **Probe.** I prepared a copy with `ise rebuild-component ... --manifest`,
-  deleted `copy/givn/specification.yaml`, and ran `ise compare`. Exit `1`,
-  stdout empty, stderr
-  `ise compare: read the spec copy's declaration '.../copy/givn/specification.yaml': No such file or directory (os error 2)`.
-- **Coverage.** `Comparison names a missing Specification file in the copy`
-  deletes `givn/specs/demo/spec.feature`, not the declaration; no scenario
-  covers the declaration's missing or malformed case.
-- **Small fix.** Treat the copy declaration as optional for the added-file
-  refusal: if it is absent or unreadable, skip that refusal and let the
-  recorded `checksums.specification` comparison report `1 missing` / `1
-  changed`; add a scenario deleting `givn/specification.yaml` and asserting
-  `Specification files: 1 missing` with `- givn/specification.yaml`.
-- **Classification.** implementation defect plus missing test; bucket 2.
-
-### B3 (blocker) - the delta use case states the opposite docstring rule
-
-- **Location.** `givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/usecase.md:81`:
-  "the docstring is the delimiter-stripped value with the common indentation
-  removed and the delimiter-adjacent line breaks kept".
-- **Contradicting source.** `docs/reference.md:549`: "the docstring has the
-  common indentation removed and loses the line break that follows the opening
-  delimiter and the line break before the closing delimiter." `src/gherkin/content.rs:32`
-  `docstring_content` strips both line breaks. The richer golden fixture
-  (`design.md`, Independent Second Implementation) expects
-  `"line one\n  indented\nline four"`, with neither line break; the golden
-  scenario pins that value.
-- **Effect.** A second implementation that follows the delta use case (which
-  archive merges into the permanent Specification) keeps the two line breaks,
-  produces a different scenario checksum, and fails the golden scenario. The
-  reference and the fixture disagree with the merged narrative.
-- **Small fix.** Correct the use case sentence to say the line break after the
-  opening delimiter and the line break before the closing delimiter are
-  dropped, matching the reference and the golden bytes. If the intended rule is
-  to keep them, change `docstring_content`, the reference, and every pinned
-  value together and re-run design-review; the former is the smaller change.
-- **Classification.** specification defect.
-
-### B4 (blocker) - the design review predates the design it reviews
-
-- **Location.** `design-review.md` records `154` scenarios: 56 removed, 28
-  modified, 70 added, and does not list the two cross-capability scenarios.
-  `design.md` was changed after the `DESIGN-REVIEW: PASS` in
-  `aef08fab` (Step Definitions rows for `prose-consolidation` and
-  `instruction-integrity`; two Use-Case Traceability rows; the Corpus
-  Rebinding sentence now says "the delta adds 72 scenarios: 39 ... 31 ... and
-  two cross-capability `@givn.modified` entries"). The two delta features were
-  added in `73bcd1bc`, after the design review.
-- **Current state.** The delta holds `156` scenarios: 56 removed, 30 modified,
-  70 added; `givn check review` reports `net delta: 70 added, 30 modified, 56
-  removed`. The `design.md` sentence is numerically wrong: the two
-  cross-capability entries are `@givn.modified`, not added, so the added count
-  remains 70. The review skill and the served review instruction require a new
-  design review when `design.md` changes: "If `design.md` changes, run
-  design-review again before continuing."
-- **Small fix.** Re-run the independent design review for the added rows and
-  the changed corpus counts, update `design-review.md` with the current counts
-  and verdict, and then return to this review.
-- **Classification.** process/design-review defect; blocking.
-
-### B5 (blocker) - the retired `ise-trial/v1` record is not refused by name
-
-- **Location.** `src/ise/manifest.rs:52-80` deserializes `Manifest` before it
-  checks `scope`. A real `ise-trial/v1` record carries `schema` and
-  `content_scope`, not `scope`; `serde` fails first.
-- **Contradicting source.** Proposal D4 gives the output
-  `ise compare: the manifest scope is 'ise-trial/v1', expected 'ise-manifest/v1'`;
-  `docs/reference.md` says the earlier record shape is refused by name;
-  `usecase.md` says the same.
-- **Probe.** A real old-shape record produced
-  `ise compare: the manifest '.../old.yaml' does not match ise-manifest/v1: unknown field 'schema', expected one of ...`.
-  The recorded `ise-trial/v1` scope is never printed.
-- **Coverage.** `Comparison refuses a manifest whose scope is not
-  ise-manifest/v1` only changes the `scope` field of a new-shape manifest; it
-  does not exercise the retired field set.
-- **Small fix.** Parse the YAML value, read `scope`/`content_scope` before
-  deserialization, and refuse `ise-trial/v1` with the recorded and expected
-  scope. Add a scenario that writes the old record shape and asserts the named
-  refusal; keep the changed-scope scenario.
-- **Classification.** implementation defect plus non-discriminating scenario;
-  bucket 2.
-
-### B6 (blocker) - batch 12 records a tag-only commit
-
-- **Location.** `tasks.md:1630` records
-  `COMMIT: f21807f8b3497173c9ec2984461dfea8d1b14c55 -- Batch: declaration-boundary`.
-  `git show f21807f8` changes exactly one line:
-  `@givn.modified @wip` -> `@givn.modified`. The scenario's `the command exits
-  1` assertion is bound by the pre-existing `tests/steps/mod.rs:626` step.
-- **Rule.** A comment-only, tag-only, task-only, or feature-only change is not
-  evidence; the commit must contain the scenario's implementation or its
-  regression test. The scenario protects existing behaviour, but the recorded
-  commit contains neither the new assertion nor a test change.
-- **Small fix.** Record the commit that introduced the delta scenario and its
-  exit-code assertion (the plan commit `76159193`), or land a commit that
-  contains the scenario's regression assertion; keep the existing-behaviour
-  note. No production code is required.
-- **Classification.** implementation-evidence defect; blocking.
-
-### B7 (blocker) - the Capability Routing table omits two delta capabilities
-
-- **Location.** `proposal.md` `## Capability Routing` has rows for
-  `clean-room-preparation`, `trial-input-verification`, and
-  `specification-declaration` only. The delta also carries `@givn.modified`
-  scenarios under `specs/create-change/prose-consolidation.feature` and
-  `specs/fragments/instruction-integrity.feature`, so the capabilities
-  `prose-consolidation` and `instruction-integrity` are undeclared.
-- **Evidence.** `givn check review --change strengthen-ise-specification`
-  reports:
-  `delta capability 'instruction-integrity' is not declared in the Capability
-  Routing table` and `delta capability 'prose-consolidation' is not declared
-  in the Capability Routing table`.
-- **Small fix.** Add two rows:
-  `prose-consolidation` -> `EXTEND prose-consolidation` (the permanent
-  `givn/specs/create-change/prose-consolidation.feature` exists and the delta
-  sits in `specs/create-change/`), and `instruction-integrity` ->
-  `NEW in fragments` (the permanent feature is under `givn/specs/fragments/`,
-  which `resolve_permanent_usecase` skips). Re-run design-review with B4.
-- **Classification.** plan-artifact defect; blocking.
+| Finding | Disposition | Evidence |
+|---|---|---|
+| B1 - the checksum report line carries an unstated ellipsis | **CLOSED** | `src/ise/manifest.rs:251` `abbreviate` returns `digest.chars().take(12)` with no suffix. `e2e/tests/steps/clean_room_preparation_e2e_steps.rs:374-393` reads the bare value and asserts 12 lowercase hex characters. `docs/reference.md:525`, chapter 06, and the delta scenario state the same rule. P1. |
+| B2 - a deleted copy declaration is refused, not reported missing | **CLOSED** | `src/ise/compare.rs:89` treats the declaration as `Option`; `copy_declaration` returns `None` for an absent or unreadable file, so the added-file refusal is skipped and the recorded `checksums.specification` comparison reports the path `missing`. The added scenario deletes `givn/specification.yaml` and asserts `Specification files: 1 missing`, `- givn/specification.yaml`, `End-to-end tests: match`, exit 1. P2. |
+| B3 - the delta use case states the opposite docstring rule | **CLOSED** | `specs/prepare-an-ise-test/usecase.md:81` now says the docstring loses the line break after the opening delimiter and the line break before the closing delimiter, matching `docs/reference.md:549` and `src/gherkin/content.rs`. The golden scenario still pins `"line one\n  indented\nline four"`. |
+| B4 - the design review predates the design it reviews | **CLOSED** | `design-review.md` records `Reviewed revision: ec4b9d71`, `158 = 72 added + 30 modified + 56 removed`, and the two cross-capability rows. `design.md` blob `88aca6d...` is the reviewed blob and `git log ec4b9d71..HEAD -- design.md` is empty. `givn check review` reports `net delta: 72 added, 30 modified, 56 removed`. |
+| B5 - the retired `ise-trial/v1` record is not refused by name | **CLOSED** | `src/ise/manifest.rs:52-61` `recorded_scope` reads `scope`/`content_scope` before deserialization and refuses a mismatched scope naming the recorded and expected values. The added scenario writes the full retired field set (`schema`, `content_scope`, `backend`, the digests, the maps) and asserts both scope tokens. P3. |
+| B6 - batch 12 records a tag-only commit | **CLOSED** | `tasks.md` batch 12 records `44168260`; `git show 44168260` adds the `the command exits 1 and names "<path>"` binding in `tests/steps/specification_declaration_steps.rs` and the matching design row, beside the tag removal. |
+| B7 - the Capability Routing table omits two delta capabilities | **CLOSED** | `proposal.md:160-161` adds `prose-consolidation` -> `EXTEND prose-consolidation` and `instruction-integrity` -> `EXTEND instruction-integrity`. `givn check review` reports both capabilities already owned and no routing refusal. The fragments capability is owned by `givn/specs/fragments`, so the gate refused `NEW in fragments` and accepted the `EXTEND` row. |
 
 ## Observations (not blockers)
 
@@ -341,10 +216,13 @@ clean after the review except for this artifact.
   and e2e scenarios, the write-mismatch branch by its unit test, and the
   remaining I/O error paths legitimately hard to inject. Not a defect at review
   time.
-- **O5 - old e2e binding becomes dead.** `report_abbreviates_the_digests` in
-  `e2e/tests/steps/clean_room_preparation_e2e_steps.rs:92-110` matches the
-  permanent scenario the delta removes; after the merge it is unused. Remove it
-  with B1's fix.
+- **O5 - permanent e2e binding retires with its scenario.** The
+  `report_abbreviates_the_digests` binding in
+  `e2e/tests/steps/clean_room_preparation_e2e_steps.rs:91-116` matches the
+  permanent scenario the delta removes. It now asserts the settled 12-hex line
+  instead of the retired ellipsis. It stays until the archive merge removes the
+  scenario, because deleting it now would leave that permanent e2e step
+  unbound.
 
 ## Arc42 implementation conformance
 
@@ -355,7 +233,7 @@ clean after the review except for this artifact.
 | 03 context-and-scope | `docs/arc42/03-context-and-scope.md` | Verifier and command rows updated | D5, D9 | Batch 1, 9-11 | Rows name the three commands and one `-`/`+` line per path | Yes |
 | 04 solution-strategy | `docs/arc42/04-solution-strategy.md` | Clean-room row updated | Scope, D5-D9 | Batches 1-11 | Row names the two rebuild commands, the manifest, and compare | Yes |
 | 05 building-block-view | `docs/arc42/05-building-block-view.md` | `cli::ise` and `ise` rows updated | Architecture Impact | Batches 1-11 | Rows name the three commands, the partition, and the manifest | Yes |
-| 06 runtime-view | `docs/arc42/06-runtime-view.md` | §6.21 rewritten | D5-D10 | Batches 1-11 | §6.21 names the four declaration cases and the comparison steps | Yes |
+| 06 runtime-view | `docs/arc42/06-runtime-view.md` | §6.21 rewritten | D5-D10 | Batches 1-11, 14 | §6.21 states the four declaration cases, the optional copy declaration, and the comparison steps | Yes |
 | 07 deployment-view | `docs/arc42/07-deployment-view.md` | No change | No deployment change | None | No packaging or runtime change | Yes |
 | 08 crosscutting-concepts | `docs/arc42/08-crosscutting-concepts.md` | §8.29 states the checksum and enumeration rules | D6-D8 | Batches 5-7 | §8.29 carries the manifest scope, byte form, and enumeration | Yes |
 | 09 architecture-decisions | `docs/arc42/09-architecture-decisions.md` | ADR-076 amended | D5-D7 | Setup, batches 6-7 | ADR-076 and the chapter-09 register name the amendment | Yes |
@@ -409,9 +287,10 @@ The design declares `Interface: none`; the changed surface is the CLI report
 and the comparison output. The evidence is the two committed terminal
 transcripts named above. The rebuild transcript shows the eleven fixed lines
 and the manifest path; the comparison transcript shows
-`Specification files: match` and `End-to-end tests: match`. The evidence is
-complete for both delta `@e2e` scenarios. B1 is a contract finding about the
-checksum line, not a missing visual artifact.
+`Specification files: match` and `End-to-end tests: match`. The rebuild
+transcript prints `Specification checksum: 7d7a8df82f9f` and
+`End-to-end checksum: f41d020038de`, both 12 lowercase hex characters with no
+ellipsis. The evidence is complete for both delta `@e2e` scenarios.
 
 VISUAL-REVIEW: PASS
 
@@ -419,13 +298,15 @@ VISUAL-REVIEW: PASS
 
 - **Bucket 1 (dead code) - delete.** `src/ise/record.rs` and
   `src/ise/verify.rs` are deleted; `E2eBoundary::contains` and its test are
-  deleted. No production dead branch was found. O5 and O1 are test/name
-  cleanups, not production behavior.
-- **Bucket 2 (missing coverage) - add the test.** B2 (deleted declaration),
-  B5 (retired record shape), and B1 (no-ellipsis line) are the missing or
-  non-discriminating scenarios; the fixes above add or correct them. The
-  `Comparison refuses a manifest whose scope is not ise-manifest/v1` scenario
-  is not discriminating the retired shape.
+  deleted. No production dead branch was found. O1 is a naming cleanup; O5 is
+  the transitional permanent binding whose scenario the delta removes.
+- **Bucket 2 (missing coverage) - added.** B2's `Comparison names a missing
+  declaration in the copy` and B5's `Comparison refuses a retired
+  ise-trial/v1 record by scope` are added, and B1's e2e assertion reads the
+  bare 12-hex value. Probes P1-P3 confirm each assertion discriminates. The
+  new-shape `Comparison refuses a manifest whose scope is not ise-manifest/v1`
+  stays for the `scope` mismatch; the retired-field-set scenario covers the
+  old shape.
 - **Bucket 3 (legitimately hard to test).** `resolved_target`'s
   no-existing-ancestor error path cannot occur on a mounted unix filesystem
   because `/` exists; the `copy_paths` and `local_checksum` read-error paths
@@ -505,29 +386,35 @@ README-IMPACT: updated - Configuration
 
 ## Sign-off
 
-- [x] The task gate passes at `6e55ba9a` (98 regular scenarios, 2 e2e, 0
-      failed, 0 skipped).
-- [x] The delta non-e2e and e2e scopes pass; the permanent e2e tier passes
-      119 scenarios and 781 steps.
-- [x] Eight mutation probes discriminate the checksum, partition, declaration,
-      prefix, compare, checkout-added, manifest, and served-text rules.
-- [x] The canonical checksum values were independently reproduced from the
-      stated bytes and rule (`specification_checksum 35444598...`,
-      `end_to_end_checksum 00580162...`, per-path values match).
+- [x] The task gate passes at `673da7dd` (receipt: 100 regular scenarios, 2
+      e2e, 0 failed, 0 skipped).
+- [x] The delta non-e2e scope passes (100 passed, 2 skipped); the delta e2e
+      scope passes (2 passed, 0 failed); the permanent e2e tier passes 119
+      scenarios and 781 steps.
+- [x] Three mutation probes discriminate the repaired rules: the ellipsis line
+      (P1), the optional copy declaration (P2), and the retired-record scope
+      check (P3).
+- [x] The canonical checksum values are pinned by
+      `Preparation records the canonical checksums for a pinned fixture` and
+      `Preparation records the canonical checksums for a richer feature`
+      (`specification_checksum 35444598...`, `end_to_end_checksum 00580162...`),
+      which pass in the delta scope.
 - [x] The retired surface is replaced in the merged corpus; the two
       cross-capability scenarios are the only extra delta entries outside the
       two prepare features and they are `@givn.modified`.
-- [ ] The design review is current with `design.md` (B4).
-- [ ] The report checksum line matches the stated 12 hex characters (B1).
-- [ ] A deleted declaration is reported as `missing` (B2).
-- [ ] The use case and the reference state one docstring rule (B3).
-- [ ] A retired `ise-trial/v1` record is refused by name (B5).
-- [ ] Every recorded scenario commit carries its assertion (B6).
-- [ ] The Capability Routing table declares `prose-consolidation` and
+- [x] The design review is current with `design.md` at `ec4b9d71` and covers
+      the 158-scenario delta (B4).
+- [x] The report checksum line is the stated 12 lowercase hex characters with
+      no ellipsis (B1).
+- [x] A deleted declaration is reported as `missing` (B2).
+- [x] The use case and the reference state one docstring rule (B3).
+- [x] A retired `ise-trial/v1` record is refused by name (B5).
+- [x] Every recorded scenario commit carries its assertion (B6).
+- [x] The Capability Routing table declares `prose-consolidation` and
       `instruction-integrity` (B7).
 
-The blockers above are repairable without redesign. After the fixes, re-run
-the affected scenarios, `givn check tasks`, and this review; the verdict can
-then flip.
+`givn check review --change strengthen-ise-specification` passes the run
+declaration, lint, overlap dispositions, capability ownership, scenario
+commits, and receipt checks with this verdict.
 
-REVIEW: FAIL
+REVIEW: PASS
