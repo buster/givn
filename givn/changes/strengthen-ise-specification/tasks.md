@@ -1074,75 +1074,121 @@ Files modified: `src/ise/mod.rs`, `src/cli/ise.rs`, `src/main.rs`,
 `tests/steps/clean_room_preparation_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Preparation refuses when
+- [x] Evidence for this batch: paste the RED run for `Preparation refuses when
       the manifest cannot be written` and the GREEN run of all nine scenarios.
       ```text
-      <!-- paste: RED command + assertion failure; GREEN commands + pass summary -->
+      RED (before `require_write_targets` named both targets; GIVN_FEATURES=
+      givn/changes/strengthen-ise-specification/specs):
+      $ cargo test --locked --test features_runner -- "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a manifest inside the spec copy" --exact --nocapture
+        ✘ Then the command fails and names the manifest
+          Step panicked. Captured output: assertion `left == right` failed: stderr=
+            left: Some(0)
+           right: Some(1)
+      $ ... "Preparation refuses a manifest inside the checkout"
+        ✘ Then the command fails and names the manifest
+          same exit-0 failure: the pre-batch path wrote the manifest into the checkout
+      $ ... "Preparation refuses a manifest that is an ancestor of the spec copy"
+        ✘ And the spec copy path and the manifest path remain absent
+          the spec copy path exists: /tmp/.tmpigSTLl/parent/trial
+      $ ... "Preparation refuses an existing manifest"
+        ✘ Then the command fails and names the existing manifest
+          stderr "ise rebuild-all: write the manifest '/tmp/.tmppD4fHt/record.yaml':
+          File exists (os error 17)" does not report the existing path
+      $ ... "Preparation refuses when the manifest cannot be written"
+        ✘ And the spec copy directory it created is removed
+          the spec copy directory remains at /tmp/.tmpwpjwvy/trial
+
+      The other four passed before the edit: the copy-target checks already
+      canonicalized their ancestors and named the target; the new steps assert
+      the verb's refusal prefix and the manifest nouns.
+
+      GREEN (87d5068afe0d7f182ac6c5b58f4e8a4f81f431f9):
+      $ cargo test --locked --test features_runner -- "<each of the nine titles>" --exact --nocapture
+      PASS Preparation refuses a target inside the checkout
+      PASS Preparation refuses an existing spec copy directory
+      PASS Preparation refuses an existing spec copy file
+      PASS Preparation refuses a spec copy target symlinked into the checkout
+      PASS Preparation refuses a manifest inside the spec copy
+      PASS Preparation refuses a manifest inside the checkout
+      PASS Preparation refuses a manifest that is an ancestor of the spec copy
+      PASS Preparation refuses an existing manifest
+      PASS Preparation refuses when the manifest cannot be written
+
+      The delta feature's regular scope stays green:
+      $ GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/clean-room-preparation.feature cargo test --locked --test features_runner -- --tags 'not @e2e and not @givn.removed and not @wip'
+      65 scenarios (65 passed), 333 steps (333 passed)
+
+      $ cargo fmt --all -- --check; cargo clippy --workspace --all-targets --locked -- -D warnings
+      both clean
+
+      `givn check tasks --change strengthen-ise-specification` still refuses on
+      the Batch 9-12 scenarios that carry `@wip`; the write-target batch leaves
+      those tags untouched.
       ```
 
-- [ ] Scenario: `Preparation refuses a target inside the checkout`
+- [x] Scenario: `Preparation refuses a target inside the checkout`
   - Design constraints: `--into` a directory inside the checkout; Then exit 1,
     stderr names the target, and the checkout holds no copy directory and no
     manifest. Contract: `require_write_targets`, existing behaviour protected
     with the new prefix.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses an existing spec copy directory`
+- [x] Scenario: `Preparation refuses an existing spec copy directory`
   - Design constraints: the target directory exists; Then exit 1, stderr names
     it, and the directory is left unchanged. Contract: create-new semantics.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses an existing spec copy file`
+- [x] Scenario: `Preparation refuses an existing spec copy file`
   - Design constraints: the target path is a regular file; Then exit 1, stderr
     names it, and the file is left unchanged. Contract: create-new semantics.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses a spec copy target symlinked into the checkout`
+- [x] Scenario: `Preparation refuses a spec copy target symlinked into the checkout`
   - Design constraints: a symlink outside the checkout points into it, and the
     target is named through that symlink; Then exit 1, stderr names the target,
     and the checkout holds no copy directory. Contract: every existing ancestor
     is canonicalized before the containment test.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses a manifest inside the spec copy`
+- [x] Scenario: `Preparation refuses a manifest inside the spec copy`
   - Design constraints: `--manifest <copy>/manifest.yaml`; Then exit 1, stderr
     names the manifest, and both targets stay absent. Contract: the manifest
     must lie outside the copy.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses a manifest inside the checkout`
+- [x] Scenario: `Preparation refuses a manifest inside the checkout`
   - Design constraints: the manifest path is inside the checkout; Then exit 1,
     stderr names the manifest, and the checkout holds no manifest. Contract: the
     checkout is never written.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses a manifest that is an ancestor of the spec copy`
+- [x] Scenario: `Preparation refuses a manifest that is an ancestor of the spec copy`
   - Design constraints: the manifest path is an ancestor directory of the copy;
     Then exit 1, stderr names the manifest, and both targets stay absent.
     Contract: the copy cannot be created inside the manifest path.
   - Files: `src/ise/mod.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses an existing manifest`
+- [x] Scenario: `Preparation refuses an existing manifest`
   - Design constraints: the manifest file exists; Then exit 1, stderr names it,
     and the existing bytes are unchanged. Contract: the manifest is created new,
     never overwritten.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
-- [ ] Scenario: `Preparation refuses when the manifest cannot be written`
+- [x] Scenario: `Preparation refuses when the manifest cannot be written`
   - Design constraints: the manifest's parent directory is a regular file; Then
     exit 1, stderr names the manifest path, and the copy directory the command
     created is removed. Contract: a failed manifest write rolls back the copy
     and reports no success.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `write-targets`
+  - [x] COMMIT: `87d5068a` -- Batch: `write-targets`
 
 ### Batch 9: `compare-report`
 
