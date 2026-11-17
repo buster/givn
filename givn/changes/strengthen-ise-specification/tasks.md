@@ -494,53 +494,70 @@ Files modified: `src/ise/partition.rs`, `src/cli/ise.rs`,
 `tests/steps/clean_room_preparation_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Preparation refuses a path
+- [x] Evidence for this batch: paste the RED run for `Preparation refuses a path
       outside every source root` and the GREEN run of all five scenarios.
       ```text
-      <!-- paste: RED command + assertion failure; GREEN commands + pass summary -->
+      RED (before the production edit, GIVN_FEATURES=givn/changes/
+      strengthen-ise-specification/specs):
+      cargo test --test features_runner -- "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a path outside every source root" --exact --nocapture
+        Step panicked. Captured output: stderr "ise rebuild-component:
+        'docs/reference.md' is outside every declared source root at revision
+        'c484f1f4'" does not carry "rebuild-all".
+      The two role scenarios failed on the assertion "keeps the retired
+      retained vocabulary": stderr "... 'givn/specs/demo.feature' is retained by
+      the behavior role at revision '<sha>'; a retained path is never replaced".
+      The two declaration scenarios failed on "does not carry \"Specification
+      file\"": stderr "... 'givn/specification.yaml' is retained by the
+      Specification declaration at revision '<sha>'; a retained path is never
+      replaced".
+
+      GREEN (narrow run per title, after the production edit):
+        5 scenarios (5 passed), 0 failed; 4, 4, 5, 5, and 5 steps green.
+      cargo fmt --all -- --check: exit 0.
+      cargo clippy --workspace --all-targets --locked -- -D warnings: exit 0.
       ```
 
-- [ ] Scenario: `Preparation refuses a path outside every source root`
+- [x] Scenario: `Preparation refuses a path outside every source root`
   - Design constraints: one source root `src/**`, component path
     `docs/reference.md`; Then exit 1 and stderr names both the path and
     `rebuild-all`. Contract: the refusal names the command that writes the copy
     removing every declared source root.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `component-paths`
+  - [x] COMMIT: `bf5cf1d29c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
 
-- [ ] Scenario: `Preparation refuses a path matched by a Specification role`
+- [x] Scenario: `Preparation refuses a path matched by a Specification role`
   - Design constraints: `behavior: ["givn/specs/**"]`, component path
     `givn/specs/demo.feature`; Then exit 1 and stderr names the path and the
     `behavior` role, and both targets stay absent. Contract: the declaration
     check runs over the named file.
   - Files: `src/ise/partition.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `component-paths`
+  - [x] COMMIT: `bf5cf1d29c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
 
-- [ ] Scenario: `Preparation refuses a directory path that contains a Specification path`
+- [x] Scenario: `Preparation refuses a directory path that contains a Specification path`
   - Design constraints: `behavior: ["givn/specs/**"]` under source root
     `givn/**`, component path `givn/specs`; Then exit 1 and stderr names
     `givn/specs/demo.feature` and the `behavior` role. Contract: the
     Specification check runs over the tracked files the directory expands to.
   - Files: `src/ise/partition.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `component-paths`
+  - [x] COMMIT: `bf5cf1d29c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
 
-- [ ] Scenario: `Preparation refuses a directory that contains the declaration`
+- [x] Scenario: `Preparation refuses a directory that contains the declaration`
   - Design constraints: source root `givn/**`, component path `givn`, tracked
     `givn/notes.md`; Then exit 1 and stderr names `givn/specification.yaml` as a
     Specification file. Contract: the declaration is an implicit Specification
     entry inside the expansion. Existing behaviour protected: the expansion
     check; the noun is new.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `component-paths`
+  - [x] COMMIT: `bf5cf1d29c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
 
-- [ ] Scenario: `Preparation refuses a component path that names the declaration`
+- [x] Scenario: `Preparation refuses a component path that names the declaration`
   - Design constraints: source root `givn/**`, component path
     `givn/specification.yaml`, and an unrelated committed `src/kept.rs`; Then
     exit 1 and stderr names the declaration as a Specification file, and both
     targets stay absent. Contract: the declaration is tested before the source
     root.
   - Files: `src/ise/partition.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `component-paths`
+  - [x] COMMIT: `bf5cf1d29c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
 
 ### Batch 4: `copy-set`
 
