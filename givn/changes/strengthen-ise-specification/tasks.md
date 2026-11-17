@@ -295,7 +295,7 @@ Files modified: `src/main.rs`, `src/cli/ise.rs`, `src/ise/mod.rs`,
 `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the narrow run and observed failure for
+- [x] Evidence for this batch: paste the narrow run and observed failure for
       `A component rebuild refuses an empty path list` and `The retired command
       names and flags exit 2`, then the GREEN run of all nine scenarios.
       ```text
@@ -315,7 +315,7 @@ Files modified: `src/main.rs`, `src/cli/ise.rs`, `src/ise/mod.rs`,
       GREEN (narrow run per title): 9 passed, 0 failed.
       ```
 
-- [ ] Scenario: `Preparation refuses while the ise addon is off`
+- [x] Scenario: `Preparation refuses while the ise addon is off`
   - Design constraints: fixture `ise_project()` with `addons.ise: false` and a
     committed declaration; When `givn ise rebuild-all --into <dir> --manifest
     <file>` is refused; Then exit 1, stderr starts with `ise rebuild-all:` and
@@ -324,67 +324,67 @@ Files modified: `src/main.rs`, `src/cli/ise.rs`, `src/ise/mod.rs`,
     Existing behaviour protected: the admission check; the prefix is new.
   - Files: `src/ise/mod.rs`, `src/cli/ise.rs`,
     `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `Preparation refuses while architecture principles are off`
+- [x] Scenario: `Preparation refuses while architecture principles are off`
   - Design constraints: fixture with `ise` on, `architecture_principles` off,
     and a malformed declaration committed; Then exit 1, stderr names
     `architecture_principles`, and the malformed declaration is never parsed.
     Contract: the add-on pair is checked before `revision_declaration`.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `Preparation refuses a dirty checkout and names every dirty path`
+- [x] Scenario: `Preparation refuses a dirty checkout and names every dirty path`
   - Design constraints: one modified tracked file and one untracked file; Then
     exit 1, stderr names both paths, and both targets stay absent. Contract:
     `Backend::dirty_entries` before the revision read.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `Preparation refuses a project with no version-control backend`
+- [x] Scenario: `Preparation refuses a project with no version-control backend`
   - Design constraints: a directory with no Git or Fossil marker; Then exit 1
     and stderr names the missing backend. Contract: `scm::select`.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `Preparation refuses a project root nested inside a Git worktree`
+- [x] Scenario: `Preparation refuses a project root nested inside a Git worktree`
   - Design constraints: the project root is a subdirectory of the worktree top
     level; Then exit 1 and stderr names the nested root. Contract: `scm::select`.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `Preparation refuses a checkout carrying both Git and Fossil markers`
+- [x] Scenario: `Preparation refuses a checkout carrying both Git and Fossil markers`
   - Design constraints: both markers at the root; Then exit 1 and stderr names
     the ambiguous version control. Contract: `scm::select`.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `Preparation refuses an omitted target`
+- [x] Scenario: `Preparation refuses an omitted target`
   - Design constraints: the When runs `givn ise rebuild-all` with no `--into`;
     Then exit 2 and stderr names `--into`, with no copy and no manifest.
     Contract: the clap requirement on `RebuildAll`. Existing behaviour
     protected (the `--into` requirement); the command name is the only change.
   - Files: `src/main.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `A component rebuild refuses an empty path list`
+- [x] Scenario: `A component rebuild refuses an empty path list`
   - Design constraints: the When runs `givn ise rebuild-component --into <dir>`;
     Then exit 2 and stderr names the missing component path list, and no copy
     or manifest exists. Contract: the positional `paths` requirement on
     `RebuildComponent`; there is no `--full` and no `--path`.
   - Files: `src/main.rs`, `src/cli/ise.rs`,
     `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
-- [ ] Scenario: `The retired command names and flags exit 2`
+- [x] Scenario: `The retired command names and flags exit 2`
   - Design constraints: three Whens in one scenario: `givn ise replace --into
     <dir>`, `givn ise verify --manifest <file>`, and `givn ise rebuild-all
     --full --into <dir>`; each exits 2, the first two name the unknown command,
     the third names the unknown flag, and no copy exists after the first and
     third. Contract: the removed variants do not exist in `IseCommands`.
   - Files: `src/main.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `command-surface`
+  - [x] COMMIT: `5bcf0c9d0cb1fddeb1f754e75e7a3a0153563f97` -- Batch: `command-surface`
 
 ### Batch 2: `revision-declaration`
 
