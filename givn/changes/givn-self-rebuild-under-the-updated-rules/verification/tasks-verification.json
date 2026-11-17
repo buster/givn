@@ -2,7 +2,7 @@
   "schema": 2,
   "change": "givn-self-rebuild-under-the-updated-rules",
   "status": "passed",
-  "head": "2e3d093b85ed233556b6531ec56254872bca33a9",
+  "head": "6f79cb71cafda36106152056671ebe2b09f42e42",
   "features_path": "givn/changes/givn-self-rebuild-under-the-updated-rules/specs",
   "features_digest": "c8bcce317c4cf43f352cfb0e81a985dfc505d00ca0eb69b7b9576b1e53ab288d",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
@@ -32,5 +32,5 @@
     "skipped": 0,
     "seconds": 0.0
   },
-  "finished_at_unix": 1794950804
+  "finished_at_unix": 1794951071
 }
