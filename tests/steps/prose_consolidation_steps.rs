@@ -982,6 +982,24 @@ fn guidance_states_the_implicit_retained_entry(world: &mut GivnWorld) {
     );
 }
 
+#[then("the guidance states that the spec copy always carries the declaration itself")]
+fn guidance_states_the_spec_copy_carries_the_declaration(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("The spec copy always carries the declaration itself"),
+        "the served ise guidance does not state that the spec copy always carries the declaration: {content}"
+    );
+}
+
+#[then("the guidance states that it is an implicit Specification entry, not a sixth role")]
+fn guidance_states_the_implicit_specification_entry(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("implicit Specification entry, not a sixth role"),
+        "the served ise guidance does not state that the declaration is an implicit Specification entry: {content}"
+    );
+}
+
 #[then("the served proposal instruction preserves the proposed-by seed stamp")]
 fn proposal_preserves_proposed_by_stamp(_world: &mut GivnWorld) {
     let content =

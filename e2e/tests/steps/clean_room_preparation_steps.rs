@@ -30,19 +30,19 @@ pub(crate) fn assert_report_line(world: &GivnWorld, line: &str) {
     );
 }
 
-pub(crate) fn record_document(world: &GivnWorld) -> serde_yaml_ng::Value {
-    let path = receipt_path(world);
+pub(crate) fn manifest_document(world: &GivnWorld) -> serde_yaml_ng::Value {
+    let path = manifest_path(world);
     let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("read the record {}: {error}", path.display()));
+        .unwrap_or_else(|error| panic!("read the manifest {}: {error}", path.display()));
     serde_yaml_ng::from_str(&text)
-        .unwrap_or_else(|error| panic!("parse the record {}: {error}", path.display()))
+        .unwrap_or_else(|error| panic!("parse the manifest {}: {error}", path.display()))
 }
 
-pub(crate) fn record_list(record: &serde_yaml_ng::Value, key: &str) -> Vec<String> {
-    record
+pub(crate) fn manifest_list(manifest: &serde_yaml_ng::Value, key: &str) -> Vec<String> {
+    manifest
         .get(key)
         .and_then(|value| value.as_sequence())
-        .unwrap_or_else(|| panic!("the record has no '{key}' list"))
+        .unwrap_or_else(|| panic!("the manifest has no '{key}' list"))
         .iter()
         .map(|value| {
             value
@@ -53,12 +53,12 @@ pub(crate) fn record_list(record: &serde_yaml_ng::Value, key: &str) -> Vec<Strin
         .collect()
 }
 
-pub(crate) fn record_number(record: &serde_yaml_ng::Value, key: &str) -> u64 {
-    record
+pub(crate) fn manifest_number(manifest: &serde_yaml_ng::Value, key: &str) -> u64 {
+    manifest
         .get("counts")
         .and_then(|counts| counts.get(key))
         .and_then(serde_yaml_ng::Value::as_u64)
-        .unwrap_or_else(|| panic!("the record has no counts.{key}"))
+        .unwrap_or_else(|| panic!("the manifest has no counts.{key}"))
 }
 
 pub(crate) fn trial_path(world: &GivnWorld) -> std::path::PathBuf {
@@ -89,32 +89,40 @@ pub(crate) fn assert_trial_omits(world: &GivnWorld, paths: &[&str]) {
     }
 }
 
-pub(crate) fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form: &[&str]) {
+pub(crate) fn prepare_spec_copy(
+    world: &mut GivnWorld,
+    revision: Option<&str>,
+    component_paths: &[&str],
+) {
+    assert!(
+        !component_paths.is_empty(),
+        "the prepared form names at least one component path"
+    );
     world.ise_clean_room.ensure_targets();
-    let trial = world
+    let copy = world
         .ise_clean_room
         .trial_path()
         .to_string_lossy()
         .into_owned();
-    let receipt = world
+    let manifest = world
         .ise_clean_room
-        .receipt_path()
+        .manifest_path()
         .to_string_lossy()
         .into_owned();
     if let Some(revision) = revision {
         world.ise_clean_room.requested_revision = Some(revision.to_string());
     }
     let args = {
-        let mut args = vec!["ise", "replace"];
+        let mut args = vec!["ise", "rebuild-component"];
+        args.extend(component_paths.iter().copied());
         if let Some(revision) = revision {
             args.push("--at");
             args.push(revision);
         }
-        args.extend(form.iter().copied());
         args.push("--into");
-        args.push(&trial);
-        args.push("--receipt");
-        args.push(&receipt);
+        args.push(&copy);
+        args.push("--manifest");
+        args.push(&manifest);
         args
     };
     let env = world
@@ -125,8 +133,8 @@ pub(crate) fn prepare_trial(world: &mut GivnWorld, revision: Option<&str>, form:
     world.last_output = Some(out);
 }
 
-pub(crate) fn receipt_path(world: &GivnWorld) -> std::path::PathBuf {
-    world.ise_clean_room.receipt_path().to_path_buf()
+pub(crate) fn manifest_path(world: &GivnWorld) -> std::path::PathBuf {
+    world.ise_clean_room.manifest_path().to_path_buf()
 }
 
 #[then(regex = r#"^preparation succeeds$"#)]

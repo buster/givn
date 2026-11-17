@@ -44,8 +44,9 @@ pub(crate) const SOURCE_PATH: &str = "src/one.rs";
 pub(crate) const SOURCE_CONTENT: &str = "pub fn one() {}\n";
 /// The bytes the existing-target-file fixture writes.
 pub(crate) const TARGET_FILE_CONTENT: &str = "existing target\n";
-/// The bytes the existing-receipt fixture writes.
-pub(crate) const RECEIPT_CONTENT: &str = "schema: 1\n";
+/// The bytes the existing-manifest fixture writes; the scope is the settled
+/// one so a create-new refusal, not a parse failure, is under test.
+pub(crate) const MANIFEST_CONTENT: &str = "scope: ise-manifest/v1\n";
 /// The declared `structure` entry a repository-link revision carries.
 pub(crate) const VENDOR_LINK_PATH: &str = "vendor/lib";
 /// The nested repository marker a revision can carry.
@@ -70,11 +71,12 @@ pub(crate) const REPLACED_SOURCE_PATH: &str = "src/keys/parser.rs";
 /// Per-scenario state for the `clean-room-preparation` fixtures.
 #[derive(Debug, Default)]
 pub(crate) struct IseCleanRoomState {
-    /// The container whose child paths are the trial and the receipt; the
-    /// container exists so both targets are outside the checkout and absent.
+    /// The container whose child paths are the spec copy and the manifest;
+    /// the container exists so both targets are outside the checkout and
+    /// absent.
     pub(crate) targets: Option<TempDir>,
     pub(crate) trial_path: Option<PathBuf>,
-    pub(crate) receipt_path: Option<PathBuf>,
+    pub(crate) manifest_path: Option<PathBuf>,
     /// The revision the When passed to `--at`.
     pub(crate) requested_revision: Option<String>,
     /// The first committed revision of a two-revision fixture.
@@ -93,7 +95,7 @@ impl IseCleanRoomState {
         }
         let container = TempDir::new().expect("create a trial target container");
         self.trial_path = Some(container.path().join("trial"));
-        self.receipt_path = Some(container.path().join("record.yaml"));
+        self.manifest_path = Some(container.path().join("manifest.yaml"));
         self.targets = Some(container);
     }
 
@@ -103,8 +105,8 @@ impl IseCleanRoomState {
             .expect("the When created the targets")
     }
 
-    pub(crate) fn receipt_path(&self) -> &Path {
-        self.receipt_path
+    pub(crate) fn manifest_path(&self) -> &Path {
+        self.manifest_path
             .as_deref()
             .expect("the When created the targets")
     }
@@ -301,10 +303,10 @@ pub(crate) fn existing_target_file(state: &mut IseCleanRoomState) {
         .expect("write the existing target file");
 }
 
-/// Create the receipt as an existing regular file holding known bytes.
-pub(crate) fn existing_receipt(state: &mut IseCleanRoomState) {
+/// Create the manifest as an existing regular file holding known bytes.
+pub(crate) fn existing_manifest(state: &mut IseCleanRoomState) {
     state.ensure_targets();
-    std::fs::write(state.receipt_path(), RECEIPT_CONTENT).expect("write the existing receipt");
+    std::fs::write(state.manifest_path(), MANIFEST_CONTENT).expect("write the existing manifest");
 }
 
 /// Point the trial at `<container>/link/trial`, where `link` is a symlink to
@@ -591,7 +593,7 @@ pub(crate) fn non_utf8_first_revision_project() -> (common::TestEnv, String) {
 }
 
 /// Rewrite one role line of the checkout's declaration in place. The caller
-/// leaves the file uncommitted: `ise verify` reads the working tree for the
+/// leaves the file uncommitted: `ise compare` reads the working tree for the
 /// `e2e` set and the `behavior` selection.
 pub(crate) fn rewrite_checkout_role(env: &common::TestEnv, role: &str, value: &str) {
     let path = env.path(DECLARATION_PATH);
@@ -880,9 +882,9 @@ pub(crate) fn add_checkout_file(env: &common::TestEnv, path: &str, content: &str
     std::fs::write(&target, content).expect("write the added file");
 }
 
-/// Point the receipt at `<container>/blocker/record.yaml`, where `blocker` is
-/// a regular file, so the record write fails after the trial exists.
-pub(crate) fn blocked_receipt(state: &mut IseCleanRoomState) {
+/// Point the manifest at `<container>/blocker/manifest.yaml`, where `blocker`
+/// is a regular file, so the manifest write fails after the spec copy exists.
+pub(crate) fn blocked_manifest(state: &mut IseCleanRoomState) {
     state.ensure_targets();
     let container = state
         .targets
@@ -891,8 +893,8 @@ pub(crate) fn blocked_receipt(state: &mut IseCleanRoomState) {
         .path()
         .to_path_buf();
     let blocker = container.join("blocker");
-    std::fs::write(&blocker, "not a directory\n").expect("write the receipt blocker");
-    state.receipt_path = Some(blocker.join("record.yaml"));
+    std::fs::write(&blocker, "not a directory\n").expect("write the manifest blocker");
+    state.manifest_path = Some(blocker.join("manifest.yaml"));
 }
 
 /// Write each file (creating its parent directories) and commit the whole

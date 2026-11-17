@@ -3735,6 +3735,20 @@ fn served_instruction_names_retained_path_survival(world: &mut GivnWorld) {
     );
 }
 
+#[then("the served instruction says a declared Specification path must survive `givn archive`")]
+fn served_instruction_names_specification_path_survival(world: &mut GivnWorld) {
+    let content = cli_stdout(world);
+    let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        normalized.contains("declared Specification path must survive `givn archive`"),
+        "the served ise instruction omits the Specification-path survival rule: {content}"
+    );
+    assert!(
+        normalized.contains("refuses such a declaration before moving the change"),
+        "the served ise instruction omits the archive refusal: {content}"
+    );
+}
+
 #[then("the served instruction names the archive location a change's artifacts move to")]
 fn served_instruction_names_archive_location(world: &mut GivnWorld) {
     let content = cli_stdout(world);

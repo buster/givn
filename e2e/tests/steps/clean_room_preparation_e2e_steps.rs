@@ -5,8 +5,8 @@
 //! shared report and record helpers live in the regular capability module.
 
 use crate::steps::clean_room_preparation_steps::{
-    assert_report_line, assert_success, assert_trial_holds, assert_trial_omits, prepare_trial,
-    project_env, receipt_path, record_document, record_list, record_number, trial_path,
+    assert_report_line, assert_success, assert_trial_holds, assert_trial_omits, manifest_document,
+    manifest_list, manifest_number, manifest_path, prepare_spec_copy, project_env, trial_path,
 };
 use crate::steps::{GivnWorld, ise_clean_room_support, output, stdout};
 use cucumber::{given, then, when};
@@ -32,8 +32,8 @@ fn commit_the_e2e_trial_revision(world: &mut GivnWorld) {
 #[when(
     regex = r#"^the developer prepares a trial from "HEAD" with the path "src/keys/parser\.rs" and a receipt$"#
 )]
-fn prepare_with_the_parser_path_and_a_receipt(world: &mut GivnWorld) {
-    prepare_trial(world, Some("HEAD"), &["--path", "src/keys/parser.rs"]);
+fn prepare_with_the_parser_path_and_a_manifest(world: &mut GivnWorld) {
+    prepare_spec_copy(world, Some("HEAD"), &["src/keys/parser.rs"]);
 }
 
 #[then(
@@ -70,12 +70,14 @@ fn report_prints_the_git_backend_and_revision(world: &mut GivnWorld) {
     regex = r#"^the report prints "Retained: 2", "Kept source: 2", "Replaced: 1", "Outside the declaration: 1", and "Not replaced: 1"$"#
 )]
 fn report_prints_the_placement_counts(world: &mut GivnWorld) {
+    // The retired scenario text names the record nouns; the settled report
+    // prints the same five counts under the Specification/Source nouns.
     for line in [
-        "Retained: 2",
-        "Kept source: 2",
-        "Replaced: 1",
-        "Outside the declaration: 1",
-        "Not replaced: 1",
+        "Specification files: 2",
+        "Source code kept: 2",
+        "Source code removed: 1",
+        "Outside the spec copy: 1",
+        "Files beside removed paths: 1",
     ] {
         assert_report_line(world, line);
     }
@@ -83,7 +85,7 @@ fn report_prints_the_placement_counts(world: &mut GivnWorld) {
 
 #[then(regex = r#"^the report prints "Frozen package: e2e, not copied \(2 files\)"$"#)]
 fn report_prints_the_frozen_package_line(world: &mut GivnWorld) {
-    assert_report_line(world, "Frozen package: e2e, not copied (2 files)");
+    assert_report_line(world, "End-to-end tests: not copied (2 files)");
 }
 
 #[then(
@@ -91,7 +93,7 @@ fn report_prints_the_frozen_package_line(world: &mut GivnWorld) {
 )]
 fn report_abbreviates_the_digests(world: &mut GivnWorld) {
     let text = stdout(world);
-    for prefix in ["Retained digest: ", "E2E digest: "] {
+    for prefix in ["Specification checksum: ", "End-to-end checksum: "] {
         let value = text
             .lines()
             .find_map(|line| line.strip_prefix(prefix))
@@ -112,11 +114,11 @@ fn report_abbreviates_the_digests(world: &mut GivnWorld) {
 fn report_prints_the_write_targets(world: &mut GivnWorld) {
     assert_report_line(
         world,
-        &format!("Written path: {}", resolved_trial_path(world).display()),
+        &format!("Copy directory: {}", resolved_trial_path(world).display()),
     );
     assert_report_line(
         world,
-        &format!("Receipt path: {}", receipt_path(world).display()),
+        &format!("Manifest: {}", manifest_path(world).display()),
     );
 }
 
@@ -157,63 +159,66 @@ fn trial_omits_the_replaced_and_frozen_files(world: &mut GivnWorld) {
 #[then(
     regex = r#"^the receipt records the replacement revision, the backend, the replaced paths, the counts, the replaced digest, the written path, and the Givn version$"#
 )]
-fn receipt_records_the_preparation_evidence(world: &mut GivnWorld) {
-    let record = record_document(world);
+fn manifest_records_the_preparation_evidence(world: &mut GivnWorld) {
+    // The retired scenario text names the record fields; the settled manifest
+    // carries the same evidence under its own shape. The backend stays a
+    // report line, and the single replaced digest becomes the two rollups.
+    assert_report_line(world, "Backend: git");
+    let manifest = manifest_document(world);
     let revision = world
         .ise_clean_room
         .first_revision
         .clone()
         .expect("the Given recorded the committed revision");
     assert_eq!(
-        record
+        manifest
             .get("revision")
             .and_then(serde_yaml_ng::Value::as_str),
         Some(revision.as_str()),
-        "the record has the wrong revision"
+        "the manifest has the wrong revision"
     );
     assert_eq!(
-        record.get("backend").and_then(serde_yaml_ng::Value::as_str),
-        Some("git"),
-        "the record has the wrong backend"
-    );
-    assert_eq!(
-        record_list(&record, "replaced_paths"),
+        manifest_list(&manifest, "removed_paths"),
         vec!["src/keys/parser.rs".to_string()],
-        "the record has the wrong replaced paths"
+        "the manifest has the wrong removed paths"
     );
     for (key, expected) in [
-        ("retained", 2),
-        ("kept_source", 2),
-        ("replaced", 1),
-        ("outside_declaration", 1),
-        ("not_replaced", 1),
+        ("specification_files", 2),
+        ("source_kept", 2),
+        ("source_removed", 1),
+        ("outside_spec_copy", 1),
+        ("files_beside_removed_paths", 1),
     ] {
-        assert_eq!(record_number(&record, key), expected, "counts.{key}");
+        assert_eq!(manifest_number(&manifest, key), expected, "counts.{key}");
     }
-    let digest = record
-        .get("replaced_digest")
+    let digest = manifest
+        .get("specification_checksum")
         .and_then(serde_yaml_ng::Value::as_str)
-        .unwrap_or_else(|| panic!("the record has no replaced_digest"));
-    assert_eq!(digest.len(), 64, "replaced_digest {digest:?} is not 64 hex");
+        .unwrap_or_else(|| panic!("the manifest has no specification_checksum"));
+    assert_eq!(
+        digest.len(),
+        64,
+        "specification_checksum {digest:?} is not 64 hex"
+    );
     assert!(
         digest
             .chars()
             .all(|character| character.is_ascii_hexdigit() && !character.is_ascii_uppercase()),
-        "replaced_digest {digest:?} is not lowercase hex"
+        "specification_checksum {digest:?} is not lowercase hex"
     );
     assert_eq!(
-        record
-            .get("written_path")
+        manifest
+            .get("copy_directory")
             .and_then(serde_yaml_ng::Value::as_str),
         Some(resolved_trial_path(world).to_string_lossy().as_ref()),
-        "the record has the wrong written path"
+        "the manifest has the wrong copy directory"
     );
     assert_eq!(
-        record
+        manifest
             .get("givn_version")
             .and_then(serde_yaml_ng::Value::as_str),
         Some(crate::harness::binary::product_version()).as_deref(),
-        "the record has the wrong Givn version"
+        "the manifest has the wrong Givn version"
     );
     write_transcript(world);
 }
@@ -228,7 +233,7 @@ fn write_transcript(world: &GivnWorld) {
     let argv = format!(
         "givn ise rebuild-all --at HEAD --into {} --manifest {}",
         trial_path(world).display(),
-        receipt_path(world).display()
+        manifest_path(world).display()
     );
     let revision = world
         .ise_clean_room
@@ -277,7 +282,7 @@ fn rebuild_all_from_the_revision_with_a_manifest(world: &mut GivnWorld, revision
     world.ise_clean_room.ensure_targets();
     world.ise_clean_room.requested_revision = Some(revision.clone());
     let trial = trial_path(world).to_string_lossy().into_owned();
-    let manifest = receipt_path(world).to_string_lossy().into_owned();
+    let manifest = manifest_path(world).to_string_lossy().into_owned();
     let out = {
         let env = project_env(world);
         crate::harness::run_givn_with_envs(
@@ -389,7 +394,7 @@ fn report_prints_the_rebuild_targets(world: &mut GivnWorld) {
     );
     assert_report_line(
         world,
-        &format!("Manifest: {}", receipt_path(world).display()),
+        &format!("Manifest: {}", manifest_path(world).display()),
     );
 }
 
@@ -427,7 +432,7 @@ fn spec_copy_omits_six(
     regex = r#"^the manifest records the scope, the revision, the removed paths, the five counts, the checksums, the copy directory, and the Givn version$"#
 )]
 fn manifest_records_the_rebuild_evidence(world: &mut GivnWorld) {
-    let manifest = record_document(world);
+    let manifest = manifest_document(world);
     let mapping = manifest
         .as_mapping()
         .unwrap_or_else(|| panic!("the manifest is not a mapping: {manifest:?}"));
@@ -474,7 +479,7 @@ fn manifest_records_the_rebuild_evidence(world: &mut GivnWorld) {
         "the manifest has the wrong revision"
     );
     assert_eq!(
-        record_list(&manifest, "removed_paths"),
+        manifest_list(&manifest, "removed_paths"),
         vec![
             "src/keys/mod.rs".to_string(),
             "src/keys/parser.rs".to_string(),
@@ -489,7 +494,7 @@ fn manifest_records_the_rebuild_evidence(world: &mut GivnWorld) {
         ("outside_spec_copy", 1),
         ("files_beside_removed_paths", 0),
     ] {
-        assert_eq!(record_number(&manifest, key), expected, "counts.{key}");
+        assert_eq!(manifest_number(&manifest, key), expected, "counts.{key}");
     }
     let checksums = manifest
         .get("checksums")

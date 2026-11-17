@@ -1,9 +1,9 @@
 //! Step definitions for the `trial-input-verification (E2E)` capability.
 //!
-//! The clean report is the `@e2e` scenario's real-interface assertion: the
-//! compiled binary's stdout and exit code, never an internal call. The
-//! regular no-drift variant asserts the same two lines, so they are bound
-//! here once rather than duplicated across the two step files.
+//! `Verifier compares the spec copy with the manifest` is the surviving
+//! `@e2e` scenario: the compiled binary's stdout and exit code, never an
+//! internal call. The retired clean-report scenario keeps one transitional
+//! binding until the delta merge replaces it.
 
 use std::path::PathBuf;
 
@@ -18,23 +18,15 @@ const SCENARIO_TITLE: &str =
 
 #[then(regex = r#"^verification reports the retained and e2e identities clean$"#)]
 fn verification_reports_the_identities_clean(world: &mut GivnWorld) {
+    // The retired scenario text names the record report; the settled compare
+    // report proves the same clean state under its two subject lines.
     let text = stdout(world);
-    for line in ["Retained: clean", "E2E: clean"] {
+    for line in ["Specification files: match", "End-to-end tests: match"] {
         assert!(
             text.lines().any(|printed| printed == line),
             "stdout {text:?} does not print the line {line:?}"
         );
     }
-    let trial = world
-        .ise_clean_room
-        .trial_path()
-        .canonicalize()
-        .expect("resolve the prepared trial path");
-    let expected = format!("Trial: {}", trial.display());
-    assert!(
-        text.lines().any(|printed| printed == expected),
-        "stdout {text:?} does not print the line {expected:?}"
-    );
 }
 
 #[then(regex = r#"^verification exits zero$"#)]
@@ -52,8 +44,8 @@ fn write_transcript(world: &GivnWorld) {
     let dir = crate::harness::terminal_evidence::transcript_dir(SCENARIO_TITLE);
     std::fs::create_dir_all(&dir).expect("create the transcript directory");
     let argv = format!(
-        "givn ise verify --trial {} --at {}",
-        world.ise_clean_room.receipt_path().display(),
+        "givn ise compare --manifest {} --copy {}",
+        world.ise_clean_room.manifest_path().display(),
         world.ise_clean_room.trial_path().display()
     );
     let text = format!(
@@ -84,7 +76,7 @@ fn compare_copy(world: &GivnWorld) -> PathBuf {
 }
 
 fn compare_manifest(world: &GivnWorld) -> PathBuf {
-    world.ise_clean_room.receipt_path().to_path_buf()
+    world.ise_clean_room.manifest_path().to_path_buf()
 }
 
 #[given(regex = r#"^a prepared spec copy with a manifest$"#)]
