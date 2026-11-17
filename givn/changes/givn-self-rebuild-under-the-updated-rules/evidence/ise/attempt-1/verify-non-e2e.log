@@ -912,56 +912,56 @@
         PASS [   3.333s] ( 906/1115) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Unsupported old configuration is refused before upgrade writes
         PASS [   2.292s] ( 907/1115) givn::features_runner verify-change/check-specification-health.feature::--change with no specs directory reports no files and exits 0
         PASS [   4.738s] ( 908/1115) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Future supported migration routes remain reviewable
-ry
-        PASS [   6.399s] ( 909/1115) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Unsupported old configuration is refused before upgrade writes
-        PASS [   3.428s] ( 910/1115) givn::features_runner verify-change/check-specification-health.feature::A blocking finding renders its severity
-        PASS [   3.909s] ( 911/1115) givn::features_runner verify-change/check-specification-health.feature::A @wip-tagged scenario is reported on stderr and exits 2
-        PASS [   3.786s] ( 912/1115) givn::features_runner verify-change/check-specification-health.feature::A PENDING step is reported on stderr and exits 2
-        PASS [   3.999s] ( 913/1115) givn::features_runner verify-change/check-specification-health.feature::A change seed proposed by an archived change is reported as stale
-        PASS [   9.024s] ( 914/1115) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Upgrade failures report actual partial state and operator recovery
-        PASS [   4.716s] ( 915/1115) givn::features_runner verify-change/check-specification-health.feature::A change seed proposed by a missing change is reported as an advisory
-        PASS [   4.140s] ( 916/1115) givn::features_runner verify-change/check-specification-health.feature::A dangling persona reference is reported as an advisory
-        PASS [   4.419s] ( 917/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package missing from the tree is reported as advisory
-        PASS [   4.944s] ( 918/1115) givn::features_runner verify-change/check-specification-health.feature::A change seed without a status line is reported as an advisory
-        PASS [   4.290s] ( 919/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e path with no package manifest is reported by the boundary finding
-        PASS [   4.985s] ( 920/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package with a transitive dependency edge into source is reported as advisory
-        PASS [   5.270s] ( 921/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package with a dependency edge into source is reported as advisory
-        PASS [   3.717s] ( 922/1115) givn::features_runner verify-change/check-specification-health.feature::A declared path missing from the tree is reported as advisory
-        PASS [   3.802s] ( 923/1115) givn::features_runner verify-change/check-specification-health.feature::A fragment inclusion does not invent an edge to a same-named use case
-        PASS [   3.636s] ( 924/1115) givn::features_runner verify-change/check-specification-health.feature::A malformed package manifest skips the dependency-edge finding
-        PASS [   4.179s] ( 925/1115) givn::features_runner verify-change/check-specification-health.feature::A parse error is reported on stderr and exits 1
-        PASS [   6.179s] ( 926/1115) givn::features_runner verify-change/check-specification-health.feature::A fragment cannot be an extension target even when a use case has the same identifier
-        PASS [   4.071s] ( 927/1115) givn::features_runner verify-change/check-specification-health.feature::A relationship cannot resolve through the other namespace
-        PASS [   5.257s] ( 928/1115) givn::features_runner verify-change/check-specification-health.feature::A non-existent change id is not surfaced
-        PASS [   3.991s] ( 929/1115) givn::features_runner verify-change/check-specification-health.feature::An absent declaration is reported by name and no advisory finding is computed
-        PASS [   4.156s] ( 930/1115) givn::features_runner verify-change/check-specification-health.feature::A removed scenario does not suppress an unrelated later @wip scenario
-        PASS [   3.726s] ( 931/1115) givn::features_runner verify-change/check-specification-health.feature::An advisory finding renders its severity and keeps the exit code
-        PASS [   6.574s] ( 932/1115) givn::features_runner verify-change/check-specification-health.feature::A malformed Unicode use-case title produces a diagnostic instead of a panic
-        PASS [   3.618s] ( 933/1115) givn::features_runner verify-change/check-specification-health.feature::An advisory seed finding is counted in the summary and still exits 0
-        PASS [   5.684s] ( 934/1115) givn::features_runner verify-change/check-specification-health.feature::A parse error outranks a @wip finding
-        PASS [   5.251s] ( 935/1115) givn::features_runner verify-change/check-specification-health.feature::A removed placeholder suppresses the @wip warning on itself
-        PASS [   4.319s] ( 936/1115) givn::features_runner verify-change/check-specification-health.feature::An unrecognised seed status is reported and a status after prose is honoured
-        PASS [   4.083s] ( 937/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint accepts a delta that keeps the projected inventory consistent
-        PASS [   6.153s] ( 938/1115) givn::features_runner verify-change/check-specification-health.feature::An empty role list retains nothing and produces no finding
-        PASS [   3.844s] ( 939/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a feature the projected inventory does not declare
-        PASS [   4.984s] ( 940/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint does not read the declaration
-        PASS [   4.328s] ( 941/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports an E2E scenario the projected inventory does not declare
-        PASS [   5.284s] ( 942/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a declared interaction whose projected corpus has no E2E scenario
-        PASS [   4.934s] ( 943/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a pre-existing inventory mismatch
-        PASS [   5.070s] ( 944/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a delta capability with no projected owner
-        PASS [   4.549s] ( 945/1115) givn::features_runner verify-change/check-specification-health.feature::Explicit paths lint exactly those files without recursive descent
-        PASS [   4.692s] ( 946/1115) givn::features_runner verify-change/check-specification-health.feature::Default lint reports an undeclared capability
-        PASS [   6.239s] ( 947/1115) givn::features_runner verify-change/check-specification-health.feature::Cycles follow use-case includes and extends relationships
-        PASS [   4.284s] ( 948/1115) givn::features_runner verify-change/check-specification-health.feature::Explicit relationship namespaces disambiguate equal identifiers
-        PASS [   3.438s] ( 949/1115) givn::features_runner verify-change/check-specification-health.feature::The JSON output exposes the finding severity
-        PASS [   5.073s] ( 950/1115) givn::features_runner verify-change/check-specification-health.feature::Findings across multiple files are aggregated and files are processed in sorted order
-        PASS [   4.461s] ( 951/1115) givn::features_runner verify-change/check-specification-health.feature::Fragment interactions are checked in their declaring fragment
-        PASS [   4.279s] ( 952/1115) givn::features_runner verify-change/check-specification-health.feature::No .feature files under givn/ reports clean and exits 0
-        PASS [   5.042s] ( 953/1115) givn::features_runner verify-change/check-specification-health.feature::Interaction evidence cannot be credited from another capability
-        PASS [   4.845s] ( 954/1115) givn::features_runner verify-change/check-specification-health.feature::One path declared in two roles is reported as advisory
-        PASS [   4.106s] ( 955/1115) givn::features_runner verify-change/givn-workflow-enforcement.feature::A case-mismatched document title is refused with the exact correction
-        PASS [   5.503s] ( 956/1115) givn::features_runner verify-change/check-specification-health.feature::The lint exit-code contract is preserved after refactor
-        PASS [   5.799s] ( 957/1115) givn::features_runner verify-change/check-specification-health.feature::The JSON path exposes declaration findings with advisory severity
+        PASS [   2.662s] ( 909/1115) givn::features_runner verify-change/check-specification-health.feature::A .feature file outside the behavior globs is reported as advisory
+        PASS [   2.308s] ( 910/1115) givn::features_runner verify-change/check-specification-health.feature::A @wip-tagged scenario is reported on stderr and exits 2
+        PASS [   2.368s] ( 911/1115) givn::features_runner verify-change/check-specification-health.feature::A PENDING step is reported on stderr and exits 2
+        PASS [   2.295s] ( 912/1115) givn::features_runner verify-change/check-specification-health.feature::A change seed proposed by a missing change is reported as an advisory
+        PASS [   2.343s] ( 913/1115) givn::features_runner verify-change/check-specification-health.feature::A blocking finding renders its severity
+        PASS [   2.407s] ( 914/1115) givn::features_runner verify-change/check-specification-health.feature::A change seed proposed by an archived change is reported as stale
+        PASS [   5.113s] ( 915/1115) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Upgrade failures report actual partial state and operator recovery
+        PASS [   2.584s] ( 916/1115) givn::features_runner verify-change/check-specification-health.feature::A change seed without a status line is reported as an advisory
+        PASS [   2.352s] ( 917/1115) givn::features_runner verify-change/check-specification-health.feature::A dangling persona reference is reported as an advisory
+        PASS [   2.633s] ( 918/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package missing from the tree is reported as advisory
+        PASS [   2.604s] ( 919/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package with a dependency edge into source is reported as advisory
+        PASS [   2.652s] ( 920/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package with a transitive dependency edge into source is reported as advisory
+        PASS [   2.207s] ( 921/1115) givn::features_runner verify-change/check-specification-health.feature::A fragment inclusion does not invent an edge to a same-named use case
+        PASS [   2.396s] ( 922/1115) givn::features_runner verify-change/check-specification-health.feature::A fragment cannot be an extension target even when a use case has the same identifier
+        PASS [   2.529s] ( 923/1115) givn::features_runner verify-change/check-specification-health.feature::A declared path missing from the tree is reported as advisory
+        PASS [   2.781s] ( 924/1115) givn::features_runner verify-change/check-specification-health.feature::A declared e2e path with no package manifest is reported by the boundary finding
+        PASS [   2.345s] ( 925/1115) givn::features_runner verify-change/check-specification-health.feature::A non-existent change id is not surfaced
+        PASS [   2.575s] ( 926/1115) givn::features_runner verify-change/check-specification-health.feature::A malformed package manifest skips the dependency-edge finding
+        PASS [   2.437s] ( 927/1115) givn::features_runner verify-change/check-specification-health.feature::A parse error is reported on stderr and exits 1
+        PASS [   3.028s] ( 928/1115) givn::features_runner verify-change/check-specification-health.feature::A malformed Unicode use-case title produces a diagnostic instead of a panic
+        PASS [   2.519s] ( 929/1115) givn::features_runner verify-change/check-specification-health.feature::A parse error outranks a @wip finding
+        PASS [   2.376s] ( 930/1115) givn::features_runner verify-change/check-specification-health.feature::A removed placeholder suppresses the @wip warning on itself
+        PASS [   2.744s] ( 931/1115) givn::features_runner verify-change/check-specification-health.feature::A relationship cannot resolve through the other namespace
+        PASS [   2.429s] ( 932/1115) givn::features_runner verify-change/check-specification-health.feature::A removed scenario does not suppress an unrelated later @wip scenario
+        PASS [   2.331s] ( 933/1115) givn::features_runner verify-change/check-specification-health.feature::An advisory finding renders its severity and keeps the exit code
+        PASS [   2.494s] ( 934/1115) givn::features_runner verify-change/check-specification-health.feature::An advisory seed finding is counted in the summary and still exits 0
+        PASS [   2.704s] ( 935/1115) givn::features_runner verify-change/check-specification-health.feature::An absent declaration is reported by name and no advisory finding is computed
+        PASS [   2.375s] ( 936/1115) givn::features_runner verify-change/check-specification-health.feature::An unrecognised seed status is reported and a status after prose is honoured
+        PASS [   2.608s] ( 937/1115) givn::features_runner verify-change/check-specification-health.feature::An empty role list retains nothing and produces no finding
+        PASS [   2.462s] ( 938/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint accepts a delta that keeps the projected inventory consistent
+        PASS [   2.640s] ( 939/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a declared interaction whose projected corpus has no E2E scenario
+        PASS [   2.505s] ( 940/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a feature the projected inventory does not declare
+        PASS [   2.773s] ( 941/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a delta capability with no projected owner
+        PASS [   2.972s] ( 942/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint does not read the declaration
+        PASS [   2.371s] ( 943/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a pre-existing inventory mismatch
+        PASS [   2.593s] ( 944/1115) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports an E2E scenario the projected inventory does not declare
+        PASS [   2.299s] ( 945/1115) givn::features_runner verify-change/check-specification-health.feature::Default lint reports an undeclared capability
+        PASS [   2.501s] ( 946/1115) givn::features_runner verify-change/check-specification-health.feature::Explicit paths lint exactly those files without recursive descent
+        PASS [   2.756s] ( 947/1115) givn::features_runner verify-change/check-specification-health.feature::Cycles follow use-case includes and extends relationships
+        PASS [   2.347s] ( 948/1115) givn::features_runner verify-change/check-specification-health.feature::Fragment interactions are checked in their declaring fragment
+        PASS [   2.734s] ( 949/1115) givn::features_runner verify-change/check-specification-health.feature::Explicit relationship namespaces disambiguate equal identifiers
+        PASS [   2.692s] ( 950/1115) givn::features_runner verify-change/check-specification-health.feature::Findings across multiple files are aggregated and files are processed in sorted order
+        PASS [   2.421s] ( 951/1115) givn::features_runner verify-change/check-specification-health.feature::No .feature files under givn/ reports clean and exits 0
+        PASS [   2.352s] ( 952/1115) givn::features_runner verify-change/check-specification-health.feature::The JSON output exposes the finding severity
+        PASS [   2.575s] ( 953/1115) givn::features_runner verify-change/check-specification-health.feature::Interaction evidence cannot be credited from another capability
+        PASS [   2.806s] ( 954/1115) givn::features_runner verify-change/check-specification-health.feature::One path declared in two roles is reported as advisory
+        PASS [   2.689s] ( 955/1115) givn::features_runner verify-change/check-specification-health.feature::The JSON path exposes declaration findings with advisory severity
+        PASS [   2.472s] ( 956/1115) givn::features_runner verify-change/check-specification-health.feature::The change scope reports a dangling persona reference
+        PASS [   2.329s] ( 957/1115) givn::features_runner verify-change/check-specification-health.feature::The lint exit-code contract is preserved after refactor
+isory severity
         PASS [   5.866s] ( 958/1115) givn::features_runner verify-change/check-specification-health.feature::The change scope reports a dangling persona reference
         PASS [   4.705s] ( 959/1115) givn::features_runner verify-change/givn-workflow-enforcement.feature::A change whose declared E2E package is a standalone workspace passes the tasks check and binds the E2E scope
         PASS [   4.190s] ( 960/1115) givn::features_runner verify-change/givn-workflow-enforcement.feature::A failed new-capability candidate tells the developer how to repair it
