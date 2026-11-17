@@ -3,9 +3,10 @@
 //! The add-on precondition runs before the manifest is read. The recorded
 //! manifest is the authority: its Specification checksums are compared with
 //! the copy's bytes, the copy's declaration bounds the added-file refusal,
-//! and the recorded kept paths must still be present. A recorded Specification
-//! path is also compared with the checkout, so an edit made after the copy was
-//! written is named once, by the subject that owns the path.
+//! and the recorded kept paths must still be present. The recorded
+//! Specification and End-to-end paths are also compared with the checkout's
+//! content paths, and a content path the manifest does not record is added
+//! when the checkout's declaration matches it.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -13,9 +14,10 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 
-use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
+use crate::config::declaration::{DECLARATION_PATH, Role, SpecificationDeclaration};
 use crate::config::overlay::load_effective_at;
-use crate::e2e_boundary::{Glob, glob_matches_path_or_parent};
+use crate::e2e_boundary::{Glob, e2e_file_set, glob_matches_path_or_parent};
+use crate::gherkin::content::e2e_scenario_digest;
 use crate::scm::EntryKind;
 
 use super::manifest;
@@ -75,6 +77,8 @@ struct Recorded {
     #[serde(default)]
     source_kept_files: Vec<String>,
     #[serde(default)]
+    end_to_end_files: Vec<String>,
+    #[serde(default)]
     checksums: Checksums,
 }
 
@@ -82,6 +86,8 @@ struct Recorded {
 struct Checksums {
     #[serde(default)]
     specification: BTreeMap<String, String>,
+    #[serde(default)]
+    end_to_end: BTreeMap<String, String>,
     #[serde(default)]
     scenarios: BTreeMap<String, String>,
 }
@@ -106,47 +112,194 @@ pub fn compare(project_root: &Path, request: &CompareRequest) -> Result<CompareR
     require_kept_paths_present(&copy, &recorded)?;
 
     let mut specification: BTreeMap<String, Difference> = BTreeMap::new();
-    for (path, checksum) in &recorded.checksums.specification {
-        match local_checksum(&copy, path)? {
-            None => observe(&mut specification, path, DifferenceKind::Missing, None),
-            Some(observed) if observed != *checksum => {
-                observe(&mut specification, path, DifferenceKind::Changed, None);
-            }
-            Some(_) => {}
+    let mut end_to_end: BTreeMap<String, Difference> = BTreeMap::new();
+
+    let checkout = Checkout::read(project_root)?;
+    for (path, checksum) in &recorded.checksums.end_to_end {
+        if path == DECLARATION_PATH {
+            continue;
+        }
+        if let Some(kind) =
+            checkout.observed(path, checksum, recorded.checksums.scenarios.get(path))?
+        {
+            observe(&mut end_to_end, path, kind, None);
         }
     }
-
-    let backend = crate::scm::select(project_root)?;
-    let content: BTreeSet<String> = backend
-        .content_paths()
-        .with_context(|| format!("read the project tree at '{}'", project_root.display()))?
-        .into_iter()
-        .map(|entry| entry.path.to_string_lossy().replace('\\', "/"))
-        .collect();
     for (path, checksum) in &recorded.checksums.specification {
-        if recorded.checksums.scenarios.contains_key(path) {
+        if recorded.checksums.end_to_end.contains_key(path) {
             continue;
         }
-        if !content.contains(path) {
-            observe(&mut specification, path, DifferenceKind::Missing, None);
+        let Some(kind) = checkout.observed(path, checksum, None)? else {
             continue;
-        }
-        match local_checksum(project_root, path)? {
-            None => observe(&mut specification, path, DifferenceKind::Missing, None),
-            Some(observed) if observed != *checksum => observe(
-                &mut specification,
-                path,
-                DifferenceKind::Changed,
-                Some(CHECKOUT_CHANGED),
-            ),
-            Some(_) => {}
+        };
+        let note = (kind == DifferenceKind::Changed).then_some(CHECKOUT_CHANGED);
+        observe(&mut specification, path, kind, note);
+    }
+    for (path, owned_by_end_to_end) in checkout.added(&recorded)? {
+        let subject = if owned_by_end_to_end {
+            &mut end_to_end
+        } else {
+            &mut specification
+        };
+        observe(subject, &path, DifferenceKind::Added, None);
+    }
+
+    for (path, checksum) in &recorded.checksums.specification {
+        let kind = match local_checksum(&copy, path)? {
+            None => DifferenceKind::Missing,
+            Some(observed) if observed != *checksum => DifferenceKind::Changed,
+            Some(_) => continue,
+        };
+        if end_to_end.contains_key(path) {
+            observe(&mut end_to_end, path, kind, None);
+        } else {
+            observe(&mut specification, path, kind, None);
         }
     }
 
     Ok(CompareReport {
         specification: ordered(specification),
-        end_to_end: Vec::new(),
+        end_to_end: ordered(end_to_end),
     })
+}
+
+/// The checkout side: every content path with its backend identity, the
+/// declaration the working tree carries, and the bytes read from disk.
+struct Checkout {
+    root: PathBuf,
+    entries: BTreeMap<String, Option<String>>,
+    declaration: Option<SpecificationDeclaration>,
+}
+
+impl Checkout {
+    /// Read the selected backend's content paths and the current declaration.
+    /// A declaration the loader refuses contributes no roles: the recorded
+    /// declaration path is already a `changed` or `missing` difference.
+    fn read(root: &Path) -> Result<Self> {
+        let backend = crate::scm::select(root)?;
+        let mut entries = BTreeMap::new();
+        for entry in backend
+            .content_paths()
+            .with_context(|| format!("read the project tree at '{}'", root.display()))?
+        {
+            let path = entry.path.to_string_lossy().replace('\\', "/");
+            entries.insert(path, entry.gitlink);
+        }
+        let declaration = SpecificationDeclaration::load(root).ok().flatten();
+        Ok(Self {
+            root: root.to_path_buf(),
+            entries,
+            declaration,
+        })
+    }
+
+    /// The content paths, sorted and deduplicated.
+    fn paths(&self) -> Vec<&str> {
+        self.entries.keys().map(String::as_str).collect()
+    }
+
+    /// Whether the checkout still holds a working-tree entry at `path`. The
+    /// index keeps listing a file deleted from disk.
+    fn presents(&self, path: &str) -> bool {
+        std::fs::symlink_metadata(self.root.join(path)).is_ok()
+    }
+
+    /// One content path's checksum. A repository link hashes its recorded
+    /// commit id, which is the only content a gitlink carries.
+    fn checksum(&self, path: &str) -> Result<Option<String>> {
+        if let Some(Some(gitlink)) = self.entries.get(path) {
+            return Ok(Some(manifest::path_checksum(
+                path,
+                EntryKind::Submodule,
+                false,
+                gitlink.as_bytes(),
+            )));
+        }
+        local_checksum(&self.root, path)
+    }
+
+    /// The path's difference against a recorded checksum, or `None` when it
+    /// matches. The selected-scenario checksum is compared only after the
+    /// bytes match, so a content edit is already `changed`.
+    fn observed(
+        &self,
+        path: &str,
+        checksum: &str,
+        scenario: Option<&String>,
+    ) -> Result<Option<DifferenceKind>> {
+        let Some(observed) = self.checksum(path)? else {
+            return Ok(Some(DifferenceKind::Missing));
+        };
+        if observed != *checksum {
+            return Ok(Some(DifferenceKind::Changed));
+        }
+        let Some(scenario) = scenario else {
+            return Ok(None);
+        };
+        let matches = self.scenario_digest(path)?.as_ref() == Some(scenario);
+        Ok((!matches).then_some(DifferenceKind::Changed))
+    }
+
+    /// The selected `@e2e` scenario digest of one checkout feature.
+    fn scenario_digest(&self, path: &str) -> Result<Option<String>> {
+        let target = self.root.join(path);
+        let bytes =
+            std::fs::read(&target).with_context(|| format!("read '{}'", target.display()))?;
+        let Ok(source) = String::from_utf8(bytes) else {
+            return Ok(None);
+        };
+        Ok(e2e_scenario_digest(path, &source).ok().flatten())
+    }
+
+    /// The content paths the manifest does not record but the checkout's
+    /// declaration matches, each with whether `End-to-end tests` owns it.
+    fn added(&self, recorded: &Recorded) -> Result<Vec<(String, bool)>> {
+        let Some(declaration) = &self.declaration else {
+            return Ok(Vec::new());
+        };
+        let roles: Vec<Glob> = declaration
+            .roles()
+            .into_iter()
+            .flat_map(|(_, patterns)| patterns.iter())
+            .map(|pattern| Glob::compile(pattern))
+            .collect();
+        let behavior: Vec<Glob> = declaration
+            .roles()
+            .into_iter()
+            .filter(|(role, _)| *role == Role::Behavior)
+            .flat_map(|(_, patterns)| patterns.iter())
+            .map(|pattern| Glob::compile(pattern))
+            .collect();
+        let content = self.paths();
+        let end_to_end_set = e2e_file_set(declaration, &content);
+        let recorded_paths: BTreeSet<&str> = recorded
+            .specification_files
+            .iter()
+            .chain(&recorded.source_kept_files)
+            .chain(&recorded.end_to_end_files)
+            .map(String::as_str)
+            .collect();
+        let mut added = Vec::new();
+        for path in self.entries.keys() {
+            if recorded_paths.contains(path.as_str()) || !self.presents(path) {
+                continue;
+            }
+            if !roles
+                .iter()
+                .any(|glob| glob_matches_path_or_parent(glob, path))
+            {
+                continue;
+            }
+            let owned_by_end_to_end = (path != DECLARATION_PATH && end_to_end_set.contains(path))
+                || (path.ends_with(".feature")
+                    && behavior
+                        .iter()
+                        .any(|glob| glob_matches_path_or_parent(glob, path))
+                    && self.scenario_digest(path)?.is_some());
+            added.push((path.clone(), owned_by_end_to_end));
+        }
+        Ok(added)
+    }
 }
 
 /// The recorded manifest fields, read permissively for this batch.
@@ -257,9 +410,11 @@ fn observe(
                     DifferenceKind::Changed
                 };
             existing.kind = merged;
-            if merged == DifferenceKind::Changed && note.is_some() {
-                existing.note = note;
-            }
+            existing.note = if merged == DifferenceKind::Changed {
+                note.or(existing.note)
+            } else {
+                None
+            };
         }
     }
 }

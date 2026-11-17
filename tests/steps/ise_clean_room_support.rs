@@ -888,6 +888,14 @@ pub(crate) const RETAINED_SOURCE_PATH: &str = "src/keep.rs";
 /// The kept source file the verify fixtures commit: inside `src/**` and
 /// outside every frozen input.
 pub(crate) const VERIFY_KEPT_PATH: &str = "src/keys/steps.rs";
+/// The contract document the checkout loses in the drift fixtures: a
+/// `docs/**` contracts match, so the manifest records it.
+pub(crate) const LIMITS_PATH: &str = "docs/arc42/02-architecture-constraints.md";
+/// The tracked file outside every declared role and source root at
+/// preparation; the `structure` rewrite makes it an added Specification path.
+pub(crate) const CONFIG_KEPT_PATH: &str = "config/kept.toml";
+/// The ignored file the checkout gains under its e2e package.
+pub(crate) const IGNORED_E2E_PATH: &str = "tests/e2e/ignored.txt";
 
 /// A Git project with `ise` enabled and the verify scenarios' declaration:
 /// `givn/specs/**` behavior, `docs/**` contracts, `tests/e2e` as the e2e
@@ -917,9 +925,10 @@ fn verify_declaration() -> String {
         .to_string()
 }
 
-/// Commit the six files the verify fixtures freeze: the `@e2e` feature, the
-/// contract document, the two e2e package files, one kept source file, and
-/// the replaced source file. Returns the revision identifier.
+/// Commit the files the verify fixtures freeze: the `@e2e` feature, the
+/// contract and limits documents, the two e2e package files, one kept source
+/// file, the replaced source file, and the file outside every role. Returns
+/// the revision identifier.
 pub(crate) fn commit_verify_trial_revision(env: &common::TestEnv) -> String {
     commit_files(
         env,
@@ -927,6 +936,8 @@ pub(crate) fn commit_verify_trial_revision(env: &common::TestEnv) -> String {
             (DECLARATION_PATH, &verify_declaration()),
             (FOSSIL_FEATURE_PATH, FOSSIL_FEATURE_CONTENT),
             (REFERENCE_PATH, "reference\n"),
+            (LIMITS_PATH, "constraints\n"),
+            (CONFIG_KEPT_PATH, "kept = true\n"),
             (VERIFY_E2E_MANIFEST_PATH, "[package]\nname = \"e2e\"\n"),
             (VERIFY_E2E_STEP_PATH, "// e2e steps\n"),
             (VERIFY_KEPT_PATH, "pub fn steps() {}\n"),
@@ -1083,6 +1094,41 @@ pub(crate) fn add_checkout_file(env: &common::TestEnv, path: &str, content: &str
         std::fs::create_dir_all(parent).expect("create the added file's parent directory");
     }
     std::fs::write(&target, content).expect("write the added file");
+}
+
+/// Delete a tracked file from the checkout's working tree. The index still
+/// lists it, so the comparison must read the file, not only the path set.
+pub(crate) fn delete_checkout_file(env: &common::TestEnv, path: &str) {
+    let target = env.path(path);
+    std::fs::remove_file(&target)
+        .unwrap_or_else(|error| panic!("delete {}: {error}", target.display()));
+}
+
+/// Rewrite a feature's `Feature:` description and leave every scenario line
+/// untouched, so the selected-scenario checksum still matches.
+pub(crate) fn rewrite_feature_description(env: &common::TestEnv, path: &str) {
+    let target = env.path(path);
+    let content = std::fs::read_to_string(&target).expect("read the checkout feature");
+    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+    let position = lines
+        .iter()
+        .position(|line| line.starts_with("Feature:"))
+        .unwrap_or_else(|| panic!("the feature {} has no description line", target.display()));
+    lines[position] = "Feature: rewritten demo".to_string();
+    std::fs::write(&target, lines.join("\n") + "\n").expect("rewrite the feature description");
+}
+
+/// Write an ignored file under the checkout's e2e package: the exclusion
+/// carries the path, so the backend's content enumeration omits it.
+pub(crate) fn add_ignored_e2e_file(env: &common::TestEnv) {
+    use std::io::Write as _;
+    let exclude = env.path(".git/info/exclude");
+    let mut file = std::fs::OpenOptions::new()
+        .append(true)
+        .open(&exclude)
+        .unwrap_or_else(|error| panic!("open {} to append: {error}", exclude.display()));
+    writeln!(file, "{IGNORED_E2E_PATH}").expect("exclude the ignored e2e file");
+    add_checkout_file(env, IGNORED_E2E_PATH, "// ignored\n");
 }
 
 /// Point the receipt at `<container>/blocker/record.yaml`, where `blocker` is

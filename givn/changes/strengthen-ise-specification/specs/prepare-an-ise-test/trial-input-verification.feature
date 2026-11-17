@@ -178,7 +178,7 @@ Feature: Spec-copy verification
     Then  comparison fails and exits 1, naming "src/keys/steps.rs"
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names an End-to-end test changed in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer edits the End-to-end (E2E) test "tests/e2e/steps/keys.rs" in the checkout
@@ -187,7 +187,7 @@ Feature: Spec-copy verification
     And  comparison prints "- tests/e2e/steps/keys.rs"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names an @e2e scenario changed in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer edits a scenario tagged "e2e" in "givn/specs/demo/spec.feature" in the checkout
@@ -196,7 +196,7 @@ Feature: Spec-copy verification
     And  comparison prints "- givn/specs/demo/spec.feature"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names a content-only change to an @e2e feature in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer edits the feature description of "givn/specs/demo/spec.feature" in the checkout
@@ -205,7 +205,7 @@ Feature: Spec-copy verification
     And  comparison prints "- givn/specs/demo/spec.feature"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names an added End-to-end file in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer adds the End-to-end (E2E) file "tests/e2e/steps/extra.rs" in the checkout
@@ -214,7 +214,7 @@ Feature: Spec-copy verification
     And  comparison prints "+ tests/e2e/steps/extra.rs"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names an added @e2e scenario file in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer adds the feature file "givn/specs/demo/extra.feature" with an "@e2e" scenario in the checkout
@@ -223,7 +223,7 @@ Feature: Spec-copy verification
     And  comparison prints "+ givn/specs/demo/extra.feature"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names an added End-to-end root in the checkout declaration
     Given  a prepared spec copy with a manifest
     When  the developer adds the e2e root "tests/extra-e2e" to the checkout declaration with the file "tests/extra-e2e/Cargo.toml"
@@ -233,7 +233,7 @@ Feature: Spec-copy verification
     And  comparison prints "+ tests/extra-e2e/Cargo.toml"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names an added Specification file in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer adds the contract file "docs/extra.md" in the checkout
@@ -243,7 +243,7 @@ Feature: Spec-copy verification
     And  comparison prints "End-to-end tests: match"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names a missing Specification file in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer deletes the Specification file "docs/reference.md" in the checkout
@@ -252,7 +252,7 @@ Feature: Spec-copy verification
     And  comparison prints "- docs/reference.md"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names a missing End-to-end test in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer deletes the End-to-end (E2E) test "tests/e2e/steps/keys.rs" in the checkout
@@ -261,7 +261,7 @@ Feature: Spec-copy verification
     And  comparison prints "- tests/e2e/steps/keys.rs"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names a missing @e2e feature in the checkout
     Given  a prepared spec copy with a manifest
     When  the developer deletes the Specification file "givn/specs/demo/spec.feature" in the checkout
@@ -270,7 +270,7 @@ Feature: Spec-copy verification
     And  comparison prints "- givn/specs/demo/spec.feature"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison names every drifting path in one run
     Given  a prepared spec copy with a manifest
     When  the agent edits the Specification file "givn/specs/demo/spec.feature" the spec copy was written with
@@ -297,7 +297,7 @@ Feature: Spec-copy verification
     And  comparison prints "Specification changed after the copy was written"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison ignores an ignored file under the End-to-end package
     Given  a prepared spec copy with a manifest
     When  the developer adds an ignored file under the checkout's End-to-end (E2E) package
@@ -305,7 +305,7 @@ Feature: Spec-copy verification
     Then  comparison prints "End-to-end tests: match"
     And  comparison exits zero
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison reports a Specification changed after the copy was written
     Given  a prepared spec copy with a manifest
     When  the developer rewrites the checkout declaration's "structure" role to "config/kept.toml"

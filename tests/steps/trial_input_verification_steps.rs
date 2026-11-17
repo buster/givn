@@ -255,17 +255,6 @@ fn trial_loses_the_declaration(world: &mut GivnWorld) {
 }
 
 #[when(
-    regex = r#"^the developer rewrites the checkout declaration's "structure" role to "docs/glossary\.md"$"#
-)]
-fn developer_rewrites_the_structure_role(world: &mut GivnWorld) {
-    ise_clean_room_support::rewrite_checkout_role(
-        project_env(world),
-        "structure",
-        "[\"docs/glossary.md\"]",
-    );
-}
-
-#[when(
     regex = r#"^the developer adds the e2e root "tests/extra-e2e" to the checkout declaration$"#
 )]
 fn developer_adds_the_extra_e2e_root(world: &mut GivnWorld) {
@@ -878,4 +867,96 @@ fn comparison_prints_one_line_under_the_subject(
         count, 1,
         "stdout {text:?} prints {count} {expected:?} lines under the {subject:?} subject"
     );
+}
+
+// --- Batch 10: compare-checkout -------------------------------------------
+
+#[when(regex = r#"^the developer edits the End-to-end \(E2E\) test "([^"]+)" in the checkout$"#)]
+fn developer_edits_the_checkout_e2e_test(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::append_bytes(&project_env(world).path(&path));
+}
+
+#[when(regex = r#"^the developer edits a scenario tagged "e2e" in "([^"]+)" in the checkout$"#)]
+fn developer_edits_the_checkout_e2e_scenario(world: &mut GivnWorld, path: String) {
+    let target = project_env(world).path(&path);
+    let text = std::fs::read_to_string(&target).expect("read the checkout feature");
+    let changed = text.replace("Given nothing", "Given something else");
+    assert_ne!(changed, text, "the fixture feature has no step to change");
+    std::fs::write(&target, changed).expect("rewrite the checkout feature");
+}
+
+#[when(regex = r#"^the developer edits the feature description of "([^"]+)" in the checkout$"#)]
+fn developer_edits_the_checkout_feature_description(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::rewrite_feature_description(project_env(world), &path);
+}
+
+#[when(regex = r#"^the developer adds the End-to-end \(E2E\) file "([^"]+)" in the checkout$"#)]
+fn developer_adds_the_checkout_e2e_file(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::add_checkout_file(project_env(world), &path, "// extra e2e steps\n");
+}
+
+#[when(
+    regex = r#"^the developer adds the feature file "([^"]+)" with an "@e2e" scenario in the checkout$"#
+)]
+fn developer_adds_the_checkout_e2e_feature(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::add_checkout_file(project_env(world), &path, ADDED_E2E_FEATURE_CONTENT);
+}
+
+#[when(
+    regex = r#"^the developer adds the e2e root "([^"]+)" to the checkout declaration with the file "([^"]+)"$"#
+)]
+fn developer_adds_the_checkout_e2e_root(world: &mut GivnWorld, root: String, path: String) {
+    let env = project_env(world);
+    let declaration = std::fs::read_to_string(env.path(ise_clean_room_support::DECLARATION_PATH))
+        .expect("read the checkout declaration");
+    let line = declaration
+        .lines()
+        .find(|line| line.starts_with("e2e:"))
+        .expect("the checkout declaration has an 'e2e:' line");
+    let entries = line
+        .trim_start_matches("e2e:")
+        .trim()
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .trim();
+    let value = if entries.is_empty() {
+        format!("[\"{root}\"]")
+    } else {
+        format!("[{entries}, \"{root}\"]")
+    };
+    ise_clean_room_support::rewrite_checkout_role(env, "e2e", &value);
+    ise_clean_room_support::add_checkout_file(env, &path, "[package]\nname = \"extra-e2e\"\n");
+}
+
+#[when(regex = r#"^the developer adds the contract file "([^"]+)" in the checkout$"#)]
+fn developer_adds_the_checkout_contract_file(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::add_checkout_file(project_env(world), &path, "contract\n");
+}
+
+#[when(regex = r#"^the developer deletes the Specification file "([^"]+)" in the checkout$"#)]
+fn developer_deletes_the_checkout_specification_file(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::delete_checkout_file(project_env(world), &path);
+}
+
+#[when(regex = r#"^the developer deletes the End-to-end \(E2E\) test "([^"]+)" in the checkout$"#)]
+fn developer_deletes_the_checkout_e2e_test(world: &mut GivnWorld, path: String) {
+    ise_clean_room_support::delete_checkout_file(project_env(world), &path);
+}
+
+#[when(
+    regex = r#"^the developer rewrites the checkout declaration's "([^"]+)" role to "([^"]+)"$"#
+)]
+fn developer_rewrites_the_checkout_role(world: &mut GivnWorld, role: String, path: String) {
+    ise_clean_room_support::rewrite_checkout_role(
+        project_env(world),
+        &role,
+        &format!("[\"{path}\"]"),
+    );
+}
+
+#[when(
+    regex = r#"^the developer adds an ignored file under the checkout's End-to-end \(E2E\) package$"#
+)]
+fn developer_adds_an_ignored_e2e_file(world: &mut GivnWorld) {
+    ise_clean_room_support::add_ignored_e2e_file(project_env(world));
 }
