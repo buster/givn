@@ -5,6 +5,7 @@
 //! not-implemented stub pattern from `design.md` "Strict Mode": RED is a
 //! failed step that names the phrase, never an unbound or skipped step.
 
+use cucumber::gherkin::Step;
 use cucumber::{given, then, when};
 
 use crate::steps::GivnWorld;
@@ -2594,5 +2595,354 @@ fn the_spec_copy_fossil_symlink_points_at_its_target(world: &mut GivnWorld) {
         world,
         ise_clean_room_support::SYMLINK_PATH,
         ise_clean_room_support::SYMLINK_TARGET,
+    );
+}
+
+// --- report-and-manifest ----------------------------------------------------
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "e2e" role names "tests/e2e"$"#
+)]
+fn git_project_with_the_e2e_role(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::bare_ise_project(
+        &ise_clean_room_support::e2e_declaration("\"tests/e2e\"", "\"src/**\""),
+    ));
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "e2e" role names "([^"]+)" and whose source root is "([^"]+)"$"#
+)]
+fn git_project_with_the_e2e_role_and_source_root(
+    world: &mut GivnWorld,
+    entry: String,
+    source: String,
+) {
+    world.env = Some(ise_clean_room_support::bare_ise_project(
+        &ise_clean_room_support::e2e_declaration(&format!("\"{entry}\""), &format!("\"{source}\"")),
+    ));
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "behavior" role names "([^"]+)", whose "e2e" role names "([^"]+)", and whose source root is "([^"]+)"$"#
+)]
+fn git_project_with_the_behavior_and_e2e_roles(
+    world: &mut GivnWorld,
+    behavior: String,
+    e2e: String,
+    source: String,
+) {
+    world.env = Some(ise_clean_room_support::bare_ise_project(
+        &ise_clean_room_support::behavior_e2e_declaration(
+            &format!("\"{behavior}\""),
+            &format!("\"{e2e}\""),
+            &format!("\"{source}\""),
+        ),
+    ));
+}
+
+#[given(
+    regex = r#"^a committed revision with "tests/e2e/Cargo\.toml" and "tests/e2e/steps/demo\.rs"$"#
+)]
+fn commit_the_e2e_package(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+            ("tests/e2e/steps/demo.rs", "// e2e steps\n"),
+        ],
+        "fixture: e2e package",
+    );
+}
+
+#[given(regex = r#"^a committed revision with "src/kept\.rs" and "notes\.md"$"#)]
+fn commit_the_kept_file_and_notes(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            (
+                ise_clean_room_support::KEPT_PATH,
+                ise_clean_room_support::KEPT_CONTENT,
+            ),
+            ("notes.md", "notes\n"),
+        ],
+        "fixture: kept file and notes",
+    );
+}
+
+#[given(
+    regex = r#"^a committed revision with "tests/e2e/runner\.rs" and "tests/unit/helper\.rs"$"#
+)]
+fn commit_the_overlapping_e2e_and_unit_files(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            ("tests/e2e/runner.rs", "// e2e runner\n"),
+            ("tests/unit/helper.rs", "// unit helper\n"),
+        ],
+        "fixture: overlapping e2e and unit files",
+    );
+}
+
+#[given(
+    regex = r#"^a committed revision with "givn/specs/demo\.feature", "tests/e2e/Cargo\.toml", "src/keys/parser\.rs", "src/keys/mod\.rs", and "src/other\.rs"$"#
+)]
+fn commit_the_component_revision(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            (
+                ise_clean_room_support::DEMO_FEATURE_PATH,
+                ise_clean_room_support::DEMO_FEATURE_CONTENT,
+            ),
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+            ("src/keys/parser.rs", "pub fn parse() {}\n"),
+            ("src/keys/mod.rs", "pub mod parser;\n"),
+            ("src/other.rs", "pub fn other() {}\n"),
+        ],
+        "fixture: component revision",
+    );
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the whole product from "([^"]+)" into a spec copy without a manifest$"#
+)]
+fn rebuild_whole_product_without_a_manifest(world: &mut GivnWorld, revision: String) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.requested_revision = Some(revision.clone());
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-all",
+            "--at",
+            revision.as_str(),
+            "--into",
+            trial.as_str(),
+        ],
+        "ise rebuild-all",
+    );
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the whole product from "([^"]+)" into a spec copy with a manifest$"#
+)]
+fn rebuild_whole_product_with_a_manifest(world: &mut GivnWorld, revision: String) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.requested_revision = Some(revision.clone());
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let manifest = manifest_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-all",
+            "--at",
+            revision.as_str(),
+            "--into",
+            trial.as_str(),
+            "--manifest",
+            manifest.as_str(),
+        ],
+        "ise rebuild-all",
+    );
+}
+
+#[when(
+    regex = r#"^the developer runs a dry run of the whole product from "([^"]+)" into a spec copy with a manifest$"#
+)]
+fn dry_run_whole_product_with_a_manifest(world: &mut GivnWorld, revision: String) {
+    run_dry_run(world, &revision, true);
+}
+
+#[when(
+    regex = r#"^the developer runs a dry run of the whole product from "([^"]+)" into a spec copy without a manifest$"#
+)]
+fn dry_run_whole_product_without_a_manifest(world: &mut GivnWorld, revision: String) {
+    run_dry_run(world, &revision, false);
+}
+
+fn run_dry_run(world: &mut GivnWorld, revision: &str, manifest: bool) {
+    world.ise_clean_room.ensure_targets();
+    world.ise_clean_room.requested_revision = Some(revision.to_string());
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let manifest = manifest.then(|| manifest_path(world).to_string_lossy().into_owned());
+    let mut args = vec![
+        "ise",
+        "rebuild-all",
+        "--at",
+        revision,
+        "--into",
+        trial.as_str(),
+        "--dry-run",
+    ];
+    if let Some(manifest) = &manifest {
+        args.push("--manifest");
+        args.push(manifest.as_str());
+    }
+    run_rebuild(world, &args, "ise rebuild-all");
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the component paths "([^"]+)" and "([^"]+)" into a spec copy$"#
+)]
+fn rebuild_component_paths_with_a_manifest(world: &mut GivnWorld, first: String, second: String) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let manifest = manifest_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-component",
+            first.as_str(),
+            second.as_str(),
+            "--into",
+            trial.as_str(),
+            "--manifest",
+            manifest.as_str(),
+        ],
+        "ise rebuild-component",
+    );
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the component path "([^"]+)" into a spec copy with a manifest$"#
+)]
+fn rebuild_component_path_with_a_manifest(world: &mut GivnWorld, path: String) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    let manifest = manifest_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-component",
+            path.as_str(),
+            "--into",
+            trial.as_str(),
+            "--manifest",
+            manifest.as_str(),
+        ],
+        "ise rebuild-component",
+    );
+}
+
+#[then(regex = r#"^the command succeeds and prints no "([^"]+)" line$"#)]
+fn the_command_succeeds_and_prints_no_line(world: &mut GivnWorld, token: String) {
+    assert_success(world);
+    let text = stdout(world);
+    assert!(
+        !text.lines().any(|line| line.starts_with(&token)),
+        "stdout {text:?} prints a {token:?} line"
+    );
+    // The report is the only output: an older build appended the trial record
+    // document, whose first fields are `schema` and `content_scope`.
+    assert!(
+        !text
+            .lines()
+            .any(|line| line.starts_with("schema:") || line.starts_with("content_scope:")),
+        "stdout {text:?} prints a trial record after the report"
+    );
+}
+
+#[then(regex = r#"^no manifest file is written$"#)]
+fn no_manifest_file_is_written(world: &mut GivnWorld) {
+    let manifest = manifest_path(world);
+    assert!(
+        !manifest.exists(),
+        "the manifest path exists: {}",
+        manifest.display()
+    );
+}
+
+#[then(regex = r#"^the spec copy holds the declaration "([^"]+)"$"#)]
+fn the_spec_copy_holds_the_declaration(world: &mut GivnWorld, path: String) {
+    assert_trial_holds(world, &[path.as_str()]);
+}
+
+#[then(regex = r#"^the dry run prints "([^"]+)" and "([^"]+)"$"#)]
+fn the_dry_run_prints_two_labels(world: &mut GivnWorld, first: String, second: String) {
+    assert_success(world);
+    let text = stdout(world);
+    for label in [first, second] {
+        assert!(
+            text.lines().any(|line| line.starts_with(&label)),
+            "stdout {text:?} does not print a {label:?} line"
+        );
+    }
+}
+
+#[then(regex = r#"^the dry run prints "([^"]+)" and no "([^"]+)" line$"#)]
+fn the_dry_run_prints_one_label_and_no_other(world: &mut GivnWorld, first: String, absent: String) {
+    assert_success(world);
+    let text = stdout(world);
+    assert!(
+        text.lines().any(|line| line.starts_with(&first)),
+        "stdout {text:?} does not print a {first:?} line"
+    );
+    assert!(
+        !text.lines().any(|line| line.starts_with(&absent)),
+        "stdout {text:?} prints a {absent:?} line"
+    );
+}
+
+#[then(regex = r#"^the manifest lists "([^"]+)" among the Specification files$"#)]
+fn the_manifest_lists_among_the_specification_files(world: &mut GivnWorld, path: String) {
+    let manifest = record_document(world);
+    let files = record_list(&manifest, "specification_files");
+    assert!(
+        files.contains(&path),
+        "specification_files {files:?} do not hold {path:?}"
+    );
+}
+
+#[then(regex = r#"^the manifest's End-to-end files hold "([^"]+)" and "([^"]+)"$"#)]
+fn the_manifest_end_to_end_files_hold(world: &mut GivnWorld, first: String, second: String) {
+    let manifest = record_document(world);
+    let mut expected = vec![first, second];
+    expected.sort();
+    assert_eq!(
+        record_list(&manifest, "end_to_end_files"),
+        expected,
+        "the manifest's End-to-end files are wrong"
+    );
+}
+
+#[then(regex = r#"^the manifest's End-to-end files are empty$"#)]
+fn the_manifest_end_to_end_files_are_empty(world: &mut GivnWorld) {
+    let manifest = record_document(world);
+    assert_eq!(
+        record_list(&manifest, "end_to_end_files"),
+        Vec::<String>::new(),
+        "the manifest's End-to-end files are not empty"
+    );
+}
+
+#[then(regex = r#"^the manifest records one removed path$"#)]
+fn the_manifest_records_one_removed_path(world: &mut GivnWorld) {
+    let manifest = record_document(world);
+    assert_eq!(
+        record_list(&manifest, "removed_paths"),
+        vec!["src/one.rs".to_string()],
+        "the manifest does not record the collapsed removal"
+    );
+}
+
+#[then(regex = r#"^the manifest's removed paths are:$"#)]
+fn the_manifest_removed_paths_are(world: &mut GivnWorld, step: &Step) {
+    let manifest = record_document(world);
+    let expected: Vec<String> = step
+        .table()
+        .expect("the step carries a removed-paths table")
+        .rows
+        .iter()
+        .flatten()
+        .cloned()
+        .collect();
+    assert_eq!(
+        record_list(&manifest, "removed_paths"),
+        expected,
+        "the manifest's removed paths are wrong"
     );
 }

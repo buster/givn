@@ -219,7 +219,7 @@ Feature: Clean-room preparation
     And  the spec copy omits "src/keys/parser.rs" and "src/keys/mod.rs"
     And  the spec copy holds "src/other.rs"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation collapses a repeated path
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/one.rs" and "src/two.rs"
@@ -326,7 +326,7 @@ Feature: Clean-room preparation
     Then  the command succeeds and prints "Specification files: 2"
     And  the spec copy holds "givn/specification.yaml"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Developer rebuilds the whole product from its Specification
     Given  a Git project with ise enabled and a declaration whose "behavior" role names "givn/specs/**", whose "e2e" role names "tests/e2e", and whose source root is "src/**"
     And  a committed revision with "givn/specs/demo.feature", "tests/e2e/Cargo.toml", "tests/e2e/steps/demo.rs", "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", and "notes.md"
@@ -340,7 +340,7 @@ Feature: Clean-room preparation
     And  the spec copy omits "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", "notes.md", "tests/e2e/Cargo.toml", and "tests/e2e/steps/demo.rs"
     And  the manifest records the scope, the revision, the removed paths, the five counts, the checksums, the copy directory, and the Givn version
 
-  @givn.added @wip
+  @givn.added
   Scenario: Developer rebuilds one component and leaves its neighbours
     Given  a Git project with ise enabled and a declaration whose "behavior" role names "givn/specs/**", whose "e2e" role names "tests/e2e", and whose source root is "src/**"
     And  a committed revision with "givn/specs/demo.feature", "tests/e2e/Cargo.toml", "src/keys/parser.rs", "src/keys/mod.rs", and "src/other.rs"
@@ -431,7 +431,7 @@ Feature: Clean-room preparation
     Then  the command exits 2 and names the missing path list
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation writes no manifest when no manifest path is given
     Given  a Git project with ise enabled and a declaration
     When  the developer rebuilds the whole product from "HEAD" into a spec copy without a manifest
@@ -439,14 +439,14 @@ Feature: Clean-room preparation
     And  no manifest file is written
     And  the spec copy holds the declaration "givn/specification.yaml"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dry run writes no spec copy and no manifest
     Given  a Git project with ise enabled and a declaration
     When  the developer runs a dry run of the whole product from "HEAD" into a spec copy with a manifest
     Then  the dry run prints "Copy directory (would write):" and "Manifest (not written):"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: A dry run without a manifest prints no manifest line
     Given  a Git project with ise enabled and a declaration
     When  the developer runs a dry run of the whole product from "HEAD" into a spec copy without a manifest
@@ -506,14 +506,14 @@ Feature: Clean-room preparation
     Then  the command succeeds
     And  the spec copy holds "givn/specification.yaml"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The manifest lists the declaration among the Specification files
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     When  the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest
     Then  the command succeeds
     And  the manifest lists "givn/specification.yaml" among the Specification files
 
-  @givn.added @wip
+  @givn.added
   Scenario: The manifest lists the End-to-end tests it does not copy
     Given  a Git project with ise enabled and a declaration whose "e2e" role names "tests/e2e"
     And  a committed revision with "tests/e2e/Cargo.toml" and "tests/e2e/steps/demo.rs"
@@ -522,14 +522,14 @@ Feature: Clean-room preparation
     And  the manifest's End-to-end files hold "tests/e2e/Cargo.toml" and "tests/e2e/steps/demo.rs"
     And  the spec copy omits "tests/e2e/Cargo.toml" and "tests/e2e/steps/demo.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A declaration with no End-to-end role copies every Specification file
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     When  the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest
     Then  the command succeeds and prints "End-to-end tests: not copied (0 files)"
     And  the manifest's End-to-end files are empty
 
-  @givn.added @wip
+  @givn.added
   Scenario: An End-to-end role that covers the declaration keeps it among the Specification files
     Given  a Git project with ise enabled and a declaration whose "e2e" role names "givn/**"
     And  a committed revision with "givn/specs/a.md" and "src/kept.rs"
@@ -538,7 +538,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "givn/specification.yaml"
     And  the spec copy omits "givn/specs/a.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project-root End-to-end entry covers the whole tracked tree
     Given  a Git project with ise enabled and a declaration whose "e2e" role names "." and whose source root is "src/**"
     And  a committed revision with "src/kept.rs" and "notes.md"
@@ -547,7 +547,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "givn/specification.yaml"
     And  the spec copy omits "src/kept.rs" and "notes.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An End-to-end entry that overlaps a source root wins over the removal
     Given  a Git project with ise enabled and a declaration whose "e2e" role names "tests/e2e" and whose source root is "tests/**"
     And  a committed revision with "tests/e2e/runner.rs" and "tests/unit/helper.rs"

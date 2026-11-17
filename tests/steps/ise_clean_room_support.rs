@@ -223,6 +223,22 @@ pub(crate) fn ise_project_with_declaration(declaration: &str) -> common::TestEnv
     env
 }
 
+/// A minimal Git project with `ise` enabled and the supplied declaration
+/// uncommitted: the `givn init` scaffold is absent, so only the paths the
+/// scenario commits enter the revision and the placement counts stay exact.
+pub(crate) fn bare_ise_project(declaration: &str) -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::write(env.path(".git/info/exclude"), "givn/config.yaml\n")
+        .expect("write the Git exclude fixture");
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
+        .expect("write the fixture config");
+    std::fs::write(env.path("givn/specification.yaml"), declaration)
+        .expect("write the fixture declaration");
+    env
+}
+
 /// Rewrite the committed declaration in place; the caller commits it.
 pub(crate) fn rewrite_declaration(env: &common::TestEnv, content: &str) {
     write_declaration(env, content);

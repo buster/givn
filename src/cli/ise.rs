@@ -34,10 +34,15 @@ fn rebuild(project_root: &Path, request: &RebuildRequest, verb: &str) -> i32 {
     }
 }
 
-/// The report: the fixed lines with the conditional frozen-package line
-/// between `E2E digest` and `Written path`, the dry run's `Would write:`
-/// block, and the record when it went to stdout.
+/// The report: eleven fixed lines, and `Manifest` only when `--manifest` was
+/// given. A dry run replaces the two write lines with
+/// `Copy directory (would write):` and `Manifest (not written):`.
 fn render(report: &Report) -> String {
+    let noun = if report.end_to_end_files == 1 {
+        "file"
+    } else {
+        "files"
+    };
     let mut text = format!(
         "Backend: {}\n\
          Revision: {}\n\
@@ -47,7 +52,8 @@ fn render(report: &Report) -> String {
          Outside the spec copy: {}\n\
          Files beside removed paths: {}\n\
          Specification checksum: {}\n\
-         End-to-end checksum: {}\n",
+         End-to-end checksum: {}\n\
+         End-to-end tests: not copied ({} {})\n",
         report.backend,
         report.revision,
         report.counts.retained,
@@ -55,37 +61,27 @@ fn render(report: &Report) -> String {
         report.counts.replaced,
         report.counts.outside_declaration,
         report.counts.not_replaced,
-        abbreviate(&report.retained_digest),
-        abbreviate(&report.e2e_digest),
+        abbreviate(&report.specification_checksum),
+        abbreviate(&report.end_to_end_checksum),
+        report.end_to_end_files,
+        noun,
     );
-    if !report.excluded_roles.is_empty() {
-        let noun = if report.frozen_files == 1 {
-            "file"
-        } else {
-            "files"
-        };
+    if report.dry_run {
         text.push_str(&format!(
-            "Frozen package: {}, not copied ({} {})\n",
-            report.excluded_roles.join(", "),
-            report.frozen_files,
-            noun
+            "Copy directory (would write): {}\n",
+            report.copy_directory.display()
         ));
+        if let Some(path) = &report.manifest {
+            text.push_str(&format!("Manifest (not written): {}\n", path.display()));
+        }
+        return text;
     }
     text.push_str(&format!(
-        "Written path: {}\n",
-        report.written_path.display()
+        "Copy directory: {}\n",
+        report.copy_directory.display()
     ));
-    if let Some(paths) = &report.would_write {
-        text.push_str("Would write:\n");
-        for path in paths {
-            text.push_str(&format!("  {path}\n"));
-        }
-    }
-    if let Some(record) = &report.record {
-        text.push_str(record);
-        if !record.ends_with('\n') {
-            text.push('\n');
-        }
+    if let Some(path) = &report.manifest {
+        text.push_str(&format!("Manifest: {}\n", path.display()));
     }
     text
 }

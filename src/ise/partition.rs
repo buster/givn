@@ -58,6 +58,12 @@ impl Partition {
         &self.retained
     }
 
+    /// The sorted kept source paths: copy paths that are not Specification
+    /// files, recorded without checksums.
+    pub(super) fn kept_source_paths(&self) -> &[String] {
+        &self.kept_source
+    }
+
     /// The sorted frozen paths: the resolved `e2e` package minus the
     /// declaration. The trial never copies one.
     pub(super) fn frozen_paths(&self) -> &[String] {
@@ -251,9 +257,10 @@ fn require_declaration_entries(
     revision: &str,
 ) -> Result<()> {
     for (role, pattern, glob) in roles {
-        let matches = entries
-            .iter()
-            .any(|entry| glob_matches_path_or_parent(glob, &entry.path));
+        let matches = (glob.matches("") && !entries.is_empty())
+            || entries
+                .iter()
+                .any(|entry| glob_matches_path_or_parent(glob, &entry.path));
         if !matches {
             bail!(
                 "the declared Specification entry '{pattern}' in the {} role matches nothing at revision '{revision}'",
@@ -335,7 +342,6 @@ fn direct_siblings(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     use super::*;
@@ -396,14 +402,6 @@ mod tests {
                 .any(|path| path == DECLARATION_PATH),
             "the retained set does not hold the declaration"
         );
-        let blobs: BTreeMap<String, Vec<u8>> = entries
-            .iter()
-            .map(|entry| (entry.path.clone(), Vec::new()))
-            .collect();
-        let identities =
-            super::super::record::identities(placement.retained_paths(), &entries, &blobs)
-                .expect("every retained path is listed at the revision");
-        assert_eq!(counts.retained, identities.len());
     }
 
     /// A frozen path is in no bucket: not retained, not kept source, not replaced,

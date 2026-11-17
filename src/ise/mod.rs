@@ -12,19 +12,15 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 
-use crate::config::declaration::{DECLARATION_PATH, Role, SpecificationDeclaration};
+use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
 use crate::config::manifest::Manifest;
 use crate::config::overlay::load_effective_at;
 use crate::scm::{Backend, EntryKind, RevisionEntry};
 
+mod manifest;
 mod partition;
-mod record;
-/// The retired verifier body; the comparison slice reuses its drift reads
-/// and replaces the module.
-#[allow(dead_code)]
-mod verify;
 
-pub(crate) use record::abbreviate;
+pub(crate) use manifest::abbreviate;
 
 /// What one rebuild command replaces.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,26 +56,24 @@ pub struct Admission {
     pub entries: Vec<RevisionEntry>,
 }
 
-/// One successful preparation's report: the fixed lines, the two digest
-/// rollups, the frozen package's role and size, the write targets, and the
-/// record when it went to stdout.
+/// One successful preparation's report: the fixed lines, the two checksum
+/// rollups, the End-to-end (E2E) set's size, and the write targets.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
     pub backend: &'static str,
     pub revision: String,
     pub counts: Counts,
-    pub retained_digest: String,
-    pub e2e_digest: String,
-    /// The roles whose files the trial does not hold; empty when nothing is
-    /// frozen, so the report prints no frozen line.
-    pub excluded_roles: Vec<&'static str>,
-    /// The frozen paths the trial omits, counted once per frozen path.
-    pub frozen_files: usize,
-    pub written_path: PathBuf,
-    /// The sorted paths a dry run would write; `None` outside a dry run.
-    pub would_write: Option<Vec<String>>,
-    /// The YAML record printed after a successful rebuild.
-    pub record: Option<String>,
+    pub specification_checksum: String,
+    pub end_to_end_checksum: String,
+    /// The End-to-end (E2E) set's own size, never the manifest's
+    /// `end_to_end_files` length.
+    pub end_to_end_files: usize,
+    pub copy_directory: PathBuf,
+    /// The manifest target; `None` when `--manifest` was omitted.
+    pub manifest: Option<PathBuf>,
+    /// Whether the report is the dry run's: every read ran, nothing was
+    /// written.
+    pub dry_run: bool,
 }
 
 /// The five placement counts the report prints.
@@ -101,7 +95,12 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
         request,
         &admission.revision,
     )?;
-    let trial = require_write_targets(project_root, request)?;
+    let (copy_directory, checkout) = require_write_targets(project_root, request)?;
+    let manifest_path = request
+        .manifest
+        .as_ref()
+        .map(|path| resolved_target(path, &checkout))
+        .transpose()?;
     require_copy_set(&copy_set(&placement), &admission.entries)?;
 
     let copy_paths = placement.copy_paths();
@@ -113,92 +112,92 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
     let e2e_paths: Vec<String> =
         crate::e2e_boundary::e2e_file_set(&admission.declaration, &revision_paths)
             .into_iter()
+            .filter(|path| path != DECLARATION_PATH)
             .collect();
-    let replaced_paths = placement.replaced_paths().to_vec();
-    let read_paths = identity_paths(&copy_paths, &e2e_paths, &replaced_paths);
+    let feature_paths = partition::behavior_features(&admission.declaration, &revision_paths);
+    let read_paths = content_paths(&copy_paths, &feature_paths);
     let blobs: BTreeMap<String, Vec<u8>> = admission
         .backend
         .revision_blobs(&admission.revision, &read_paths)
-        .with_context(|| format!("read the trial inputs at revision '{}'", admission.revision))?
+        .with_context(|| {
+            format!(
+                "read the spec copy inputs at revision '{}'",
+                admission.revision
+            )
+        })?
         .into_iter()
         .collect();
+    let scenario_paths: Vec<String> =
+        manifest::scenario_digests(&admission.declaration, &admission.entries, &blobs)?
+            .into_keys()
+            .collect();
+
+    let mut end_to_end_files: Vec<String> =
+        e2e_paths.iter().chain(&scenario_paths).cloned().collect();
+    end_to_end_files.sort();
+    end_to_end_files.dedup();
+
+    // The checksum slice fills the maps; until then both rollups cover the
+    // recorded, empty maps.
+    let checksums = manifest::Checksums::default();
+    let specification_checksum = manifest::rollup(&checksums.specification);
+    let end_to_end_checksum = manifest::rollup(&checksums.scenarios);
 
     let counts = placement.counts();
-    let excluded_roles: Vec<&'static str> = if placement.frozen_paths().is_empty() {
-        Vec::new()
-    } else {
-        vec![Role::E2e.as_str()]
-    };
-    let retained_files =
-        record::identities(placement.retained_paths(), &admission.entries, &blobs)?;
-    let e2e_files = record::identities(&e2e_paths, &admission.entries, &blobs)?;
-    let e2e_scenarios =
-        record::scenario_digests(&admission.declaration, &admission.entries, &blobs)?;
-    let replaced_files = record::identities(&replaced_paths, &admission.entries, &blobs)?;
-    let record = record::TrialRecord {
-        schema: record::SCHEMA,
-        content_scope: record::CONTENT_SCOPE.to_string(),
-        backend: admission.backend.name().to_string(),
-        revision: admission.revision.clone(),
-        named_paths: named_paths(request),
-        replaced_paths,
-        counts,
-        excluded_roles: excluded_roles
-            .iter()
-            .map(|role| (*role).to_string())
-            .collect(),
-        retained_digest: record::rollup(&retained_files),
-        e2e_digest: record::e2e_rollup(&e2e_files, &e2e_scenarios),
-        replaced_digest: record::rollup(&replaced_files),
-        retained_files,
-        e2e_files,
-        e2e_scenarios,
-        written_path: trial.to_string_lossy().into_owned(),
-        givn_version: env!("CARGO_PKG_VERSION").to_string(),
-    };
-    let mut report = Report {
+    let report = Report {
         backend: admission.backend.name(),
         revision: admission.revision.clone(),
         counts,
-        retained_digest: record.retained_digest.clone(),
-        e2e_digest: record.e2e_digest.clone(),
-        excluded_roles,
-        frozen_files: placement.frozen_paths().len(),
-        written_path: trial.clone(),
-        would_write: request.dry_run.then(|| copy_paths.clone()),
-        record: None,
+        specification_checksum: specification_checksum.clone(),
+        end_to_end_checksum: end_to_end_checksum.clone(),
+        end_to_end_files: e2e_paths.len(),
+        copy_directory: copy_directory.clone(),
+        manifest: manifest_path.clone(),
+        dry_run: request.dry_run,
     };
     if request.dry_run {
         return Ok(report);
     }
 
     let files = trial_files(&admission.entries, &copy_paths, &blobs)?;
-    let outcome = write_trial(&trial, &files, &FileWriter)
+    let outcome = write_trial(&copy_directory, &files, &FileWriter)
         .with_context(|| format!("write revision '{}'", admission.revision))?;
     if let WriteOutcome::Mismatched { paths } = outcome {
         bail!(
-            "the written trial differs from revision '{}' at {}",
+            "the written spec copy differs from revision '{}' at {}",
             admission.revision,
             paths.join(", ")
         );
     }
-    report.record = Some(record.yaml()?);
+    if let Some(path) = &manifest_path {
+        let document = manifest::Manifest {
+            scope: manifest::CONTENT_SCOPE.to_string(),
+            revision: admission.revision.clone(),
+            removed_paths: placement.replaced_paths().to_vec(),
+            specification_files: placement.retained_paths().to_vec(),
+            source_kept_files: placement.kept_source_paths().to_vec(),
+            end_to_end_files,
+            counts: manifest_counts(counts),
+            checksums,
+            specification_checksum,
+            end_to_end_checksum,
+            copy_directory: copy_directory.to_string_lossy().into_owned(),
+            givn_version: env!("CARGO_PKG_VERSION").to_string(),
+        };
+        document.write(path)?;
+    }
     Ok(report)
 }
 
-/// The `--path` values the record keeps: normalized, sorted, deduplicated.
-/// A value the normalizer rejects already refused in the partition.
-fn named_paths(request: &RebuildRequest) -> Vec<String> {
-    let RebuildScope::Paths(paths) = &request.scope else {
-        return Vec::new();
-    };
-    let mut paths: Vec<String> = paths
-        .iter()
-        .filter_map(|value| crate::config::declaration::normalize_project_path(value))
-        .collect();
-    paths.sort();
-    paths.dedup();
-    paths
+/// The placement counts as the manifest's five named counts.
+fn manifest_counts(counts: Counts) -> manifest::Counts {
+    manifest::Counts {
+        specification_files: counts.retained,
+        source_kept: counts.kept_source,
+        source_removed: counts.replaced,
+        outside_spec_copy: counts.outside_declaration,
+        files_beside_removed_paths: counts.not_replaced,
+    }
 }
 
 /// The union of the copy set and the frozen set: every revision path the trial
@@ -215,10 +214,10 @@ fn copy_set(placement: &partition::Partition) -> Vec<String> {
     paths
 }
 
-/// The union of the copy set, the `e2e` package files, and the replaced
-/// paths: every revision entry an identity or a digest needs.
-fn identity_paths(copy: &[String], e2e: &[String], replaced: &[String]) -> Vec<String> {
-    let mut paths: Vec<String> = copy.iter().chain(e2e).chain(replaced).cloned().collect();
+/// The union of the copy set and the scenario features: every revision entry
+/// the writer or the scenario digest reads.
+fn content_paths(copy: &[String], features: &[String]) -> Vec<String> {
+    let mut paths: Vec<String> = copy.iter().chain(features).cloned().collect();
     paths.sort();
     paths.dedup();
     paths
@@ -302,9 +301,13 @@ fn revision_declaration(
 /// Refusal 8 (spec copy target): the trial lies outside the checkout and is
 /// created new. The path is resolved through its deepest existing ancestor, so
 /// a symlinked parent cannot alias a checkout path. The manifest target checks
-/// land with the manifest slice. Returns the absolute trial path the report and
-/// the record name.
-fn require_write_targets(project_root: &Path, request: &RebuildRequest) -> Result<PathBuf> {
+/// land with the manifest slice. Returns the absolute trial path the report
+/// and the manifest name, and the resolved checkout the manifest resolves
+/// against.
+fn require_write_targets(
+    project_root: &Path,
+    request: &RebuildRequest,
+) -> Result<(PathBuf, PathBuf)> {
     let checkout = project_root
         .canonicalize()
         .with_context(|| format!("resolve the checkout '{}'", project_root.display()))?;
@@ -322,7 +325,7 @@ fn require_write_targets(project_root: &Path, request: &RebuildRequest) -> Resul
             request.into.display()
         );
     }
-    Ok(trial)
+    Ok((trial, checkout))
 }
 
 /// The absolute form of a write target: every existing ancestor is
