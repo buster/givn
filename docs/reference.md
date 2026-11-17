@@ -694,6 +694,9 @@ End-to-end tests: 1 added
 other Specification file, so an edited or deleted declaration is a difference
 naming the path. The copy's declaration derives the Specification paths the
 added-file refusal tests, so the five roles including `e2e` bound the refusal.
+A copy whose declaration is absent or unreadable contributes no roles: the
+added-file refusal is skipped, and the recorded declaration path is `missing`
+or `changed` like any other Specification file.
 The checkout's declaration derives the checkout's added paths, including an
 added `e2e` root and the files it brings. An edit that moves the checkout
 declaration's `structure:` or `limits:` entries changes the declaration's

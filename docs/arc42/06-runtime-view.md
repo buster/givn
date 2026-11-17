@@ -1087,8 +1087,10 @@ checksums.
 3. Confirm the manifest belongs to this copy: the canonicalized
    `copy_directory` equals `--copy`, and the manifest path lies outside the
    copy. A mismatch refuses and names the manifest and the copy.
-4. Load the copy's declaration. A copy without one refuses with the loader's
-   missing-declaration message.
+4. Load the copy's declaration when it is present. A copy without one, or one
+   whose declaration cannot be read, contributes no roles: the added-file
+   refusal is skipped, and the recorded declaration checksum reports the file
+   `missing` or `changed` like any other Specification file.
 5. Walk the copy. A file under a declared Specification path that the
    manifest's `specification_files` does not list refuses before any count,
    naming at most twenty sorted paths and the remainder count. A declared
