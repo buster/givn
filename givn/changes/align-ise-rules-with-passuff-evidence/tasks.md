@@ -673,7 +673,7 @@ evidence first; C5 lands the receipt and the gate evidence.
 
 ## Batch 4: `review-and-archive`
 
-- [ ] Write `review.md` and pass the review gate
+- [x] Write `review.md` and pass the review gate
   - Paths:
     `givn/changes/align-ise-rules-with-passuff-evidence/review.md`; paste the
     transcript in this task.
@@ -697,9 +697,9 @@ evidence first; C5 lands the receipt and the gate evidence.
     and `## Delta scenarios and rebinding` (no split; each added scenario
     protects its distinct invariant); the review instruction requires the
     machine-checkable markers and the gate's disposition vocabulary.
-  - [ ] COMMIT: `___` -- Batch: review-and-archive
+  - [x] COMMIT: `6af30485b9ccb48f1b64bc51ff4964c54a0e9e17` -- Batch: review-and-archive
 
-- [ ] Run `givn archive` and record the receipts
+- [x] Run `givn archive` and record the receipts
   - Paths: `givn/archive/align-ise-rules-with-passuff-evidence/`.
   - Run:
     ```sh
@@ -716,9 +716,9 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Design constraints: design `## Verification plan` item 8; the archive gate
     merges the delta and runs both scopes against the merged candidate; the
     change adds no promotion beyond the corpus merge.
-  - [ ] COMMIT: `___` -- Batch: review-and-archive
+  - [x] COMMIT: `6af30485b9ccb48f1b64bc51ff4964c54a0e9e17` -- Batch: review-and-archive
 
-- [ ] Run the post-archive suite scopes
+- [x] Run the post-archive suite scopes
   - Run:
     ```sh
     GIVN_FEATURES=givn/specs ./run-tests.sh --non-e2e
@@ -730,9 +730,9 @@ evidence first; C5 lands the receipt and the gate evidence.
     Commit the transcript as C7.
   - Design constraints: design `## Verification plan` item 8; the merged
     permanent corpus is the tested tree.
-  - [ ] COMMIT: `___` -- Batch: review-and-archive
+  - [x] COMMIT: `6af30485b9ccb48f1b64bc51ff4964c54a0e9e17` -- Batch: review-and-archive
 
-- [ ] Run the self-dogfood sequence
+- [x] Run the self-dogfood sequence
   - Paths:
     `givn/archive/align-ise-rules-with-passuff-evidence/evidence/self-dogfood.txt`.
   - Run:
@@ -750,7 +750,7 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Design constraints: `AGENTS.md` `## Self-dogfood after each change`;
     design `## Verification plan` item 8. This is a post-archive maintenance
     task, not a delta scenario.
-  - [ ] COMMIT: `___` -- Batch: review-and-archive
+  - [x] COMMIT: `6af30485b9ccb48f1b64bc51ff4964c54a0e9e17` -- Batch: review-and-archive
 
 ## Closeout: merged step definitions
 
