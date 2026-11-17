@@ -421,7 +421,7 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     `givn/specification.yaml`, and both targets stay absent. Contract: the
     revision tree lacks the path, so `revision_declaration` names it.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses a malformed declaration`
   - Design constraints: one unknown top-level key in the committed declaration;
@@ -429,14 +429,14 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     (`unknown key 'component'`), and both targets stay absent. Contract:
     `SpecificationDeclaration::from_content` on the revision blob.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses an absent revision`
   - Design constraints: `--at 0000000000000000000000000000000000000000`; Then
     exit 1, stderr names the revision, and both targets stay absent. Contract:
     `Backend::commit_exists` before the tree read.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses when a revision blob cannot be read`
   - Design constraints: a tracked blob is removed from the object store while
@@ -444,7 +444,7 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     revision, and both targets stay absent. Contract:
     `Backend::revision_blobs` refusal during the copy read.
   - Files: `src/scm.rs`, `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses a revision that does not record the declaration`
   - Design constraints: the first revision predates the declaration; Then exit 1,
@@ -452,7 +452,7 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     the blob-absent phrase must not satisfy it. Contract: the tree check in
     `revision_declaration`, before any blob read.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses a malformed declaration at the selected revision`
   - Design constraints: a malformed declaration in the first revision and a
@@ -460,14 +460,14 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     reason for the selected revision, never HEAD's. Contract: the blob is read
     at the selected revision.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses a declaration that is not UTF-8`
   - Design constraints: a non-UTF-8 declaration in the first revision, valid at
     HEAD; Then exit 1, stderr names the path and the UTF-8 decoding error.
     Contract: `std::str::from_utf8` on the revision blob.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses a declaration the revision records but cannot read`
   - Design constraints: the loose object for `HEAD:givn/specification.yaml` is
@@ -478,7 +478,7 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     the assertion is that the declaration read produces it rather than a panic.
   - Files: `src/scm.rs`, `src/ise/mod.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 - [x] Scenario: `Preparation refuses a Specification path missing at the revision`
   - Design constraints: the `contracts` role names `docs/contract.md` and the
@@ -486,7 +486,7 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     revision. Contract: the declared-entry check renamed from the role noun to
     `Specification entry`, naming the entry and the revision.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `b84dbd24de6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
+  - [x] COMMIT: `b84dbd24cea6cca01d88b060f77e517d2befcdd4` -- Batch: `revision-declaration`
 
 ### Batch 3: `component-paths`
 
@@ -523,7 +523,7 @@ Files modified: `src/ise/partition.rs`, `src/cli/ise.rs`,
     `rebuild-all`. Contract: the refusal names the command that writes the copy
     removing every declared source root.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [x] COMMIT: `c5679b629c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
+  - [x] COMMIT: `c5679b623f8a0d600665eb82b2e9757c342e413c` -- Batch: `component-paths`
 
 - [x] Scenario: `Preparation refuses a path matched by a Specification role`
   - Design constraints: `behavior: ["givn/specs/**"]`, component path
@@ -531,7 +531,7 @@ Files modified: `src/ise/partition.rs`, `src/cli/ise.rs`,
     `behavior` role, and both targets stay absent. Contract: the declaration
     check runs over the named file.
   - Files: `src/ise/partition.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `c5679b629c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
+  - [x] COMMIT: `c5679b623f8a0d600665eb82b2e9757c342e413c` -- Batch: `component-paths`
 
 - [x] Scenario: `Preparation refuses a directory path that contains a Specification path`
   - Design constraints: `behavior: ["givn/specs/**"]` under source root
@@ -539,7 +539,7 @@ Files modified: `src/ise/partition.rs`, `src/cli/ise.rs`,
     `givn/specs/demo.feature` and the `behavior` role. Contract: the
     Specification check runs over the tracked files the directory expands to.
   - Files: `src/ise/partition.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `c5679b629c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
+  - [x] COMMIT: `c5679b623f8a0d600665eb82b2e9757c342e413c` -- Batch: `component-paths`
 
 - [x] Scenario: `Preparation refuses a directory that contains the declaration`
   - Design constraints: source root `givn/**`, component path `givn`, tracked
@@ -548,7 +548,7 @@ Files modified: `src/ise/partition.rs`, `src/cli/ise.rs`,
     entry inside the expansion. Existing behaviour protected: the expansion
     check; the noun is new.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `c5679b629c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
+  - [x] COMMIT: `c5679b623f8a0d600665eb82b2e9757c342e413c` -- Batch: `component-paths`
 
 - [x] Scenario: `Preparation refuses a component path that names the declaration`
   - Design constraints: source root `givn/**`, component path
@@ -557,7 +557,7 @@ Files modified: `src/ise/partition.rs`, `src/cli/ise.rs`,
     targets stay absent. Contract: the declaration is tested before the source
     root.
   - Files: `src/ise/partition.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `c5679b629c8756020bcfd3fa3b892ed91e71e245` -- Batch: `component-paths`
+  - [x] COMMIT: `c5679b623f8a0d600665eb82b2e9757c342e413c` -- Batch: `component-paths`
 
 ### Batch 4: `copy-set`
 
@@ -596,7 +596,7 @@ Files modified:
     absent. Contract: `require_copy_set` refuses a gitlink in the copy set.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `d62403e15f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
+  - [x] COMMIT: `d62403e182e14c528811171aa5531c9d06a6f961` -- Batch: `copy-set`
 
 - [x] Scenario: `Preparation refuses a nested repository marker in the copy set`
   - Design constraints: `structure: ["nested/_FOSSIL_"]` and a committed
@@ -604,7 +604,7 @@ Files modified:
     `require_copy_set` refuses a nested repository marker.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `d62403e15f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
+  - [x] COMMIT: `d62403e182e14c528811171aa5531c9d06a6f961` -- Batch: `copy-set`
 
 - [x] Scenario: `Preparation refuses a symlink whose target resolves outside the spec copy`
   - Design constraints: committed symlink `src/out` declared through the
@@ -614,7 +614,7 @@ Files modified:
     the copy; leaving the copy refuses before any write.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `d62403e15f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
+  - [x] COMMIT: `d62403e182e14c528811171aa5531c9d06a6f961` -- Batch: `copy-set`
 
 - [x] Scenario: `Preparation refuses an absolute symlink target`
   - Design constraints: committed `src/run.sh` and symlink `src/abs` declared
@@ -624,7 +624,7 @@ Files modified:
     refuses, even when it resolves inside the copy.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `d62403e15f0c1f030cb78ce32e96488923401e86` -- Batch: `copy-set`
+  - [x] COMMIT: `d62403e182e14c528811171aa5531c9d06a6f961` -- Batch: `copy-set`
 
 ### Batch 5: `partition-and-copy`
 
@@ -665,7 +665,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     removed paths: 0`, the two key files absent, `src/other.rs` present.
     Contract: directory expansion over the revision's tracked files.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation does not expand a glob-shaped path`
   - Design constraints: component path `src/**` in a project with
@@ -673,14 +673,14 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     tracked files stay in the copy. Contract: no glob expansion; the value
     resolves to no tracked file, so it removes nothing.
   - Files: `src/ise/partition.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `A named path absent from the revision removes nothing`
   - Design constraints: component path `src/keys/parsr.rs` (typo); Then
     `Source code removed: 0` and `src/keys/parser.rs` stays. Contract: an absent
     path is not a refusal.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation counts the files left in a removed path's directory`
   - Design constraints: `src/keys/parser.rs` beside `src/keys/mod.rs` and
@@ -689,7 +689,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     containment count is the direct tracked siblings the command did not name
     and did not remove.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `A whole-product rebuild removes every tracked file under the source roots`
   - Design constraints: `src/one.rs` and `src/nested/two.rs`; Then
@@ -697,7 +697,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     the copy holds the declaration and omits both files. Contract: `All` scope
     removes every tracked file under every source root.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `A whole-product rebuild keeps a Specification file under a source root`
   - Design constraints: `structure: ["src/kept.rs", "src/nested/notes.md"]`, one
@@ -707,14 +707,14 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     a Specification-role match under a source root is a Specification file, not
     kept Source code.
   - Files: `src/ise/partition.rs`, `src/cli/ise.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `A role that matches the declaration counts it once`
   - Design constraints: `contracts: ["givn/**"]`, tracked `givn/specs/a.md`;
     Then `Specification files: 2` and the copy holds the declaration. Contract:
     the Specification set is a union keyed by path.
   - Files: `src/ise/partition.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation partitions with the declaration at the selected revision`
   - Design constraints: first revision holds `structure: ["docs/glossary.md"]`
@@ -723,7 +723,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     revision's bytes. Contract: the partition and the copy use one revision
     blob. Existing behaviour protected: the revision read.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation writes no version-control metadata into the spec copy`
   - Design constraints: one source root and a committed `src/kept.rs`; Then the
@@ -731,7 +731,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     Contract: the writer copies revision blobs, never metadata. Existing
     behaviour protected.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation leaves an ignored file out of the spec copy`
   - Design constraints: a committed `src/kept.rs` that the `structure` role keeps
@@ -739,7 +739,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     `src/kept.rs` and not the ignored file. Contract: the read is the revision,
     never the working tree. Existing behaviour protected.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation preserves the executable bit and the symlink target`
   - Design constraints: committed executable `src/run.sh` and symlink `src/link`
@@ -748,7 +748,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     sets the recorded mode and writes the relative target. Existing behaviour
     protected.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation reads an explicit revision and reports it`
   - Design constraints: first revision holds `src/kept.rs` (kept through
@@ -757,7 +757,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     `src/later.rs`. Contract: `--at` reads that revision's tree and declaration.
     Existing behaviour protected.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `Preparation reads a Fossil revision and preserves an executable file and a symlink`
   - Design constraints: Fossil checkout with `allow-symlinks`, one source root,
@@ -767,7 +767,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     `Backend::revision_files`/`revision_blobs` on Fossil. Existing behaviour
     protected.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `The spec copy carries the declaration when no role names it`
   - Design constraints: one source root and no role naming the declaration;
@@ -775,7 +775,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     an implicit Specification entry. Existing behaviour protected; the noun is
     new.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 - [x] Scenario: `A whole-product rebuild keeps the declaration under a source root`
   - Design constraints: source root `givn/**` covering the declaration, tracked
@@ -783,7 +783,7 @@ Files modified: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/cli/ise.rs`,
     the declaration held and `givn/notes.md` omitted. Contract: the declaration
     is never counted as removed.
   - Files: `src/ise/partition.rs`.
-  - [x] COMMIT: `dceea391513809194ae467e941984e370f5c973b` -- Batch: `partition-and-copy`
+  - [x] COMMIT: `dceea391c17575c14746b3a76034c8204d458034` -- Batch: `partition-and-copy`
 
 ### Batch 6: `report-and-manifest`
 
@@ -833,7 +833,7 @@ for the `@e2e` scenario slug below.
         ✘ And the report prints "End-to-end tests: not copied (2 files)"
           stdout prints "Frozen package: e2e, not copied (2 files)" and the trial record
 
-      GREEN (76f5237fbb08e9bd482eb871fc6828051f1944d0):
+      GREEN (76f5237fed61affc4f034f02703314ca405241c2):
 
       $ cargo nextest run --test features_runner '<each regular batch title>'
       PASS Preparation writes no manifest when no manifest path is given
@@ -871,7 +871,7 @@ for the `@e2e` scenario slug below.
     no manifest file, and the copy holds the declaration. Contract: the report
     is the only output; no record on stdout.
   - Files: `src/main.rs`, `src/cli/ise.rs`, `src/ise/mod.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `A dry run writes no spec copy and no manifest`
   - Design constraints: `--dry-run --manifest <file>`; Then the report prints
@@ -879,14 +879,14 @@ for the `@e2e` scenario slug below.
     paths stay absent. Contract: every read, refusal, count, and checksum runs;
     nothing is written.
   - Files: `src/ise/mod.rs`, `src/cli/ise.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `A dry run without a manifest prints no manifest line`
   - Design constraints: `--dry-run` without `--manifest`; Then the report prints
     `Copy directory (would write):` and no `Manifest (not written):` line, and
     the copy path stays absent. Contract: the conditional dry-run label.
   - Files: `src/cli/ise.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `Preparation collapses a repeated path`
   - Design constraints: `src/one.rs` and `src/two.rs`, with `src/one.rs` named
@@ -895,14 +895,14 @@ for the `@e2e` scenario slug below.
     the collapsed set.
   - Files: `src/ise/partition.rs`, `src/ise/manifest.rs`,
     `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `The manifest lists the declaration among the Specification files`
   - Design constraints: one source root, `--manifest` given; Then
     `specification_files` holds `givn/specification.yaml`. Contract: the list
     equals the Specification set, declaration included.
   - Files: `src/ise/manifest.rs`, `src/ise/partition.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `The manifest lists the End-to-end tests it does not copy`
   - Design constraints: `e2e: ["tests/e2e"]` and two committed files under it;
@@ -910,14 +910,14 @@ for the `@e2e` scenario slug below.
     sorted paths, and the copy omits both. Contract: the E2E set is recorded and
     never copied.
   - Files: `src/ise/manifest.rs`, `src/ise/mod.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `A declaration with no End-to-end role copies every Specification file`
   - Design constraints: no `e2e` entries; Then `End-to-end tests: not copied (0
     files)` and `end_to_end_files` is empty. Contract: an empty E2E set is not
     an error.
   - Files: `src/ise/mod.rs`, `src/ise/manifest.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `An End-to-end role that covers the declaration keeps it among the Specification files`
   - Design constraints: `e2e: ["givn/**"]`, tracked `givn/specs/a.md`; Then
@@ -925,7 +925,7 @@ for the `@e2e` scenario slug below.
     declaration held and `givn/specs/a.md` omitted. Contract: the declaration is
     never frozen.
   - Files: `src/ise/partition.rs`, `src/ise/mod.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `A project-root End-to-end entry covers the whole tracked tree`
   - Design constraints: `e2e: ["."]` and `source: ["src/**"]`, tracked
@@ -935,7 +935,7 @@ for the `@e2e` scenario slug below.
     an entry matching the project root resolves to the tracked tree. A reader
     that treats `.` as a package path without a manifest fails.
   - Files: `src/e2e_boundary/mod.rs`, `src/ise/partition.rs`, `src/ise/mod.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `An End-to-end entry that overlaps a source root wins over the removal`
   - Design constraints: `e2e: ["tests/e2e"]` and `source: ["tests/**"]`, tracked
@@ -944,7 +944,7 @@ for the `@e2e` scenario slug below.
     files omitted. Contract: an E2E match under a source root is neither copied
     nor removed; the non-E2E sibling is removed.
   - Files: `src/ise/partition.rs`, `src/ise/mod.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `Developer rebuilds one component and leaves its neighbours`
   - Design constraints: `behavior: ["givn/specs/**"]`, `e2e: ["tests/e2e"]`,
@@ -957,7 +957,7 @@ for the `@e2e` scenario slug below.
     the manifest's removed paths are exactly `src/keys/parser.rs`. Contract:
     `rebuild-component` scope over the driver.
   - Files: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/ise/manifest.rs`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 - [x] Scenario: `Developer rebuilds the whole product from its Specification`
   - Design constraints: the same declaration with a committed
@@ -979,7 +979,7 @@ for the `@e2e` scenario slug below.
     `src/gherkin/content.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `e2e/tests/steps/clean_room_preparation_e2e_steps.rs`,
     `givn/changes/strengthen-ise-specification/evidence/visual/developer-rebuilds-the-whole-product-from-its-specification/transcript.txt`.
-  - [x] COMMIT: `76f5237fbb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `76f5237fed61affc4f034f02703314ca405241c2` -- Batch: `report-and-manifest`
 
 ### Batch 7: `checksums`
 
@@ -1045,7 +1045,7 @@ docstring rule corrected to match the pinned bytes),
     rollups; no helper imports `crate::ise`.
   - Files: `src/ise/manifest.rs`, `tests/steps/ise_clean_room_support.rs`,
     `tests/steps/clean_room_preparation_steps.rs`.
-  - [x] COMMIT: `bc5fd9836121b42b375a4ffdbc8446a8300e49be` -- Batch: `checksums`
+  - [x] COMMIT: `bc5fd98331b95748ef73781ab4f02561f4c9a8e1` -- Batch: `checksums`
 
 - [x] Scenario: `Preparation records the canonical checksums for a richer feature`
   - Design constraints: `rich_checksum_project()` replaces the feature with the
@@ -1055,7 +1055,7 @@ docstring rule corrected to match the pinned bytes),
     `2c16dfed…2844`. Contract: the scenario checksum hashes title, NUL,
     executable content, NUL per selected scenario in file order.
   - Files: `src/ise/manifest.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `bc5fd9836121b42b375a4ffdbc8446a8300e49be` -- Batch: `checksums`
+  - [x] COMMIT: `bc5fd98331b95748ef73781ab4f02561f4c9a8e1` -- Batch: `checksums`
 
 - [x] Scenario: `Preparation checksums a repository link in the End-to-end set`
   - Design constraints: `e2e: ["tests/e2e"]`, a committed
@@ -1066,7 +1066,7 @@ docstring rule corrected to match the pinned bytes),
     copy set still refuses.
   - Files: `src/ise/manifest.rs`, `src/ise/mod.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [x] COMMIT: `bc5fd9836121b42b375a4ffdbc8446a8300e49be` -- Batch: `checksums`
+  - [x] COMMIT: `bc5fd98331b95748ef73781ab4f02561f4c9a8e1` -- Batch: `checksums`
 
 ### Batch 8: `write-targets`
 
@@ -1102,7 +1102,7 @@ Files modified: `src/ise/mod.rs`, `src/cli/ise.rs`, `src/main.rs`,
       canonicalized their ancestors and named the target; the new steps assert
       the verb's refusal prefix and the manifest nouns.
 
-      GREEN (fce3d39ffe0d7f182ac6c5b58f4e8a4f81f431f9):
+      GREEN (fce3d39f1253e5eb20e39b833f4e942272662b4a):
       $ cargo test --locked --test features_runner -- "<each of the nine titles>" --exact --nocapture
       PASS Preparation refuses a target inside the checkout
       PASS Preparation refuses an existing spec copy directory
@@ -1619,7 +1619,7 @@ already binds every phrase).
     malformed case; `src/cli/lint/specification.rs` maps it to exit 1. Existing
     behaviour protected: the refusal exists; only the code assertion is new.
   - Files: `tests/steps/specification_declaration_steps.rs`.
-  - [x] COMMIT: `f21807f8e71b` -- Batch: `declaration-boundary`
+  - [x] COMMIT: `f21807f8b3497173c9ec2984461dfea8d1b14c55` -- Batch: `declaration-boundary`
 
 ## E2E smoke tests
 
