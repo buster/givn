@@ -1198,15 +1198,41 @@ Files modified: `src/ise/compare.rs` (renamed from `src/ise/verify.rs`),
 `tests/steps/ise_clean_room_support.rs`,
 `e2e/tests/steps/trial_input_verification_e2e_steps.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Comparison names a changed
+- [x] Evidence for this batch: paste the RED run for `Comparison names a changed
       Specification file in the copy` and for `Verifier compares the spec copy
       with the manifest` (`@e2e`), then the GREEN run of all nine scenarios and
       the transcript path.
       ```text
-      <!-- paste: RED commands + assertion failures; GREEN commands + pass summary -->
+      RED (compile-only compare slice, before this batch's implementation):
+      $ GIVN_FEATURES=givn/changes/strengthen-ise-specification cargo nextest run --test features_runner \
+          'specs/prepare-an-ise-test/trial-input-verification.feature::Comparison names a changed Specification file in the copy'
+        Then comparison prints "Specification files: 1 changed"
+        Step panicked: stdout "" does not print the line "Specification files: 1 changed"
+
+      $ GIVN_FEATURES=$PWD/givn/changes/strengthen-ise-specification GIVN_BIN=$PWD/target/debug/givn \
+          cargo test --manifest-path e2e/Cargo.toml --test e2e_runner -- \
+          --name 'Verifier compares the spec copy with the manifest'
+        Then comparison prints "Specification files: match" and "End-to-end tests: match"
+        Step panicked: stdout "Trial: /tmp/.../trial\nRetained: clean\nE2E: clean\n"
+        does not print the line "Specification files: match"
+      Both failures are assertion failures on the new subject lines; no
+      unbound, skipped, or unknown-subcommand step.
+
+      GREEN:
+      $ GIVN_FEATURES=... GIVN_CUCUMBER_TAGS='not @wip and not @e2e and not @givn.removed' \
+          cargo nextest run --test features_runner -E 'test(/...batch 9 titles.../)'
+        Summary [1.4s] 8 tests run: 8 passed, 90 skipped
+      $ GIVN_FEATURES=$PWD/givn/changes/strengthen-ise-specification GIVN_BIN=$PWD/target/debug/givn \
+          cargo test --manifest-path e2e/Cargo.toml --test e2e_runner -- \
+          --name 'Verifier compares the spec copy with the manifest'
+        Summary: 1 scenario (1 passed), 5 steps (5 passed)
+      $ cargo fmt --all -- --check        -> clean
+      $ cargo clippy --workspace --all-targets --locked -- -D warnings -> clean
+      Transcript: givn/changes/strengthen-ise-specification/evidence/visual/
+      verifier-compares-the-spec-copy-with-the-manifest/transcript.txt
       ```
 
-- [ ] Scenario: `Comparison names a changed Specification file in the copy`
+- [x] Scenario: `Comparison names a changed Specification file in the copy`
   - Design constraints: the prepared copy is built with `rebuild-component
     src/keys/parser.rs --manifest`, so `src/keys/steps.rs` is kept and the
     parser removed; the agent edits `givn/specs/demo/spec.feature` in the copy;
@@ -1215,62 +1241,62 @@ Files modified: `src/ise/compare.rs` (renamed from `src/ise/verify.rs`),
     with the manifest's per-path checksum.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Comparison names a missing Specification file in the copy`
+- [x] Scenario: `Comparison names a missing Specification file in the copy`
   - Design constraints: the agent deletes `givn/specs/demo/spec.feature` in the
     copy; Then `Specification files: 1 missing`, `- <path>`, `End-to-end tests:
     match`, exit 1. Contract: a recorded path absent from the copy is `missing`.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Comparison reports no difference after the agent adds Source code`
+- [x] Scenario: `Comparison reports no difference after the agent adds Source code`
   - Design constraints: the agent writes a file at a `removed_paths` entry;
     Then both subjects say `match` and the exit is 0. Contract: the rebuild's
     Source code is not a frozen input.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Comparison reports no difference after a kept Source code file is edited`
+- [x] Scenario: `Comparison reports no difference after a kept Source code file is edited`
   - Design constraints: the agent edits `src/keys/steps.rs` (kept); Then both
     subjects say `match` and the exit is 0. Contract: kept paths carry no
     checksum (R-162).
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Comparison refuses a file added under a declared Specification path`
+- [x] Scenario: `Comparison refuses a file added under a declared Specification path`
   - Design constraints: the agent adds a file under a declared role in the copy;
     Then exit 1, stderr names the added path as a Specification change, and no
     `Specification files: match` line prints. Contract: the copy's declaration
     derives the added-file check.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Comparison refuses a file added under an End-to-end role`
+- [x] Scenario: `Comparison refuses a file added under an End-to-end role`
   - Design constraints: the agent adds a file under the declared `e2e` role in
     the copy; Then exit 1, the added path is named as a Specification change, and
     no clean line prints. Contract: an `e2e` match is a declared Specification
     path for the refusal even though the copy never carries one.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Comparison refuses a deleted kept Source code file`
+- [x] Scenario: `Comparison refuses a deleted kept Source code file`
   - Design constraints: the agent deletes the kept `src/keys/steps.rs`; Then
     exit 1, stderr names the path, and no `Specification files:` line prints.
     Contract: a recorded kept path that is gone is refused before any count.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Comparison prints one line for a path drifting in the copy and the checkout`
+- [x] Scenario: `Comparison prints one line for a path drifting in the copy and the checkout`
   - Design constraints: `docs/reference.md` is edited in the copy and in the
     checkout; Then `Specification files: 1 changed`, exactly one
     `- docs/reference.md` line under that subject, `Specification changed after
     the copy was written`, `End-to-end tests: match`, exit 1. Contract: one
     observation per path, owned by the subject that owns the path.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
-- [ ] Scenario: `Verifier compares the spec copy with the manifest`
+- [x] Scenario: `Verifier compares the spec copy with the manifest`
   - Design constraints: the prepared copy is unmodified; the When runs `givn ise
     compare --manifest <file> --copy <dir>` as a subprocess of the compiled
     binary; Then `Specification files: match` and `End-to-end tests: match`, exit
@@ -1281,7 +1307,7 @@ Files modified: `src/ise/compare.rs` (renamed from `src/ise/verify.rs`),
     `tests/steps/trial_input_verification_steps.rs`,
     `e2e/tests/steps/trial_input_verification_e2e_steps.rs`,
     `givn/changes/strengthen-ise-specification/evidence/visual/verifier-compares-the-spec-copy-with-the-manifest/transcript.txt`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-report`
+  - [x] COMMIT: `109b8a19` -- Batch: `compare-report`
 
 ### Batch 10: `compare-checkout`
 
