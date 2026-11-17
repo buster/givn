@@ -2213,3 +2213,86 @@ fn the_spec_copy_path_remains_absent(world: &mut GivnWorld) {
         trial.display()
     );
 }
+
+// --- component-paths: Specification and source-root refusals ---------------
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "behavior" role names "givn/specs/\*\*"$"#
+)]
+fn git_project_whose_behavior_role_names_the_specs(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::retained_behavior_project());
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled, a declaration whose "behavior" role names "givn/specs/\*\*" and whose source root is "givn/\*\*"$"#
+)]
+fn git_project_whose_behavior_role_names_the_specs_under_givn(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::behavior_declaration("\"givn/specs/**\"", "\"givn/**\""),
+    ));
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose source root is "givn/\*\*"$"#
+)]
+fn git_project_whose_source_root_is_givn(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::source_only_declaration("\"givn/**\""),
+    ));
+}
+
+#[when(regex = r#"^the developer rebuilds the component path "([^"]+)" into a spec copy$"#)]
+fn rebuild_the_component_path_into_a_spec_copy(world: &mut GivnWorld, path: String) {
+    world.ise_clean_room.ensure_targets();
+    let trial = trial_path(world).to_string_lossy().into_owned();
+    run_rebuild(
+        world,
+        &[
+            "ise",
+            "rebuild-component",
+            path.as_str(),
+            "--into",
+            trial.as_str(),
+        ],
+        "ise rebuild-component",
+    );
+}
+
+#[then(regex = r#"^the command fails and exits 1, naming "([^"]+)" and "([^"]+)"$"#)]
+fn the_command_fails_and_exits_one_naming(world: &mut GivnWorld, path: String, word: String) {
+    assert_refusal_names(world, &[&path, &word]);
+}
+
+#[then(regex = r#"^the command fails and names "([^"]+)" and the "([^"]+)" role$"#)]
+fn the_command_fails_and_names_the_role(world: &mut GivnWorld, path: String, role: String) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let text = stderr(world);
+    for needle in [path.as_str(), format!("{role} role").as_str()] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not carry {needle:?}"
+        );
+    }
+    assert!(
+        !text.contains("retained"),
+        "stderr {text:?} keeps the retired retained vocabulary"
+    );
+}
+
+#[then(regex = r#"^the command fails and names "([^"]+)" as a Specification file$"#)]
+fn the_command_fails_and_names_the_specification_file(world: &mut GivnWorld, path: String) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let text = stderr(world);
+    for needle in [path.as_str(), "Specification file"] {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not carry {needle:?}"
+        );
+    }
+    assert!(
+        !text.contains("retained"),
+        "stderr {text:?} keeps the retired retained vocabulary"
+    );
+}

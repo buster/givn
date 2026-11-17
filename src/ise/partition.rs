@@ -276,21 +276,23 @@ fn require_replaceable_paths(
     for path in candidates {
         if path == DECLARATION_PATH {
             bail!(
-                "'{path}' is retained by the Specification declaration at revision '{revision}'; a retained path is never replaced"
+                "'{path}' is a Specification file at revision '{revision}'; the declaration is never removed"
             );
         }
     }
     for path in candidates {
         if let Some(role) = retained_role(path, roles) {
             bail!(
-                "'{path}' is retained by the {} role at revision '{revision}'; a retained path is never replaced",
+                "'{path}' is a Specification file through the {} role at revision '{revision}'; a Specification file is never removed",
                 role.as_str()
             );
         }
     }
     for path in candidates {
         if !path_or_parent_matches(source_roots, path) {
-            bail!("'{path}' is outside every declared source root at revision '{revision}'");
+            bail!(
+                "'{path}' is outside every declared source root at revision '{revision}'; rebuild-all writes a copy that removes every declared source root"
+            );
         }
     }
     Ok(())

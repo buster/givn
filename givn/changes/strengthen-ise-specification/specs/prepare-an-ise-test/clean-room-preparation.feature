@@ -172,7 +172,7 @@ Feature: Clean-room preparation
     Then  the command fails and names the ambiguous version control
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a path outside every source root
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     When  the developer rebuilds the component path "docs/reference.md" into a spec copy
@@ -281,7 +281,7 @@ Feature: Clean-room preparation
     And  the spec copy's executable script is executable
     And  the spec copy's symlink is a symlink to its target
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a directory that contains the declaration
     Given  a Git project with ise enabled and a declaration whose source root is "givn/**"
     And  a committed revision with "givn/notes.md"
@@ -359,14 +359,14 @@ Feature: Clean-room preparation
     Then  the command fails and names "docs/contract.md" and the revision
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a path matched by a Specification role
     Given  a Git project with ise enabled and a declaration whose "behavior" role names "givn/specs/**"
     When  the developer rebuilds the component path "givn/specs/demo.feature" into a spec copy
     Then  the command fails and names "givn/specs/demo.feature" and the "behavior" role
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a directory path that contains a Specification path
     Given  a Git project with ise enabled, a declaration whose "behavior" role names "givn/specs/**" and whose source root is "givn/**"
     And  a committed revision with "givn/specs/demo.feature"
@@ -664,7 +664,7 @@ Feature: Clean-room preparation
     Then  the command exits 2 and names the unknown flag
     And  the spec copy path remains absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a component path that names the declaration
     Given  a Git project with ise enabled and a declaration whose source root is "givn/**"
     And  a committed revision with "src/kept.rs"
