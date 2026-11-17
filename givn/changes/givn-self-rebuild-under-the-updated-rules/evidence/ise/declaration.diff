@@ -1,0 +1,61 @@
+diff --git a/givn/specification.yaml b/givn/specification.yaml
+index 1279e515..cb16b392 100644
+--- a/givn/specification.yaml
++++ b/givn/specification.yaml
+@@ -1,17 +1,43 @@
+-# The project's declared Specification. Written by the change that moved the
+-# @e2e acceptance corpus into `e2e/`; inert until the `ise` addon is effective.
++# The project's declared Specification. The four content roles retain the
++# documents and build inputs the whole-product rebuild reads; the `e2e` role
++# names the frozen acceptance package, and the `source` roots are replaced.
+ #
+-# Five retained roles plus the replaceable `source` roots. Every value is a
+-# project-relative path or glob.
++# A build input sits under the role that owns its content class: the build
++# manifest and lockfile under `contracts`, the toolchain pin under `limits`,
++# document and report templates under `structure`, and served instruction,
++# skill, integration, and hook text under `behavior`.
+ behavior:
+   - "givn/specs/**"
++  - "assets/instructions/**"
++  - "assets/skills/**"
++  - "assets/agent-integrations/**"
++  - "assets/addons/arc42-docs/instructions.md"
++  - "assets/addons/communication-policy/policy.md"
++  - "assets/addons/coverage/instructions.md"
++  - "assets/agents-project-hint.md"
++  - "assets/hooks/**"
+ structure:
+   - "docs/glossary.md"
+   - "docs/domain-model.md"
++  - "assets/templates/**"
++  - "assets/addons/arc42-docs/chapters/**"
++  - "assets/addons/arc42-docs/impact-assessment-template.md"
++  - "assets/addons/coverage/template.md"
++  - "assets/addons/readme/README.md.tmpl"
++  - "assets/timeline/report.html"
+ contracts:
+   - "docs/reference.md"
++  - "Cargo.toml"
++  - "Cargo.lock"
++  - "assets/commands.yaml.tmpl"
++  - "assets/config.yaml.tmpl"
++  - "assets/run.yaml.tmpl"
++  - "assets/default-manifest.yaml"
++  - "assets/specification.yaml.tmpl"
++  - "assets/migrations/**"
+ limits:
+   - "docs/arc42/02-architecture-constraints.md"
++  - "rust-toolchain.toml"
+ e2e:
+   - "e2e"
+ source:
+diff --git a/rust-toolchain.toml b/rust-toolchain.toml
+new file mode 100644
+index 00000000..59277fee
+--- /dev/null
++++ b/rust-toolchain.toml
+@@ -0,0 +1,3 @@
++[toolchain]
++channel = "1.97.1"
++components = ["clippy", "rustfmt"]

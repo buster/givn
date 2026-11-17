@@ -180,7 +180,7 @@ Files modified: `givn/specification.yaml`, `rust-toolchain.toml` (new),
 (`@wip` removed from both). Both bindings land together because the batch's
 delta scope runs both scenarios and a `@wip` scenario still executes.
 
-- [ ] Scenario: A declaration that names build inputs under the four content roles is accepted
+- [x] Scenario: A declaration that names build inputs under the four content roles is accepted
   - Design constraints: D1 (pin `1.97.1` with `clippy` and `rustfmt` under
     `limits`), D4 (build inputs under the four content-class roles with the
     design's exact entries), and the design's role table. The fixture writes
@@ -203,9 +203,18 @@ delta scope runs both scenarios and a `@wip` scenario still executes.
     passed)`, `5 steps (5 passed)`, and exits 0. The mutation probe fails on the
     advisory named in the batch map and the restored fixture passes.
   - Evidence: paste the single-scenario run and the mutation-probe failure line.
-  - [ ] COMMIT: `___` -- Batch: declaration-and-copy
+    ```text
+    Feature: specification-declaration
+    1 feature
+    1 scenario (1 passed)
+    5 steps (5 passed)
+    --- mutation probe: Cargo.lock not written into the fixture ---
+    ✘  And stderr contains no declared-path advisory for the build inputs
+    [SPEC ] advisory  givn/specification.yaml & Cargo.lock  the 'contracts' role declares 'Cargo.lock', which matches no path in the project
+    ```
+  - [x] COMMIT: `a524d14` -- Batch: declaration-and-copy
 
-- [ ] Scenario: Preparation carries every declared build input into the spec copy
+- [x] Scenario: Preparation carries every declared build input into the spec copy
   - Design constraints: D4 and D6; the design's `## Delta Step Bindings` rows
     for `clean-room-preparation`. The shared build-input declaration fixture
     writes the five build-input paths (`Cargo.toml`, `Cargo.lock`,
@@ -238,7 +247,18 @@ delta scope runs both scenarios and a `@wip` scenario still executes.
     restored fixture passes.
   - Evidence: paste the single-scenario run, the delta summary, and the
     mutation-probe refusal.
-  - [ ] COMMIT: `___` -- Batch: declaration-and-copy
+    ```text
+    Feature: Clean-room preparation
+    1 scenario (1 passed)
+    8 steps (8 passed)
+    Specification files: 7
+    --- delta scope ---
+    Summary [   1.278s] 2 tests run: 2 passed, 0 skipped
+    --- mutation probe: assets/templates/glossary.md not committed ---
+    ✘  Then the command succeeds and prints "Specification files: 7"
+    stderr=ise rebuild-all: the declared Specification entry 'assets/templates/glossary.md' in the structure role matches nothing at revision '0369a968ce2265a280af46847a11875e4d8b7f86'
+    ```
+  - [x] COMMIT: `a524d14` -- Batch: declaration-and-copy
 
 ## Batch: `pre-trial`
 
