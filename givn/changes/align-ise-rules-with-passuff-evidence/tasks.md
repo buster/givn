@@ -134,7 +134,7 @@ or removed; both delta files stay tagged `@givn.delta`; no file under
     Git backend`; `git rev-parse HEAD` printed the same revision.
   - [x] COMMIT: `a0dc6c025c4976fdd137c56e5e4101f7c2b90aa2` -- Batch: setup
 
-- [ ] Confirm the runner configuration and the delta discovery count
+- [x] Confirm the runner configuration and the delta discovery count
   - Paths: none; paste the evidence into this task.
   - Run:
     ```sh
@@ -166,9 +166,9 @@ or removed; both delta files stay tagged `@givn.delta`; no file under
   - Design constraints: design `## Test runner and strict mode` and the
     design's E2E smoke test infrastructure section; the change adds no runner
     configuration.
-  - [ ] COMMIT: `___` -- Batch: setup
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: setup
 
-- [ ] Proof-of-strictness, once
+- [x] Proof-of-strictness, once
   - Paths: `/tmp/ise-strictness-probe/` (scratch, outside the checkout).
   - Run:
     ```sh
@@ -217,7 +217,7 @@ or removed; both delta files stay tagged `@givn.delta`; no file under
   - Design constraints: served `tasks` instruction proof-of-strictness rule;
     `tests/features_runner.rs` sets `.fail_on_skipped()` and fails a skipped
     step, so an empty or undefined step can never report PASS.
-  - [ ] COMMIT: `___` -- Batch: setup
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: setup
 
 ## Batch 1: `served-rules`
 
@@ -230,7 +230,7 @@ feature files (`@wip` removed). The two permanent bodies are written in place in
 the same commit as the rebind, so the archive merge replaces them by title with
 identical text and the pre-archive permanent scope is green.
 
-- [ ] Evidence for this batch
+- [x] Evidence for this batch
   - Run the single-scenario RED proof, the delta RED run, and the delta GREEN
     run; paste all three outputs here.
     ```sh
@@ -296,9 +296,9 @@ identical text and the pre-archive permanent scope is green.
   - Design constraints: design `## Verification plan` items 1 to 3 and the
     batch-map RED proof; the bindings land before the asset edits so the RED is
     the missing sentence, not a missing binding.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The ise instruction makes the declaration cover every build input
+- [x] Scenario: The ise instruction makes the declaration cover every build input
   - Design constraints: design `### Specification completeness bullet` and
     `### Vocabulary paragraph`; decision D2. Every behavior, contract, limit,
     acceptance test, and build input is declared and reachable; each build
@@ -321,9 +321,9 @@ identical text and the pre-archive permanent scope is green.
     (`@wip` removed).
   - Acceptance: both bound `Then` phrases assert the listed substrings; the
     scenario passes; the five obligation labels keep their em dashes.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The ise instruction accepts an asset the rebuild generates inside the replaced unit
+- [x] Scenario: The ise instruction accepts an asset the rebuild generates inside the replaced unit
   - Design constraints: design `### Specification completeness bullet`; decision
     D2. An asset the rebuild generates inside the replaced unit whose bytes no
     frozen test fixes is an `acceptable undocumented change`, not a neighbor.
@@ -337,9 +337,9 @@ identical text and the pre-archive permanent scope is green.
   - Acceptance: both bound phrases assert the listed substrings; the scenario
     passes; the generated-asset classification is not applied to a declared
     build input.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The ise instruction keeps the dependency cache in the environment
+- [x] Scenario: The ise instruction keeps the dependency cache in the environment
   - Design constraints: design `### Specification completeness bullet`; decision
     D2. The dependency cache and the installed toolchain are environment
     inputs, never declared files; the lockfile declares the resolved
@@ -355,9 +355,9 @@ identical text and the pre-archive permanent scope is green.
     removed).
   - Acceptance: all four bound phrases assert the listed substrings; the
     scenario passes; the setup-failure classification is stated once.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The ise instruction requires a relied-on contract to enumerate its fixed values
+- [x] Scenario: The ise instruction requires a relied-on contract to enumerate its fixed values
   - Design constraints: design `### Specification completeness bullet`; decision
     D3. A contract the frozen tests rely on enumerates every value it fixes:
     literal text, headings, labels, error prefixes, exit codes, file formats,
@@ -369,9 +369,9 @@ identical text and the pre-archive permanent scope is green.
     removed).
   - Acceptance: the bound phrase asserts the sentence; the scenario passes; the
     instruction does not grow a technology-specific value list.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The ise instruction keeps a published copy out of the clean room
+- [x] Scenario: The ise instruction keeps a published copy out of the clean room
   - Design constraints: design `### Clean-room boundary section`; decision D5.
     The builder reads no product source outside the spec copy and the declared
     inputs; before the rebuild it scans the local package registry's source,
@@ -389,9 +389,9 @@ identical text and the pre-archive permanent scope is green.
     removed).
   - Acceptance: all five bound phrases assert the listed substrings; the
     scenario passes; the section names no product-specific package manager.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The ise instruction records a rebuild's neighbors and consolidations
+- [x] Scenario: The ise instruction records a rebuild's neighbors and consolidations
   - Design constraints: design `### Records table`; decision D6. The sentence
     reads `An ise change carries three records:`; the third row is
     `Neighbor record` with its home and content; a consolidation merges or
@@ -408,9 +408,9 @@ identical text and the pre-archive permanent scope is green.
   - Acceptance: all three bound phrases assert the listed substrings; the
     scenario passes; the instruction still carries five obligations and three
     records.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The ise instruction keeps a dry run out of the product
+- [x] Scenario: The ise instruction keeps a dry run out of the product
   - Design constraints: design `### Dry-run sentence`; decision D7. Insert the
     sentence at the end of the `## The spec copy rule` paragraph, before the
     new clean-room section: a `Dry-Run Ise` trial promotes nothing, the rebuilt
@@ -422,9 +422,9 @@ identical text and the pre-archive permanent scope is green.
     removed).
   - Acceptance: both bound phrases assert the listed substrings; the scenario
     passes; the sentence states no promotion command.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: The review guidance asks the neighboring-components question without a gate
+- [x] Scenario: The review guidance asks the neighboring-components question without a gate
   - Design constraints: design `## Exact review guidance text` and
     `## New Then phrases and asserted text` (the rephrased binding). Replace the
     `Neighboring components` bullet in `assets/instructions/review.md` with the
@@ -447,9 +447,9 @@ identical text and the pre-archive permanent scope is green.
   - Acceptance: the four `Then` steps pass; the permanent scenario passes
     without an unbound step; the `givn ise rebuild-component` rows carrying the
     pre-existing `neighbouring components` wording stay unchanged.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
-- [ ] Scenario: Served ise guidance keeps component scenarios in the Specification
+- [x] Scenario: Served ise guidance keeps component scenarios in the Specification
   - Design constraints: design `### two-layer test boundary bullet`; decision
     D4. Replace the second obligation in `assets/instructions/ise.md`: the
     `@e2e` scenarios stay in the Specification under the `behavior` role with
@@ -471,7 +471,7 @@ identical text and the pre-archive permanent scope is green.
     (`@wip` removed).
   - Acceptance: all five `Then` steps pass; the permanent scenario passes
     without an unbound step; no `@e2e` tag is added or removed.
-  - [ ] COMMIT: `___` -- Batch: served-rules
+  - [x] COMMIT: `9f99bb367b66cb87ec4e3cc3dc353205f00a5de2` -- Batch: served-rules
 
 ## Batch 2: `reference-and-glossary`
 

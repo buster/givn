@@ -482,6 +482,24 @@ does not modify any Specification file the copy was written with; adding a file
 under a declared Specification path is a Specification change, not the product,
 and is refused.
 
+**Rebuild rules.** The `ise` instruction carries these rules; the reference
+states what each requires.
+
+| Rule | Requirement |
+| --- | --- |
+| Build inputs | A file the build reads that is not Source code and whose content the build cannot resolve from the Specification text is declared under the role that owns its content class: a build manifest and a lockfile under `contracts`, because they fix the dependency and build-target schema; a toolchain pin under `limits`; a structural template such as `assets/templates/domain-model.md` or `assets/templates/glossary.md` under `structure`; a schema or migration asset under `contracts`; and served instruction or skill text under `behavior`. The frozen End-to-end (E2E) tests fix the bytes they assert; a structural template or a schema asset fixes its content through the contract that names its shape. The `e2e` package's own manifest and lockfile are the test build's inputs, not the product build's. A build input the declaration leaves outside the Specification roles is a `specification defect`, and a neighbor when it lies outside the replaced unit, each with its consequence. |
+| Fixed values | A contract the frozen End-to-end (E2E) tests rely on enumerates every value it fixes: literal text, headings, labels, error prefixes, exit codes, file formats, and test seams. |
+| Acceptance corpus | The `@e2e` scenarios stay in the Specification under the `behavior` role with their exact titles. The declared `e2e` package holds the runner and every `@e2e` step definition. |
+| Clean-room boundary | The builder reads no product source outside the spec copy and the declared inputs. Before the rebuild, scan the local package registry's source, cache, and git stores for a published copy of the product, quarantine every hit outside the builder's reach, and record the scan result in the neighbor record; a store that does not exist has no hit. |
+| Neighbor record | Every file changed outside the declared Specification or the replaced unit, and every consolidation, with its reason. The trial review records the neighbor record; it is a review question, never a gate. |
+| Dry-Run Ise | A `Dry-Run Ise` trial promotes nothing: the rebuilt work stays in the copy, and the trial review records that no rebuilt file was promoted. |
+
+An environment input is never declared: the lockfile declares the resolved
+dependencies, the toolchain pin declares the toolchain, and the trial records
+how the dependency cache and the installed toolchain were supplied. A locked
+dependency the cache cannot resolve blocks the rebuild; the blocked rebuild is a
+setup failure, not a `Spec gap`, and it is not a `specification defect`.
+
 **Manifest.** `ise-manifest/v1` is strict: an unreadable file, a scope other
 than `ise-manifest/v1`, an unknown field, or a missing field refuses with the
 manifest path and the reason. The earlier `ise-trial/v1` record shape is refused
@@ -533,7 +551,8 @@ directory at or above it that holds a tracked `Cargo.toml`, or the matched path
 itself when no such directory exists. The set is every tracked file at or below
 a root, minus the declaration, ordered by path. An entry that matches the
 project root covers the whole tracked tree. Ignored and untracked files cannot
-enter.
+enter. The scenarios themselves stay in the `behavior` role; the `e2e` role
+holds the runner and every `@e2e` step definition.
 
 **Scenario checksum.** The per-feature checksum is `sha256(feature path NUL
 (title NUL executable-content NUL)*)` over the selected scenarios in file
