@@ -668,7 +668,7 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     changes.
   - [x] COMMIT: `1023349` -- Batch: verify-and-review
 
-- [ ] Write the independent review
+- [x] Write the independent review
   - Paths: `givn/changes/givn-self-rebuild-under-the-updated-rules/review.md`.
   - Change: one fresh review context reads the declaration, the two scenarios,
     the trial evidence, and the arc42 chapters, and writes `review.md` with the
@@ -696,9 +696,9 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     one fresh context owns design review and final review); served `review`
     instruction; `givn-review-gate-artifact-formats` for the exact marker
     formats.
-  - [ ] COMMIT: `___` -- Batch: verify-and-review
+  - [x] COMMIT: `6f79cb71` -- Batch: verify-and-review
 
-- [ ] Record the review gate
+- [x] Record the review gate
   - Paths: `evidence/ise/boundary-review-check.txt`.
   - Run:
     ```sh
@@ -713,7 +713,7 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     it names; a `design.md` edit reopens design-review.
   - Design constraints: design `## Verification` item 7; the review gate runs
     integrity and evidence checks, not the suites.
-  - [ ] COMMIT: `___` -- Batch: verify-and-review
+  - [x] COMMIT: `6f79cb71` -- Batch: verify-and-review
 
 ## Batch: `archive-and-dogfood`
 
@@ -726,7 +726,7 @@ placeholder. C8 is the archive's own candidate revision. C9 carries the
 self-dogfood transcript and corrects the archive task's identifier to C8; C10
 corrects this task's identifier to C9.
 
-- [ ] Archive the change
+- [x] Archive the change
   - Paths: `givn/archive/givn-self-rebuild-under-the-updated-rules/`;
     `givn/specs/declare-the-specification/specification-declaration.feature`,
     `givn/specs/prepare-an-ise-test/clean-room-preparation.feature`.
@@ -753,9 +753,9 @@ Batch: archive-and-dogfood'
     merged-step rule (the delta adds no step file, so every new phrase is
     already bound in the permanent `tests/steps/` tree); `S14` owns the
     promotion decision.
-  - [ ] COMMIT: `___` -- Batch: archive-and-dogfood
+  - [x] COMMIT: `6f79cb71` -- Batch: archive-and-dogfood
 
-- [ ] Record the post-archive suites and the self-dogfood transcript
+- [x] Record the post-archive suites and the self-dogfood transcript
   - Paths: `givn/archive/givn-self-rebuild-under-the-updated-rules/evidence/ise/self-dogfood.txt`.
   - Run:
     ```sh
@@ -783,7 +783,7 @@ Batch: archive-and-dogfood'
     design `## Verification` item 8; the sequence runs after archive so the
     installed binary and the regenerated skills are current before the next
     change.
-  - [ ] COMMIT: `___` -- Batch: archive-and-dogfood
+  - [x] COMMIT: `6f79cb71` -- Batch: archive-and-dogfood
 
 ---
 
