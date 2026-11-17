@@ -1729,15 +1729,22 @@ produced the executable.
 
 ## Closeout
 
-- [ ] Merged step definitions. No delta step file exists: every phrase is bound
+- [x] Merged step definitions. No delta step file exists: every phrase is bound
       in the permanent per-capability file from its batch, one file per
       capability, so the archive gate finds nothing to merge and nothing
       missing. Record the six files and their phrase counts.
       ```text
-      <!-- record: phrase counts per file; no givn/changes/**/steps file exists -->
+      tests/steps/clean_room_preparation_steps.rs           261 bindings
+      tests/steps/trial_input_verification_steps.rs          98 bindings
+      tests/steps/specification_declaration_steps.rs          9 bindings
+      tests/steps/ise_clean_room_support.rs                   0 bindings (fixtures)
+      e2e/tests/steps/clean_room_preparation_e2e_steps.rs    22 bindings
+      e2e/tests/steps/trial_input_verification_e2e_steps.rs   7 bindings
+      No givn/changes/**/steps file exists; every phrase is bound in a permanent
+      per-capability file.
       ```
 
-- [ ] Run the complete change suite and the two scopes.
+- [x] Run the complete change suite and the two scopes.
       ```sh
       cargo fmt --all -- --check
       cargo clippy --workspace --all-targets -- -D warnings
@@ -1746,20 +1753,34 @@ produced the executable.
       ./run-tests.sh --e2e --package e2e
       ```
       ```text
-      <!-- paste: exit 0 for each command and the pass/skip summaries -->
+      cargo fmt --all -- --check                                    exit 0
+      cargo clippy --workspace --all-targets --locked -- -D warnings exit 0
+      GIVN_FEATURES=givn/changes/strengthen-ise-specification \
+        GIVN_CUCUMBER_TAGS='not @e2e' \
+        cargo nextest run --locked --test features_runner           98 passed, 2 skipped
+      ./run-tests.sh --e2e --package e2e                           119 passed, 781 steps, exit 0
       ```
+      The unmerged permanent corpus still runs the ise scenarios this delta
+      replaces, so a whole-corpus pre-archive run is red by construction; the
+      archive gate merges the delta first and runs the merged corpus. The
+      `@e2e` scenarios bind their steps only in `e2e/tests/steps`, which is why
+      a bare `cargo nextest run` reports them unbound even at baseline.
 
-- [ ] Change gate: every scenario is unchecked-free, every scenario task carries
+- [x] Change gate: every scenario is unchecked-free, every scenario task carries
       its batch revision, and no delta scenario stays `@wip`.
       ```sh
       givn check tasks --change strengthen-ise-specification
       givn status --change strengthen-ise-specification
       ```
       ```text
-      <!-- paste: check tasks exit 0 and the status artifact checklist -->
+      check tasks: exit 0; change verification receipt 98 scenarios, 0 failed,
+      0 skipped at f7270ce1d36b2c1b97b9a732536999289466803a; E2E 2 scenarios,
+      0 failed, 0 skipped; verify passed.
+      status: proposal, specs, design, arc42-docs, design-review, tasks done;
+      review is the only artifact still missing.
       ```
 
-- [ ] Durable-doc verification: the served instruction and the reference state
+- [x] Durable-doc verification: the served instruction and the reference state
       the implemented surface; the glossary, ideation topic, arc42 chapters,
       ADR-076 amendment and registers, README, and the guidance use case name the
       three commands and the retired vocabulary is gone.
@@ -1769,6 +1790,9 @@ produced the executable.
       grep -rn "trial record\|--receipt\|ise replace\|ise verify" docs assets README.md
       ```
       ```text
-      <!-- paste: the served command table, the reference rows, and the empty
-           retired-token grep outside the ADR historical note -->
+      givn instructions ise prints the command table with rebuild-all,
+      rebuild-component, and compare.
+      docs/reference.md:33-35 and 368-378 carry the three commands.
+      grep over docs, assets, and README.md for trial record, --receipt,
+      ise replace, and ise verify: no hit outside the ADR historical notes.
       ```

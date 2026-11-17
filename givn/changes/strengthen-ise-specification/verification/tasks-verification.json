@@ -2,7 +2,7 @@
   "schema": 2,
   "change": "strengthen-ise-specification",
   "status": "passed",
-  "head": "aef08fab9914a77a4c255d942838c61de8c14ba8",
+  "head": "f7270ce1d36b2c1b97b9a732536999289466803a",
   "features_path": "givn/changes/strengthen-ise-specification/specs",
   "features_digest": "f4befc58c67c1de1fb3ad49d2564edf381637ee400bd91d760ac0e5ba5bcc226",
   "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
@@ -30,7 +30,7 @@
     "passed": 2,
     "failed": 0,
     "skipped": 0,
-    "seconds": 1.5470687889999999
+    "seconds": 1.583279586
   },
-  "finished_at_unix": 1794914044
+  "finished_at_unix": 1794914146
 }
