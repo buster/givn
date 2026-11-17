@@ -2236,9 +2236,7 @@ fn git_project_whose_behavior_role_names_the_specs_under_givn(world: &mut GivnWo
     regex = r#"^a Git project with ise enabled and a declaration whose source root is "givn/\*\*"$"#
 )]
 fn git_project_whose_source_root_is_givn(world: &mut GivnWorld) {
-    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
-        &ise_clean_room_support::source_only_declaration("\"givn/**\""),
-    ));
+    world.env = Some(ise_clean_room_support::givn_source_root_project());
 }
 
 #[when(regex = r#"^the developer rebuilds the component path "([^"]+)" into a spec copy$"#)]
@@ -2352,4 +2350,249 @@ fn the_command_fails_and_names_the_absolute_symlink_target(world: &mut GivnWorld
         .clone()
         .expect("the Given recorded the absolute target");
     assert_refusal_names(world, &["src/abs", &target]);
+}
+
+// --- partition-and-copy: count labels, declaration, and copy tree -----------
+
+/// The quoted strings a `prints ...` step lists, in order.
+fn printed_lines(printed: &str) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current = String::new();
+    let mut quoted = false;
+    for character in printed.chars() {
+        match character {
+            '"' if quoted => {
+                lines.push(std::mem::take(&mut current));
+                quoted = false;
+            }
+            '"' => quoted = true,
+            _ if quoted => current.push(character),
+            _ => {}
+        }
+    }
+    assert!(!quoted, "unbalanced quotes in {printed:?}");
+    lines
+}
+
+fn assert_success_and_prints(world: &GivnWorld, printed: &str) {
+    assert_success(world);
+    for line in printed_lines(printed) {
+        assert_report_line(world, &line);
+    }
+}
+
+#[given(
+    regex = r#"^a Git project with ise enabled and a declaration whose "structure" role names "src/kept\.rs" and "src/nested/notes\.md" and whose source root is "src/\*\*"$"#
+)]
+fn git_project_with_two_structure_files_under_src(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::ise_project_with_declaration(
+        &ise_clean_room_support::structure_declaration(
+            "\"src/kept.rs\", \"src/nested/notes.md\"",
+            "\"src/**\"",
+        ),
+    ));
+}
+
+#[given(
+    regex = r#"^a committed revision with "src/kept\.rs", "src/nested/notes\.md", and "src/other\.rs"$"#
+)]
+fn commit_two_specification_files_and_one_source(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_files(
+        project_env(world),
+        &[
+            (
+                ise_clean_room_support::KEPT_PATH,
+                ise_clean_room_support::KEPT_CONTENT,
+            ),
+            ("src/nested/notes.md", "notes\n"),
+            ("src/other.rs", "pub fn other() {}\n"),
+        ],
+        "fixture: Specification files under a source root",
+    );
+}
+
+#[given(
+    regex = r#"^a committed revision with "src/kept\.rs", a Specification file through the "structure" role$"#
+)]
+fn commit_kept_file_through_the_structure_role(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration("\"src/kept.rs\"", "\"src/**\""),
+    );
+    ise_clean_room_support::commit_files(
+        env,
+        &[(
+            ise_clean_room_support::KEPT_PATH,
+            ise_clean_room_support::KEPT_CONTENT,
+        )],
+        "fixture: kept file through the structure role",
+    );
+}
+
+#[given(
+    regex = r#"^a committed revision with an executable script "src/run\.sh" and a symlink "src/link" to "run\.sh", a Specification file through the "structure" role$"#
+)]
+fn commit_executable_and_symlink_through_the_structure_role(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration(
+            "\"src/run.sh\", \"src/link\"",
+            "\"src/**\"",
+        ),
+    );
+    ise_clean_room_support::commit_executable_and_symlink(env);
+}
+
+#[given(
+    regex = r#"^a committed revision with "src/kept\.rs", a Specification file through the "structure" role, and a later revision adding "src/later\.rs"$"#
+)]
+fn commit_kept_file_then_a_later_revision(world: &mut GivnWorld) {
+    let env = project_env(world);
+    ise_clean_room_support::rewrite_declaration(
+        env,
+        &ise_clean_room_support::structure_declaration("\"src/kept.rs\"", "\"src/**\""),
+    );
+    let first = ise_clean_room_support::commit_files(
+        env,
+        &[(
+            ise_clean_room_support::KEPT_PATH,
+            ise_clean_room_support::KEPT_CONTENT,
+        )],
+        "fixture: first revision",
+    );
+    ise_clean_room_support::commit_files(
+        env,
+        &[("src/later.rs", "pub fn later() {}\n")],
+        "fixture: later revision",
+    );
+    world.ise_clean_room.first_revision = Some(first);
+}
+
+#[given(
+    regex = r#"^a committed revision with a Specification file, a Source code kept file, a removed source file, an executable script, and a symlink to it$"#
+)]
+fn commit_fossil_specification_kept_removed_script_and_symlink(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_fossil_kinds(project_env(world));
+}
+
+#[then(regex = r#"^the command succeeds and prints ("[^"]*"(?:(?:, "[^"]*")*,? and "[^"]*")?)$"#)]
+fn the_command_succeeds_and_prints(world: &mut GivnWorld, printed: String) {
+    assert_success_and_prints(world, &printed);
+}
+
+#[then(
+    regex = r#"^the command succeeds and prints "Backend: git" and "Revision:" with the first revision identifier$"#
+)]
+fn the_command_succeeds_and_reports_the_first_revision(world: &mut GivnWorld) {
+    assert_success(world);
+    assert_report_line(world, "Backend: git");
+    let first = world
+        .ise_clean_room
+        .first_revision
+        .clone()
+        .expect("the Given recorded the first revision");
+    assert_report_line(world, &format!("Revision: {first}"));
+}
+
+#[then(regex = r#"^the spec copy holds "([^"]+)"$"#)]
+fn the_spec_copy_holds_one(world: &mut GivnWorld, path: String) {
+    assert_trial_holds(world, &[path.as_str()]);
+}
+
+#[then(regex = r#"^the spec copy holds "([^"]+)" and "([^"]+)"$"#)]
+fn the_spec_copy_holds_two(world: &mut GivnWorld, first: String, second: String) {
+    assert_trial_holds(world, &[first.as_str(), second.as_str()]);
+}
+
+#[then(regex = r#"^the spec copy omits "([^"]+)"$"#)]
+fn the_spec_copy_omits_one(world: &mut GivnWorld, path: String) {
+    assert_trial_omits(world, &[path.as_str()]);
+}
+
+#[then(regex = r#"^the spec copy omits "([^"]+)" and "([^"]+)"$"#)]
+fn the_spec_copy_omits_two(world: &mut GivnWorld, first: String, second: String) {
+    assert_trial_omits(world, &[first.as_str(), second.as_str()]);
+}
+
+#[then(regex = r#"^the spec copy does not hold "([^"]+)"$"#)]
+fn the_spec_copy_does_not_hold(world: &mut GivnWorld, path: String) {
+    assert_trial_omits(world, &[path.as_str()]);
+}
+
+#[then(regex = r#"^the spec copy does not hold the ignored file$"#)]
+fn the_spec_copy_does_not_hold_the_ignored_file(world: &mut GivnWorld) {
+    assert_trial_omits(world, &[ise_clean_room_support::IGNORED_PATH]);
+}
+
+#[then(regex = r#"^the spec copy holds no "\.git" entry and no "\.fslckout" entry$"#)]
+fn the_spec_copy_holds_no_version_control_metadata(world: &mut GivnWorld) {
+    assert_trial_has_no_vcs_entries(world);
+}
+
+#[then(
+    regex = r#"^the spec copy's "givn/specification\.yaml" is the declaration committed at the selected revision$"#
+)]
+fn the_spec_copy_holds_the_selected_revision_declaration(world: &mut GivnWorld) {
+    let revision = world
+        .ise_clean_room
+        .requested_revision
+        .clone()
+        .expect("the When recorded the selected revision");
+    let expected = ise_clean_room_support::revision_content(
+        project_env(world),
+        &revision,
+        ise_clean_room_support::DECLARATION_PATH,
+    );
+    let actual = std::fs::read(trial_path(world).join(ise_clean_room_support::DECLARATION_PATH))
+        .unwrap_or_else(|error| panic!("read the spec copy declaration: {error}"));
+    assert_eq!(
+        actual, expected,
+        "the spec copy's declaration is not the copy recorded at revision {revision}"
+    );
+}
+
+#[then(regex = r#"^the spec copy's "src/run\.sh" is executable$"#)]
+fn the_spec_copy_script_is_executable(world: &mut GivnWorld) {
+    assert_trial_executable(world, ise_clean_room_support::RUN_SCRIPT_PATH);
+}
+
+#[then(regex = r#"^the spec copy's "src/link" is a symlink to "run\.sh"$"#)]
+fn the_spec_copy_link_points_at_the_script(world: &mut GivnWorld) {
+    assert_trial_symlink(
+        world,
+        ise_clean_room_support::SYMLINK_PATH,
+        ise_clean_room_support::SYMLINK_TARGET,
+    );
+}
+
+#[then(regex = r#"^the spec copy holds the Specification file and the Source code kept file$"#)]
+fn the_spec_copy_holds_the_fossil_specification_and_kept_file(world: &mut GivnWorld) {
+    assert_trial_holds(
+        world,
+        &[
+            ise_clean_room_support::FOSSIL_FEATURE_PATH,
+            ise_clean_room_support::KEPT_SOURCE_PATH,
+        ],
+    );
+}
+
+#[then(regex = r#"^the spec copy omits the removed source file$"#)]
+fn the_spec_copy_omits_the_fossil_removed_source(world: &mut GivnWorld) {
+    assert_trial_omits(world, &[ise_clean_room_support::REPLACED_SOURCE_PATH]);
+}
+
+#[then(regex = r#"^the spec copy's executable script is executable$"#)]
+fn the_spec_copy_fossil_script_is_executable(world: &mut GivnWorld) {
+    assert_trial_executable(world, ise_clean_room_support::RUN_SCRIPT_PATH);
+}
+
+#[then(regex = r#"^the spec copy's symlink is a symlink to its target$"#)]
+fn the_spec_copy_fossil_symlink_points_at_its_target(world: &mut GivnWorld) {
+    assert_trial_symlink(
+        world,
+        ise_clean_room_support::SYMLINK_PATH,
+        ise_clean_room_support::SYMLINK_TARGET,
+    );
 }

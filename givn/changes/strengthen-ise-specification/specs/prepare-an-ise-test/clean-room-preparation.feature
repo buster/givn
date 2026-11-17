@@ -210,7 +210,7 @@ Feature: Clean-room preparation
     Then  the command fails and names "nested/_FOSSIL_"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation expands a directory path to the tracked files beneath it
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/keys/parser.rs", "src/keys/mod.rs", and "src/other.rs"
@@ -227,7 +227,7 @@ Feature: Clean-room preparation
     Then  the command succeeds and prints "Source code removed: 1"
     And  the manifest records one removed path
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation does not expand a glob-shaped path
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/one.rs" and "src/nested/two.rs"
@@ -235,7 +235,7 @@ Feature: Clean-room preparation
     Then  the command succeeds and prints "Source code removed: 0"
     And  the spec copy holds "src/one.rs" and "src/nested/two.rs"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A named path absent from the revision removes nothing
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/keys/parser.rs"
@@ -270,7 +270,7 @@ Feature: Clean-room preparation
     Then  the command fails and names the manifest path
     And  the spec copy directory it created is removed
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation reads a Fossil revision and preserves an executable file and a symlink
     Given  a Fossil checkout with ise enabled, allow-symlinks on, and a declaration with one source root "src/**"
     And  a committed revision with a Specification file, a Source code kept file, a removed source file, an executable script, and a symlink to it
@@ -318,7 +318,7 @@ Feature: Clean-room preparation
     Then  the command fails and names "givn/specification.yaml", the revision, and "returned no blob"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A role that matches the declaration counts it once
     Given  a Git project with ise enabled and a declaration whose "contracts" role names "givn/**"
     And  a committed revision with "givn/specs/a.md"
@@ -374,7 +374,7 @@ Feature: Clean-room preparation
     Then  the command fails and names "givn/specs/demo.feature" and the "behavior" role
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation counts the files left in a removed path's directory
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision where "src/keys/parser.rs" sits beside "src/keys/mod.rs" and "src/keys/tests.rs"
@@ -406,7 +406,7 @@ Feature: Clean-room preparation
     Then  the command fails and names the target
     And  the checkout holds no spec copy directory
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation writes no version-control metadata into the spec copy
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/kept.rs"
@@ -414,7 +414,7 @@ Feature: Clean-room preparation
     Then  the command succeeds
     And  the spec copy holds no ".git" entry and no ".fslckout" entry
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation partitions with the declaration at the selected revision
     Given  a Git project with ise enabled and a declaration whose "structure" role names "docs/glossary.md"
     And  a committed revision with "docs/glossary.md" and "src/one.rs"
@@ -453,7 +453,7 @@ Feature: Clean-room preparation
     Then  the dry run prints "Copy directory (would write):" and no "Manifest (not written):" line
     And  the spec copy path remains absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation leaves an ignored file out of the spec copy
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/kept.rs", a Specification file through the "structure" role
@@ -463,7 +463,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "src/kept.rs"
     And  the spec copy does not hold the ignored file
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation preserves the executable bit and the symlink target
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with an executable script "src/run.sh" and a symlink "src/link" to "run.sh", a Specification file through the "structure" role
@@ -472,7 +472,7 @@ Feature: Clean-room preparation
     And  the spec copy's "src/run.sh" is executable
     And  the spec copy's "src/link" is a symlink to "run.sh"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation reads an explicit revision and reports it
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/kept.rs", a Specification file through the "structure" role, and a later revision adding "src/later.rs"
@@ -481,7 +481,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "src/kept.rs"
     And  the spec copy does not hold "src/later.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A whole-product rebuild removes every tracked file under the source roots
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision with "src/one.rs" and "src/nested/two.rs"
@@ -490,7 +490,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "givn/specification.yaml"
     And  the spec copy omits "src/one.rs" and "src/nested/two.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A whole-product rebuild keeps a Specification file under a source root
     Given  a Git project with ise enabled and a declaration whose "structure" role names "src/kept.rs" and "src/nested/notes.md" and whose source root is "src/**"
     And  a committed revision with "src/kept.rs", "src/nested/notes.md", and "src/other.rs"
@@ -499,7 +499,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "src/kept.rs" and "src/nested/notes.md"
     And  the spec copy omits "src/other.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The spec copy carries the declaration when no role names it
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
@@ -556,7 +556,7 @@ Feature: Clean-room preparation
     And  the spec copy holds "givn/specification.yaml"
     And  the spec copy omits "tests/e2e/runner.rs" and "tests/unit/helper.rs"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A whole-product rebuild keeps the declaration under a source root
     Given  a Git project with ise enabled and a declaration whose source root is "givn/**"
     And  a committed revision with "givn/notes.md"

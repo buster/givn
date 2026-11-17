@@ -518,6 +518,29 @@ pub(crate) fn behavior_e2e_declaration(behavior: &str, e2e: &str, source: &str) 
     )
 }
 
+/// A project whose `source` role names `givn/**`. The config and the command
+/// file are excluded from the repository, so the revision's `givn/` holds only
+/// the declaration and the document the role matches; the removed count
+/// therefore isolates the source-root expansion.
+pub(crate) fn givn_source_root_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::write(
+        env.path(".git/info/exclude"),
+        "givn/config.yaml\ngivn/commands.yaml\n",
+    )
+    .expect("write the Git exclude fixture");
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
+        .expect("write the fixture config");
+    std::fs::write(
+        env.path(DECLARATION_PATH),
+        source_only_declaration("\"givn/**\""),
+    )
+    .expect("write the fixture declaration");
+    env
+}
+
 /// A project whose `contracts` role names `givn/**`. The config and the
 /// command file are excluded from the repository, so the revision's `givn/`
 /// holds only the declaration and the document the role matches; the retained

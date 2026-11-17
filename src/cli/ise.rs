@@ -41,13 +41,13 @@ fn render(report: &Report) -> String {
     let mut text = format!(
         "Backend: {}\n\
          Revision: {}\n\
-         Retained: {}\n\
-         Kept source: {}\n\
-         Replaced: {}\n\
-         Outside the declaration: {}\n\
-         Not replaced: {}\n\
-         Retained digest: {}\n\
-         E2E digest: {}\n",
+         Specification files: {}\n\
+         Source code kept: {}\n\
+         Source code removed: {}\n\
+         Outside the spec copy: {}\n\
+         Files beside removed paths: {}\n\
+         Specification checksum: {}\n\
+         End-to-end checksum: {}\n",
         report.backend,
         report.revision,
         report.counts.retained,

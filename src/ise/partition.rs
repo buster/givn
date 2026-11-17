@@ -152,7 +152,7 @@ pub(super) fn partition(
         .collect();
     outside.sort();
 
-    let not_replaced = direct_siblings(&tracked, &replaced_set);
+    let not_replaced = direct_siblings(&tracked, &replaced_set, &frozen_set);
     Ok(Partition {
         retained,
         kept_source,
@@ -306,9 +306,15 @@ fn path_or_parent_matches(globs: &[Glob], path: &str) -> bool {
         .any(|glob| glob_matches_path_or_parent(glob, path))
 }
 
-/// The direct tracked files in the replaced files' parent directories that
-/// were not themselves replaced.
-fn direct_siblings(tracked: &BTreeSet<&str>, replaced: &BTreeSet<&str>) -> usize {
+/// The direct tracked files in the removed files' parent directories that
+/// were not themselves removed and are not End-to-end matches. The declaration
+/// and every Specification-role match stay counted, so a neighbour also
+/// appears in one of the other placement counts.
+fn direct_siblings(
+    tracked: &BTreeSet<&str>,
+    replaced: &BTreeSet<&str>,
+    frozen: &BTreeSet<&str>,
+) -> usize {
     let mut parents = BTreeSet::new();
     for path in replaced {
         if let Some((parent, _)) = path.rsplit_once('/') {
@@ -319,6 +325,7 @@ fn direct_siblings(tracked: &BTreeSet<&str>, replaced: &BTreeSet<&str>) -> usize
         .iter()
         .filter(|path| {
             !replaced.contains(**path)
+                && !frozen.contains(**path)
                 && path
                     .rsplit_once('/')
                     .is_some_and(|(parent, _)| parents.contains(parent))
