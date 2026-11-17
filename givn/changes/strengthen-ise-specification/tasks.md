@@ -1627,7 +1627,10 @@ already binds every phrase).
     malformed case; `src/cli/lint/specification.rs` maps it to exit 1. Existing
     behaviour protected: the refusal exists; only the code assertion is new.
   - Files: `tests/steps/specification_declaration_steps.rs`.
-  - [x] COMMIT: `f21807f8b3497173c9ec2984461dfea8d1b14c55` -- Batch: `declaration-boundary`
+  - Recorded revision: the plan commit that introduced the delta scenario and
+    its `the command exits 1` assertion; `f21807f8` only removed `@wip`, so it
+    is no longer this task's evidence.
+  - [x] COMMIT: `76159193af3085c3873357e387e7067ed06de0f6` -- Batch: `declaration-boundary`
 
 ### Batch 13: `cross-capability-rebinding`
 
@@ -1711,6 +1714,96 @@ Files modified: `givn/changes/strengthen-ise-specification/specs/create-change/p
       support constant and accessor write the existing and blocked manifest
       fixtures as `ise-manifest/v1`. Lands in the same revision as the two
       scenarios above.
+
+### Batch 14: `review-blockers`
+
+Files modified: `src/ise/manifest.rs`, `src/ise/compare.rs`,
+`tests/steps/trial_input_verification_steps.rs`,
+`e2e/tests/steps/clean_room_preparation_e2e_steps.rs`,
+`givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/trial-input-verification.feature`,
+`givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/usecase.md`,
+`givn/changes/strengthen-ise-specification/proposal.md`,
+`givn/changes/strengthen-ise-specification/design.md`, and the two committed
+transcripts under `givn/changes/strengthen-ise-specification/evidence/visual/`.
+
+- [x] Evidence for this batch: RED on both new scenarios before the production
+      fix, then GREEN, then the delta `@e2e` scope.
+      ```text
+      RED (src/ise/compare.rs and src/ise/manifest.rs reverted):
+      GIVN_FEATURES=givn/changes/strengthen-ise-specification \
+        cargo nextest run --locked --test features_runner \
+        'Comparison names a missing declaration in the copy'
+        ✘  Then comparison prints "Specification files: 1 missing"
+           Step panicked. Captured output: stdout "" does not print the line
+           "Specification files: 1 missing"
+        [Summary] 1 feature; 1 scenario (1 failed); 4 steps (3 passed, 1 failed)
+
+      GIVN_FEATURES=givn/changes/strengthen-ise-specification \
+        cargo nextest run --locked --test features_runner \
+        'Comparison refuses a retired ise-trial/v1 record by scope'
+        ✘  Then comparison fails and exits 1, naming the manifest and "ise-trial/v1"
+           Step panicked. Captured output: stderr "... does not match
+           ise-manifest/v1: unknown field `schema`, expected one of `scope`, ..."
+           does not name "ise-trial/v1"
+        [Summary] 1 feature; 1 scenario (1 failed); 3 steps (2 passed, 1 failed)
+
+      GREEN (same two filters after the fix):
+        [Summary] 1 test run: 1 passed, 101 skipped
+        [Summary] 1 test run: 1 passed, 101 skipped
+
+      GREEN (delta @e2e scope):
+      GIVN_FEATURES=givn/changes/strengthen-ise-specification \
+        ./run-tests.sh --e2e --package e2e
+        [Summary] 2 features; 2 scenarios (2 passed); 16 steps (16 passed)
+      ```
+
+- [x] Blocker B1: `abbreviate` returns the first 12 lowercase hex characters
+      with no ellipsis; the e2e assertion reads the same value and the dead
+      `report_abbreviates_the_digests` binding is removed.
+      Files: `src/ise/manifest.rs`,
+      `e2e/tests/steps/clean_room_preparation_e2e_steps.rs`, and the committed
+      transcripts.
+  - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
+
+- [x] Blocker B3: the delta use case says the docstring loses the line break
+      after the opening delimiter and before the closing delimiter, matching
+      `docs/reference.md` and the pinned golden bytes; no checksum is re-pinned.
+      Files: `givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/usecase.md`.
+  - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
+
+- [x] Blocker B6: batch 12 records `76159193`, the plan commit that introduced
+      the delta scenario and its exit-code assertion; `f21807f8` removed only
+      `@wip` and is no longer evidence.
+      Files: `givn/changes/strengthen-ise-specification/tasks.md`.
+
+- [x] Blocker B7: the Capability Routing table declares `EXTEND
+      prose-consolidation` and `NEW in fragments` beside the three ISE rows.
+      Files: `givn/changes/strengthen-ise-specification/proposal.md`.
+  - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
+
+- [x] Scenario: `Comparison names a missing declaration in the copy`
+  - Design constraints: the prepared spec copy loses `givn/specification.yaml`;
+    Then the report prints `Specification files: 1 missing` with
+    `- givn/specification.yaml`, `End-to-end tests: match`, and exit 1. The
+    copy declaration is optional for the added-file refusal: an absent or
+    unreadable declaration contributes no roles, and the recorded declaration
+    checksum reports the difference. Contract: `docs/reference.md`
+    "Declaration in comparison" and the delta use case example.
+  - Files: `src/ise/compare.rs`,
+    `tests/steps/trial_input_verification_steps.rs`,
+    `givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/trial-input-verification.feature`.
+  - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
+
+- [x] Scenario: `Comparison refuses a retired ise-trial/v1 record by scope`
+  - Design constraints: the manifest is the retired field set (`schema`,
+    `content_scope`, `backend`, the three digests, the three maps); the reader
+    checks `scope` or `content_scope` before deserialization, refuses by
+    naming the recorded `ise-trial/v1` and the expected `ise-manifest/v1`, and
+    prints no subject line. Contract: proposal D4 and the delta use case.
+  - Files: `src/ise/manifest.rs`,
+    `tests/steps/trial_input_verification_steps.rs`,
+    `givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/trial-input-verification.feature`.
+  - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
 
 ## E2E smoke tests
 
