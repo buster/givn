@@ -783,7 +783,7 @@ Batch: archive-and-dogfood'
     design `## Verification` item 8; the sequence runs after archive so the
     installed binary and the regenerated skills are current before the next
     change.
-  - [x] COMMIT: `6f79cb71` -- Batch: archive-and-dogfood
+  - [x] COMMIT: `89692701` -- Batch: archive-and-dogfood
 
 ---
 
