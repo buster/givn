@@ -1586,16 +1586,32 @@ Files modified: `src/ise/compare.rs`, `src/ise/manifest.rs`,
 
 ### Batch 12: `declaration-boundary`
 
-Files modified: `tests/steps/specification_declaration_steps.rs`
-(`src/cli/lint/specification.rs` only if the exact exit code is not already 1).
+Files modified: `givn/changes/strengthen-ise-specification/specs/declare-the-specification/specification-declaration.feature`
+(the scenario loses `@wip`; `tests/steps/specification_declaration_steps.rs`
+already binds every phrase).
 
-- [ ] Evidence for this batch: paste the GREEN run; the scenario is existing
+- [x] Evidence for this batch: paste the GREEN run; the scenario is existing
       behaviour protected (the delta pins the code to exactly 1).
       ```text
-      <!-- paste: command + pass summary, and the lint exit code observed -->
+      GREEN: GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs cargo test --locked --test features_runner -- "declare-the-specification/specification-declaration.feature::An unreadable declaration is refused by name" --exact --nocapture
+      Feature: specification-declaration
+        Scenario: An unreadable declaration is refused by name
+         ✔  Given an ise-enabled project selecting opencode whose declaration path is a directory
+         ✔  When the user runs `givn lint`
+         ✔  Then the command exits 1
+         ✔  And stderr names "givn/specification.yaml"
+      [Summary]
+      1 feature
+      1 scenario (1 passed)
+      4 steps (4 passed)
+
+      Observed on the same fixture, `givn lint` with `givn/specification.yaml`
+      a directory:
+        exit=1
+        stderr: [DECL ] blocking  givn/specification.yaml  Is a directory (os error 21)
       ```
 
-- [ ] Scenario: `An unreadable declaration is refused by name`
+- [x] Scenario: `An unreadable declaration is refused by name`
   - Design constraints: an `ise`-enabled project selecting `opencode` whose
     declaration path is a directory; the When runs `givn lint`; Then the exit
     code is exactly 1 and stderr names `givn/specification.yaml`. Contract:
@@ -1603,7 +1619,7 @@ Files modified: `tests/steps/specification_declaration_steps.rs`
     malformed case; `src/cli/lint/specification.rs` maps it to exit 1. Existing
     behaviour protected: the refusal exists; only the code assertion is new.
   - Files: `tests/steps/specification_declaration_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `declaration-boundary`
+  - [x] COMMIT: `49be9ffce71b` -- Batch: `declaration-boundary`
 
 ## E2E smoke tests
 
