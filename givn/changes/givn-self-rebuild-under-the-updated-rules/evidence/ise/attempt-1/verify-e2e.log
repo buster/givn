@@ -1,5 +1,5 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.07s
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.21s
      Running tests/e2e_runner.rs (/home/buster/.paseo/worktrees/008cxm4u/modern-mule/target/e2e-package/debug/deps/e2e_runner-6aed3b12b9ad785e)
 Feature: Archive Proof
   Scenario Outline: Consumer archives a completed change and receives a proven archive
@@ -950,22 +950,6 @@ Feature: Visual Review Gate
    ✔  And the change's delta spec contains an @e2e scenario "Consumer opens the dashboard"
    ✔  And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "mobile"
    ✔  And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "desktop"
-   ✔  And the change's review.md contains "VISUAL-REVIEW: PASS"
-   ✔  And the project declares a complete run declaration
-   ✔  When the user runs `givn check review --change test-change`
-   ✔  Then the command exits 0
-  Scenario: Review guidance requires the visual verdict and persona lenses
-   ✔  Given a givn project
-   ✔  When the user runs `givn instructions review --change visual-ui-review`
-   ✔  Then stdout contains "VISUAL-REVIEW: PASS"
-   ✔  And stdout contains "confirmed Persona"
-   ✔  And stdout contains "vision"
-   ✔  And stdout contains "transcript"
-[Summary]
-56 features
-120 scenarios (120 passed)
-784 steps (784 passed)
-r "Consumer opens the dashboard" at viewport "desktop"
    ✔  And the change's review.md contains "VISUAL-REVIEW: PASS"
    ✔  And the project declares a complete run declaration
    ✔  When the user runs `givn check review --change test-change`

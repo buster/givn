@@ -1,9 +1,9 @@
 Mandatory checks for 'tasks':
   ⚠ task preflight: review.md is missing
   ✓ scenario commits passed (2 scenario(s))
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.24s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.27s
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.18s
      Running tests/features_runner.rs (target/debug/deps/features_runner-d59691a9e2740d4a)
 Feature: specification-declaration
   Scenario: A declaration that names build inputs under the four content roles is accepted
@@ -26,6 +26,6 @@ Feature: Clean-room preparation
 2 features
 2 scenarios (2 passed)
 13 steps (13 passed)
-  ✓ change verification receipt: 2 scenario(s), 0 failed, 0 skipped at faa1beab666579f94b9cd40f18b5c74b31ae2762
+  ✓ change verification receipt: 2 scenario(s), 0 failed, 0 skipped at 2e3d093b85ed233556b6531ec56254872bca33a9
   ✓ E2E verification: not_applicable
   ✓ verify passed
