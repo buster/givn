@@ -87,7 +87,10 @@ contract.
 ## 2.3 Addon Constraint
 
 Every registered addon except an Opt-in addon is enabled by default; `ise` is
-the one Opt-in addon. The `arc42` addon:
+the one Opt-in addon. Givn itself is `ise`-effective: `givn/specification.yaml`
+names `src/**` and `tests/**` as the replaceable source roots, so a
+whole-product rebuild removes every tracked file under them while the `e2e`
+package and the declaration stay. The `arc42` addon:
 
 - expands to a required `arc42-docs` artifact after `design`;
 - adds `arc42-docs` to `apply.requires` and to `design-review` dependencies;
