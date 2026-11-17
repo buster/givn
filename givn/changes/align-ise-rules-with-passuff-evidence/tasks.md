@@ -114,7 +114,7 @@ or removed; both delta files stay tagged `@givn.delta`; no file under
 
 ## Setup
 
-- [ ] Land the plan on the change branch
+- [x] Land the plan on the change branch
   - Paths: `givn/changes/align-ise-rules-with-passuff-evidence/` (proposal,
     specs, design, design-review, arc42, config-lock, tasks).
   - Run:
@@ -480,7 +480,7 @@ asserts these rows directly; the batch is documentation that states what the
 instruction requires. It is committed after the served text exists so the
 reference and the instruction cannot disagree at review time.
 
-- [ ] Add the rebuild rules and the two sentences to the reference
+- [x] Add the rebuild rules and the two sentences to the reference
   - Paths: `docs/reference.md`.
   - Change: insert the `**Rebuild rules.**` paragraph and its six-row table
     (Build inputs, Fixed values, Acceptance corpus, Clean-room boundary,
@@ -498,9 +498,9 @@ reference and the instruction cannot disagree at review time.
   - Design constraints: design `## Reference rows`; the reference states the
     value classes, the role home, and the scan roots; the instruction keeps the
     rule once.
-  - [ ] COMMIT: `___` -- Batch: reference-and-glossary
+  - [x] COMMIT: `787dcaf4ce6ac8c92138cde03469e161328d9209` -- Batch: reference-and-glossary
 
-- [ ] Add the three glossary terms
+- [x] Add the three glossary terms
   - Paths: `docs/glossary.md`.
   - Change: insert `Build input` after the `Specification` row, `Neighbor
     record` before the `Spec gap` row, and `Replaced unit` after the `Spec
@@ -512,7 +512,7 @@ reference and the instruction cannot disagree at review time.
     no other row changes.
   - Design constraints: design `## Glossary terms`; decision D8; the glossary
     is the vocabulary authority and chapter 12 links it.
-  - [ ] COMMIT: `___` -- Batch: reference-and-glossary
+  - [x] COMMIT: `787dcaf4ce6ac8c92138cde03469e161328d9209` -- Batch: reference-and-glossary
 
 ## Batch 3: `verification`
 
@@ -540,6 +540,28 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Acceptance: each run prints `1 feature`, `1 scenario (1 passed)`, 0 failed,
     0 skipped, and exits 0. A `0 scenarios` summary, an unbound step, or a
     skip fails this task. Paste the nine summaries.
+  - Evidence:
+    ```text
+    The ise instruction makes the declaration cover every build input
+      1 feature / 1 scenario (1 passed) / 6 steps (6 passed) / exit 0
+    The ise instruction accepts an asset the rebuild generates inside the replaced unit
+      1 feature / 1 scenario (1 passed) / 5 steps (5 passed) / exit 0
+    The ise instruction keeps the dependency cache in the environment
+      1 feature / 1 scenario (1 passed) / 7 steps (7 passed) / exit 0
+    The ise instruction requires a relied-on contract to enumerate its fixed values
+      1 feature / 1 scenario (1 passed) / 4 steps (4 passed) / exit 0
+    The ise instruction keeps a published copy out of the clean room
+      1 feature / 1 scenario (1 passed) / 8 steps (8 passed) / exit 0
+    The ise instruction records a rebuild's neighbors and consolidations
+      1 feature / 1 scenario (1 passed) / 6 steps (6 passed) / exit 0
+    The ise instruction keeps a dry run out of the product
+      1 feature / 1 scenario (1 passed) / 5 steps (5 passed) / exit 0
+    The review guidance asks the neighboring-components question without a gate
+      1 feature / 1 scenario (1 passed) / 7 steps (7 passed) / exit 0
+    Served ise guidance keeps component scenarios in the Specification
+      1 feature / 1 scenario (1 passed) / 7 steps (7 passed) / exit 0
+    ```
+    All nine exited 0; none printed `0 scenarios` or an unbound step.
   - Design constraints: design `## Test runner and strict mode`; every command
     names its corpus through `GIVN_FEATURES`; the bare runner cannot assert a
     count, so the printed summary is the evidence.
@@ -553,6 +575,13 @@ evidence first; C5 lands the receipt and the gate evidence.
     ```
   - Acceptance: exit 0; 9 scenarios passed, 0 failed, 0 skipped; the printed
     summary names 9 scenarios. Paste the run's summary and the exit code.
+  - Evidence:
+    ```text
+    $ GIVN_FEATURES=givn/changes/align-ise-rules-with-passuff-evidence/specs \
+        ./run-tests.sh --non-e2e
+         Summary [   1.612s] 9 tests run: 9 passed, 0 skipped
+    exit 0
+    ```
   - Design constraints: design `## Verification plan` item 2; the delta batch
     is the change's own behavior corpus.
   - [ ] COMMIT: `___` -- Batch: verification
@@ -565,6 +594,15 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Acceptance: exit 0; a non-zero scenario count; 0 failed, 0 skipped; the two
     replaced permanent scenario bodies pass. Paste the run's summary and the
     exit code. A red scenario or a `0 scenarios` summary fails this task.
+  - Evidence:
+    ```text
+    $ GIVN_FEATURES=givn/specs ./run-tests.sh --non-e2e
+         Summary [ 209.097s] 1108 tests run: 1108 passed, 115 skipped
+    exit 0
+    ```
+    The 115 nextest-skipped units are the `@e2e` complement the regular tag
+    expression excludes; the runner reported no skipped step and both replaced
+    scenario bodies passed.
   - Design constraints: design `## Verification plan` item 5; the permanent
     bodies are written in batch 1 so no permanent scenario carries an unbound
     step before archive.
@@ -578,6 +616,15 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Acceptance: exit 0; a non-zero total; 0 failed, 0 skipped. No `@e2e`
     scenario asserts a changed sentence; the suite still must be green. Paste
     the summary and the exit code.
+  - Evidence:
+    ```text
+    $ GIVN_FEATURES=givn/specs ./run-tests.sh --e2e --package e2e
+    [Summary]
+    56 features
+    120 scenarios (120 passed)
+    784 steps (784 passed)
+    exit 0
+    ```
   - Design constraints: design `## Verification plan` item 6 and the design's
     E2E smoke test infrastructure section; the change adds no runner
     configuration and no `@e2e` scenario.
