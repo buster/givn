@@ -559,7 +559,7 @@ Batch: pre-trial-inputs'
   - Design constraints: D6 (the not-applicable path writes no receipt; the
     boundary preflight is the acceptance check review can make); the transcript
     is boundary evidence, not suite evidence.
-  - [x] COMMIT: `3a46c41cdd5a2091562b187a3fa43429ac2f0f63` -- Batch: review-and-archive
+  - [x] COMMIT: `6fffac83b024b9ea9db8e92aa26efadde9c05235` -- Batch: review-and-archive
 
 - [x] Run `givn archive` and record the receipts
   - Paths: `givn/archive/enable-ise-and-run-the-givn-self-rebuild/`
@@ -581,7 +581,7 @@ Batch: pre-trial-inputs'
   - Design constraints: `specs` is skipped (`.givn-skip`) and the proposal
     declares `Behavior change: none`; no trial file enters the checkout except
     the recorded evidence; nothing is installed, tagged, or released.
-  - [x] COMMIT: `3a46c41cdd5a2091562b187a3fa43429ac2f0f63` -- Batch: review-and-archive
+  - [x] COMMIT: `6fffac83b024b9ea9db8e92aa26efadde9c05235` -- Batch: review-and-archive
 
 ## Batch: self-dogfood
 
@@ -618,4 +618,4 @@ Batch: pre-trial-inputs'
   - Design constraints: `design.md` Verification item 10 and the post-archive
     record rule; the sequence runs after archive, so the installed binary and
     the regenerated skills are current before the next change starts.
-  - [x] COMMIT: `3a46c41cdd5a2091562b187a3fa43429ac2f0f63` -- Batch: self-dogfood
+  - [x] COMMIT: `6fffac83b024b9ea9db8e92aa26efadde9c05235` -- Batch: self-dogfood

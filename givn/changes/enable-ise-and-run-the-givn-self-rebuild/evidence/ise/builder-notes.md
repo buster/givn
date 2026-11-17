@@ -236,3 +236,12 @@ product, or the frozen `e2e/` package. My only repository input was this
 workspace. I did not use the network; every build ran with `--offline` inside
 the sandbox. I did not run `cargo install`, `cargo update` with a network, or
 refresh the registry cache.
+
+## Verifier test-infrastructure inputs (executor note)
+
+The builder did not read these; they are disclosed for the verifier, which runs
+the frozen package from the checkout. `run-tests.sh` builds
+`GIVN_READY_FIXTURE` from the checkout's `tests/ready_fixture.rs` and defaults
+`GIVN_ROOT` to the checkout; `GIVN_BIN` is the rebuilt binary. This is the D3
+disclosure: the clean-room claim covers product behavior, not the fixture bytes
+or the checkout files those repository-file assertions read.

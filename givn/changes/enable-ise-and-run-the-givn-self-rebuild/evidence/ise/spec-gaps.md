@@ -23,6 +23,26 @@ three outlines (`archive-proof`, `agent-activity-reporting`, and
 row count stays 115 definitions. This is a count-semantics difference, not a
 `Spec gap` outcome.
 
+## Trial inputs read from the checkout
+
+The frozen acceptance command was:
+
+```sh
+GIVN_BIN=/tmp/givn-ise-self-rebuild-20261117T133311Z/target/release/givn \
+GIVN_RESULT_FILE=$PWD/givn/changes/enable-ise-and-run-the-givn-self-rebuild/evidence/ise/e2e-result.json \
+./run-tests.sh --e2e --package e2e
+```
+
+`GIVN_BIN` is the rebuilt binary. `GIVN_READY_FIXTURE` is built by
+`run-tests.sh` from the checkout's `tests/ready_fixture.rs`, and `GIVN_ROOT`
+defaults to the checkout. Those two inputs are test infrastructure, not product
+construction. The clean-room claim covers product behavior, not the fixture
+bytes or the checkout files those repository-file assertions read.
+
+The trial-1 triage table's observed column escapes `|` as `\|`; a column count
+that does not account for the escape sees extra fields on three rows. The
+outcome counts in the summary are authoritative.
+
 ## Trial 1 triage (before repair)
 
 The frozen run against the builder's first binary recorded 120 total, 35 passed,
