@@ -795,78 +795,139 @@ Files modified: `src/ise/manifest.rs` (renamed from `src/ise/record.rs`),
 Files created: `givn/changes/strengthen-ise-specification/evidence/visual/`
 for the `@e2e` scenario slug below.
 
-- [ ] Evidence for this batch: paste the RED and GREEN runs for
+- [x] Evidence for this batch: paste the RED and GREEN runs for
       `A project-root End-to-end entry covers the whole tracked tree` (regular)
       and `Developer rebuilds the whole product from its Specification`
       (`@e2e`), then the GREEN run of the other ten scenarios.
       ```text
-      <!-- paste: RED commands + assertion failures; GREEN commands + pass summary;
-           the e2e transcript path -->
+      RED against the pre-batch binary (b26f10ce7d):
+
+      $ GIVN_FEATURES=givn/changes/strengthen-ise-specification cargo nextest run \
+          --test features_runner \
+          'specs/prepare-an-ise-test/clean-room-preparation.feature::Preparation writes no manifest when no manifest path is given'
+      FAIL
+        ✔ Given a Git project with ise enabled and a declaration
+        ✔ When the developer rebuilds the whole product from "HEAD" into a spec copy without a manifest
+        ✘ Then the command succeeds and prints no "Manifest:" line
+          stdout "...\nWritten path: /tmp/.tmpCzSJjZ/trial\nschema: 1\ncontent_scope: ise-trial/v1\n..."
+          the pre-batch build appends the trial record after the report
+
+      $ ... '...::A project-root End-to-end entry covers the whole tracked tree'
+      FAIL
+        ✘ Then the command succeeds and prints "Specification files: 1", "Source code kept: 0",
+          "Source code removed: 0", "Outside the spec copy: 0", and "End-to-end tests: not copied (2 files)"
+          stderr=ise rebuild-all: the declared Specification entry '' in the e2e role matches
+          nothing at revision '28cb28e51944db775c9c71ad962f61056c2cf640'
+          the normalized "." entry is checked as a package path, so the rebuild refuses
+
+      $ ... '...::An End-to-end entry that overlaps a source root wins over the removal'
+      FAIL
+        ✘ Then the command succeeds and prints "Specification files: 1", "Source code kept: 0",
+          "Source code removed: 1", "Outside the spec copy: 0", and "End-to-end tests: not copied (1 file)"
+          stdout prints "Frozen package: e2e, not copied (1 file)" and no "End-to-end tests:" line
+
+      $ GIVN_FEATURES=$PWD/givn/changes/strengthen-ise-specification \
+          GIVN_BIN=$PWD/target/debug/givn GIVN_CUCUMBER_TAGS='@e2e and @clean-room-preparation' \
+          cargo test --manifest-path e2e/Cargo.toml --test e2e_runner
+      FAIL
+        ✘ And the report prints "End-to-end tests: not copied (2 files)"
+          stdout prints "Frozen package: e2e, not copied (2 files)" and the trial record
+
+      GREEN (48b71831bb08e9bd482eb871fc6828051f1944d0):
+
+      $ cargo nextest run --test features_runner '<each regular batch title>'
+      PASS Preparation writes no manifest when no manifest path is given
+      PASS A dry run writes no spec copy and no manifest
+      PASS A dry run without a manifest prints no manifest line
+      PASS Preparation collapses a repeated path
+      PASS The manifest lists the declaration among the Specification files
+      PASS The manifest lists the End-to-end tests it does not copy
+      PASS A declaration with no End-to-end role copies every Specification file
+      PASS An End-to-end role that covers the declaration keeps it among the Specification files
+      PASS A project-root End-to-end entry covers the whole tracked tree
+      PASS An End-to-end entry that overlaps a source root wins over the removal
+      PASS Developer rebuilds one component and leaves its neighbours
+
+      $ GIVN_FEATURES=$PWD/givn/changes/strengthen-ise-specification \
+          GIVN_BIN=$PWD/target/debug/givn GIVN_CUCUMBER_TAGS='@e2e and @clean-room-preparation' \
+          cargo test --manifest-path e2e/Cargo.toml --test e2e_runner
+      Developer rebuilds the whole product from its Specification
+      1 scenario (1 passed), 11 steps (11 passed)
+
+      Transcript:
+      givn/changes/strengthen-ise-specification/evidence/visual/developer-rebuilds-the-whole-product-from-its-specification/transcript.txt
+
+      Slice notes: `src/ise/record.rs` became `src/ise/manifest.rs`; the retired
+      `ise-trial/v1` verifier body (`src/ise/verify.rs` and
+      `E2eBoundary::contains`) was deleted with the record it read, and the
+      comparison slice re-creates its reader. `Preparation collapses a repeated
+      path` names no manifest in its When but asserts the manifest in its Then,
+      so the step requests `--manifest`; the scenario text is unchanged.
       ```
 
-- [ ] Scenario: `Preparation writes no manifest when no manifest path is given`
+- [x] Scenario: `Preparation writes no manifest when no manifest path is given`
   - Design constraints: `givn ise rebuild-all --into <dir>` with no
     `--manifest`; Then the command succeeds, prints no `Manifest:` line, writes
     no manifest file, and the copy holds the declaration. Contract: the report
     is the only output; no record on stdout.
   - Files: `src/main.rs`, `src/cli/ise.rs`, `src/ise/mod.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `A dry run writes no spec copy and no manifest`
+- [x] Scenario: `A dry run writes no spec copy and no manifest`
   - Design constraints: `--dry-run --manifest <file>`; Then the report prints
     `Copy directory (would write):` and `Manifest (not written):`, and both
     paths stay absent. Contract: every read, refusal, count, and checksum runs;
     nothing is written.
   - Files: `src/ise/mod.rs`, `src/cli/ise.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `A dry run without a manifest prints no manifest line`
+- [x] Scenario: `A dry run without a manifest prints no manifest line`
   - Design constraints: `--dry-run` without `--manifest`; Then the report prints
     `Copy directory (would write):` and no `Manifest (not written):` line, and
     the copy path stays absent. Contract: the conditional dry-run label.
   - Files: `src/cli/ise.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `Preparation collapses a repeated path`
+- [x] Scenario: `Preparation collapses a repeated path`
   - Design constraints: `src/one.rs` and `src/two.rs`, with `src/one.rs` named
     twice; Then `Source code removed: 1` and the manifest's `removed_paths` holds
     one entry. Contract: the named set is a `BTreeSet`, and the manifest records
     the collapsed set.
   - Files: `src/ise/partition.rs`, `src/ise/manifest.rs`,
     `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `The manifest lists the declaration among the Specification files`
+- [x] Scenario: `The manifest lists the declaration among the Specification files`
   - Design constraints: one source root, `--manifest` given; Then
     `specification_files` holds `givn/specification.yaml`. Contract: the list
     equals the Specification set, declaration included.
   - Files: `src/ise/manifest.rs`, `src/ise/partition.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `The manifest lists the End-to-end tests it does not copy`
+- [x] Scenario: `The manifest lists the End-to-end tests it does not copy`
   - Design constraints: `e2e: ["tests/e2e"]` and two committed files under it;
     Then `End-to-end tests: not copied (2 files)`, `end_to_end_files` holds both
     sorted paths, and the copy omits both. Contract: the E2E set is recorded and
     never copied.
   - Files: `src/ise/manifest.rs`, `src/ise/mod.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `A declaration with no End-to-end role copies every Specification file`
+- [x] Scenario: `A declaration with no End-to-end role copies every Specification file`
   - Design constraints: no `e2e` entries; Then `End-to-end tests: not copied (0
     files)` and `end_to_end_files` is empty. Contract: an empty E2E set is not
     an error.
   - Files: `src/ise/mod.rs`, `src/ise/manifest.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `An End-to-end role that covers the declaration keeps it among the Specification files`
+- [x] Scenario: `An End-to-end role that covers the declaration keeps it among the Specification files`
   - Design constraints: `e2e: ["givn/**"]`, tracked `givn/specs/a.md`; Then
     `Specification files: 1` and `End-to-end tests: not copied (1 file)`, the
     declaration held and `givn/specs/a.md` omitted. Contract: the declaration is
     never frozen.
   - Files: `src/ise/partition.rs`, `src/ise/mod.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `A project-root End-to-end entry covers the whole tracked tree`
+- [x] Scenario: `A project-root End-to-end entry covers the whole tracked tree`
   - Design constraints: `e2e: ["."]` and `source: ["src/**"]`, tracked
     `src/kept.rs` and `notes.md`; Then `Specification files: 1`, `Source code
     kept: 0`, `Source code removed: 0`, `Outside the spec copy: 0`, `End-to-end
@@ -874,18 +935,18 @@ for the `@e2e` scenario slug below.
     an entry matching the project root resolves to the tracked tree. A reader
     that treats `.` as a package path without a manifest fails.
   - Files: `src/e2e_boundary/mod.rs`, `src/ise/partition.rs`, `src/ise/mod.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `An End-to-end entry that overlaps a source root wins over the removal`
+- [x] Scenario: `An End-to-end entry that overlaps a source root wins over the removal`
   - Design constraints: `e2e: ["tests/e2e"]` and `source: ["tests/**"]`, tracked
     `tests/e2e/runner.rs` and `tests/unit/helper.rs`; Then `Specification files:
     1`, `Source code removed: 1`, `End-to-end tests: not copied (1 file)`, both
     files omitted. Contract: an E2E match under a source root is neither copied
     nor removed; the non-E2E sibling is removed.
   - Files: `src/ise/partition.rs`, `src/ise/mod.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `Developer rebuilds one component and leaves its neighbours`
+- [x] Scenario: `Developer rebuilds one component and leaves its neighbours`
   - Design constraints: `behavior: ["givn/specs/**"]`, `e2e: ["tests/e2e"]`,
     `source: ["src/**"]`, tracked `givn/specs/demo.feature`,
     `tests/e2e/Cargo.toml`, `src/keys/parser.rs`, `src/keys/mod.rs`,
@@ -896,9 +957,9 @@ for the `@e2e` scenario slug below.
     the manifest's removed paths are exactly `src/keys/parser.rs`. Contract:
     `rebuild-component` scope over the driver.
   - Files: `src/ise/partition.rs`, `src/ise/mod.rs`, `src/ise/manifest.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
-- [ ] Scenario: `Developer rebuilds the whole product from its Specification`
+- [x] Scenario: `Developer rebuilds the whole product from its Specification`
   - Design constraints: the same declaration with a committed
     `givn/specs/demo.feature`, `tests/e2e/Cargo.toml`,
     `tests/e2e/steps/demo.rs`, three `src/**` files, and `notes.md`; the When
@@ -918,7 +979,7 @@ for the `@e2e` scenario slug below.
     `src/gherkin/content.rs`, `tests/steps/clean_room_preparation_steps.rs`,
     `e2e/tests/steps/clean_room_preparation_e2e_steps.rs`,
     `givn/changes/strengthen-ise-specification/evidence/visual/developer-rebuilds-the-whole-product-from-its-specification/transcript.txt`.
-  - [ ] COMMIT: `<hash>` -- Batch: `report-and-manifest`
+  - [x] COMMIT: `48b71831bb08e9bd482eb871fc6828051f1944d0` -- Batch: `report-and-manifest`
 
 ### Batch 7: `checksums`
 
