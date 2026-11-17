@@ -656,9 +656,17 @@ unless a difference reroutes to the builder or the tests; a rerun writes a new
     `verify.e2e_command` for the package). The regular suite includes the two
     scenarios under the change's delta path only through `givn check tasks`; the
     permanent scope is green after archive in the next batch.
+  - Gate transcript: `evidence/ise/attempt-1/check-tasks.txt` records
+    `givn check tasks` on the same revision: `2 scenarios (2 passed)`, the
+    receipt `2 scenario(s), 0 failed, 0 skipped`, `E2E verification:
+    not_applicable`, and `verify passed`.
+  - Result: `./run-tests.sh --non-e2e` ran 1115 tests, 1115 passed, 0 failed,
+    with the 115 `@e2e` tests excluded by the regular scope's tag expression;
+    `./run-tests.sh --e2e --package e2e` ran 120 scenarios, 120 passed, 0
+    failed, 0 skipped.
   - Design constraints: design `## Verification` item 6; no suite command
     changes.
-  - [x] COMMIT: `78dfde5a` -- Batch: verify-and-review
+  - [x] COMMIT: `1023349` -- Batch: verify-and-review
 
 - [ ] Write the independent review
   - Paths: `givn/changes/givn-self-rebuild-under-the-updated-rules/review.md`.
