@@ -497,3 +497,12 @@ fn body_asks_which_name(world: &mut GivnWorld) {
         "body does not ask which name the record should use"
     );
 }
+
+#[when("the agent requests the next-step guidance through the Givn CLI")]
+fn agent_requests_next_step_guidance(world: &mut GivnWorld) {
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(env, &["instructions"])
+    };
+    world.last_output = Some(output);
+}

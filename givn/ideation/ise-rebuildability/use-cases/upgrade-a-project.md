@@ -1,0 +1,221 @@
+# Use case: upgrade-a-project
+
+## Level
+
+!
+
+## Actors
+
+- Project maintainer
+- Supporting: Authoring agent
+
+## Goal
+
+Cross a supported release gap with reviewable managed revisions, preserving
+user-owned content and accurately reporting recovery from a committed
+checkpoint. The delta: the upgrade writes the `Specification` declaration when
+`ise` is effective and the project has none, and it never rewrites a
+project-edited declaration.
+
+## Trigger
+
+The maintainer upgrades Givn.
+
+## Preconditions
+
+- The project configuration and repository state are available.
+- Git or Fossil is selected, with a clean-state witness and a committed
+  version-control checkpoint.
+- The project's effective addon set is readable; it may or may not make `ise`
+  effective.
+- The declaration file is either absent or project-owned content.
+- 1.0 is the supported migration baseline; configuration format is a separate
+  concern.
+
+## Main flow
+
+1. The maintainer requests an upgrade; the system records the committed
+   checkpoint and refuses before writes for dirty projects or missing version
+   control (unchanged).
+2. The maintainer expects a supported route; the system detects the project
+   version and validates configuration ownership. Pre-1.0 projects receive
+   manual transition guidance, not embedded old migration bundles or
+   compatibility aliases; unsupported old keys refuse before writes
+   (unchanged).
+3. The maintainer requests synchronization of the managed scaffold; the system
+   synchronizes the managed scaffold and thin skills, removes only recognizable
+   generated legacy commands, and leaves project-owned content authoritative.
+   When `ise` is effective and the declaration file is absent, the system
+   writes the documented declaration scaffold and reports the write; an
+   existing declaration is left byte-for-byte and reported as project-owned
+   (delta: declaration-aware scaffold).
+4. The maintainer reviews the managed revision; the system publishes the
+   calculated allowlist-only managed revision, excluding project extensions and
+   custom replacements. The revision contains the declaration this upgrade
+   wrote and never an existing one (delta: staged set).
+5. The maintainer follows an applicable supported migration route; the system
+   produces a reviewable plan recording the actual managed upgrade revision,
+   and an existing plan is preserved and reported (unchanged).
+6. The maintainer verifies what changed; the system reports completed writes
+   and revisions, pending work, and any removed commands or manual transitions
+   accurately, naming whether the declaration was written or preserved (delta:
+   declaration reporting).
+
+## Extensions
+
+- 1: uncommitted changes exist → refuse before writes, naming dirty paths and
+  preserving user work; protects the minimal guarantee.
+- 1: no supported version-control system or committed checkpoint exists →
+  refuse before writes and name the checkpoint requirement; protects the
+  minimal guarantee.
+- 2: unsupported old configuration exists → name offending keys and applicable
+  manual communication policy, challenge, and skills-only transitions without
+  converting them; protects the minimal guarantee.
+- 3: the project is already current and no managed file differs → report state
+  and publish no revision; protects the success guarantee.
+- 3: the project is already current and an effective `ise` has no declaration →
+  the scaffold is written and published as the one managed revision; protects
+  the success guarantee.
+- 3: the declaration already exists → preserve it byte-for-byte, stage nothing
+  for it, and report it as project-owned; protects the minimal guarantee.
+- 3: `ise` is not effective → write no declaration and touch none; a
+  declaration left in the tree is preserved and no `ise` gate reads it;
+  protects the success guarantee.
+- 3: the declaration scaffold cannot be written → exit nonzero, name the path
+  and the writes already completed, and offer checkpoint-based recovery
+  without a rollback claim; protects the minimal guarantee.
+- 3: a project-owned replacement, extension, or customized legacy command
+  exists → preserve it byte-for-byte and report any manual transition;
+  protects the minimal guarantee.
+- 4: writing or publication fails after some work completed → exit nonzero and
+  identify the failed operation, checkpoint, completed writes (including a
+  written declaration), actual published revisions, and pending work; offer
+  operator restoration or fix-forward without automatic reset or clean;
+  protects the minimal guarantee.
+- 5: a migration plan already exists → preserve and identify its proposal and
+  design; protects the success guarantee.
+- 6: a consumer invokes a removed command → report it unavailable rather than
+  silently substituting another action; protects the success guarantee.
+
+## Rules
+
+- The declaration is written only when `ise` is effective and the file is
+  absent. Its content is the documented shape, not a project decision; the next
+  `declare-the-specification` edit owns the content.
+- An existing declaration is project-owned: byte-for-byte, never rewritten,
+  never staged as a modification, and reported as project-owned. A declaration
+  left behind after `ise` was disabled is preserved and never read.
+- The write and the staged set extend together. A declaration this upgrade
+  wrote joins the calculated allowlist and the failure snapshot, so the
+  published revision and the failure report both name it; an existing
+  declaration joins neither. The revision is never empty of a file the upgrade
+  wrote.
+- The upgrade reads the effective addon set and changes no addon state. A
+  configuration holding `ise` on with `architecture_principles` off is not
+  repaired here; the addon commands own that refusal.
+- Declaration findings are advisory at upgrade time. A declared path that does
+  not exist yet is reported by `givn lint` and never refuses the upgrade;
+  `givn check review` remains the blocking gate for a change.
+- The declaration is not a migration plan: it adds no change, no plan
+  revision, and no migration bundle. A repeated upgrade on an unchanged project
+  produces no diff and no revision.
+- The allowlist, the clean preflight, the one-revision guarantee for a
+  migration-free upgrade, and the no-plan rule stay unchanged. Improved
+  built-in rules still need no revision.
+- Managed writes still never stage, merge, rewrite, or inject into project
+  extensions or custom replacements, and never destroy specifications or
+  user-owned files.
+- A failure can leave partial writes or published revisions. Report actual
+  state and recovery from the checkpoint, distinguishing pending from completed
+  work; never perform automatic reset or clean or promise complete rollback.
+- Operator-controlled restoration or fix-forward is the recovery contract; no
+  expanded transaction or history-rewrite subsystem is implied.
+
+## Examples
+
+- Absent declaration, `ise: true`: `givn upgrade` writes
+  `givn/specification.yaml` with the five roles (`behavior`, `structure`,
+  `contracts`, `limits`, `e2e`) and one `source:` list, then publishes one
+  allowlist-only revision containing it; `givn lint` afterwards reports any
+  declared path missing from the tree as advisory.
+- Edited declaration: a project that added `docs/reference.md` to `contracts`
+  and its crate roots to `source` receives a revision with no diff for
+  `givn/specification.yaml`, and the report calls it project-owned.
+- Declaration deleted on a current project: the upgrade writes and publishes it
+  as the one managed revision; running the upgrade again produces no diff and
+  no revision.
+- `ise` disabled with a leftover declaration: the upgrade preserves the file
+  untouched and writes nothing; `givn addons enable ise` is the next step and
+  also preserves it.
+- Dirty project: the upgrade refuses before writes and an existing declaration
+  stays byte-for-byte.
+- Publication failure after the declaration was written: the report names the
+  written path, the completed writes, the checkpoint, and any revision actually
+  published; the operator restores or repairs forward.
+- Customised legacy command and an extension saying "Keep proposals under 500
+  words": both remain byte-for-byte unchanged.
+
+## Minimal guarantee
+
+Preflight refusal preserves project files, including an existing declaration.
+Later failures preserve user-owned specifications, extensions, and
+replacements and report actual partial state and checkpoint-based operator
+recovery without claiming rollback; an upgrade never writes a declaration when
+`ise` is not effective and never rewrites one that exists.
+
+## Success guarantee
+
+Supported upgrade work is explicit in version history, future migration plans
+are reviewable and revision-bound, thin skills reach current effective rules
+while user-owned content remains unchanged, and the project receives the
+`Specification` declaration when `ise` is effective and it was absent, with an
+existing declaration unchanged; pre-1.0 transitions are explicitly manual.
+
+## Personas
+
+- developer--primary-user
+- givn-maintainer--owner
+
+## Capabilities
+
+- `apply-a-managed-upgrade`: modified (the declaration scaffold joins the
+  managed write and the staged allowlist, while an existing declaration joins
+  neither)
+
+## Interactions
+
+| Capability | Consumer action | E2E scenario |
+|---|---|---|
+| apply-a-managed-upgrade | run an upgrade on a project with `ise` effective and no declaration | The revision contains the documented declaration scaffold and no project-owned file was written or staged |
+| apply-a-managed-upgrade | run an upgrade on a project with an edited declaration | The revision carries no diff for the declaration and the report calls it project-owned |
+| apply-a-managed-upgrade | run an upgrade on a project with `ise` disabled | No declaration is written, and a leftover declaration is preserved |
+| apply-a-managed-upgrade | repeat an upgrade after the scaffold was written | No second revision is created |
+| apply-a-managed-upgrade | run a managed upgrade without migration requirements | One allowlist-only revision, as today |
+
+## Includes
+
+- fragment: support
+
+## Extends
+
+- none
+
+## Out of scope
+
+Changing product specifications during an upgrade; publishing releases
+(`publish-a-release`); the declaration's content and validation
+(`declare-the-specification`); the first enable that scaffolds the declaration
+(`initialize-project`); repairing an addon prerequisite relation (the addon
+commands).
+
+## Diagram
+
+```mermaid
+flowchart LR
+  Maint((Maintainer)) --> Witness[[Witness the clean state]]
+  Witness --> Sync[[Synchronize scaffold and skills]]
+  Sync --> Decl[[Write the declaration when ise is effective and absent]]
+  Decl --> Rev[[Publish the allowlist-only revision]]
+  Rev --> Plan[[Publish the plan revision]]
+  Rev --> Report[[Report writes, revisions, and preserved content]]
+```

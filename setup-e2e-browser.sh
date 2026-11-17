@@ -1,6 +1,6 @@
 #!/bin/sh
 # One-time setup for the @e2e browser tier: install the Playwright pinned in
-# tests/e2e/package.json and the Chromium that Playwright bundles.
+# e2e/browser/package.json and the Chromium that Playwright bundles.
 #
 # This is the only step of the change that touches the network, and it runs
 # once, outside the suite. The tier itself needs no server, no port, no
@@ -13,5 +13,5 @@ set -eu
 
 cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
-npm ci --prefix tests/e2e
-npx --prefix tests/e2e playwright install chromium
+npm ci --prefix e2e/browser
+npx --prefix e2e/browser playwright install chromium

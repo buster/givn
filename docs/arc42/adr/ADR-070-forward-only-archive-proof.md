@@ -213,7 +213,7 @@ without a compatibility rule.
       scope and a receipt migration, not a silent reinterpretation.
 - [x] **Shapes quality attributes** — the binding keeps the review/archive
       audit guarantee while removing a full test rerun after documentation
-      edits; the tested bytes remain the unit of proof.
+      edits; the tested bytes remain the package of proof.
 - [x] **Structural** — it fixes what review and archive may reuse and keeps the
       SCM seam as the single content-path authority on Git and Fossil.
 - [x] **Must be shared** — supporting only: an implementer must not infer
@@ -315,6 +315,79 @@ The original tested-content binding (the `review-friction-hardening`
 amendment) remains in force; this amendment adds the stable execution witness
 and the lean per-scope recovery rule.
 
+## Amendment — E2E identity binding (enforce-ise-e2e-boundary)
+
+Amended by the `enforce-ise-e2e-boundary` change on 2026-11-14. This refines the
+existing receipt compatibility boundary; it does not replace the forward-only
+publication boundary.
+
+### Qualification
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: AMEND_ADR
+canonical_artifact: null
+target_adr: ADR-070
+replacement_adr: null
+
+- **alternatives** — proposal D1 compared additive fields under
+  `change-proof/v1` with a new `change-proof/v2` scope. The additive fields
+  keep one live scope and let the single freshness consumer refuse a missing
+  identity by name; a new scope would force review, archive, and any external
+  consumer to learn a second version for an additive field.
+- **architectural_impact** — the receipt contract now fixes what an
+  `ise`-effective change binds as its black-box acceptance identity, and the
+  declared E2E package becomes the boundary a change check can enforce.
+- **durable_consequence** — receipts are durable project data; the E2E
+  identity fields and their stale reasons are compatibility commitments. A
+  later change of identity scope needs a new scope, not a silent
+  reinterpretation, and a receipt written before the identity is refused on an
+  `ise`-effective change.
+- **lower_level_artifact** — the observable boundary refusals, the E2E scope
+  applicability, and the freshness behavior are owned by the `verify-change`
+  and `create-change` specs and the change design.
+- **existing_adr_check** — the active and archived registers were searched.
+  ADR-070 owns the change and archive receipt, ADR-010 owns configuration
+  authority (the declaration was already added there), and ADR-028 owns the
+  mandatory-check boundary. No record owns the E2E acceptance identity. Route:
+  `AMEND_ADR`.
+
+### Current consequences
+
+- `ChangeReceipt` schema 2 and `content_scope: "change-proof/v1"` stay; two
+  optional fields carry the E2E identity and the E2E scope outcome.
+- When the change's `config-lock.yaml` has `ise` effective, freshness requires
+  the resolved `e2e` package digests, the E2E runner command digest, the
+  running Givn version, and an E2E scope outcome that is green when the delta
+  has `@e2e` scenarios and `not_applicable` when it has none. A missing or
+  changed identity is stale and names the reason.
+- A change whose lock has `ise` off keeps the previous receipt shape and
+  freshness rules; an old receipt remains readable.
+- The E2E identity is additional stale evidence, not a replacement for the
+  tested-content digest: a component step definition still changes tested
+  content, while only the resolved package trees change the focused identity.
+- Good, because review and archive can name the black-box suite the accepted
+  results protected.
+- Bad, because an `ise`-effective change in flight needs one `givn check tasks`
+  rerun to gain the identity (chapter 11 R-140).
+- Bad, because the package digests depend on the declaration's accuracy: a
+  broad `e2e` role entry weakens the distinction (chapter 11 R-141).
+
+### Confirmation
+
+The `verify-change` delta scenarios assert each boundary refusal, the unbound
+and skipped E2E failures with their own reported counts, the receipt fields,
+each stale identity reason, the delta-aware scope outcome, and the unchanged
+`ise`-off receipt. Receipt unit tests cover the additive roundtrip, the
+missing-identity refusal, and the identity's scope over the resolved packages; a
+component step definition is outside that identity but still invalidates the
+receipt through the tested-content digest.
+
 ## More Information
 
 - Amendment design: `givn/changes/review-friction-hardening/design.md` and
@@ -323,7 +396,9 @@ and the lean per-scope recovery rule.
   (`archive-proof`, `extract-coverage-gate`, `enforce-post-merge-e2e-gate`)
   and `specs/verify-change/givn-workflow-enforcement.feature`.
 - Design: `givn/changes/archive-proof/design.md`.
-- Related decisions: ADR-014 (filesystem-derived state), ADR-015 (declared
-  runner), ADR-028 (hooks versus mandatory checks), ADR-069 (feature-free
-  binary; the receipt and result formats use the existing JSON dependency).
-- Risk records: chapter 11 R-5, R-53, R-54, R-55.
+- E2E identity amendment design: `givn/changes/enforce-ise-e2e-boundary/design.md`.
+- Related decisions: ADR-010 (configuration authority; the declaration),
+  ADR-014 (filesystem-derived state), ADR-015 (declared runner), ADR-028
+  (hooks versus mandatory checks), ADR-069 (feature-free binary; the receipt
+  and result formats use the existing JSON dependency).
+- Risk records: chapter 11 R-5, R-53, R-54, R-55, R-138, R-139, R-140, R-141.

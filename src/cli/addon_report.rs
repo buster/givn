@@ -1,4 +1,4 @@
-//! The `givn addons list` materialization report (ADR-076).
+//! The `givn addons list` materialization report (ADR-080).
 //!
 //! Compares each addon's stored setting against the filesystem effect its
 //! registry entry declares, and prints one literal suggestion per difference.
@@ -9,7 +9,7 @@ use std::path::Path;
 
 use anyhow::Result;
 
-use crate::cli::addons::{KNOWN_ADDONS, Materialization};
+use crate::config::addons::{AddonSpec, KNOWN_ADDONS, Materialization};
 
 /// What the filesystem shows for one addon's declared materialization.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -146,7 +146,7 @@ fn own_files(files: &'static [&'static str]) -> impl Iterator<Item = &'static st
     })
 }
 
-fn declares(addon: &crate::cli::addons::AddonSpec, path: &str) -> bool {
+fn declares(addon: &AddonSpec, path: &str) -> bool {
     match addon.materialization {
         Materialization::Files(files) | Materialization::FilesAndSkill { files, .. } => {
             files.contains(&path)

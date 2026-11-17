@@ -23,9 +23,8 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
   is still the `givn missing-testrunner` sentinel, follow its guidance.
 - **Strict-mode config** (mandatory — see below).
 - **Single-scenario run command**: the exact invocation to run ONE named
-  scenario, e.g. `cucumber-js --name "<title>"`,
-  `mvn test -Dcucumber.filter.name="<title>"`, `cargo test <name> -- --exact`,
-  `behave -n "<title>"`.
+  scenario for the change's runner; the stack instruction named by `steps`
+  carries that runner's command.
 - Any other technical decision the implementer needs before writing tasks.
 {{#if addons.architecture_principles}}
   A carried decision still names the default the implementer uses.
@@ -54,6 +53,31 @@ ID (`Decides D2 (seed Q5): …`), so the question-to-decision link is readable
 from the proposal and the design alone. An unresolved, unrecorded `D<n>` is a
 design-review finding.
 
+{{#if addons.ise}}
+### change strategy in the Decisions ledger
+
+Record exactly one `change strategy` as a `Decides D<n>` entry. Name one of
+three values:
+
+| Value | Meaning |
+|---|---|
+| `incremental modification` | The change edits existing components in place; their contracts and responsibilities stay. |
+| `Constant Ise` | The Specification and its `@e2e` package stay frozen; the implementation behind them is replaced. |
+| `whole-product rebuild` | The whole product is rebuilt while its declared Specification and end-to-end tests carry the behavior. |
+
+A change that rebuilds records its `Ise Test` mode beside the strategy:
+`Dry-Run Ise` (the declared end-to-end tests run against the replacement before
+cutover) or `Full replacement` (the replacement ships and the declared
+end-to-end tests prove it).
+
+The entry also names the affected consumers, the persisted state the rebuild
+must carry, and the rebuild boundary. This is the existing `## Decisions`
+entry; it adds no mandatory design field.
+
+Prose writes `change strategy` in full. A bare `strategy` names no domain
+decision.
+
+{{/if}}
 {{#if addons.architecture_principles}}
 ## Contracts and components (mandatory)
 
@@ -118,19 +142,17 @@ always an acceptable answer; a bare specific number with no lookup and no
 ## Strict mode (mandatory)
 
 Most runners treat an undefined or pending step as neither pass nor hard
-failure by default; some (notably Java/cucumber-jvm with an empty step
-method body) report an outright PASS for a step that does nothing. This
-produces a project where every task is checked off, the runner exits 0, and
-nothing is implemented. Name the exact mechanism:
-
-| Runner | Strict-mode mechanism |
-|---|---|
-| `cucumber-rs` | `.fail_on_skipped()` on the `Cucumber` builder |
-| `cucumber-js` | `--strict` (pin explicitly in `cucumber.js`, do not rely on version defaults) |
-| `cucumber-jvm` (CLI) | `--strict` |
-| `cucumber-jvm` (JUnit Platform Suite) | No native flag — enforced by never leaving a step body empty, plus a plugin/listener that fails the build on UNDEFINED/PENDING. Name the plugin/listener class. |
-| `behave` | Steps must explicitly `raise`; a bare `pass` reports as passed. Every new step body starts with `raise NotImplementedError(...)`. |
-| `godog` | Return `godog.ErrPending` — fails by default. |
+failure by default; some report an outright PASS for a step that does
+nothing. This produces a project where every task is checked off, the runner
+exits 0, and nothing is implemented. Name the exact mechanism in the stack
+instruction that carries it:
+`steps-rust` when the change's runner is `cucumber-rs`;
+`steps-python` when the change's runner is `behave`;
+`steps-node` when the change's runner is `cucumber-js`;
+`steps-java` when the change's runner is `cucumber-jvm`;
+`steps-go` when the change's runner is `godog`;
+`steps-ruby` when the change's runner is `cucumber-ruby`.
+This instruction carries no per-runner strict-mode table.
 
 If the runner cannot fail on undefined/pending steps via config alone, state
 that step-body discipline (never empty) is the enforcement mechanism, and
@@ -344,8 +366,8 @@ obstacle; it must not introduce a second wording of the policy.
 
 `verify.command` MUST execute the `.feature` files from `givn/specs/**` and
 the change's `specs/**`. A bare unit-test runner alone is not acceptable —
-wrap it in or replace it with a Gherkin runner (`cucumber-rs`, `behave`,
-`cucumber-js`). Step definitions are the runner's bindings from `.feature`
+wrap it in or replace it with the Gherkin runner for the project's stack.
+Step definitions are the runner's bindings from `.feature`
 steps to code — never a parallel hand-maintained test file.
 
 ## Rules

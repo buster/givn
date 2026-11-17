@@ -49,6 +49,31 @@ to true, overlay processing adds a required `arc42-docs` artifact after
 The addon expansion is idempotent. The artifact's generated lifecycle marker is
 `arc42.md`; the durable chapter files are not manifest-generated paths.
 
+`givn/specification.yaml` is a third configuration authority, but it is not an
+overlay: it is read-only and parsed once by the strict declaration loader, it
+refuses any unknown or missing key, and no command writes it except the one-time
+scaffold. That scaffold runs when `ise` becomes effective and the file is
+absent, and the managed upgrade writes and stages it when `ise` is already
+effective and the file is absent. An existing declaration is never written or
+staged. It is read only while `ise` is effective, so a project without the addon
+never reads a file that happens to be present.
+
+One command reads the declaration for a different reason: `givn archive`. On
+its fresh move, and only while `ise` is effective, it loads the declaration
+through the same strict loader and reads the project's content paths once
+(tracked plus untracked non-ignored, the listing `givn ise compare` reads). A
+Specification-role entry that matches content under `givn/changes/<id>/` must also
+match a content path that stays or the `givn/archive/<id>/` form of a content
+path it matches, or the archive refuses before mutation. The refusal names the
+role, the entry, the moved path, and the archived path to declare instead, and
+its advice keeps the entry's shape (a wildcard entry gets the same pattern under
+`givn/archive`), so a project cannot archive itself into a declaration that
+matches nothing. Entry matching uses the shared declared-path glob with parent
+matching; an entry that also survives the move, such as `givn/**` or a directory
+that still holds another active change, is unaffected. A declaration the loader
+refuses blocks the archive by name, and a project with `ise` off reads no
+declaration here either.
+
 ## 8.3 The Gherkin Delta Model
 
 The `.feature` file is the behavior specification. Active change features use:
@@ -192,6 +217,7 @@ because a red corpus is not a valid baseline. `givn lint` names every finding.
 ```text
 givn/
   config.yaml                    # structural overlay, addon flags, targets
+  specification.yaml             # declared Specification roles and source roots (ise)
   commands.yaml                  # verify, coverage, and run settings
   specs/<usecase-id>/usecase.md # permanent use-case contract
   specs/<usecase-id>/<cap>.feature # permanent tag-stripped specification
@@ -212,13 +238,14 @@ docs/arc42/                      # fixed durable Arc42 output path
 ```
 
 `givn init` creates the core `givn/` directories and command/config files. The
-current init path enables every registered addon unless `--no-addons` is passed;
-Arc42 scaffolding therefore normally appears during initialization, and the
-outline report and architecture-principles guidance are available in a fresh
-project. A project opts out with `givn addons disable <name>` or by writing an
-explicit `false`; there is no effective `arc42.output_dir` or chapter-list
-setting, and no lifecycle cascade for selecting individual durable chapter
-files.
+current init path enables every addon whose declared default is on unless
+`--no-addons` is passed; Arc42 scaffolding therefore normally appears during
+initialization, and the outline report and architecture-principles guidance are
+available in a fresh project. `ise` is omitted by default and is never enabled
+by a fresh init. A project opts out with `givn addons disable <name>` or by
+writing an explicit `false`; there is no effective `arc42.output_dir` or
+chapter-list setting, and no lifecycle cascade for selecting individual durable
+chapter files.
 
 ## 8.5 The Behavior Batch
 
@@ -333,96 +360,15 @@ removed only when its bytes are recognizable as Givn output; custom content at
 the same path is preserved with a manual transition notice. `givn-start` is the
 default entry skill; `givn-explore` is no longer generated and has no alias.
 
-A project extends one instruction's built-in rules through the `extensions:`
-map in `givn/config.yaml`: an instruction id maps to project-owned rule
-strings, appended to the served content under a marked `## Project extension`
-section. The extension is additive — it never overrides, suppresses, or
-reorders the built-in rules and never changes steps, order, or gates. It is
-read on every request, never written into generated files, and never part of
-the managed upgrade revision; an unknown instruction id or a malformed entry
-warns and is dropped, and the built-in rules are served alone. When a
-project-owned replacement of the instruction facet exists for the same id, the
-replacement is the base the extension extends; the replacement file itself is
-never modified.
-
-A target that owns a shell integration also receives its attribution
-integration: `.opencode/plugins/givn-attribution.js`,
-`.claude/hooks/givn-attribution.sh` with `.claude/settings.local.json`, and
-`.omp/hooks/pre/givn-attribution.js`.
-
-The target selection is stored in `skills.targets` in `givn/config.yaml`; an
-absent, empty, or unknown-only list falls back to opencode when `givn skills
-sync` runs, so projects initialized by older versions keep syncing.
-Initialization itself requires a selection: the interactive prompt opens with
-`.opencode` marked and re-asks — with an error naming the requirement — until a
-target is marked, while an empty or unknown-only answer and EOF without the
-`--agents` flag refuse with a non-zero exit before the first write, naming
-`.opencode`, `.agents`, `.claude`, `.omp`, and `.maki` plus the `--agents` flag.
-
-The implementation guidance states the revision-message rule: every revision a
-change records carries the change's release note (authored in its proposal) as
-its message subject, with the batch name and, for a single-scenario batch, the
-scenario title in the message body. The rule
-lives in the `tasks` instruction; the project-start block renders its resident
-rules (the task-checkoff and commit obligations) from that same
-`instructions/tasks.md` asset, so the block's text and the served instruction
-cannot disagree. The rule is guidance only — `givn commit` neither composes nor
-validates the subject.
-
-Generated guidance is written for the consumer project. Every file reference
-it carries must resolve in the project that receives it: a file the project
-has, a location a named creation step creates, a project-owned destination
-the guidance itself defines, or a skill resolved by name across the
-configured agent targets. Every instruction id a direction names must resolve
-through the CLI in the same Givn version or a later one, in the context the
-direction names: an artifact direction carries a resolvable change context,
-and a policy or step direction resolves without one (an artifact request
-without a resolvable change context refuses by name). A reference into the
-Givn distribution (`assets/…`, a repository-only document) is a defect; the
-acceptance suite grades every generated skill and printed instruction against
-both rules.
-
-`AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
-create or replace the unconditional `givn-project` block and, when enabled, the
-`communication-policy` block; it removes the retired `absolute-mode` block. It
-does not rewrite surrounding user content. The project block carries the
-direction to `givn instructions`, the mandatory dialog-policy obligation, and
-its resident task-checkoff and commit obligations rendered from the canonical
-`instructions/tasks.md` asset. The communication-policy addon controls only
-presentation and documentation; it does not gate or own question content. Givn never stages
-`AGENTS.md` under either rules policy; committing it is the developer's explicit
-act.
-
-The generated-rules policy is a flat scalar in `givn/config.yaml`:
-`rules: local-only` (the default when absent) or `rules: versioned`. An
-unrecognized value warns and continues as `local-only`. Under `local-only` the
-strict rules — every generated rule except the `AGENTS.md` fence — are kept out
-of the repository through a fenced block in the tracked ignore file
-(`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
-(`.git/info/exclude`, the Fossil `ignore-glob` setting). The block carries
-prefix patterns for the reserved namespaces (`.opencode/skills/givn-*/`,
-`.agents/skills/givn-*/`, `.claude/skills/givn-*/`, `.omp/skills/givn-*/`,
-`.maki/skills/givn-*/`, and the fixed integration files), never individual rule
-names; tracked rules are discovered by a path predicate instead. A tracked strict rule
-becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
-stays on disk, and the staged removals join the upgrade's managed revision or
-wait for the developer after `givn init`. Under `versioned` the fenced blocks
-are removed and the rules are repository content. Every command that touches
-rules reports tracked and reachable-history occurrences; `givn check rules`
-exits non-zero on a violation, while init, sync, and upgrade never block.
-Givn itself never rewrites history: historical occurrences are reported, never
-repaired — a project that must purge them does so with its own SCM tooling
-outside Givn, and the reachable local refs boundary (remotes and forks are
-outside the guarantee) is named, not acted on.
-
 ## 8.8 Error Handling and Exit Codes
 
 Library-specific errors use typed errors and application paths add context.
 
 `givn lint` returns:
 
-- `0` for clean;
-- `1` for a parse error, an invalid use-case document, an interaction mismatch, an undeclared capability, or an unplaceable delta capability;
+- `0` for clean, including advisory `seed_status`, `persona_ref`, and the four
+  `ise` declaration placement findings;
+- `1` for a parse error, an invalid use-case document, an interaction mismatch, an undeclared capability, an unplaceable delta capability, or a malformed `givn/specification.yaml`;
 - `3` for an active duplicate scenario title or an empty feature;
 - `2` for `@wip` or PENDING.
 
@@ -455,7 +401,7 @@ arithmetic belongs to the project's merge command; this repository's merge
 script unions the per-line data so a line measured by both reports counts once
 and counts as covered when either report hit it (summed counters would count
 every shared line twice in the denominator), while branch counters stay summed
-because branch identity is not retained by the parser (documented limitation).
+because branch identity is not preserved by the parser (documented limitation).
 Givn updates only its named README blocks. A coverage
 failure leaves the archive candidate unproven in place — the permanent
 corpus, README, and coverage files are not rolled back. A zero branch
@@ -555,11 +501,25 @@ exception into a general bypass for product changes.
 ## 8.11 Addons and the Arc42 Documentation Artifact
 
 An addon is embedded behavior toggled through `addons.<name>` in the project
-config. The embedded default flags are true, and `givn init` enables every
-registered addon unless `--no-addons` is supplied. A missing key in an explicit
-`addons:` block resolves to enabled; only an explicit `false` disables a flag.
-`givn init --no-addons` writes explicit false values for every known add-on, and
+config. Each addon declares its own default: the embedded default flags are
+true for every addon except an opt-in addon, and `givn init` enables every
+addon whose declared default is on unless `--no-addons` is supplied. A missing
+key in an explicit `addons:` block resolves to that addon's declared default;
+only an explicit `false` disables a default-on addon. `givn init --no-addons`
+writes explicit false values for every known add-on, and
 `givn addons disable <name>` is the per-add-on opt-out.
+
+`ise` is the one opt-in addon in the current registry until promotion. Its
+declared default is false, a fresh init omits its key, and it requires
+`architecture_principles`: enabling it while that addon is off is refused by
+name, and disabling the prerequisite while `ise` is on is refused with `ise`
+named first. Both refusals write nothing. The first effective enable scaffolds
+`givn/specification.yaml` from its documented shape when the file is absent and
+never rewrites an existing declaration. A project that never enables `ise`
+receives no new key, no new file, no new finding, and no new gate. An
+`ise`-effective project also receives `givn ise rebuild-all`, `givn ise
+rebuild-component`, and `givn ise compare`; all three refuse by name with the
+addon or its prerequisite off and read no declaration or manifest.
 
 For Arc42 specifically, `givn addons enable arc42`:
 
@@ -634,15 +594,17 @@ may use `allow_failure: true`.
 When an explicit artifact is passed to `givn check`, `src/cli/check.rs` first
 runs mandatory checks:
 
-- `tasks`: change-delta WIP protection and `verify.command`;
+- `tasks`: change-delta WIP protection, the declared E2E package boundary when
+  the change lock has `ise` effective, `verify.command`, the change-scoped E2E
+  scope when the delta has `@e2e` scenarios, and the E2E-bound receipt;
 - `review`: `integrity`, the run-declaration check, change-scoped lint, the
   named-change overlap and retirement gates, the use-case/capability-routing
   gate (which reports every schema and routing diagnostic in one pass, with
   dependent completeness findings withheld while the title or Level is
-  invalid), the shared change verification receipt freshness check, and the
-  scenario-commit check. Review does not execute the test suite; scenario
-  execution is proven by the archive verification receipt. There is no outline
-  review member.
+  invalid), the shared change verification receipt freshness check including
+  the E2E identity, and the scenario-commit check. Review does not execute the
+  test suite; scenario execution is proven by the archive verification
+  receipt. There is no outline review member.
 
 These checks are not controlled by `post` and cannot be disabled by merely
 removing a hook entry. Removing the `tasks` or `review` artifact changes the
@@ -1121,7 +1083,7 @@ and no LLM-facing content; and `full` adds complete LLM-facing content (tool
 inputs and outputs, assistant and thinking text, user prompts, compaction
 summaries, plan content, draft text, and subagent transcripts) under the
 64 KiB-per-field / 256 KiB-per-entry caps. Lowering the mode is forward-looking:
-already-captured entries are retained, never purged. The intake is the single
+already-captured entries are kept, never purged. The intake is the single
 enforcement site for every bound and enforces the mode for payloads; Claude's
 in-process `harness_hook` is the second `off` site (no append, no pending write,
 no ignore write). An absent or invalid value falls back to `on` with one
@@ -1335,7 +1297,7 @@ only: calls remain name-only unless the shared resolver can prove a target, and
 calls never resolve across languages.
 
 A test-only Tree-sitter evaluation compared the Rust and Python facts with
-parallel grammars. Its 0.9.14 decision retained those adapters because the
+parallel grammars. Its 0.9.14 decision kept those adapters because the
 comparison found missing required units, methods, calls, and spans. That record
 is not a parity claim for Java, TypeScript, or JavaScript. See
 [the evaluation record](../outline-tree-sitter-evaluation.md).
@@ -1432,5 +1394,307 @@ reported for manual transition. Legacy generated explore command files remain
 recognized for removal. The upgrade snapshot and versioned-rules staging include
 retired managed paths so a tracked generated explore skill is removed from the
 revision rather than left as an uncommitted deletion.
+
+## 8.29 The Spec Copy and Its Manifest
+
+`givn ise rebuild-all` and `givn ise rebuild-component` write a spec copy and,
+when `--manifest` names a file, one manifest under the `ise-manifest/v1` scope.
+The manifest is the verifier's evidence for one `Ise Test`; it is ephemeral, it
+lives outside the copy and the checkout, and it is neither the change
+verification receipt (`change-proof/v1`) nor a change artifact.
+
+| Field | Content |
+|---|---|
+| `scope` | `ise-manifest/v1` |
+| `revision` | The resolved revision for `HEAD`, the supplied identifier otherwise |
+| `removed_paths` | The tracked files actually removed, sorted; a named directory contributes its expansion |
+| `specification_files`, `source_kept_files`, `end_to_end_files` | The sorted path inventory of the Specification files, the Source code kept, and the End-to-end (E2E) inputs; `end_to_end_files` is the sorted union of the keys of `checksums.end_to_end` and `checksums.scenarios` |
+| `counts` | `specification_files`, `source_kept`, `source_removed`, `outside_spec_copy`, `files_beside_removed_paths` |
+| `checksums` | `specification`, `end_to_end`, and `scenarios`; `end_to_end` holds one path checksum per `end_to_end_files` path, including a scenario-carrying feature, and `scenarios` one per feature scenario set |
+| `specification_checksum`, `end_to_end_checksum` | Full rollups |
+| `copy_directory` | The absolute spec copy directory |
+| `givn_version` | The running Givn version |
+
+`specification_files` always includes `givn/specification.yaml` as an implicit
+entry, and `counts.specification_files` equals that list's length, so a Specification
+role that also matches the declaration adds no second entry;
+`specification_checksum` covers it. `source_kept_files` is the sorted set of
+copy paths that are not Specification files; it records paths without
+checksums, so a kept edit is not a difference while a deleted kept path is
+refused.
+
+The End-to-end (E2E) set is never part of the spec copy (ADR-078). Its files
+are the tracked files of the `e2e` role's resolved packages at the selected
+revision, except `givn/specification.yaml`, and they are in no placement
+bucket: not a Specification file, not Source code kept, not Source code
+removed, and not outside the spec copy. The report prints
+`End-to-end tests: not copied (<n> files)`, where `<n>` is the set's size, not
+`end_to_end_files.len()`, which also holds the feature paths that carry
+scenario checksums.
+
+**The four rule sentences.** The spec copy is written with the project's
+Specification files. During a rebuild the agent adds files, and those are the
+rebuilt Source code. The agent may edit Source code kept because it is the
+product, but it does not delete any file the copy was written with. The agent
+does not modify any Specification file the copy was written with; adding a file
+under a declared Specification path is a Specification change, not the product,
+and is refused. A declared Specification path is a match of any of the five
+roles, including `e2e`, although the copy never carries an `e2e` match.
+
+**Compatibility.** `ise-manifest/v1` requires every field it lists; this scope
+has no optional field. A field added later is optional only when the scope
+states its default, and a field with no derivable default opens a new scope. An
+unknown field, a missing field, a malformed checksum, or a mismatched scope is
+refused naming the manifest and the expected value, so a reader never guesses.
+The manifest carries no backend: `compare` re-selects it from the checkout. The earlier `ise-trial/v1` record
+shape is refused by name and is not migrated: a spec copy is ephemeral, and one
+command re-prepares it.
+
+**Checksums.** One path checksum is
+`sha256(path, NUL, kind, NUL, executable, NUL, content)`, where `kind` is `f`
+(regular), `x` (executable regular), `l` (symlink), or `g` (gitlink),
+`executable` is `1` or `0`, and `content` is the regular file's bytes, the
+symlink target's bytes, the recorded commit id for a gitlink, or the bytes the
+backend returns for the entry. A gitlink in the End-to-end (E2E) set hashes as
+`g`; a gitlink in the copy set refuses. The value is lowercase hex. A
+rollup is `sha256` over each sorted `path, NUL, checksum, LF`;
+`specification_checksum` rolls up `checksums.specification`, and
+`end_to_end_checksum` rolls up the union of `checksums.end_to_end` and
+`checksums.scenarios` keyed by path, with a scenario checksum winning when one
+path is in both maps. The report prints the first 12 lowercase hex characters
+of a rollup; the manifest keeps the full value.
+
+**Per-feature scenario checksum.** The checksum is `sha256(feature path, NUL,
+(title, NUL, executable content, NUL)*)` over the selected scenarios in file
+order. A feature-level `@e2e` tag selects every scenario; otherwise each
+scenario carrying `@e2e` is selected; a scenario under a `Rule:` is never
+selected; a feature that selects none contributes no entry. The executable
+content is the compact JSON array `[scenario keyword, background, tags, steps,
+examples]`: `background` is null or the background steps; `tags` is the sorted,
+duplicate-free union of the feature's and the scenario's tags with every tag
+beginning `givn.` and the tag `wip` removed; a step is `[trimmed keyword,
+Given|When|Then, text, docstring, table]`, where `And`, `But`, and `*` inherit
+the preceding type (or `Given` when none precedes), the text has trailing
+whitespace removed, the docstring has the common indentation removed and loses
+the line break that follows the opening delimiter and the line break before the
+closing delimiter, and the table is its rows with the Gherkin
+escapes decoded; `examples` is one `[tags, table]` pair per `Examples:` block,
+with the same tag filter. The JSON is UTF-8 with no insignificant whitespace,
+`"` and `\` escaped, the short control escapes, every other code point below
+U+0020 as `\u00xx`, non-ASCII as literal UTF-8, and `/` unescaped.
+
+**Enumeration.** The End-to-end (E2E) set is read from the selected revision's
+tracked paths, never the working tree. Each declared `e2e` entry matches
+tracked files and tracked directory prefixes; a matched file resolves through
+its parent directory, and each match takes as its root the nearest directory at
+or above it that holds a tracked `Cargo.toml`, or the matched path itself when
+no such directory exists. The set is every tracked file at or below a root,
+minus the declaration; an entry matching the project root covers the whole
+tracked tree. Ignored and untracked files cannot enter. `givn ise compare`
+reads the checkout's content paths instead: tracked files plus untracked
+non-ignored files, sorted and deduplicated, with bytes read from disk, so an
+uncommitted edit is seen, an added non-ignored file is seen, and an ignored
+file is not. This per-path evidence is what lets the comparison name a
+differing file instead of only reporting that a set changed.
+
+**Write targets.** The copy and the manifest both lie outside the checkout; the
+copy does not exist, and the manifest does not exist, does not lie inside the
+copy, and is not an ancestor of it. The checkout is never written by a rebuild
+command, including the manifest.
+
+**Comparison.** `givn ise compare` treats the manifest as a trust anchor after
+one check: the canonicalized `copy_directory` equals `--copy`, and the manifest
+path lies outside the copy. It then prints two subject lines,
+`Specification files` and `End-to-end tests`, each `match` or its `changed`,
+`missing`, and `added` counts, one `- <path>` line per changed or missing path,
+one `+ <path>` line per added path, and exit 0 only when both lines say
+`match`. The `Specification files` line compares the recorded paths with the
+copy's bytes; on the checkout side it compares them with the checkout's content
+paths, except a feature path carrying a selected `@e2e` scenario, which the
+`End-to-end tests` line owns there. The copy side still compares that file's
+bytes under `Specification files`. The line refuses a file the copy holds under
+a declared Specification path that the manifest does not list (naming at most
+twenty sorted paths and the remainder count), and counts an added content path
+matched by a declared Specification role, except a content path in the
+checkout's declared End-to-end (E2E) set or a feature path carrying a selected
+`@e2e` scenario, which the `End-to-end tests` line owns even when another
+Specification role also matches it. The `End-to-end tests` line compares
+the recorded End-to-end (E2E) paths with the checkout: for each recorded path
+it compares the `checksums.end_to_end` content checksum and, for a feature path
+carrying a selected `@e2e` scenario, the `checksums.scenarios` checksum; a
+missing path or either difference is `changed`, so an edit outside the selected
+scenario is named. It counts an added content
+path in the checkout's declared End-to-end (E2E) set or an added feature path
+carrying a selected `@e2e` scenario, and owns every content path in that set on
+the checkout side, so such a path prints one line even when
+another Specification role also matches it. The comparison refuses a copy that lost a path the manifest
+lists among the Source code kept, naming it; kept content is not verified, so an
+edit is not a difference. The manifest carries no runner command; the
+independent verifier chooses and records the runner outside the manifest.
+
+The End-to-end (E2E) checksums are revision-resolved: each path matched by the
+declared `e2e` role resolves to its nearest `Cargo.toml` directory at the
+revision, and every tracked file under each resolved root is checked. The
+`@e2e` scenarios come from the `.feature` files matched by the `behavior` role.
+A matched path that resolves no manifest is its own root. Component step
+definitions and Source code kept are not in the End-to-end (E2E) checksums.
+
+Git and Fossil agree on one `RevisionEntry` shape. Git derives the kind and the
+executable bit from `git ls-tree` modes. Fossil derives them from the check-in
+manifest's `F` lines (`x` executable, `l` symlink), read through
+`fossil artifact`; the path has `\s` decoded to a space, and a 40-hex or
+64-hex blob hash is accepted. Fossil writes an `l` entry only with
+`allow-symlinks on`. A manifest read or parse failure refuses before any
+write.
+
+## 8.30 Stack Instruction Composition
+
+A core step instruction carries the universal rules of its step and names each
+on-demand stack instruction with the condition that selects it; it carries no
+per-runner body. Six stack instructions hold the rows the core instructions used
+to carry — `steps-rust` (`cucumber-rs`), `steps-python` (`behave`), `steps-node`
+(`cucumber-js`), `steps-java` (`cucumber-jvm`), `steps-go` (`godog`), and
+`steps-ruby` (`cucumber-ruby`) — each carrying that runner's step definition
+file, binding form, empty-body stub, strict-mode mechanism, and single-scenario
+command where the core instruction carried one. `steps` and `design` name the
+ids; `specs` and `review` carry no stack body and name none. A stack instruction
+is a policy instruction id: it resolves through the same cascade with no change
+context, a project may override it per id, and its body reaches the caller only
+on a request for its own id. The relation is the id convention `steps` to
+`steps-rust`, the same pairing `dialog` to `dialog-examples` established.
+
+A core step instruction carries the universal rules and the id mapping; it
+does not carry a per-runner body. Per-stack mechanics are served only by a
+request for that stack's id, so a change on a stack the core instruction does
+not name never loads another stack's rows. The acceptance suite asserts the
+rule as served-text presence and absence: the core text names each id with its
+condition and carries no per-runner path, stub, binding instruction, strict
+mechanism, or run command (ADR-077, `Q-126`).
+
+Instruction length carries no numeric cap. A sentence that states a valid rule
+is not removed or split to satisfy a line count; prose that adds no rule is the
+length defect to remove. `review.md` therefore keeps its full obligation set.
+
+The instruction-id part of the guidance reference check reads served text, not
+the asset: every `givn instructions <id>` direction that a served instruction
+or an effective addon instruction names must resolve as that instruction is
+resolved, a policy id with no change context and an artifact id in a change
+context (the direction's own, or the single active change the CLI
+auto-selects). A policy direction that carries `--change` is a finding: the
+flag is ignored for policy ids, so the direction promises a context that
+changes nothing. An unresolved id, or a policy id carrying a change context, is
+a finding naming the id, its source line, and the line text. An addon-bound id
+is checked only while its addon is effective in the project.
+
+A project extends one instruction's built-in rules through the `extensions:`
+map in `givn/config.yaml`: an instruction id maps to project-owned rule
+strings, appended to the served content under a marked `## Project extension`
+section. The extension is additive — it never overrides, suppresses, or
+reorders the built-in rules and never changes steps, order, or gates. It is
+read on every request, never written into generated files, and never part of
+the managed upgrade revision; an unknown instruction id or a malformed entry
+warns and is dropped, and the built-in rules are served alone. When a
+project-owned replacement of the instruction facet exists for the same id, the
+replacement is the base the extension extends; the replacement file itself is
+never modified.
+
+A target that owns a shell integration also receives its attribution
+integration: `.opencode/plugins/givn-attribution.js`,
+`.claude/hooks/givn-attribution.sh` with `.claude/settings.local.json`, and
+`.omp/hooks/pre/givn-attribution.js`.
+
+The target selection is stored in `skills.targets` in `givn/config.yaml`; an
+absent, empty, or unknown-only list falls back to opencode when `givn skills
+sync` runs, so projects initialized by older versions keep syncing.
+Initialization itself requires a selection: the interactive prompt opens with
+`.opencode` marked and re-asks — with an error naming the requirement — until a
+target is marked, while an empty or unknown-only answer and EOF without the
+`--agents` flag refuse with a non-zero exit before the first write, naming
+`.opencode`, `.agents`, `.claude`, `.omp`, and `.maki` plus the `--agents` flag.
+
+The implementation guidance states the revision-message rule: every revision a
+change records carries the change's release note (authored in its proposal) as
+its message subject, with the batch name and, for a single-scenario batch, the
+scenario title in the message body. The rule
+lives in the `tasks` instruction; the project-start block renders its resident
+rules (the task-checkoff and commit obligations) from that same
+`instructions/tasks.md` asset, so the block's text and the served instruction
+cannot disagree. The rule is guidance only — `givn commit` neither composes nor
+validates the subject.
+
+Generated guidance is written for the consumer project. Every file reference
+it carries must resolve in the project that receives it: a file the project
+has, a location a named creation step creates, a project-owned destination
+the guidance itself defines, or a skill resolved by name across the
+configured agent targets. Every instruction id a direction names must resolve
+through the CLI in the same Givn version or a later one, resolved the way the
+CLI resolves it: a policy or step direction resolves with no change context,
+and an artifact direction resolves in a change context, which the CLI
+auto-selects when the direction names none (an artifact request in a project
+with no single active change refuses by name). A reference into the
+Givn distribution (`assets/…`, a repository-only document) is a defect; the
+acceptance suite grades every generated skill and printed instruction against
+both rules.
+
+`AGENTS.md` is user-owned outside givn-managed fenced blocks. The sync path may
+create or replace the unconditional `givn-project` block and, when enabled, the
+`communication-policy` block; it removes the retired `absolute-mode` block. It
+does not rewrite surrounding user content. The project block carries the
+direction to `givn instructions`, the mandatory dialog-policy obligation, and
+its resident task-checkoff and commit obligations rendered from the canonical
+`instructions/tasks.md` asset. The communication-policy addon controls only
+presentation and documentation; it does not gate or own question content. Givn never stages
+`AGENTS.md` under either rules policy; committing it is the developer's explicit
+act.
+
+The generated-rules policy is a flat scalar in `givn/config.yaml`:
+`rules: local-only` (the default when absent) or `rules: versioned`. An
+unrecognized value warns and continues as `local-only`. Under `local-only` the
+strict rules — every generated rule except the `AGENTS.md` fence — are kept out
+of the repository through a fenced block in the tracked ignore file
+(`.gitignore`, `.fossil-settings/ignore-glob`) and a local exclude
+(`.git/info/exclude`, the Fossil `ignore-glob` setting). The block carries
+prefix patterns for the reserved namespaces (`.opencode/skills/givn-*/`,
+`.agents/skills/givn-*/`, `.claude/skills/givn-*/`, `.omp/skills/givn-*/`,
+`.maki/skills/givn-*/`, and the fixed integration files), never individual rule
+names; tracked rules are discovered by a path predicate instead. A tracked strict rule
+becomes local-only through `git rm --cached` or `fossil rm --soft`; the file
+stays on disk, and the staged removals join the upgrade's managed revision or
+wait for the developer after `givn init`. Under `versioned` the fenced blocks
+are removed and the rules are repository content. Every command that touches
+rules reports tracked and reachable-history occurrences; `givn check rules`
+exits non-zero on a violation, while init, sync, and upgrade never block.
+Givn itself never rewrites history: historical occurrences are reported, never
+repaired — a project that must purge them does so with its own SCM tooling
+outside Givn, and the reachable local refs boundary (remotes and forks are
+outside the guarantee) is named, not acted on.
+
+## 8.31 The Declared E2E Package and the Binary-Only Harness
+
+Givn's black-box acceptance authority is the standalone `e2e` package. The
+package declares its own `[workspace]` so its manifest and lockfile resolve
+without the product workspace, is excluded from the published crate through the
+root `exclude` list, and links no product crate. It holds the runner, every `@e2e` step definition, the
+fixtures those steps need, and the browser driver assets. Feature files stay in
+`givn/specs/`; the package selects `@e2e` scenarios by tag.
+
+| Runner variable | Meaning |
+|---|---|
+| `GIVN_BIN` | Required, executable path to the built product binary. |
+| `GIVN_READY_FIXTURE` | Path to the built `ready_fixture`; required by the run-execution scenarios only. |
+| `GIVN_FEATURES` | The feature path the runner executes; defaults to `givn/specs/`. |
+| `GIVN_RESULT_FILE` | Where the runner writes `{"scope", "total", "passed", "failed", "skipped"}`. |
+| `GIVN_RESULT_SCOPE` | The scope the run reports; the E2E scope reports `e2e`. |
+
+`./run-tests.sh --e2e --package e2e` canonicalizes the feature and result paths,
+builds the binary and the ready fixture unless an instrumented `GIVN_BIN` is
+supplied, exports both paths, and runs the package in one process. `givn check
+tasks` and `givn archive` run the same command with their own feature path and
+result file; the `--package e2e` value is what satisfies the runner-target rule,
+because `--e2e` alone names no package. The runner first refuses a `Cargo.lock`
+naming a product crate, then filters `@e2e`, excludes `@givn.removed`, fails on
+a skipped step, and exits nonzero on a failed, skipped, or zero count. The
+failure mode this closes is a suite that passes because it exercised the library
+it lives beside rather than the binary a consumer installs.
 
 *[Architecture documentation index](README.md)*

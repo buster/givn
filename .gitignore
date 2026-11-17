@@ -1,5 +1,11 @@
-# Rust build output — do NOT ignore Cargo.lock for binary crates
+# Rust build output — do NOT ignore Cargo.lock for binary crates.
+# `/e2e/target` covers a direct `cargo test --manifest-path e2e/Cargo.toml`;
+# `./run-tests.sh` points CARGO_TARGET_DIR at `target/e2e-package` instead.
 /target
+/e2e/target
+
+# The @e2e browser package installs its pinned Playwright here.
+/e2e/browser/node_modules
 
 # Python bytecode cache
 __pycache__/

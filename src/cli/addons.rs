@@ -5,111 +5,10 @@
 use anyhow::{Result, bail};
 use std::io::IsTerminal;
 
-/// One registered addon.
-pub struct AddonSpec {
-    pub id: &'static str,
-    pub description: &'static str,
-    pub default_enabled: bool,
-    /// The filesystem effect this addon declares. The enable path and
-    /// `givn addons list` both read it, so the two cannot disagree.
-    pub materialization: Materialization,
-}
-
-/// The filesystem effect an addon declares (ADR-076).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Materialization {
-    /// No project files are written.
-    None,
-    /// Paths that must all exist, relative to the project root.
-    Files(&'static [&'static str]),
-    /// One managed fenced block inside a project file.
-    ManagedBlock {
-        file: &'static str,
-        block: &'static str,
-    },
-    /// Scaffolded paths plus a generated skill directory checked in every
-    /// selected agent target.
-    FilesAndSkill {
-        files: &'static [&'static str],
-        skill: &'static str,
-    },
-}
-
-/// Registry of all known addons.
-pub const KNOWN_ADDONS: &[AddonSpec] = &[
-    AddonSpec {
-        id: "arc42",
-        description: "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
-        default_enabled: true,
-        materialization: Materialization::Files(&["docs/arc42", "docs/glossary.md"]),
-    },
-    AddonSpec {
-        id: "communication_policy",
-        description: "Communication policy — manages a fenced presentation and documentation block in AGENTS.md; the dialog obligation is independent of this addon",
-        default_enabled: true,
-        materialization: Materialization::ManagedBlock {
-            file: "AGENTS.md",
-            block: "communication-policy",
-        },
-    },
-    AddonSpec {
-        id: "readme",
-        description: "README scaffolding — writes an initial README.md to the project root",
-        default_enabled: true,
-        materialization: Materialization::Files(&["README.md"]),
-    },
-    AddonSpec {
-        id: "coverage",
-        description: "Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML",
-        default_enabled: true,
-        materialization: Materialization::None,
-    },
-    AddonSpec {
-        id: "domain_modeling",
-        description: "Skill — maintain the standalone glossary and structural domain model before design; does not require arc42",
-        default_enabled: true,
-        // `docs/glossary.md` is shared with `arc42` and is checked under
-        // `arc42` only, so one addon's observed state cannot contradict the
-        // other's (the report skips a path another addon declares).
-        materialization: Materialization::FilesAndSkill {
-            files: &["docs/glossary.md", "docs/domain-model.md"],
-            skill: "givn-domain-modeling",
-        },
-    },
-    AddonSpec {
-        id: "dev_principles",
-        description: "Skill — apply the team's engineering principles during implementation",
-        default_enabled: true,
-        materialization: Materialization::FilesAndSkill {
-            files: &[],
-            skill: "givn-dev-principles",
-        },
-    },
-    AddonSpec {
-        id: "challenge",
-        description: "Skill — research proposals, tests, specs, design, code, and whole changes before asking unresolved decisions; no lifecycle gate",
-        default_enabled: true,
-        materialization: Materialization::FilesAndSkill {
-            files: &[],
-            skill: "givn-challenge",
-        },
-    },
-    AddonSpec {
-        id: "architecture_principles",
-        description: "Architecture-principles guidance — last-responsible-moment decision timing, consumer contracts, component splits and port/adapter boundaries; enabled by default",
-        default_enabled: true,
-        materialization: Materialization::None,
-    },
-    AddonSpec {
-        id: "outline",
-        description: "Outline report — enabled by default; disable with `givn addons disable outline`",
-        default_enabled: true,
-        materialization: Materialization::None,
-    },
-];
+use crate::config::addons::{AddonSpec, KNOWN_ADDONS, Materialization};
 
 /// `givn addons list` — print all known addons with their effective enabled
-/// state and their observed materialization (ADR-076).
+/// state and their observed materialization (ADR-080).
 ///
 /// The listing resolves the same effective manifest every other command uses:
 /// the embedded defaults, then the project overlay. An omitted addon in a
@@ -169,7 +68,9 @@ pub fn run_list() -> Result<bool> {
         println!("Tip: run `givn init` first to create givn/config.yaml, then");
         println!("     `givn addons enable <name>` to enable an addon.");
     } else {
-        println!("These are effective values: omitted keys use the enabled default.");
+        println!(
+            "These are effective values: each omitted key resolves that addon's declared default."
+        );
         println!("Use `givn addons enable <name>` or `givn addons disable <name>`");
         println!("to toggle an addon. Changes are written to givn/config.yaml.");
     }
@@ -187,10 +88,15 @@ pub fn run_enable(
     change: Option<&str>,
 ) -> Result<()> {
     let project_root = std::env::current_dir()?;
-    let before = crate::config::overlay::load_effective()?
+    let manifest = crate::config::overlay::load_effective()?;
+    if let Some(required) = missing_prerequisite(name, &manifest) {
+        bail!("addon '{name}' requires '{required}'; enable it first");
+    }
+    let before = manifest
         .addons
         .get(name)
-        .unwrap_or(true);
+        .or_else(|| AddonSpec::declared_default(name))
+        .unwrap_or(false);
     let target = guard_addon_mutation(&project_root, name, operator, reason, change)?;
     enable_scaffold(name)?;
     if let Some(change_dir) = target {
@@ -222,7 +128,7 @@ pub fn enable_scaffold(name: &str) -> Result<()> {
 /// choices, so a disabled addon is never scaffolded.
 pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
     // Dispatch on the declared materialization so the enable path and
-    // `givn addons list` (ADR-076) cannot disagree about an addon's files.
+    // `givn addons list` (ADR-080) cannot disagree about an addon's files.
 
     // Addon-specific scaffolding.
     if name == "arc42" {
@@ -259,6 +165,8 @@ pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
         println!("Next steps:");
         println!("  Edit givn/commands.yaml to set coverage.measure_command");
         println!("  and coverage.merge_command to use your project scripts.");
+    } else if name == "ise" {
+        materialize(name)?;
     }
 
     Ok(())
@@ -267,7 +175,7 @@ pub(crate) fn scaffold_enabled(name: &str) -> Result<()> {
 /// Materialize exactly what the addon's registry entry declares.
 ///
 /// The declaration is the input, so an addon that gains a path is scaffolded
-/// and reported from one value (ADR-076).
+/// and reported from one value (ADR-080).
 fn materialize(name: &str) -> Result<()> {
     let Some(addon) = KNOWN_ADDONS.iter().find(|addon| addon.id == name) else {
         return Ok(());
@@ -285,6 +193,8 @@ fn materialize(name: &str) -> Result<()> {
             scaffold_domain_model()?;
         } else if *path == "README.md" {
             crate::cli::readme::scaffold_readme()?;
+        } else if *path == crate::config::declaration::DECLARATION_PATH {
+            scaffold_declaration()?;
         }
     }
     Ok(())
@@ -334,6 +244,35 @@ fn scaffold_document_at(
         std::fs::create_dir_all(parent)?;
     }
     std::fs::write(&dest, content)?;
+    println!("  created  {relative_path}");
+    Ok(())
+}
+
+/// Write the declaration scaffold once. A regular file at the path is
+/// project-owned and preserved byte-for-byte; a path occupied by a directory or
+/// another non-regular file is not an existing declaration, so the write is
+/// attempted and its failure names the path and the already-written setting.
+fn scaffold_declaration() -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    let relative_path = crate::config::declaration::DECLARATION_PATH;
+    let destination = project_root.join(relative_path);
+    if destination.is_file() {
+        println!("  exists   {relative_path}  (content preserved)");
+        return Ok(());
+    }
+
+    let asset_key = "specification.yaml.tmpl";
+    let content = crate::config::embedded::Assets::get_str(asset_key)
+        .ok_or_else(|| anyhow::anyhow!("embedded declaration template missing: {asset_key}"))?;
+    if let Some(parent) = destination.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&destination, content).map_err(|error| {
+        anyhow::anyhow!(
+            "write the declaration '{relative_path}': {error}; the path is not a regular file, \
+             and addons.ise was already written to givn/config.yaml; no completion is claimed"
+        )
+    })?;
     println!("  created  {relative_path}");
     Ok(())
 }
@@ -403,10 +342,15 @@ pub fn run_disable(
     change: Option<&str>,
 ) -> Result<()> {
     let project_root = std::env::current_dir()?;
-    let before = crate::config::overlay::load_effective()?
+    let manifest = crate::config::overlay::load_effective()?;
+    if let Some(dependent) = first_dependent(name, &manifest) {
+        bail!("addon '{name}' is required by '{dependent}'; disable '{dependent}' first");
+    }
+    let before = manifest
         .addons
         .get(name)
-        .unwrap_or(true);
+        .or_else(|| AddonSpec::declared_default(name))
+        .unwrap_or(false);
     let target = guard_addon_mutation(&project_root, name, operator, reason, change)?;
     disable_scaffold(name)?;
     if let Some(change_dir) = target {
@@ -498,6 +442,13 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
     } else if name == "coverage" {
         println!("The 'coverage' gate is now disabled.");
         println!("The coverage fence in README.md is preserved.");
+    } else if name == "ise" {
+        let project_root = std::env::current_dir()?;
+        let relative_path = crate::config::declaration::DECLARATION_PATH;
+        if project_root.join(relative_path).is_file() {
+            println!("  exists   {relative_path}  (project-owned; not removed)");
+        }
+        println!("The 'ise' declaration is project-owned and is not removed.");
     } else if is_skill_addon(name) {
         remove_skill_addon_files(name);
         println!("Removed the '{name}' skill files from every agent target.");
@@ -507,6 +458,39 @@ pub fn disable_scaffold(name: &str) -> Result<()> {
 }
 
 // ── Internals ────────────────────────────────────────────────────────────────
+
+/// The first declared prerequisite of `name` that is not effective, in
+/// declared order. `None` when the addon is unregistered or every prerequisite
+/// is on.
+fn missing_prerequisite(
+    name: &str,
+    manifest: &crate::config::manifest::Manifest,
+) -> Option<&'static str> {
+    let addon = KNOWN_ADDONS.iter().find(|addon| addon.id == name)?;
+    addon
+        .requires
+        .iter()
+        .copied()
+        .find(|required| !manifest.addons.get(required).unwrap_or(false))
+}
+
+/// The first registered addon, in registry order, that requires `name` and is
+/// effective. Used to refuse disabling a prerequisite while its dependent is on.
+fn first_dependent(
+    name: &str,
+    manifest: &crate::config::manifest::Manifest,
+) -> Option<&'static str> {
+    KNOWN_ADDONS
+        .iter()
+        .find(|addon| {
+            addon.requires.contains(&name)
+                && manifest
+                    .addons
+                    .get(addon.id)
+                    .unwrap_or(addon.default_enabled)
+        })
+        .map(|addon| addon.id)
+}
 
 fn validate_addon_name(name: &str) -> Result<()> {
     if KNOWN_ADDONS.iter().any(|addon| addon.id == name) {
@@ -849,6 +833,31 @@ mod tests {
         assert_eq!(addon_skill_name("arc42"), None);
     }
 
+    #[test]
+    fn a_disabled_prerequisite_blocks_the_enable() {
+        let mut manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        assert_eq!(missing_prerequisite("ise", &manifest), None);
+        manifest.addons.architecture_principles = false;
+        assert_eq!(
+            missing_prerequisite("ise", &manifest),
+            Some("architecture_principles")
+        );
+        assert_eq!(missing_prerequisite("outline", &manifest), None);
+        assert_eq!(missing_prerequisite("unknown", &manifest), None);
+    }
+
+    #[test]
+    fn an_effective_dependent_blocks_the_disable() {
+        let mut manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        assert_eq!(first_dependent("architecture_principles", &manifest), None);
+        manifest.addons.ise = true;
+        assert_eq!(
+            first_dependent("architecture_principles", &manifest),
+            Some("ise")
+        );
+        assert_eq!(first_dependent("outline", &manifest), None);
+    }
+
     fn config_fixture(content: &str) -> (tempfile::TempDir, std::path::PathBuf) {
         let directory = tempfile::tempdir().unwrap();
         let givn = directory.path().join("givn");
@@ -1014,28 +1023,5 @@ givn_config_version: \"0.9.9\"
             "{created}"
         );
         assert!(created.contains("layout: elk"), "{created}");
-    }
-
-    #[test]
-    fn addon_registry_matches_the_manifest_schema_and_defaults() {
-        let manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
-        assert_eq!(
-            KNOWN_ADDONS.len(),
-            crate::config::manifest::Addons::NAMES.len()
-        );
-        for addon in KNOWN_ADDONS {
-            assert_eq!(
-                manifest.addons.get(addon.id),
-                Some(addon.default_enabled),
-                "registry entry '{}' does not match the manifest schema",
-                addon.id
-            );
-        }
-        for name in crate::config::manifest::Addons::NAMES {
-            assert!(
-                KNOWN_ADDONS.iter().any(|addon| addon.id == name),
-                "manifest addon '{name}' is missing from the registry"
-            );
-        }
     }
 }

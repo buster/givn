@@ -115,11 +115,12 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And  the output does not demand a duplicate qualification worksheet
     And  the output distinguishes authoring policy from runtime enforcement
 
+  @adr-qualification-gate
   Scenario: The migration preserves independent architecture history across three proposed decisions
     Given  the remediation case carries the distinguishing marker "harness jib mandrel nozzle oboe yacht yarn zither"
     Given  the consolidated ADR register and canonical sources are available
     When  a maintainer compares the register with the canonical sources
-    Then  the final register has 28 accepted decisions and no proposed decisions
+    Then  the final register has 32 accepted decisions and no proposed decisions
     And  the change's migration manifest gives every assigned identifier exactly one disposition
     And  reserved identifiers `ADR-050` and `ADR-051` have no record
     And  non-ADR records are removed from the active register and ADR archive

@@ -17,26 +17,19 @@ normal TDD are below.
 ## Rule: prove strict mode once, with evidence
 
 Empty/undefined steps silently reporting PASS makes GREEN meaningless.
-1. Write/reuse a step using the not-implemented stub (table below) or leave
-   it undefined.
+`givn instructions steps` maps the project's runner to the stack instruction
+that carries the stub and the strict mechanism.
+1. Write/reuse a step using the not-implemented stub the stack instruction
+   names, or leave it undefined.
 2. Run the runner, confirm non-zero exit.
-3. If exit 0, enable the runner's strict flag (`--strict` for
-   cucumber-js/cucumber-jvm, `.fail_on_skipped()` for cucumber-rs).
+3. If exit 0, enable the strict flag or mechanism the stack instruction names
+   for the project's runner.
 4. Paste the command + non-zero-exit output into the task.
 
 ## Rule: step body is never empty
 
 `{}`, bare `pass`, bare `return` = indistinguishable from PASS. Unimplemented
-steps use:
-
-| Language / framework | Stub |
-|---|---|
-| Rust (`cucumber-rs`) | `unimplemented!()` or `todo!()` |
-| Java (`cucumber-jvm`) | `throw new io.cucumber.java.PendingException("TODO");` |
-| Python (`behave`) | `raise NotImplementedError("TODO")` |
-| JS/TS (`cucumber-js`) | `return "pending";` or `throw new Error("TODO")` |
-| Go (`godog`) | `return godog.ErrPending` |
-| Ruby (`cucumber-ruby`) | `pending("TODO")` |
+steps use the stub the stack instruction names for the project's runner.
 
 ## Characterization loop (in .feature order)
 

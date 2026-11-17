@@ -428,6 +428,12 @@ pub fn prepare_managed_upgrade(
     let checkpoint = backend
         .revision()
         .context("read the checkpoint revision before a managed upgrade")?;
+    let manifest = crate::config::overlay::load_effective_at(project_root)
+        .context("read the effective addon set before the declaration scaffold")?;
+    let declaration_path = project_root.join(crate::config::declaration::DECLARATION_PATH);
+    let ise_effective =
+        crate::config::declaration::SpecificationDeclaration::is_effective(&manifest);
+    let declaration_absent = ise_effective && !declaration_path.is_file();
     let mut report = UpgradeReport::new(checkpoint);
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
     let retired_paths = crate::skills::targets::retired_managed_generated_paths(project_root)?;
@@ -443,15 +449,29 @@ pub fn prepare_managed_upgrade(
             snapshot_paths.push(path);
         }
     }
+    if declaration_absent && !declaration_path.exists() {
+        snapshot_paths.push(declaration_path.clone());
+    }
     let snapshot = FileSnapshot::capture(snapshot_paths)?;
 
     let upgraded = crate::cli::upgrade::upgrade_config(existing_config, target_version)?;
-    if let Err(error) = apply_managed_upgrade(config_path, &upgraded, project_root, &mut report) {
-        report.completed = snapshot.changed_paths(project_root);
-        let restoration = snapshot.restore_report();
-        report.print_failure(&error, &restoration);
-        return Err(error);
-    }
+    let declaration_written = match apply_managed_upgrade(
+        config_path,
+        &upgraded,
+        project_root,
+        &declaration_path,
+        ise_effective,
+        declaration_absent,
+        &mut report,
+    ) {
+        Ok(written) => written,
+        Err(error) => {
+            report.completed = snapshot.changed_paths(project_root);
+            let restoration = snapshot.restore_report();
+            report.print_failure(&error, &restoration);
+            return Err(error);
+        }
+    };
 
     match commit_managed_upgrade(
         project_root,
@@ -459,6 +479,7 @@ pub fn prepare_managed_upgrade(
         config_path,
         &managed_paths,
         &retired_paths,
+        declaration_written.then_some(declaration_path.as_path()),
         commit_message,
     ) {
         Ok(hash) => {
@@ -564,17 +585,47 @@ impl Restoration {
     }
 }
 
+/// Refresh the managed scaffold and, when `ise` is effective, the declaration.
+/// Returns whether this run wrote `givn/specification.yaml`, which decides
+/// whether the path joins the staged allowlist; an existing declaration is
+/// reported as project-owned and never staged.
 fn apply_managed_upgrade(
     config_path: &Path,
     upgraded: &str,
     project_root: &Path,
+    declaration_path: &Path,
+    ise_effective: bool,
+    declaration_absent: bool,
     report: &mut UpgradeReport,
-) -> Result<()> {
+) -> Result<bool> {
     std::fs::write(config_path, upgraded)
         .with_context(|| format!("write managed config '{}'", config_path.display()))?;
     report
         .completed
         .push("givn/config.yaml (managed scaffold refreshed)".to_string());
+
+    let mut declaration_written = false;
+    if ise_effective {
+        if declaration_absent {
+            let asset_key = "specification.yaml.tmpl";
+            let content = crate::config::embedded::Assets::get_str(asset_key).ok_or_else(|| {
+                anyhow::anyhow!("embedded declaration template missing: {asset_key}")
+            })?;
+            std::fs::write(declaration_path, content).with_context(|| {
+                format!(
+                    "write the declaration '{}'",
+                    crate::config::declaration::DECLARATION_PATH
+                )
+            })?;
+            report
+                .completed
+                .push("givn/specification.yaml (declared Specification)".to_string());
+            println!("  wrote    givn/specification.yaml (declared Specification)");
+            declaration_written = true;
+        } else if declaration_path.is_file() {
+            println!("  exists   givn/specification.yaml  (project-owned; not staged)");
+        }
+    }
 
     crate::skills::targets::sync(project_root)
         .context("synchronize generated Givn skills and commands")?;
@@ -605,7 +656,7 @@ fn apply_managed_upgrade(
     let report = crate::skills::rules::cleanliness(project_root)?;
     crate::skills::rules::print_report("upgrade", &report)?;
 
-    Ok(())
+    Ok(declaration_written)
 }
 
 fn commit_managed_upgrade(
@@ -614,6 +665,7 @@ fn commit_managed_upgrade(
     config_path: &Path,
     managed_paths: &[PathBuf],
     retired_paths: &[PathBuf],
+    declaration_path: Option<&Path>,
     commit_message: &str,
 ) -> Result<Option<String>> {
     let policy = crate::config::overlay::load_rules_policy(project_root)?;
@@ -621,6 +673,9 @@ fn commit_managed_upgrade(
         config_path.to_path_buf(),
         project_root.join("givn/commands.yaml"),
     ];
+    if let Some(path) = declaration_path {
+        paths.push(path.to_path_buf());
+    }
     for extra in [".gitignore", ".fossil-settings/ignore-glob"] {
         let path = project_root.join(extra);
         if path.exists() {
@@ -1304,6 +1359,7 @@ mod tests {
             &config,
             std::slice::from_ref(&config),
             &[],
+            None,
             "chore(givn): refresh managed files",
         )
         .unwrap();

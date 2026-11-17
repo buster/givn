@@ -1,5 +1,5 @@
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 85%](https://img.shields.io/badge/line%20coverage-85%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 86%](https://img.shields.io/badge/line%20coverage-86%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -101,6 +101,9 @@ fail if the project configuration drifts from the record. An operator can use
 | `givn/commands.yaml` | Define project-specific test runner, coverage, and startup commands. |
 | `givn skills sync` | Regenerate agent skill files after changing config. |
 | `givn commit -m "<msg>" <paths...>` | Commit explicit paths for a behavior batch without sweeping in unrelated working-tree edits. |
+| `givn ise rebuild-all --into <dir> [--manifest <file>]` | Write the spec copy in which the whole product is rebuilt: every declared source root is removed from it. |
+| `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. |
+| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the manifest and the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. |
 
 ## Documentation
 
@@ -128,7 +131,7 @@ As a special exception under section 7 of the GNU General Public License, versio
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 85% (19090/22414)
+Line coverage: 86% (21774/25186)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:

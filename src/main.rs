@@ -1,4 +1,4 @@
-use givn::{cli, history};
+use givn::{cli, history, ise};
 
 use std::path::PathBuf;
 
@@ -200,6 +200,11 @@ enum Commands {
         #[arg(long)]
         print: bool,
     },
+    /// Materialize and re-check a clean-room Ise Test trial.
+    Ise {
+        #[command(subcommand)]
+        command: IseCommands,
+    },
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
@@ -253,6 +258,52 @@ enum AttributionCommands {
     },
     /// Convert a Claude Code Bash hook payload into an optional command update.
     ClaudePreToolUse,
+}
+
+#[derive(Subcommand)]
+enum IseCommands {
+    /// Rebuild the whole product from one recorded revision.
+    RebuildAll {
+        /// Revision to read (defaults to HEAD).
+        #[arg(long)]
+        at: Option<String>,
+        /// Spec copy directory; must lie outside the checkout and not exist.
+        #[arg(long)]
+        into: PathBuf,
+        /// Write the manifest to this path.
+        #[arg(long)]
+        manifest: Option<PathBuf>,
+        /// Perform every read and refusal without writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Rebuild one or more component paths from one recorded revision.
+    RebuildComponent {
+        /// Revision to read (defaults to HEAD).
+        #[arg(long)]
+        at: Option<String>,
+        /// Tracked component paths: a file or a directory's tracked files.
+        #[arg(required = true)]
+        paths: Vec<String>,
+        /// Spec copy directory; must lie outside the checkout and not exist.
+        #[arg(long)]
+        into: PathBuf,
+        /// Write the manifest to this path.
+        #[arg(long)]
+        manifest: Option<PathBuf>,
+        /// Perform every read and refusal without writing.
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// Compare a prepared spec copy with the manifest that recorded it.
+    Compare {
+        /// The manifest the preparation wrote.
+        #[arg(long)]
+        manifest: PathBuf,
+        /// The spec copy the manifest describes.
+        #[arg(long)]
+        copy: PathBuf,
+    },
 }
 
 /// The `history` command's subcommands: the read view is the command itself.
@@ -535,7 +586,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Addons { command } => match command {
             AddonsCommands::List => {
                 // A broken enabled addon exits 1 without being an error: the
-                // listing itself succeeded (ADR-076).
+                // listing itself succeeded (ADR-080).
                 if cli::addons::run_list()? {
                     std::process::exit(1);
                 }
@@ -591,6 +642,49 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             }
         },
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),
+        Commands::Ise { command } => {
+            let project_root = std::env::current_dir()?;
+            let exit_code = match command {
+                IseCommands::RebuildAll {
+                    at,
+                    into,
+                    manifest,
+                    dry_run,
+                } => cli::ise::rebuild_all(
+                    &project_root,
+                    &ise::RebuildRequest {
+                        at,
+                        scope: ise::RebuildScope::All,
+                        into,
+                        manifest,
+                        dry_run,
+                    },
+                ),
+                IseCommands::RebuildComponent {
+                    at,
+                    paths,
+                    into,
+                    manifest,
+                    dry_run,
+                } => cli::ise::rebuild_component(
+                    &project_root,
+                    &ise::RebuildRequest {
+                        at,
+                        scope: ise::RebuildScope::Paths(paths),
+                        into,
+                        manifest,
+                        dry_run,
+                    },
+                ),
+                IseCommands::Compare { manifest, copy } => {
+                    cli::ise::compare(&project_root, &ise::CompareRequest { manifest, copy })
+                }
+            };
+            if exit_code != 0 {
+                std::process::exit(exit_code);
+            }
+            Ok(())
+        }
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::TestResult {
             total,

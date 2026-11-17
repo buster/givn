@@ -3,6 +3,7 @@ use std::process::Output;
 
 use super::GivnWorld;
 use crate::common;
+use crate::steps::e2e_boundary_support;
 
 fn output(world: &GivnWorld) -> &Output {
     world
@@ -357,12 +358,16 @@ fn write_fixture_change_receipt(world: &GivnWorld, id: &str) {
         &head,
         "./emit-result.sh regular",
         &tested_content_digest,
-        givn::proof::RunnerResult {
-            scope: None,
-            total: 2,
-            passed: 2,
-            failed: 0,
-            skipped: 0,
+        givn::proof::ChangeVerification {
+            result: givn::proof::RunnerResult {
+                scope: None,
+                total: 2,
+                passed: 2,
+                failed: 0,
+                skipped: 0,
+            },
+            e2e_identity: None,
+            e2e_scope: None,
         },
         1,
     )
@@ -3520,4 +3525,590 @@ fn developer_runs_migration_coverage(world: &mut GivnWorld) {
         &["check", "migration", "--change", "migration-test"],
     );
     world.last_output = Some(out);
+}
+
+// --- declared e2e boundary fixtures ---------------------------------------
+
+#[given(
+    regex = r#"^an ise-effective change ready for change-scoped verification whose e2e role "([^"]+)"$"#
+)]
+fn ise_change_with_e2e_role(world: &mut GivnWorld, state: String) {
+    e2e_boundary_support::ise_change(world);
+    match state.as_str() {
+        "matches no project path" => {
+            e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+        }
+        "resolves a package with a malformed manifest" => {
+            e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        "lists no path" => {
+            e2e_boundary_support::declare(world, &[], &["src/**"]);
+        }
+        other => panic!("unknown e2e role state '{other}'"),
+    }
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    regex = r#"^an ise-effective change ready for change-scoped verification whose e2e package reaches a source package through a "([^"]+)" dependency$"#
+)]
+fn ise_change_with_source_edge(world: &mut GivnWorld, edge: String) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+    match edge.as_str() {
+        "direct" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\ngivn_product = { path = \"../../src\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        "transitive" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\nhelper = { path = \"../fixtures/helper\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/fixtures/helper/Cargo.toml",
+                "[package]\nname = \"helper\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\ngivn_product = { path = \"../../../src\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        "workspace-inherited" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "Cargo.toml",
+                "[workspace]\nmembers = [\"tests/e2e\"]\n\n\
+                 [workspace.dependencies]\ngivn_product = { path = \"src\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [dependencies]\ngivn_product = { workspace = true }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        "target-specific" => {
+            e2e_boundary_support::write_manifest(
+                world,
+                "tests/e2e/Cargo.toml",
+                "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n\n\
+                 [target.'cfg(unix)'.dependencies]\ngivn_product = { path = \"../../src\" }\n",
+            );
+            e2e_boundary_support::write_manifest(
+                world,
+                "src/Cargo.toml",
+                "[package]\nname = \"givn_product\"\nversion = \"0.1.0\"\n",
+            );
+        }
+        other => panic!("unknown dependency edge '{other}'"),
+    }
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose e2e path sits under a source root"
+)]
+fn ise_change_with_path_under_source(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["src/e2e-tests"], &["src/**"]);
+    e2e_boundary_support::write_file(world, "src/e2e-tests/harness.txt", "fixture\n");
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose e2e package contains a source root"
+)]
+fn ise_change_with_source_inside_package(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["."], &["src/**"]);
+    e2e_boundary_support::write_manifest(
+        world,
+        "Cargo.toml",
+        "[package]\nname = \"app\"\nversion = \"0.1.0\"\n",
+    );
+    e2e_boundary_support::write_file(world, "src/lib.rs", "pub fn helper() {}\n");
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose e2e path resolves no package and imports a package under a source root"
+)]
+fn ise_change_with_import_edge(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+    e2e_boundary_support::write_file(
+        world,
+        "tests/e2e/steps.rs",
+        "use givn::proof::ChangeReceipt;\n\nmod ../../src/helpers;\n",
+    );
+    e2e_boundary_support::write_file(world, "src/helpers.rs", "pub fn helper() {}\n");
+    e2e_boundary_support::set_import_target(world, "src/helpers");
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    regex = r#"^an ise-effective change ready for change-scoped verification whose E2E runner command is "([^"]+)"$"#
+)]
+fn ise_change_with_runner_command(world: &mut GivnWorld, command: String) {
+    e2e_boundary_support::ise_change(world);
+    e2e_boundary_support::declare(world, &["tests/e2e"], &["src/**"]);
+    e2e_boundary_support::write_manifest(
+        world,
+        "tests/e2e/Cargo.toml",
+        "[package]\nname = \"e2e-tests\"\nversion = \"0.1.0\"\n",
+    );
+    e2e_boundary_support::set_e2e_command(world, &command);
+    e2e_boundary_support::commit(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose delta has one E2E scenario with an unbound step"
+)]
+fn ise_change_with_unbound_e2e_step(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_failing_e2e_run(world, "failed");
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose delta has one E2E scenario with a skipped step"
+)]
+fn ise_change_with_skipped_e2e_step(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_failing_e2e_run(world, "skipped");
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification with a passing E2E run over two declared e2e packages"
+)]
+fn ise_change_with_passing_e2e_over_two_packages(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_passing_e2e_over_two_packages(world);
+}
+
+#[then(regex = r#"^stderr names the declared e2e package and "([^"]+)"$"#)]
+fn stderr_names_declared_e2e_package(world: &mut GivnWorld, condition: String) {
+    let observed = stderr(world);
+    let declared = e2e_boundary_support::state(world).declared_entry.clone();
+    match declared {
+        Some(entry) => assert!(
+            observed.contains(&entry),
+            "stderr does not name the declared e2e entry {entry:?}:\n{observed}"
+        ),
+        None => assert!(
+            observed.contains("the 'e2e' role lists no path"),
+            "stderr does not name the empty e2e role:\n{observed}"
+        ),
+    }
+    assert!(
+        observed.contains(&condition),
+        "stderr does not state the {condition:?} condition:\n{observed}"
+    );
+}
+
+#[given("an ise-effective change with no behavior change and no readable e2e declaration")]
+fn ise_change_without_behavior_change(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_without_behavior_change(world);
+}
+
+#[then("stderr names the absent e2e declaration")]
+fn stderr_names_absent_e2e_declaration(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    assert!(
+        observed.contains("the declared e2e boundary cannot be resolved"),
+        "stderr does not refuse the unresolvable boundary: {observed}"
+    );
+    assert!(
+        observed.contains("givn/specification.yaml") && observed.contains("is absent"),
+        "stderr does not name the absent declaration: {observed}"
+    );
+}
+
+#[then("stderr names the e2e path and the source root")]
+fn stderr_names_e2e_path_and_source_root(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    let path = state
+        .declared_entry
+        .clone()
+        .expect("the fixture declares an e2e path");
+    assert!(
+        observed.contains(&path),
+        "stderr does not name the e2e path {path:?}:\n{observed}"
+    );
+    assert!(
+        observed.contains("source root"),
+        "stderr does not name the source root condition:\n{observed}"
+    );
+    assert!(
+        state
+            .source_roots
+            .iter()
+            .any(|root| observed.contains(root)),
+        "stderr names no declared source root:\n{observed}"
+    );
+}
+
+#[then("stderr names the e2e package and the source root")]
+fn stderr_names_e2e_package_and_source_root(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    assert!(
+        observed.contains("e2e package"),
+        "stderr does not name the e2e package:\n{observed}"
+    );
+    assert!(
+        state
+            .source_roots
+            .iter()
+            .any(|root| observed.contains(root)),
+        "stderr names no declared source root:\n{observed}"
+    );
+}
+
+#[then("stderr names the e2e path and the imported source package")]
+fn stderr_names_e2e_path_and_imported_package(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    let path = state
+        .declared_entry
+        .clone()
+        .expect("the fixture declares an e2e path");
+    let target = state
+        .import_target
+        .clone()
+        .expect("the fixture imports a source path");
+    assert!(
+        observed
+            .lines()
+            .any(|line| line.contains("imports the source path")
+                && line.contains(&path)
+                && line.contains(&target)),
+        "stderr does not name the import edge from {path:?} to {target:?}:\n{observed}"
+    );
+}
+
+#[then("stderr names the declared e2e root and the E2E runner command")]
+fn stderr_names_e2e_root_and_runner_command(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    let state = e2e_boundary_support::state(world);
+    let root = state
+        .declared_entry
+        .clone()
+        .expect("the fixture declares an e2e root");
+    let command = state
+        .runner_command
+        .clone()
+        .expect("the fixture declares an E2E runner command");
+    assert!(
+        observed.contains(&root),
+        "stderr does not name the declared e2e root {root:?}:\n{observed}"
+    );
+    assert!(
+        observed.contains("E2E runner command"),
+        "stderr does not name the E2E runner command:\n{observed}"
+    );
+    if command.is_empty() {
+        assert!(
+            observed.contains("command ''"),
+            "an empty E2E runner command is not rendered explicitly:\n{observed}"
+        );
+    } else {
+        assert!(
+            observed.contains(&command),
+            "stderr does not show the E2E runner command {command:?}:\n{observed}"
+        );
+    }
+}
+
+#[then("no change verification receipt is written")]
+fn no_change_verification_receipt(world: &mut GivnWorld) {
+    let id = current_change_id(world);
+    let receipt = change_dir_for(world, &id).join("verification/tasks-verification.json");
+    assert!(
+        !receipt.exists(),
+        "a change verification receipt was written at {}",
+        receipt.display()
+    );
+}
+
+// --- change verification receipt identity scenarios -----------------------
+
+fn change_receipt_json(world: &GivnWorld) -> serde_json::Value {
+    let id = current_change_id(world);
+    let path = change_dir_for(world, &id).join("verification/tasks-verification.json");
+    let text = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "read change verification receipt {}: {error}",
+            path.display()
+        )
+    });
+    serde_json::from_str(&text).expect("the change verification receipt is valid JSON")
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification with no E2E scenario in its delta"
+)]
+fn ise_change_without_delta_e2e(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_ready_for_verification(world);
+}
+
+#[given("a change ready for change-scoped verification with ise off")]
+fn change_without_ise(world: &mut GivnWorld) {
+    e2e_boundary_support::change_ready_for_verification_without_ise(world);
+}
+
+#[given(
+    "an ise-effective change ready for change-scoped verification whose declared e2e package declares its own workspace, whose E2E runner command is \"./run-tests.sh --e2e --package e2e\", and whose delta has an E2E scenario"
+)]
+fn ise_change_with_standalone_workspace_package(world: &mut GivnWorld) {
+    super::e2e_boundary_support::ise_change_with_standalone_workspace(world);
+}
+
+#[then("the change verification receipt records a digest of every resolved e2e package")]
+fn receipt_records_e2e_package_digests(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let digests = receipt["e2e_identity"]["package_digests"]
+        .as_object()
+        .unwrap_or_else(|| panic!("the receipt records no resolved e2e package digest: {receipt}"));
+    let mut expected = e2e_boundary_support::state(world).resolved_packages.clone();
+    expected.sort();
+    let mut recorded: Vec<String> = digests.keys().cloned().collect();
+    recorded.sort();
+    assert_eq!(
+        recorded, expected,
+        "the receipt binds a package set other than the resolved one: {receipt}"
+    );
+    for (package, digest) in digests {
+        let digest = digest.as_str().unwrap_or_default();
+        assert_eq!(
+            digest.len(),
+            64,
+            "the digest for {package:?} is not a hex sha256: {digest:?}"
+        );
+        assert!(
+            digest
+                .chars()
+                .all(|character| character.is_ascii_hexdigit()),
+            "the digest for {package:?} is not hexadecimal: {digest:?}"
+        );
+    }
+}
+
+#[then(regex = r"^stderr names the failing E2E run and reports (\d+) (failed|skipped) tests?$")]
+fn stderr_names_failing_e2e_run(world: &mut GivnWorld, count: u64, state: String) {
+    let observed = stderr(world);
+    assert!(
+        observed.contains("E2E run"),
+        "stderr names no failing E2E run: {observed}"
+    );
+    let expected = format!("{count} {state} test");
+    assert!(
+        observed.contains(&expected),
+        "stderr does not report {expected:?}: {observed}"
+    );
+}
+
+#[then("the change verification receipt records the E2E runner command digest")]
+fn receipt_records_e2e_runner_command_digest(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let command = e2e_boundary_support::state(world)
+        .runner_command
+        .clone()
+        .expect("the fixture records its E2E runner command");
+    let expected = {
+        use sha2::Digest;
+        sha2::Sha256::digest(command.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    };
+    assert_eq!(
+        receipt["e2e_identity"]["runner_command_digest"].as_str(),
+        Some(expected.as_str()),
+        "the receipt does not bind the digest of {command:?}: {receipt}"
+    );
+}
+
+#[then("the change verification receipt records the running Givn version")]
+fn receipt_records_running_givn_version(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let out = common::run_givn(e2e_boundary_support::env(world), &["--version"]);
+    let reported = String::from_utf8_lossy(&out.stdout);
+    let version = reported
+        .trim()
+        .rsplit(' ')
+        .next()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        !version.is_empty(),
+        "the built binary reports no version: {reported}"
+    );
+    assert_eq!(
+        receipt["e2e_identity"]["givn_version"].as_str(),
+        Some(version.as_str()),
+        "the receipt does not bind the running Givn version {version:?}: {receipt}"
+    );
+}
+
+#[then("the change verification receipt records a passed E2E scope")]
+fn receipt_records_passed_e2e_scope(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let scope = &receipt["e2e_scope"];
+    assert_eq!(
+        scope["status"].as_str(),
+        Some("passed"),
+        "the receipt does not record a passed E2E scope: {receipt}"
+    );
+    for (field, expected) in [("total", 1), ("passed", 1), ("failed", 0), ("skipped", 0)] {
+        assert_eq!(
+            scope[field].as_u64(),
+            Some(expected),
+            "the receipt records the wrong E2E scope {field}: {receipt}"
+        );
+    }
+}
+
+#[then("the change verification receipt records the E2E scope as not applicable")]
+fn receipt_records_e2e_scope_not_applicable(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    assert_eq!(
+        receipt["e2e_scope"]["status"], "not_applicable",
+        "the receipt does not record the E2E scope as not applicable: {receipt}"
+    );
+    let result =
+        change_dir_for(world, &current_change_id(world)).join("verification/e2e-result.json");
+    assert!(
+        !result.exists(),
+        "an E2E run wrote a result for a delta without an @e2e scenario at {}",
+        result.display()
+    );
+}
+
+#[then("the change verification receipt contains no E2E identity and no E2E scope")]
+fn receipt_without_e2e_keys(world: &mut GivnWorld) {
+    let receipt = change_receipt_json(world);
+    let recorded = receipt
+        .as_object()
+        .expect("the change verification receipt is a JSON object");
+    assert!(
+        !recorded.contains_key("e2e_identity"),
+        "an ise-off receipt records an E2E identity: {receipt}"
+    );
+    assert!(
+        !recorded.contains_key("e2e_scope"),
+        "an ise-off receipt records an E2E scope: {receipt}"
+    );
+    let mut keys: Vec<&str> = recorded.keys().map(String::as_str).collect();
+    keys.sort_unstable();
+    let expected = [
+        "change",
+        "command",
+        "command_digest",
+        "content_scope",
+        "features_digest",
+        "features_path",
+        "finished_at_unix",
+        "head",
+        "result",
+        "runner_exit",
+        "schema",
+        "status",
+        "tested_content_digest",
+    ];
+    assert_eq!(
+        keys, expected,
+        "the ise-off receipt shape changed beyond the previous schema-2 keys: {receipt}"
+    );
+}
+
+// --- change verification receipt freshness scenarios ----------------------
+
+#[given("an ise-effective change with a current change verification receipt")]
+fn ise_change_with_current_receipt(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_change_with_current_receipt(world);
+}
+
+#[given(regex = r#"^the receipt's E2E identity no longer matches the project because (.+)$"#)]
+fn receipt_identity_no_longer_matches(world: &mut GivnWorld, input: String) {
+    match input.as_str() {
+        "the e2e package changed" => e2e_boundary_support::change_e2e_package(world),
+        "the E2E runner command changed" => e2e_boundary_support::change_e2e_command(world),
+        "the Givn version changed" => e2e_boundary_support::change_recorded_givn_version(world),
+        "the receipt lacks the identity" => e2e_boundary_support::remove_recorded_identity(world),
+        "the declaration cannot be read" => e2e_boundary_support::corrupt_declaration(world),
+        other => panic!("unknown E2E identity mutation '{other}'"),
+    }
+}
+
+#[given(
+    regex = r#"^an ise-effective change with a current change verification receipt whose delta "([^"]+)"$"#
+)]
+fn ise_change_with_current_receipt_delta(world: &mut GivnWorld, delta: String) {
+    e2e_boundary_support::ise_change_with_current_receipt(world);
+    match delta.as_str() {
+        "has an E2E scenario" => e2e_boundary_support::add_delta_e2e_scenario(world),
+        "has no E2E scenario" => {}
+        other => panic!("unknown delta state '{other}'"),
+    }
+}
+
+#[given(regex = r#"^the receipt's E2E scope records "([^"]+)"$"#)]
+fn receipt_e2e_scope(world: &mut GivnWorld, scope: String) {
+    e2e_boundary_support::record_e2e_scope(world, &scope);
+}
+
+#[then("stderr says the change verification receipt is stale")]
+fn stderr_says_change_receipt_stale(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    assert!(
+        observed.contains("change verification receipt is stale"),
+        "stderr does not say the change verification receipt is stale: {observed}"
+    );
+}
+
+/// The delta's reason assertion. A stale reason may name its subject between
+/// two of its words (`e2e package digest for '<path>' changed`), so the words
+/// must appear in order on one line; this binding is delta-scoped so no
+/// permanent assertion is loosened.
+#[then(regex = r#"^stderr reports the stale reason "([^"]+)"$"#)]
+fn stderr_reports_stale_reason(world: &mut GivnWorld, reason: String) {
+    let observed = stderr(world);
+    let words: Vec<String> = reason.split_whitespace().map(str::to_lowercase).collect();
+    let named = observed.lines().any(|line| {
+        let mut rest = line.to_lowercase();
+        words.iter().all(|word| match rest.find(word.as_str()) {
+            Some(index) => {
+                rest = rest[index + word.len()..].to_string();
+                true
+            }
+            None => false,
+        })
+    });
+    assert!(
+        named,
+        "stderr has no line reporting the stale reason {reason:?} in order: {observed}"
+    );
 }

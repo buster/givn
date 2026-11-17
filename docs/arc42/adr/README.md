@@ -16,7 +16,7 @@ are historical context only.
 
 The complete qualification procedure, LLM verdict schema, routing values, and
 MADR template are owned by the resolved Arc42 addon instruction. Run
-`givn instructions arc42-docs --change <id>` before drafting.
+`givn instructions arc42-docs` before drafting.
 
 This register records status, relationships, and links; it does not duplicate
 the procedure. A chapter being affected does not by itself require a new ADR.
@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-27 accepted records and no proposed records. The fifteen semantic-engine
+32 accepted records and no proposed records. The fifteen semantic-engine
 records were superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and
 moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -60,7 +60,11 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | [ADR-073](ADR-073-development-record-ownership.md) | accepted | Own the development record and report harness activity through one intake interface | record-ownership and intake-contract boundary |
 | [ADR-074](ADR-074-neutral-source-analyzer-port.md) | accepted | Analyze source code behind a neutral `SourceAnalyzer` port with a `syn` adapter | dependency-direction and engine-replacement boundary |
 | [ADR-075](ADR-075-projected-interaction-integrity.md) | accepted | Enforce the projected interaction inventory before accepting a change | pre-mutation gate boundary; component split and dependency direction |
-| [ADR-076](ADR-076-addon-materialization-declaration.md) | accepted | Declare each addon's materialization on its registry entry | ownership boundary between the registry and its consumers; compile-time exhaustiveness |
+| [ADR-076](ADR-076-clean-room-trial-record.md) | accepted | Bind a clean-room trial to a versioned, per-path record outside the trial | durable evidence scope; builder-versus-verifier boundary |
+| [ADR-077](ADR-077-stack-instructions.md) | accepted | Serve stack mechanics on demand from per-stack instructions | durable guidance composition contract; instruction id and load-condition boundary |
+| [ADR-078](ADR-078-frozen-package-outside-the-trial.md) | accepted | Keep the frozen End-to-end (E2E) test package outside the clean-room trial | builder-versus-verifier authority boundary; durable record and compatibility boundary |
+| [ADR-079](ADR-079-standalone-acceptance-package.md) | accepted | Keep the black-box acceptance suite in a standalone workspace package | acceptance-authority and dependency-direction boundary; independent-package build contract |
+| [ADR-080](ADR-080-addon-materialization-declaration.md) | accepted | Declare each addon's materialization on its registry entry | ownership boundary between the registry and its consumers; compile-time exhaustiveness |
 
 ## Relationships
 
@@ -69,14 +73,17 @@ moved to [`archive/`](archive/) by the `drop-embedding-features` change.
 | ADR-019 -> retired ADR-027 | ADR-027 superseded the old `givn verify` naming and was later retired as non-qualifying; the lint naming contract lives in `givn/specs/verify-change/`. |
 | ADR-039, 041, 044, 045, 046, 047, 052, 054, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
 | ADR-070 -> ADR-072 | ADR-072 generalizes ADR-070's publication consequence onto the backend seam; ADR-070 keeps the forward-only proof decision. |
-| ADR-070 (amended by review-friction-hardening, prepare-0-9-10) | The receipt binds tested content through a SHA-256 digest and `change-proof/v1`. A documentation-only revision reuses the proof. The later amendment adds the stable execution witness captured before/after launch, the no-behavior-change applicability result, and per-scope archive evidence reused only when inputs and results match. |
+| ADR-070 (amended by review-friction-hardening, prepare-0-9-10, enforce-ise-e2e-boundary) | The receipt binds tested content through a SHA-256 digest and `change-proof/v1`. A documentation-only revision reuses the proof. The later amendments add the stable execution witness captured before/after launch, the no-behavior-change applicability result, per-scope archive evidence reused only when inputs and results match, and — for an `ise`-effective change — the declared E2E package digests, E2E runner command digest, running Givn version, and E2E scope outcome. |
 | ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration preparation on Fossil. |
 | ADR-013 (amended by require-agent-target, keep-agent-prompt-open, development-timeline, prepare-0-9-10) | Initialization requires an explicitly selected target set. The destinations are `opencode`, `agents`, `claude`, `omp`, and `maki`. The current invocation surface is skills-only; no target receives generated commands. Maki remains a full skills target and receives the development reporter through merged user-owned configuration. |
-| ADR-010 (amended by prepare-0-9-10) | The generic overlay owns policy and graph in `givn/config.yaml`; `givn/commands.yaml` uses a dedicated `verify`/`coverage`/`run` schema. Cross-owned keys are refused. |
+| ADR-010 (amended by prepare-0-9-10, add-ise-addon-and-specification) | The generic overlay owns policy and graph in `givn/config.yaml`; `givn/commands.yaml` uses a dedicated `verify`/`coverage`/`run` schema; `givn/specification.yaml` uses a strict read-only schema for the declared Specification roles and source roots. Cross-owned keys are refused. |
 | ADR-023 (amended by prepare-0-9-10) | The upgrade runs on Git and Fossil through the seam, captures a checkpoint, stages only the allowlist, and reports publication/recovery honestly. The 1.0 baseline ships no pre-1.0 route; retired keys require manual repair. |
 | ADR-028 (amended by prepare-0-9-10) | Mandatory review checks remain non-deactivatable. The later conditional readability/outline review member is retired; the outline addon is advisory and no `OUTLINE`/`READABILITY` verdict or waiver is required. |
 | ADR-073 (related to ADR-014, ADR-013, ADR-028) | The development record is a durable journal deliberately outside ADR-014's filesystem-derived state, delivered as one generated agent integration under ADR-013's ownership rule, and explicitly outside ADR-028's gate boundary — the record is never a gate input. |
 | ADR-011, ADR-028, ADR-070, ADR-072 -> ADR-075 | ADR-075 binds the feature-is-spec and mandatory-check contracts to a projected pre-acceptance gate; ADR-070 and ADR-072 keep proof and publication ownership. |
+| ADR-076 (related to ADR-010, ADR-070, ADR-071) | The spec copy's manifest is a separate `ise-manifest/v1` scope. ADR-010 owns the declaration it reads, ADR-070 owns the change verification receipt (`change-proof/v1`), and ADR-071 owns the revision read; the manifest owns only the clean-room handover evidence. |
+| ADR-076 (amended by strengthen-ise-specification) | The clean-room commands are `givn ise rebuild-all`, `givn ise rebuild-component`, and `givn ise compare`; the evidence is the ephemeral `ise-manifest/v1` manifest, whose checksum bytes and additive-field compatibility rule are stated. The original shape, placement, and ownership rule stand; a later field is optional with the older content as its default, and a required field or a changed meaning opens a new scope. |
+| ADR-078 (related to ADR-076, ADR-010) | ADR-078 owns what the spec copy contains: the resolved `e2e` package is never copied, and a copy that holds one is refused by name. It adds no field to the `ise-manifest/v1` scope; ADR-076 keeps the manifest's shape, placement, and scope rule, and ADR-010 owns the declaration that derives the package. |
 
 ## Evidence
 

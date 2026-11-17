@@ -13,6 +13,7 @@ pub mod graph;
 pub mod history;
 pub mod init;
 pub mod instructions;
+pub mod ise;
 pub mod lint;
 pub mod migration;
 pub mod missing_run_command;

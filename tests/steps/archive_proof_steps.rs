@@ -744,7 +744,7 @@ fn stderr_names(world: &mut GivnWorld, needle: String) {
     let stderr = crate::steps::stderr(world);
     assert!(
         stderr.contains(&needle),
-        "stderr missing {needle:?}: {stderr}"
+        "stderr does not name {needle:?}: {stderr}"
     );
 }
 

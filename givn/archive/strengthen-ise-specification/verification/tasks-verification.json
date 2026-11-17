@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "change": "strengthen-ise-specification",
+  "status": "passed",
+  "head": "30f8400af9fb6111bfc7031375c3dc96008f05b1",
+  "features_path": "givn/changes/strengthen-ise-specification/specs",
+  "features_digest": "ab8993cfbe173c82be7b21faae72387c9684c703710b89145dd13cf2399cb10d",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "ea25b267399fa9bc329a5f5fe3360f234d8494455c115514c849f48a43eb82d9",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 100,
+    "passed": 100,
+    "failed": 0,
+    "skipped": 0
+  },
+  "e2e_identity": {
+    "package_digests": {
+      "e2e": "dcb664aeac1bdfbaac7ec099abb15b14f282caf7f3e2bb0a6e6633322a10adc5"
+    },
+    "runner_command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+    "givn_version": "0.9.20"
+  },
+  "e2e_scope": {
+    "status": "passed",
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 8.071802587
+  },
+  "finished_at_unix": 1794917028
+}

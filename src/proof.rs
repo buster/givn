@@ -411,6 +411,16 @@ impl ScopeOutcome {
             ..Self::default()
         }
     }
+
+    /// Whether the scope records a green run with at least one scenario.
+    pub fn is_green(&self) -> bool {
+        self.status == "passed"
+            && self.failed == 0
+            && self.skipped == 0
+            && self.total > 0
+            && self.passed == self.total
+            && self.passed + self.failed + self.skipped == self.total
+    }
 }
 
 impl Default for ScopeOutcome {
@@ -501,14 +511,16 @@ impl RunnerResult {
         }
         if result.failed != 0 {
             bail!(
-                "archive blocked: {label} runner result declares {} failed scenario(s)",
-                result.failed
+                "archive blocked: {label} runner result reports {} failed {}",
+                result.failed,
+                if result.failed == 1 { "test" } else { "tests" }
             );
         }
         if result.skipped != 0 {
             bail!(
-                "archive blocked: {label} runner result declares {} skipped scenario(s)",
-                result.skipped
+                "archive blocked: {label} runner result reports {} skipped {}",
+                result.skipped,
+                if result.skipped == 1 { "test" } else { "tests" }
             );
         }
         if result.passed + result.failed + result.skipped != result.total {
@@ -523,6 +535,27 @@ impl RunnerResult {
         }
         Ok(result)
     }
+}
+
+/// The E2E identity a receipt binds: one digest per resolved `e2e` package,
+/// the E2E runner command digest, and the Givn version that wrote it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct E2eIdentity {
+    /// Package directory (or import-mode path) to the digest of its tracked
+    /// tree.
+    pub package_digests: BTreeMap<String, String>,
+    pub runner_command_digest: String,
+    pub givn_version: String,
+}
+
+/// The verification outcome a change-scoped run records in its receipt.
+#[derive(Debug, Clone)]
+pub struct ChangeVerification {
+    pub result: RunnerResult,
+    /// Absent when the change lock has `ise` off.
+    pub e2e_identity: Option<E2eIdentity>,
+    /// The E2E scope outcome; absent when the change lock has `ise` off.
+    pub e2e_scope: Option<ScopeOutcome>,
 }
 
 /// The receipt `givn check tasks` writes after a green change-scoped run.
@@ -543,6 +576,12 @@ pub struct ChangeReceipt {
     pub content_scope: Option<String>,
     pub runner_exit: i32,
     pub result: RunnerResult,
+    /// The E2E identity; absent on a receipt written with `ise` off.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub e2e_identity: Option<E2eIdentity>,
+    /// The E2E scope outcome; absent on a receipt written with `ise` off.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub e2e_scope: Option<ScopeOutcome>,
     pub finished_at_unix: u64,
 }
 
@@ -561,13 +600,49 @@ pub enum ProofStatus {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StaleReason {
     NotGreen,
-    FeaturesChanged { receipt: String, current: String },
-    CommandChanged { receipt: String, current: String },
-    TestedContentChanged { receipt: String, current: String },
-    TestedRevisionUnavailable { tested_revision: String },
-    LegacyReceiptWithoutContentBinding { tested_revision: String },
-    UnsupportedContentScope { scope: String },
-    UnsupportedReceiptSchema { schema: u32 },
+    FeaturesChanged {
+        receipt: String,
+        current: String,
+    },
+    CommandChanged {
+        receipt: String,
+        current: String,
+    },
+    TestedContentChanged {
+        receipt: String,
+        current: String,
+    },
+    TestedRevisionUnavailable {
+        tested_revision: String,
+    },
+    LegacyReceiptWithoutContentBinding {
+        tested_revision: String,
+    },
+    UnsupportedContentScope {
+        scope: String,
+    },
+    UnsupportedReceiptSchema {
+        schema: u32,
+    },
+    MissingE2eIdentity,
+    E2eIdentityUnavailable {
+        reason: String,
+    },
+    E2ePackageChanged {
+        package: String,
+        receipt: String,
+        current: String,
+    },
+    E2eRunnerCommandChanged {
+        receipt: String,
+        current: String,
+    },
+    GivnVersionChanged {
+        receipt: String,
+        current: String,
+    },
+    E2eScopeMissing,
+    E2eScopeUnexpected,
 }
 
 impl StaleReason {
@@ -597,8 +672,49 @@ impl StaleReason {
             Self::UnsupportedReceiptSchema { schema } => {
                 format!("unsupported change verification receipt schema {schema}")
             }
+            Self::MissingE2eIdentity => {
+                "the receipt lacks the E2E identity; run `givn check tasks` once".to_string()
+            }
+            Self::E2eIdentityUnavailable { reason } => {
+                format!("the E2E identity cannot be read: {reason}")
+            }
+            Self::E2ePackageChanged {
+                package,
+                receipt,
+                current,
+            } => format!(
+                "the e2e package digest for '{package}' changed: receipt {receipt}, current {current}"
+            ),
+            Self::E2eRunnerCommandChanged { receipt, current } => {
+                format!("E2E runner command changed: receipt {receipt}, current {current}")
+            }
+            Self::GivnVersionChanged { receipt, current } => {
+                format!("Givn version changed: receipt {receipt}, current {current}")
+            }
+            Self::E2eScopeMissing => "the E2E scope is missing: the delta has an @e2e scenario \
+                 but the receipt records no green E2E scope; run `givn check tasks` once"
+                .to_string(),
+            Self::E2eScopeUnexpected => "the E2E scope is not applicable to this delta: the \
+                 receipt records a passed E2E scope but the delta has no @e2e scenario; run \
+                 `givn check tasks` once"
+                .to_string(),
         }
     }
+}
+
+/// Path of the change-scoped E2E runner result.
+pub const CHANGE_E2E_RESULT_FILE: &str = "verification/e2e-result.json";
+
+/// Read the change's E2E scope result. The refusal names the failing E2E run
+/// and the count the result reported, so an unbound step (a failed test) and a
+/// skipped step (a skipped test) never share one generic message.
+pub fn read_change_e2e_result(change_id: &str, path: &Path) -> Result<RunnerResult> {
+    RunnerResult::read(path, SCOPE_E2E).map_err(|error| {
+        anyhow::anyhow!(
+            "the change E2E run failed: {error}; repair the change and rerun \
+             `givn check tasks --change {change_id}`"
+        )
+    })
 }
 
 /// Path of the change-scoped verification receipt.
@@ -853,6 +969,10 @@ impl ChangeReceipt {
             _ => unreachable!("schema was checked above"),
         }
 
+        if crate::config::lock::ise_effective_for_change(change_dir)? {
+            reasons.extend(self.e2e_stale_reasons(change_dir, project_root, manifest)?);
+        }
+
         if !reasons.is_empty() {
             Ok(ProofStatus::Stale(reasons))
         } else if documentation_only {
@@ -863,6 +983,98 @@ impl ChangeReceipt {
         } else {
             Ok(ProofStatus::Current)
         }
+    }
+
+    /// The E2E identity and delta-aware scope reasons an `ise`-effective
+    /// change adds to the shared freshness rule. Every independent reason is
+    /// collected; only a receipt without the identity stops the comparison.
+    fn e2e_stale_reasons(
+        &self,
+        change_dir: &Path,
+        project_root: &Path,
+        manifest: &crate::config::manifest::Manifest,
+    ) -> Result<Vec<StaleReason>> {
+        let mut reasons = Vec::new();
+
+        let delta_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&change_dir.join("specs"));
+        match self.e2e_scope.as_ref() {
+            Some(scope) if delta_has_e2e && !scope.is_green() => {
+                reasons.push(StaleReason::E2eScopeMissing);
+            }
+            None if delta_has_e2e => reasons.push(StaleReason::E2eScopeMissing),
+            Some(scope) if !delta_has_e2e && scope.status == "passed" => {
+                reasons.push(StaleReason::E2eScopeUnexpected);
+            }
+            _ => {}
+        }
+
+        let Some(identity) = self.e2e_identity.as_ref() else {
+            reasons.push(StaleReason::MissingE2eIdentity);
+            return Ok(reasons);
+        };
+
+        let current_runner = digest_text(&manifest.verify.e2e_command);
+        if identity.runner_command_digest != current_runner {
+            reasons.push(StaleReason::E2eRunnerCommandChanged {
+                receipt: identity.runner_command_digest.clone(),
+                current: current_runner,
+            });
+        }
+        let current_version = env!("CARGO_PKG_VERSION");
+        if identity.givn_version != current_version {
+            reasons.push(StaleReason::GivnVersionChanged {
+                receipt: identity.givn_version.clone(),
+                current: current_version.to_string(),
+            });
+        }
+
+        let declaration =
+            match crate::config::declaration::SpecificationDeclaration::load(project_root) {
+                Ok(Some(declaration)) => declaration,
+                Ok(None) => {
+                    reasons.push(StaleReason::E2eIdentityUnavailable {
+                        reason: format!(
+                            "'{}' is absent",
+                            crate::config::declaration::DECLARATION_PATH
+                        ),
+                    });
+                    return Ok(reasons);
+                }
+                Err(error) => {
+                    reasons.push(StaleReason::E2eIdentityUnavailable {
+                        reason: error.to_string(),
+                    });
+                    return Ok(reasons);
+                }
+            };
+        let current = crate::e2e_boundary::E2eBoundary::resolve(project_root, &declaration)
+            .identity(project_root)?;
+        for (package, recorded) in &identity.package_digests {
+            match current.get(package) {
+                Some(digest) if digest == recorded => {}
+                Some(digest) => reasons.push(StaleReason::E2ePackageChanged {
+                    package: package.clone(),
+                    receipt: recorded.clone(),
+                    current: digest.clone(),
+                }),
+                None => reasons.push(StaleReason::E2ePackageChanged {
+                    package: package.clone(),
+                    receipt: recorded.clone(),
+                    current: "(absent)".to_string(),
+                }),
+            }
+        }
+        for (package, digest) in &current {
+            if !identity.package_digests.contains_key(package) {
+                reasons.push(StaleReason::E2ePackageChanged {
+                    package: package.clone(),
+                    receipt: "(absent)".to_string(),
+                    current: digest.clone(),
+                });
+            }
+        }
+
+        Ok(reasons)
     }
 
     /// Strict revision equality used by older callers and tests.
@@ -972,35 +1184,12 @@ fn digest_content(
     }
     for entry in entries {
         let relative = entry.path.to_string_lossy().replace('\\', "/");
-        hasher.update(relative.as_bytes());
-        hasher.update(b"\0");
-        let absolute = project_root.join(&entry.path);
-        let metadata = std::fs::symlink_metadata(&absolute)
-            .with_context(|| format!("cannot read tested content path '{relative}'"))?;
-        #[cfg(unix)]
-        let executable = {
-            use std::os::unix::fs::PermissionsExt;
-            metadata.permissions().mode() & 0o111 != 0
-        };
-        #[cfg(not(unix))]
-        let executable = false;
-        hasher.update(if executable { b"1" } else { b"0" });
-        hasher.update(b"\0");
-        if let Some(object) = &entry.gitlink {
-            hasher.update(b"gitlink\0");
-            hasher.update(object.as_bytes());
-        } else if metadata.file_type().is_symlink() {
-            let target = std::fs::read_link(&absolute)
-                .with_context(|| format!("cannot read symlink target '{relative}'"))?;
-            hasher.update(target.to_string_lossy().as_bytes());
-        } else if metadata.is_dir() {
-            hasher.update(b"directory\0");
-        } else {
-            let bytes = std::fs::read(&absolute)
-                .with_context(|| format!("cannot read tested content path '{relative}'"))?;
-            hasher.update(&bytes);
-        }
-        hasher.update(b"\0");
+        crate::e2e_boundary::hash_entry(
+            &mut hasher,
+            project_root,
+            &relative,
+            entry.gitlink.as_deref(),
+        )?;
     }
     Ok(hasher
         .finalize()
@@ -1018,7 +1207,7 @@ pub fn write_change_receipt(
     head: &str,
     command: &str,
     tested_content_digest: &str,
-    result: RunnerResult,
+    verification: ChangeVerification,
     finished_at_unix: u64,
 ) -> Result<()> {
     let features = change_dir.join("specs");
@@ -1039,7 +1228,9 @@ pub fn write_change_receipt(
         tested_content_digest: Some(tested_content_digest.to_string()),
         content_scope: Some(CONTENT_SCOPE.to_string()),
         runner_exit: 0,
-        result,
+        result: verification.result,
+        e2e_identity: verification.e2e_identity,
+        e2e_scope: verification.e2e_scope,
         finished_at_unix,
     };
     let dir = change_dir.join("verification");
@@ -1478,12 +1669,16 @@ mod tests {
             "abc",
             "runner",
             "digest",
-            RunnerResult {
-                scope: None,
-                total: 1,
-                passed: 1,
-                failed: 0,
-                skipped: 0,
+            ChangeVerification {
+                result: RunnerResult {
+                    scope: None,
+                    total: 1,
+                    passed: 1,
+                    failed: 0,
+                    skipped: 0,
+                },
+                e2e_identity: None,
+                e2e_scope: None,
             },
             1,
         )
@@ -1517,12 +1712,16 @@ mod tests {
             "abc",
             "runner",
             "digest",
-            RunnerResult {
-                scope: None,
-                total: 2,
-                passed: 2,
-                failed: 0,
-                skipped: 0,
+            ChangeVerification {
+                result: RunnerResult {
+                    scope: None,
+                    total: 2,
+                    passed: 2,
+                    failed: 0,
+                    skipped: 0,
+                },
+                e2e_identity: None,
+                e2e_scope: None,
             },
             1,
         )
@@ -1620,12 +1819,16 @@ mod tests {
             &head,
             &manifest.verify.command,
             &digest,
-            RunnerResult {
-                scope: None,
-                total: 1,
-                passed: 1,
-                failed: 0,
-                skipped: 0,
+            ChangeVerification {
+                result: RunnerResult {
+                    scope: None,
+                    total: 1,
+                    passed: 1,
+                    failed: 0,
+                    skipped: 0,
+                },
+                e2e_identity: None,
+                e2e_scope: None,
             },
             1,
         )

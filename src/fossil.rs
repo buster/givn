@@ -357,37 +357,35 @@ impl FossilCheckout {
         Ok(None)
     }
 
-    /// Files under `root` in `revision`.
+    /// Tracked files under `root` in `revision`, with their entry kind.
+    ///
+    /// The check-in manifest is the read: `fossil ls` reports neither the
+    /// executable bit nor a symlink, while each `F` card carries both.
     pub fn revision_files(
         &self,
         revision: &str,
         root: &str,
-    ) -> Result<Vec<(String, crate::scm::EntryKind)>> {
-        let output = self.run(&["ls", "-r", revision_arg(revision)])?;
+    ) -> Result<Vec<crate::scm::RevisionEntry>> {
+        let output = self.run(&["artifact", revision_arg(revision)])?;
         if !output.status.success() {
-            return Ok(Vec::new());
+            bail!(
+                "read the Fossil manifest at revision '{revision}' in '{}': {}",
+                self.root.display(),
+                stderr(&output)
+            );
         }
-        Ok(String::from_utf8_lossy(&output.stdout)
-            .lines()
-            .filter(|line| under_root(line, root) && line.ends_with(".rs"))
-            .map(|line| (line.to_string(), crate::scm::EntryKind::Regular))
+        let manifest = String::from_utf8_lossy(&output.stdout);
+        Ok(parse_manifest(&manifest, revision)?
+            .into_iter()
+            .filter(|entry| root.is_empty() || under_root(&entry.path, root))
             .collect())
     }
 
-    /// Read the named blobs from `revision`.
-    pub fn revision_blobs(
-        &self,
-        revision: &str,
-        paths: &[String],
-    ) -> Result<Vec<(String, Vec<u8>)>> {
-        let mut blobs = Vec::new();
-        for path in paths {
-            let output = self.run(&["cat", "-r", revision_arg(revision), path])?;
-            if output.status.success() {
-                blobs.push((path.clone(), output.stdout));
-            }
-        }
-        Ok(blobs)
+    /// One path's bytes at `revision`, or `None` when the checkout holds no
+    /// blob for it.
+    pub fn revision_blob(&self, revision: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        let output = self.run(&["cat", "-r", revision_arg(revision), path])?;
+        Ok(output.status.success().then_some(output.stdout))
     }
 
     /// Changed paths under `root` from `base` to the current revision.
@@ -514,6 +512,63 @@ fn under_root(path: &str, root: &str) -> bool {
             .is_some_and(|rest| rest.starts_with('/'))
 }
 
+/// Parse the `F` cards of a Fossil check-in manifest. Each card is
+/// `F <path> <40-hex-or-64-hex blob> [flags]`; `x` marks an executable
+/// regular file and `l` a symlink. A manifest is the recorded revision, so a
+/// malformed card refuses instead of being skipped.
+fn parse_manifest(manifest: &str, revision: &str) -> Result<Vec<crate::scm::RevisionEntry>> {
+    let mut entries = Vec::new();
+    for line in manifest.lines() {
+        let Some(rest) = line.strip_prefix("F ") else {
+            continue;
+        };
+        let mut fields = rest.split_whitespace();
+        let Some(raw_path) = fields.next() else {
+            bail!(
+                "the Fossil manifest at revision '{revision}' has an F line without a path: '{line}'"
+            );
+        };
+        let Some(hash) = fields.next() else {
+            bail!(
+                "the Fossil manifest at revision '{revision}' has an F line without a blob hash: '{line}'"
+            );
+        };
+        if !is_blob_hash(hash) {
+            bail!(
+                "the Fossil manifest at revision '{revision}' has an F line without a 40-hex or 64-hex blob hash: '{line}'"
+            );
+        }
+        let mut kind = crate::scm::EntryKind::Regular;
+        let mut executable = false;
+        for flag in fields {
+            match flag {
+                "x" => executable = true,
+                "l" => kind = crate::scm::EntryKind::Symlink,
+                other => bail!(
+                    "the Fossil manifest at revision '{revision}' has an F line with an unknown flag '{other}': '{line}'"
+                ),
+            }
+        }
+        entries.push(crate::scm::RevisionEntry {
+            path: decode_manifest_path(raw_path),
+            kind,
+            executable,
+            gitlink: None,
+        });
+    }
+    Ok(entries)
+}
+
+/// A Fossil manifest hash is a 40-hex SHA-1 or a 64-hex SHA-256 artifact id.
+fn is_blob_hash(value: &str) -> bool {
+    (value.len() == 40 || value.len() == 64) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+/// Fossil escapes a space in a manifest path as `\s`.
+fn decode_manifest_path(raw: &str) -> String {
+    raw.replace("\\s", " ")
+}
+
 fn stderr(output: &Output) -> String {
     String::from_utf8_lossy(&output.stderr).trim().to_string()
 }
@@ -588,6 +643,51 @@ mod tests {
         );
         assert!(parse_change_paths("").is_empty());
         assert!(parse_change_paths("EDITED").is_empty());
+    }
+
+    #[test]
+    fn parses_manifest_entry_kinds_and_decodes_a_space() {
+        let manifest = "\
+C abcdef\n\
+P 0123456789abcdef0123456789abcdef01234567\n\
+F dir/file.txt 0123456789abcdef0123456789abcdef01234567\n\
+F a\\sb.txt fedcba9876543210fedcba9876543210fedcba98\n\
+F run.sh 1111111111111111111111111111111111111111111111111111111111111111 x\n\
+F link 2222222222222222222222222222222222222222222222222222222222222222 l\n\
+F sub 3333333333333333333333333333333333333333 l x\n\
+";
+        let entries = parse_manifest(manifest, "current").unwrap();
+        assert_eq!(entries.len(), 5, "{entries:?}");
+        assert_eq!(entries[0].path, "dir/file.txt");
+        assert_eq!(entries[0].kind, crate::scm::EntryKind::Regular);
+        assert!(!entries[0].executable);
+        assert_eq!(entries[1].path, "a b.txt");
+        assert_eq!(entries[2].path, "run.sh");
+        assert!(entries[2].executable);
+        assert_eq!(entries[3].kind, crate::scm::EntryKind::Symlink);
+        assert_eq!(entries[4].kind, crate::scm::EntryKind::Symlink);
+        assert!(entries[4].executable);
+    }
+
+    #[test]
+    fn refuses_a_manifest_line_without_a_blob_hash() {
+        let manifest = "F dir/file.txt not-a-hash\n";
+        let error = parse_manifest(manifest, "abc123")
+            .expect_err("a short hash is refused")
+            .to_string();
+        assert!(error.contains("abc123"), "{error}");
+        assert!(error.contains("F dir/file.txt not-a-hash"), "{error}");
+        assert!(error.contains("40-hex or 64-hex"), "{error}");
+    }
+
+    #[test]
+    fn refuses_a_manifest_line_with_an_unknown_flag() {
+        let manifest = "F run.sh 0123456789abcdef0123456789abcdef01234567 z\n";
+        let error = parse_manifest(manifest, "current")
+            .expect_err("an unknown flag is refused")
+            .to_string();
+        assert!(error.contains("unknown flag 'z'"), "{error}");
+        assert!(error.contains("current"), "{error}");
     }
 
     #[test]

@@ -89,7 +89,7 @@ A change can reach review with every task checked off, the runner exiting
 0, and almost nothing actually implemented — if steps were left as
 empty/no-op stubs. Mechanical check, before trusting any other artifact:
 
-0. **Verify @e2e tag integrity.** Grep every delta `.feature` file in
+0. **Verify `@e2e` tag integrity.** Grep every delta `.feature` file in
    `givn/changes/<change-id>/specs/`. If any scenario's tags were changed
    from including `@e2e` to excluding it, record this as a
    implementation-evidence finding: `@e2e` coverage was planned and then removed
@@ -163,7 +163,7 @@ Examples:
    E2E scenario. Variants, error cases, and output-affecting flag combinations
    of the same action are regular scenarios. Excess E2E scenarios are a
    implementation-evidence finding.
-9. **Confirm the E2E scope is selected explicitly.** When regular and E2E
+9. **Confirm the explicit E2E scope selection and receipt reading.** When regular and E2E
    verification share one runner command, an explicit scope selection such as
    `GIVN_RESULT_SCOPE` must distinguish the executions. Equal test counts or
    identical command strings do not by themselves invalidate honestly isolated
@@ -205,8 +205,8 @@ Examples:
        the same interaction.
     d. For each matrix row, grep the e2e step definition file(s) for the
        promised driving mechanism. If the matrix says "Playwright: click
-       button X", the step file must import/use Playwright (not `reqwest`,
-       not raw HTTP). If the driving mechanism is an HTTP client for an
+       button X", the step file must import/use Playwright (not an HTTP
+       client, not raw HTTP). If the driving mechanism is an HTTP client for an
        API-only capability, confirm the step file uses that HTTP client.
        Mismatch = driving-mechanism finding: the implementation silently
        used a different driver than the reviewed design committed to.
@@ -220,6 +220,29 @@ Examples:
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
+{{#if addons.ise}}
+## Change strategy and Spec gap
+
+Read the change's design ledger and its proposal before classifying any
+difference.
+
+- **One `Spec gap` outcome before any fix.** Record exactly one `Spec gap`
+  outcome before any fix: `E2E test defect`, `implementation defect`,
+  `specification defect`, or `acceptable undocumented change`. More than one
+  outcome, or an outcome recorded after a fix, is a finding. The record names
+  the artifact that is wrong, not who found it.
+- **Only `specification defect` is a gap in the Specification.** An
+  `E2E test defect` is a gap in the E2E test, an `implementation defect` is a
+  gap in the build, and an `acceptable undocumented change` is no gap at all.
+- **An `E2E test defect` stops the Ise Test.** Stop the trial, correct the E2E
+  test, and restart the trial from the corrected suite. The `e2e` package is
+  part of the Specification, so the corrected test is a Specification
+  correction, not an exception to the freeze.
+- **Neighboring components.** Ask which components changed outside the
+  replaced component, and the reason for each change. Record the answer. This
+  is one review question, never a gate.
+
+{{/if}}
 {{#if addons.arc42}}
 ## Arc42 implementation conformance
 
@@ -473,7 +496,7 @@ blocks the archive gate regardless of this line.
   verification receipt; review does not re-run the suite.
 - Coverage classification uses the most recent available measured evidence;
   the archive receipt will carry the merged result.
-- Every coverage gap classified and resolved.
+- Every coverage gap is classified and resolved; no fourth bucket.
 - Dead code deleted. Missing tests added. Hard-to-test gaps justified.
 - Redundant unit tests removed.
 - No `@wip` tags remain. No implementation-layer detail in the spec.
@@ -485,17 +508,18 @@ blocks the archive gate regardless of this line.
 - The local run command starts the full stack (including digital twins)
   cleanly, verified during this review.
 - The exact file(s) `verify.e2e_command` invokes were identified and read;
-  the tree (including untracked files) was searched for a second/parallel
-  e2e implementation before accepting a weaker one.
-- The E2E scope is selected explicitly (`GIVN_RESULT_SCOPE` or equivalent);
-  equal counts or command strings are acceptable only with that honest
-  isolation, and required executions report zero failures and skips.
-- Implementation (commands, file layout, framework/driver) matches what
-  design.md explicitly named — any deviation was resolved by updating
-  design.md and re-running design-review, never left as a silent shortcut.
-- Interaction coverage verified: every use-case inventory entry maps to a
-  design matrix row, an existing `@e2e` scenario, and step definitions
-  using the promised driving mechanism — no mismatches.
+  the tree (including untracked files) was searched for a second `@e2e` file
+  implementation before accepting a weaker one.
+- The explicit E2E scope selection is recorded (`GIVN_RESULT_SCOPE` or
+  equivalent); equal counts or command strings are acceptable only with that
+  honest isolation, and required executions report zero failures and skips.
+- Design match: implementation (commands, file layout, framework/driver)
+  matches what `design.md` explicitly named — any deviation was resolved by
+  updating `design.md` and re-running design-review, never left as a silent
+  shortcut.
+- Interaction coverage maps every use-case inventory entry to a design matrix
+  row, an existing `@e2e` scenario, and step definitions using the promised
+  driving mechanism — no mismatches.
 - No finding was excused with a classification outside the three buckets
   (no "acceptable for now," "future scope," "sufficient for current scope,"
   or similar invented exception anywhere in this report).

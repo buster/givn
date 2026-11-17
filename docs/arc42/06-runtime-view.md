@@ -217,6 +217,17 @@ advisory and never changes the exit code. Forward references during an active
 ideation topic stay quiet, and the persona scan runs in both the default and
 `--change` scopes.
 
+When `ise` is effective, the default whole-tree scope also reads
+`givn/specification.yaml` through the one strict declaration loader and reports
+four advisory placement findings: a declared path that matches nothing, one
+path declared in two roles, a `.feature` file outside the `behavior` globs, and
+a declared `e2e` package that is missing or carries a dependency edge into
+`source`. The `e2e` edge is computed from Cargo manifests, statically; a project
+with no Cargo manifest receives no such finding. The four findings never change
+the exit code. A malformed declaration is a blocking error (exit `1`) and no
+advisory finding is computed from it. The change scope and explicit paths never
+read the declaration, so no declaration finding becomes a review blocker.
+
 ## 6.5 `givn status` and `givn graph`
 
 Both commands load the effective manifest and derive state from the change
@@ -248,7 +259,24 @@ through its dedicated `verify`/`coverage`/`run` schema after the
 For `givn check tasks`, the binary runs the non-configurable mandatory checks:
 
 1. For a change delta, reject non-removed scenarios that still have `@wip`.
-2. Run `verify.command` with `GIVN_FEATURES` set to the active change specs.
+2. When the change's `config-lock.yaml` has `ise` effective, load
+   `givn/specification.yaml` and resolve the declared `e2e` role to its packages,
+   each matched path's package or the path itself when it resolves none.
+   Refuse, and write no receipt, on every boundary condition: matches no path, a
+   resolved package's malformed manifest, a resolved path under a `source:` root, a
+   resolved package whose tree contains a `source:` root, a direct, transitive, or
+   workspace-inherited dependency edge into `source`, a path that resolves no
+   package with a reference into `source`, or an E2E runner command that names no
+   resolved root.
+3. Run `verify.command` with `GIVN_FEATURES` set to the active change specs and
+   `GIVN_RESULT_SCOPE=change`.
+4. When the delta contains an `@e2e` scenario, run `verify.e2e_command` with the
+   same `GIVN_FEATURES`, `GIVN_RESULT_SCOPE=e2e`, and
+   `verification/e2e-result.json`; an unbound step, skipped step, nonzero exit,
+   malformed, zero, unreconciled, failed, or wrong-scope result refuses and
+   writes no receipt.
+5. Write the change verification receipt with the regular counts and, when
+   `ise` is effective, the E2E identity and E2E scope outcome.
 
 For `givn check review`, it runs:
 
@@ -299,7 +327,8 @@ flowchart TD
 
 Review does not execute `verify.command` or `verify.e2e_command`. Scenario
 execution is proven once per archive by the verification receipt; review
-inspects the static artifacts and the implementation evidence check instead.
+inspects the static artifacts, the receipt (including the optional E2E
+identity), and the implementation evidence check instead.
 
 These mandatory checks are in `src/cli/check.rs` and cannot be removed by
 removing a `post` entry. Built-in hook names also ignore `allow_failure` when
@@ -344,7 +373,7 @@ sequenceDiagram
     D->>A: givn archive --change id
     A->>S: select backend + clean-state witness
     alt fresh archive
-        A->>A: structural gates (artifacts, step-definition comparison, hooks, run declaration, README, merge preconditions)
+        A->>A: structural gates (declared Specification paths, artifacts, step-definition comparison, hooks, run declaration, README, merge preconditions)
         A->>A: write pending verification.json (merge_completed: false)
         A->>A: move givn/changes/id to givn/archive/id with one rename
         A->>A: merge use-case docs and deltas from the archived candidate
@@ -384,7 +413,13 @@ Stages:
    `apply.requires` completeness, the delta step-definition comparison,
    configured archive hooks, the run-declaration gate, the README completeness
    gate, use-case and delta prevalidation, the e2e-runner configuration check,
-   and the shared change-receipt freshness check (section 6.7.1). The
+   and the shared change-receipt freshness check (section 6.7.1). Before the
+   artifact gates, an `ise`-effective project's declaration is checked: every
+   Specification-role entry that matches a content path under `givn/changes/<id>/`
+   must also match a content path that stays or the archived
+   `givn/archive/<id>/` form of a content path it matches, or the archive is
+   refused by name before the pending receipt is written. A project with `ise`
+   off reads no declaration. The
    step-definition comparison reads the change's `specs/**` step files, collects
    the phrases bound by their binding expressions, compares them with the
    permanent test tree (the project root minus the change, archive, history,
@@ -455,10 +490,17 @@ requires a clean committed tree except evidence/verification paths, sets
 validates four green counts. Before the run it captures the tested-content
 digest: every tracked and untracked non-ignored path outside the closed
 documentation/evidence allowlist, sorted, hashed with its executable marker and
-file bytes. It then writes
+file bytes. When the delta contains an `@e2e` scenario and the change lock has
+`ise` effective, it runs the same delta features through `verify.e2e_command`
+with `GIVN_RESULT_SCOPE=e2e` and
+`verification/e2e-result.json`, then recaptures the E2E identity and requires it
+to be unchanged. It then writes
 `givn/changes/<id>/verification/tasks-verification.json` (schema 2) with the
 tested revision, features digest, verify-command digest, tested-content digest,
-`content_scope: "change-proof/v1"`, and counts.
+`content_scope: "change-proof/v1"`, counts, and — when `ise` is effective — the
+resolved package digests, the E2E runner command digest, the running Givn version,
+and the E2E scope outcome. Both E2E fields are omitted rather than serialized
+as `null`, so a change with `ise` off keeps the previous receipt bytes.
 
 `givn check review` runs no tests: it reads that receipt and refuses a missing
 or stale one with `givn check tasks --change <id>`. `givn archive` performs the
@@ -475,10 +517,16 @@ without reuse. Unchanged tested content under a different, available revision
 is accepted as a documentation-only revision and keeps the proof current: the
 command prints the reused-proof message and runs no change-suite test. The
 check establishes tested-content equality; it does not inspect the intervening
-diff. A failed check reports every independent stale reason (changed features,
-changed command, changed tested content, unavailable tested revision, unbound
-schema 1 receipt, unsupported content scope, or unsupported schema) and routes
-to `givn check tasks --change <id>`.
+diff. When the change lock has `ise` effective, freshness also requires the E2E
+identity: a missing identity, an unreadable declaration, a changed resolved-package
+digest, a changed E2E runner command, a changed Givn version, or an E2E scope
+that is not green while the delta has an `@e2e` scenario (or is `passed` while
+it has none) is stale. `not_applicable` is accepted exactly when the delta has
+no `@e2e` scenario. A failed check reports
+every independent stale reason (changed features, changed command, changed
+tested content, unavailable tested revision, unbound schema 1 receipt,
+unsupported content scope, unsupported schema, or any E2E-identity reason) and
+routes to `givn check tasks --change <id>`.
 
 `givn check review` reports every use-case schema and capability-routing
 problem in one pass. The routing gate parses each referenced document and every
@@ -534,9 +582,14 @@ add-on set. Review and archive compare the current effective values with the
 lock and refuse on drift.
 
 `givn addons list` reads enabled flags from `givn/config.yaml` and lists every
-registered addon with its effective default. All registered addons are enabled
-by default; a missing key resolves to enabled, and only an explicit `false`
-disables a flag.
+registered addon with its effective default. Every addon except an opt-in addon
+is enabled by default; a missing key resolves to that addon's declared default,
+and only an explicit `false` disables a default-on addon. `ise` is the one
+opt-in addon: enabling it requires `architecture_principles`, disabling
+`architecture_principles` is refused while `ise` is on, and the first effective
+enable writes `givn/specification.yaml` when the file is absent. A second enable,
+or an enable on a project that edited the declaration, reports the existing file
+and leaves it byte-for-byte.
 
 The listing also compares each addon's stored setting against its **addon
 materialization**: the declared paths it scaffolds and, for a skill addon, the
@@ -548,8 +601,8 @@ the command executes none of them and writes nothing, including the change
 lock. An enabled addon with `missing` artifacts exits 1; files present for a
 disabled addon and retired keys exit 0.
 
-`enable arc42` sets the flag, scaffolds missing fixed-path
-chapter files and `docs/glossary.md`, and expands the effective graph;
+`enable arc42` sets the flag, scaffolds missing fixed-path chapter files and
+`docs/glossary.md`, and expands the effective graph;
 `disable arc42` leaves existing docs in place. `enable domain_modeling` sets the
 flag and creates missing `docs/glossary.md` and `docs/domain-model.md`;
 `disable domain_modeling` removes the generated skill but leaves the documents.
@@ -585,9 +638,12 @@ The command records the checkpoint revision, refreshes `givn/config.yaml`,
 backfills the `run:` scaffold into `givn/commands.yaml` when the file exists and
 has no top-level `run:` key (idempotent; a project that already declares `run:`
 produces no diff), and synchronizes generated skills and Givn-owned `AGENTS.md`
-blocks. It stages an explicit allowlist — including `givn/commands.yaml` for the
-backfill — never a complete directory or worktree, and creates one managed
-commit when files changed.
+blocks. When `ise` is effective and `givn/specification.yaml` is absent, it also
+writes the declaration scaffold and stages it in the same allowlist revision;
+an existing declaration is left byte-for-byte, reported as project-owned, and
+staged by neither path. It stages an explicit allowlist — including
+`givn/commands.yaml` for the backfill — never a complete directory or worktree,
+and creates one managed commit when files changed.
 
 The shipped catalog is `migrations: []` at the 1.0 baseline. No pre-1.0 route is
 resolved, so no aggregate maintenance change is created; a project must have a
@@ -629,6 +685,20 @@ repository or external service participates. The `ready_fixture` test target
 plays the started product in `givn run` scenarios: it binds a port, answers a
 readiness path, and can self-exit, fail early, answer failure forever, or trap
 signals into a marker file.
+
+Givn's own repository runs two tiers. The component tier is the
+`tests/features_runner.rs` binary: it creates an isolated temporary project,
+invokes the compiled CLI, captures exit status and stdout/stderr, and performs
+secondary filesystem assertions for non-`@e2e` scenarios. The End-to-end (E2E)
+tier is the standalone `e2e` package: its runner selects `@e2e` scenarios from
+the same feature files, executes `GIVN_BIN` against a temporary project, fails
+on an unbound or skipped step, and writes the four counts and the declared
+scope to `GIVN_RESULT_FILE`. `./run-tests.sh --e2e --package e2e` canonicalizes
+the feature and result paths, builds the product binary unless an instrumented
+`GIVN_BIN` is supplied, exports its path, and runs the package; `givn check
+tasks` and `givn archive` run the same command with their own feature path and
+result file. The package runner first refuses a `Cargo.lock` naming a product
+crate.
 
 ## 6.15 `givn run`
 
@@ -874,10 +944,10 @@ sequenceDiagram
     ORCH->>AN: analyze(request)
     AN-->>ORCH: neutral Analysis plus per-file diagnostics
     ORCH->>MET: compute(analysis)
-    MET-->>ORCH: per-unit metric hints
+    MET-->>ORCH: per-package metric hints
     ORCH->>CLS: classify(metrics)
     CLS-->>ORCH: classification, evidence
-    ORCH->>RPT: render(classified units)
+    ORCH->>RPT: render(classified packages)
     RPT-->>Developer: outline first, then hints; stdout or --out, exit 0
   end
 ```
@@ -909,17 +979,17 @@ sequenceDiagram
    resolved calls into the outline items. A read or parse failure is a
    diagnostic for that file, not an abort; the report continues with the
    analyzable files and names every failure.
-4. The report prints each unit as a per-component call tree first: declarations,
+4. The report prints each package as a per-component call tree first: declarations,
    signatures, order, and calls. Module outlines list their declared member
-   types as type items beside their free functions. Same-unit calls nest under
+   types as type items beside their free functions. Same-package calls nest under
    the caller; calls to another component are leaves tagged with resolution,
    visibility, and owner. A `name_only` edge is a leaf and is never expanded.
    The tree is forward-only and omits calls outside the analyzed sources. It
    contains no data, method bodies, or comments. Shared metrics and
    classification follow as hints. File code lines exclude recorded
-   `#[cfg(test)]` spans, and unit physical lines cover the unit's own spans.
-   Every analyzed unit receives exactly one classification and its evidence;
-   no action or recommendation is produced, and wholly unsupported units are
+   `#[cfg(test)]` spans, and package physical lines cover the package's own spans.
+   Every analyzed package receives exactly one classification and its evidence;
+   no action or recommendation is produced, and wholly unsupported packages are
    not classified and are named.
 5. The selected renderer writes human text or schema-v5 JSON. JSON call objects
    carry `callee`, `resolution`, and `target`; human tags lead with the
@@ -930,7 +1000,7 @@ sequenceDiagram
 ## 6.20 Retired outline review gate
 
 The blocking outline review gate is retired. `givn check review` contains no
-outline analysis, no per-unit verdict, no metric waiver, and no forced reviewer
+outline analysis, no per-package verdict, no metric waiver, and no forced reviewer
 context. The outline addon still produces the advisory report described in
 6.19, and the served implementation and review guidance may refer to that
 evidence during REFACTOR and final review, but the report cannot block review or
@@ -940,5 +1010,137 @@ The current report behavior is owned by the `outline-report` capability and the
 advisory outline guide ([`docs/outline.md`](../outline.md)). Historical gate
 material remains in archived changes and ADR history; it is not current
 architecture.
+
+## 6.21 `givn ise rebuild-all`, `givn ise rebuild-component`, and `givn ise compare`
+
+All three commands are bound to `addons.ise` and its `architecture_principles`
+prerequisite in the effective project config. With either off, each refuses by
+name before reading the declaration or a manifest. The change's
+`config-lock.yaml` is not their authority; it decides the change-scoped
+boundary gate.
+
+`rebuild-all` takes a required `--into`; `rebuild-component` also requires at
+least one path. A missing path list or target is a usage error (exit 2) that
+names it.
+
+### Rebuild
+
+1. Load the effective manifest. `ise` off, or its prerequisite off, refuses by
+   name before any declaration read.
+2. Select the backend. The existing backend selector refuses a missing, mixed,
+   or nested repository.
+3. Read the dirty entries. A dirty checkout refuses and names every path.
+4. Resolve the revision (`HEAD` by default) and read every tracked path with
+   its kind and executable bit: `git ls-tree -r` on Git, the check-in
+   manifest's `F` lines on Fossil (with `\s` decoded and a 40-hex or 64-hex
+   hash accepted). The working tree is not the read source.
+5. Read the declaration recorded at that revision. A revision whose entry list
+   does not hold `givn/specification.yaml` refuses, naming the path, the
+   revision, and `does not record`; a recorded declaration whose blob the
+   backend cannot return refuses, naming the path, the revision, and
+   `returned no blob`; bytes that are not UTF-8 refuse, naming the path and the
+   decoding error; malformed bytes refuse, naming the path and the loader's
+   reason. The parsed revision declaration is the only authority the partition
+   uses.
+6. Partition the tracked paths. The End-to-end (E2E) set is every tracked file
+   of the `e2e` role's resolved packages at that revision, except the
+   declaration; an entry that matches the project root covers the whole tracked
+   tree. The End-to-end (E2E) set's files are in no placement bucket and are
+   never copied.
+   The Specification files are the union of the four content Specification roles
+   and the declaration, counted once; a declared non-empty entry that matches
+   nothing refuses. Each component path is normalized: a tracked file
+   contributes itself, a directory contributes every tracked file beneath it, a
+   glob-shaped value is never expanded, and a value that resolves no tracked
+   path removes nothing. Over that candidate set, the declaration refuses
+   first, then a Specification-role match, then a path outside every source root (the
+   refusal names `rebuild-all`). `rebuild-all` removes every tracked file under
+   every source root, and the covered set wins over both scopes. Remaining
+   source paths that are not Specification files and not End-to-end (E2E)
+   matches are Source code kept; the rest are outside the spec copy.
+7. Check the write targets. The copy and the manifest lie outside the checkout;
+   neither exists; the manifest is not inside the copy and is not an ancestor
+   of it. The containment check resolves the deepest existing ancestor, so a
+   symlinked parent cannot alias the target inside the checkout.
+8. Refuse a gitlink or a copied path whose component is `.git`, `.fslckout`,
+   or `_FOSSIL_` in the copy set, because the copy cannot hold history. A
+   gitlink in the End-to-end (E2E) set is accepted and hashed as kind `g` with
+   the recorded commit id as its content.
+9. On `--dry-run`, print the report with `Copy directory (would write):` and,
+   only when a manifest path was given, `Manifest (not written):`, then stop.
+   Nothing is created.
+10. Create the copy with `create_dir`, write each file with its recorded
+    executable bit or symlink target, and re-read every path against the
+    revision. A mismatch removes the copy and writes no manifest. A symlink
+    with an absolute target, even one that resolves inside the copy, or with a
+    relative target that resolves outside it, refuses, names the link path and
+    the target, and writes nothing.
+11. Write the manifest with `create_new` when `--manifest` is given. A manifest
+    write failure removes the copy; without `--manifest`, nothing is printed
+    after the report.
+
+The report prints the eleven fixed lines `Backend`, `Revision`, `Specification
+files`, `Source code kept`, `Source code removed`, `Outside the spec copy`,
+`Files beside removed paths`, `Specification checksum`, `End-to-end checksum`,
+`End-to-end tests`, and `Copy directory`, then `Manifest` when given: twelve with
+the manifest path. `Specification files` counts the
+declaration and every non-covered Specification file once, so it equals the
+manifest's `specification_files` length. The two checksums are the first 12 hex
+characters of the rollup; the manifest carries the full values and the per-path
+checksums.
+
+### Compare
+
+1. Load the effective manifest; `ise` off, or its prerequisite off, refuses
+   before any manifest or declaration read.
+2. Read the `ise-manifest/v1` manifest with its strict schema. A wrong scope
+   (including `ise-trial/v1`), an unknown field, a missing field, a malformed
+   checksum, or an unreadable file refuses and names the manifest.
+3. Confirm the manifest belongs to this copy: the canonicalized
+   `copy_directory` equals `--copy`, and the manifest path lies outside the
+   copy. A mismatch refuses and names the manifest and the copy.
+4. Load the copy's declaration when it is present. A copy without one, or one
+   whose declaration cannot be read, contributes no roles: the added-file
+   refusal is skipped, and the recorded declaration checksum reports the file
+   `missing` or `changed` like any other Specification file.
+5. Walk the copy. A file under a declared Specification path that the
+   manifest's `specification_files` does not list refuses before any count,
+   naming at most twenty sorted paths and the remainder count. A declared
+   Specification path is a match of any of the five roles, including `e2e`. A
+   path in `source_kept_files` that the copy lost refuses before any count,
+   naming the deleted path.
+6. Compare each recorded Specification file with the copy: a missing path or a
+   differing checksum is a difference.
+7. Build the checkout tree from the backend's content paths (tracked plus
+   untracked non-ignored) and load the checkout's declaration when it parses.
+   Compare the manifest's recorded Specification paths with the checkout,
+   except a feature path carrying a selected `@e2e` scenario: a missing path or
+   a differing checksum is a `Specification files` difference, with
+   `Specification changed after the copy was written` for the differing case. A
+   checkout content path matched by a declared Specification role that the
+   manifest does not record is an added Specification file, except a content
+   path in the checkout's declared End-to-end (E2E) set or a feature path
+   carrying a selected `@e2e` scenario, which step 8 owns even when another
+   Specification role also matches it.
+8. Compare each recorded End-to-end (E2E) path with the checkout: compare its
+   `checksums.end_to_end` content checksum and, for a feature path carrying a
+   selected `@e2e` scenario, its `checksums.scenarios` checksum; a missing path
+   or either difference is a difference, so an edit outside the selected
+   scenario is named. A checkout content path in the declared End-to-end (E2E)
+   set, or a feature carrying a selected `@e2e` scenario, that the manifest
+   does not record is an added End-to-end test. Every content path in that set
+   is owned by this step on the checkout side, even when another Specification
+   role also matches it.
+9. Print the two subject lines, one `- <path>` line per changed or missing path,
+   one `+ <path>` line per added path, and exit 1; or print both as `match` and
+   exit 0. A path that differs on both sides prints one line, counted and owned
+   by `End-to-end tests` when the checkout side owns it and by `Specification
+   files` otherwise.
+
+The End-to-end (E2E) package and the selected `@e2e` scenarios are the frozen
+inputs the `End-to-end tests` line compares with the checkout. A file the
+builder adds under a source root
+is the rebuilt Source code; it is not a difference, and the comparison never
+edits the copy.
 
 *[Architecture documentation index](README.md)*

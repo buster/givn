@@ -1,0 +1,19 @@
+# The project's declared Specification. Written by the change that moved the
+# @e2e acceptance corpus into `e2e/`; inert until the `ise` addon is effective.
+#
+# Five retained roles plus the replaceable `source` roots. Every value is a
+# project-relative path or glob.
+behavior:
+  - "givn/specs/**"
+structure:
+  - "docs/glossary.md"
+  - "docs/domain-model.md"
+contracts:
+  - "docs/reference.md"
+limits:
+  - "docs/arc42/02-architecture-constraints.md"
+e2e:
+  - "e2e"
+source:
+  - "src/**"
+  - "tests/**"

@@ -1,0 +1,801 @@
+//! Clean-room trial preparation and verification.
+//!
+//! This module owns the admission checks that run before any trial content is
+//! read or written, the partition of one revision, and the plain-directory
+//! write that a verifier inspects. The CLI adapter in `crate::cli::ise`
+//! formats the outcome; only the adapter knows about exit codes.
+
+use std::collections::{BTreeMap, BTreeSet};
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
+
+use anyhow::{Context, Result, bail};
+use serde::{Deserialize, Serialize};
+
+use crate::config::declaration::{DECLARATION_PATH, SpecificationDeclaration};
+use crate::config::manifest::Manifest;
+use crate::config::overlay::load_effective_at;
+use crate::scm::{Backend, EntryKind, RevisionEntry};
+
+mod compare;
+mod manifest;
+mod partition;
+
+pub use compare::{CompareReport, CompareRequest, Difference, DifferenceKind, compare};
+pub(crate) use manifest::abbreviate;
+
+/// What one rebuild command replaces.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RebuildScope {
+    /// Every tracked file under the declared source roots.
+    All,
+    /// A tracked file or a directory's tracked files; the command requires
+    /// at least one path.
+    Paths(Vec<String>),
+}
+
+/// `givn ise rebuild-all`'s and `givn ise rebuild-component`'s parsed
+/// request.
+#[derive(Debug, Clone)]
+pub struct RebuildRequest {
+    /// Revision to read; `None` and `HEAD` both resolve the current revision.
+    pub at: Option<String>,
+    /// The files this rebuild replaces.
+    pub scope: RebuildScope,
+    /// Spec copy directory; required and outside the checkout.
+    pub into: PathBuf,
+    /// Optional manifest path; written only when supplied.
+    pub manifest: Option<PathBuf>,
+    /// Perform every read and refusal without writing.
+    pub dry_run: bool,
+}
+
+/// The state the partition consumes after admission.
+pub struct Admission {
+    pub backend: Backend,
+    pub revision: String,
+    pub declaration: SpecificationDeclaration,
+    pub entries: Vec<RevisionEntry>,
+}
+
+/// One successful preparation's report: the fixed lines, the two checksum
+/// rollups, the End-to-end (E2E) set's size, and the write targets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Report {
+    pub backend: &'static str,
+    pub revision: String,
+    pub counts: Counts,
+    pub specification_checksum: String,
+    pub end_to_end_checksum: String,
+    /// The End-to-end (E2E) set's own size, never the manifest's
+    /// `end_to_end_files` length.
+    pub end_to_end_files: usize,
+    pub copy_directory: PathBuf,
+    /// The manifest target; `None` when `--manifest` was omitted.
+    pub manifest: Option<PathBuf>,
+    /// Whether the report is the dry run's: every read ran, nothing was
+    /// written.
+    pub dry_run: bool,
+}
+
+/// The five placement counts the report prints.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Counts {
+    pub retained: usize,
+    pub kept_source: usize,
+    pub replaced: usize,
+    pub outside_declaration: usize,
+    pub not_replaced: usize,
+}
+
+/// Materialize a trial from one recorded revision and report its placement.
+pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> {
+    let admission = admit(project_root, request.at.as_deref())?;
+    let placement = partition::partition(
+        &admission.declaration,
+        &admission.entries,
+        request,
+        &admission.revision,
+    )?;
+    let (copy_directory, manifest_path) = require_write_targets(project_root, request)?;
+    let copy_paths = placement.copy_paths();
+    require_copy_set(&copy_paths, &admission.entries)?;
+
+    let revision_paths: Vec<&str> = admission
+        .entries
+        .iter()
+        .map(|entry| entry.path.as_str())
+        .collect();
+    let entries_by_path: BTreeMap<&str, &RevisionEntry> = admission
+        .entries
+        .iter()
+        .map(|entry| (entry.path.as_str(), entry))
+        .collect();
+    let e2e_paths: Vec<String> =
+        crate::e2e_boundary::e2e_file_set(&admission.declaration, &revision_paths)
+            .into_iter()
+            .filter(|path| path != DECLARATION_PATH)
+            .collect();
+    let feature_paths = partition::behavior_features(&admission.declaration, &revision_paths);
+    let mut read_paths: BTreeSet<String> = copy_paths.iter().cloned().collect();
+    read_paths.extend(feature_paths.iter().cloned());
+    read_paths.extend(
+        e2e_paths
+            .iter()
+            .filter(|path| {
+                !matches!(
+                    entries_by_path.get(path.as_str()).map(|entry| entry.kind),
+                    Some(EntryKind::Submodule)
+                )
+            })
+            .cloned(),
+    );
+    let read_paths: Vec<String> = read_paths.into_iter().collect();
+    let blobs: BTreeMap<String, Vec<u8>> = admission
+        .backend
+        .revision_blobs(&admission.revision, &read_paths)
+        .with_context(|| {
+            format!(
+                "read the spec copy inputs at revision '{}'",
+                admission.revision
+            )
+        })?
+        .into_iter()
+        .collect();
+    let scenarios = manifest::scenario_digests(&admission.declaration, &admission.entries, &blobs)?;
+
+    let mut end_to_end_files: Vec<String> =
+        e2e_paths.iter().chain(scenarios.keys()).cloned().collect();
+    end_to_end_files.sort();
+    end_to_end_files.dedup();
+
+    let mut checksums = manifest::Checksums::default();
+    for path in placement.retained_paths() {
+        checksums
+            .specification
+            .insert(path.clone(), checksum_for(path, &entries_by_path, &blobs)?);
+    }
+    for path in &end_to_end_files {
+        checksums
+            .end_to_end
+            .insert(path.clone(), checksum_for(path, &entries_by_path, &blobs)?);
+    }
+    let specification_checksum = manifest::rollup(&checksums.specification);
+    let end_to_end_checksum = manifest::end_to_end_rollup(&checksums.end_to_end, &scenarios);
+    checksums.scenarios = scenarios;
+
+    let counts = placement.counts();
+    let report = Report {
+        backend: admission.backend.name(),
+        revision: admission.revision.clone(),
+        counts,
+        specification_checksum: specification_checksum.clone(),
+        end_to_end_checksum: end_to_end_checksum.clone(),
+        end_to_end_files: e2e_paths.len(),
+        copy_directory: copy_directory.clone(),
+        manifest: manifest_path.clone(),
+        dry_run: request.dry_run,
+    };
+    if request.dry_run {
+        return Ok(report);
+    }
+
+    let files = trial_files(&admission.entries, &copy_paths, &blobs)?;
+    let outcome = write_trial(&copy_directory, &files, &FileWriter)
+        .with_context(|| format!("write revision '{}'", admission.revision))?;
+    if let WriteOutcome::Mismatched { paths } = outcome {
+        bail!(
+            "the written spec copy differs from revision '{}' at {}",
+            admission.revision,
+            paths.join(", ")
+        );
+    }
+    if let Some(path) = &manifest_path {
+        let document = manifest::Manifest {
+            scope: manifest::CONTENT_SCOPE.to_string(),
+            revision: admission.revision.clone(),
+            removed_paths: placement.replaced_paths().to_vec(),
+            specification_files: placement.retained_paths().to_vec(),
+            source_kept_files: placement.kept_source_paths().to_vec(),
+            end_to_end_files,
+            counts: manifest_counts(counts),
+            checksums,
+            specification_checksum,
+            end_to_end_checksum,
+            copy_directory: copy_directory.to_string_lossy().into_owned(),
+            givn_version: env!("CARGO_PKG_VERSION").to_string(),
+        };
+        if let Err(error) = document.write(path) {
+            remove_created_copy(&copy_directory, path)?;
+            return Err(error);
+        }
+    }
+    Ok(report)
+}
+
+/// A failed manifest write leaves no spec copy behind: the copy this command
+/// created is removed before the refusal surfaces.
+fn remove_created_copy(copy: &Path, manifest: &Path) -> Result<()> {
+    std::fs::remove_dir_all(copy).with_context(|| {
+        format!(
+            "remove the spec copy '{}' after the manifest '{}' could not be written",
+            copy.display(),
+            manifest.display()
+        )
+    })
+}
+
+/// The placement counts as the manifest's five named counts.
+fn manifest_counts(counts: Counts) -> manifest::Counts {
+    manifest::Counts {
+        specification_files: counts.retained,
+        source_kept: counts.kept_source,
+        source_removed: counts.replaced,
+        outside_spec_copy: counts.outside_declaration,
+        files_beside_removed_paths: counts.not_replaced,
+    }
+}
+
+/// One recorded path's checksum. A repository link hashes its recorded commit
+/// id as kind `g`; every other path hashes the bytes the backend returned.
+fn checksum_for(
+    path: &str,
+    entries: &BTreeMap<&str, &RevisionEntry>,
+    blobs: &BTreeMap<String, Vec<u8>>,
+) -> Result<String> {
+    let entry = entries
+        .get(path)
+        .with_context(|| format!("the revision does not list '{path}'"))?;
+    let content: &[u8] = match entry.kind {
+        EntryKind::Submodule => entry
+            .gitlink
+            .as_deref()
+            .with_context(|| format!("the revision records no commit id for '{path}'"))?
+            .as_bytes(),
+        _ => blobs
+            .get(path)
+            .with_context(|| format!("the revision returned no content for '{path}'"))?,
+    };
+    Ok(manifest::path_checksum(
+        path,
+        entry.kind,
+        entry.executable,
+        content,
+    ))
+}
+
+/// The ordered admission checks: add-ons, backend, dirty checkout, revision,
+/// then the declaration recorded at that revision. Every check precedes the
+/// first write and none writes.
+fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
+    let manifest = load_effective_at(project_root).with_context(|| {
+        format!(
+            "read the effective manifest at '{}'",
+            project_root.display()
+        )
+    })?;
+    require_addons(&manifest)?;
+
+    let backend = crate::scm::select(project_root)?;
+
+    let dirty = backend.dirty_entries()?;
+    if !dirty.is_empty() {
+        let paths = dirty
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        bail!("the checkout is dirty at {paths}; commit or restore these paths first");
+    }
+
+    let revision = match at {
+        None => backend.revision()?,
+        Some("HEAD") => backend.revision()?,
+        Some(value) => {
+            if !backend.commit_exists(value)? {
+                bail!("revision '{value}' does not exist in this repository");
+            }
+            value.to_string()
+        }
+    };
+    let entries = backend
+        .revision_files(&revision, "")
+        .with_context(|| format!("read revision '{revision}'"))?;
+    let declaration = revision_declaration(&backend, &revision, &entries)?;
+
+    Ok(Admission {
+        backend,
+        revision,
+        declaration,
+        entries,
+    })
+}
+
+/// The declaration recorded at the selected revision. The four unreadable
+/// cases are distinct refusals: the tree does not record the path; the tree
+/// records it but the backend returns no blob; the blob is not UTF-8; the
+/// blob is malformed. The working tree is never consulted, so the partition
+/// and the trial use the roles and the content the revision declared.
+fn revision_declaration(
+    backend: &Backend,
+    revision: &str,
+    entries: &[RevisionEntry],
+) -> Result<SpecificationDeclaration> {
+    if !entries.iter().any(|entry| entry.path == DECLARATION_PATH) {
+        bail!(
+            "the revision '{revision}' does not record '{DECLARATION_PATH}'; a clean-room trial always carries the declaration"
+        );
+    }
+    let bytes = backend
+        .revision_blob(revision, DECLARATION_PATH)
+        .with_context(|| format!("read '{DECLARATION_PATH}' at revision '{revision}'"))?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "'{DECLARATION_PATH}' is recorded at revision '{revision}' but the backend returned no blob for it"
+            )
+        })?;
+    let content = std::str::from_utf8(&bytes)
+        .map_err(|error| anyhow::anyhow!("{DECLARATION_PATH}: {error}"))?;
+    SpecificationDeclaration::from_content(content).map_err(|error| anyhow::anyhow!("{error}"))
+}
+
+/// Refusal 8 (write targets): the spec copy and the manifest lie outside the
+/// checkout and are created new; the manifest is not inside the copy and the
+/// copy is not created inside the manifest path. Each path is resolved through
+/// its deepest existing ancestor, so a symlinked parent cannot alias a
+/// checkout path. Returns the absolute copy path and the absolute manifest
+/// path the report and the manifest name.
+fn require_write_targets(
+    project_root: &Path,
+    request: &RebuildRequest,
+) -> Result<(PathBuf, Option<PathBuf>)> {
+    let checkout = project_root
+        .canonicalize()
+        .with_context(|| format!("resolve the checkout '{}'", project_root.display()))?;
+    let copy = resolved_target(&request.into, &checkout)?;
+    let manifest = request
+        .manifest
+        .as_ref()
+        .map(|path| resolved_target(path, &checkout))
+        .transpose()?;
+    if copy.starts_with(&checkout) {
+        bail!(
+            "the target '{}' is inside the checkout '{}'",
+            request.into.display(),
+            checkout.display()
+        );
+    }
+    if copy.exists() {
+        bail!(
+            "the target '{}' already exists; a spec copy is written only into a new path",
+            request.into.display()
+        );
+    }
+    if let (Some(manifest), Some(supplied)) = (&manifest, request.manifest.as_ref()) {
+        if manifest.starts_with(&checkout) {
+            bail!(
+                "the manifest '{}' is inside the checkout '{}'; the checkout is never written",
+                supplied.display(),
+                checkout.display()
+            );
+        }
+        if manifest.exists() {
+            bail!(
+                "the manifest '{}' already exists; a manifest is written only to a new path",
+                supplied.display()
+            );
+        }
+        if manifest.starts_with(&copy) {
+            bail!(
+                "the manifest '{}' is inside the spec copy '{}'",
+                supplied.display(),
+                copy.display()
+            );
+        }
+        if copy.starts_with(manifest) {
+            bail!(
+                "the manifest '{}' is an ancestor of the spec copy '{}'",
+                supplied.display(),
+                copy.display()
+            );
+        }
+    }
+    Ok((copy, manifest))
+}
+
+/// The absolute form of a write target: every existing ancestor is
+/// canonicalized and the missing components are appended.
+fn resolved_target(path: &Path, checkout: &Path) -> Result<PathBuf> {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        checkout.join(path)
+    };
+    let mut missing: Vec<OsString> = Vec::new();
+    let mut current = absolute.as_path();
+    let existing = loop {
+        match current.canonicalize() {
+            Ok(canonical) => break canonical,
+            Err(error) => {
+                let name = current.file_name().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "the path '{}' has no existing ancestor: {error}",
+                        path.display()
+                    )
+                })?;
+                missing.push(name.to_os_string());
+                current = current.parent().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "the path '{}' has no existing ancestor: {error}",
+                        path.display()
+                    )
+                })?;
+            }
+        }
+    };
+    let mut resolved = existing;
+    for name in missing.iter().rev() {
+        resolved.push(name);
+    }
+    Ok(resolved)
+}
+
+/// Refusal 9: the copy set carries no repository link and no version-control
+/// marker at any depth. The End-to-end set is not part of the copy set, so a
+/// link there is hashed as kind `g` instead of refused. The check runs before
+/// any content is read or written.
+fn require_copy_set(paths: &[String], entries: &[RevisionEntry]) -> Result<()> {
+    for path in paths {
+        if path
+            .split('/')
+            .any(|component| matches!(component, ".git" | ".fslckout" | "_FOSSIL_"))
+        {
+            bail!(
+                "'{path}' is a version-control marker; a clean-room trial copies no repository metadata"
+            );
+        }
+        let is_link = entries
+            .iter()
+            .any(|entry| entry.path == *path && entry.kind == EntryKind::Submodule);
+        if is_link {
+            bail!("'{path}' is a repository link; a clean-room trial copies no repository link");
+        }
+    }
+    Ok(())
+}
+
+/// `ise` and its `architecture_principles` prerequisite gate both commands.
+fn require_addons(manifest: &Manifest) -> Result<()> {
+    if !manifest.addons.ise {
+        bail!("ise is not enabled; run `givn addons enable ise` first");
+    }
+    if !manifest.addons.architecture_principles {
+        bail!(
+            "architecture_principles is not enabled; run `givn addons enable architecture_principles` first"
+        );
+    }
+    Ok(())
+}
+
+/// One file the trial copies from the revision.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TrialFile {
+    path: String,
+    kind: EntryKind,
+    executable: bool,
+    bytes: Vec<u8>,
+}
+
+/// Pair the copy set with its revision metadata and blobs.
+fn trial_files(
+    entries: &[RevisionEntry],
+    paths: &[String],
+    blobs: &BTreeMap<String, Vec<u8>>,
+) -> Result<Vec<TrialFile>> {
+    let by_path: BTreeMap<&str, &RevisionEntry> = entries
+        .iter()
+        .map(|entry| (entry.path.as_str(), entry))
+        .collect();
+    paths
+        .iter()
+        .map(|path| {
+            let entry = by_path.get(path.as_str()).copied().ok_or_else(|| {
+                anyhow::anyhow!("the revision does not list '{path}', so the trial cannot write it")
+            })?;
+            let bytes = blobs
+                .get(path)
+                .ok_or_else(|| anyhow::anyhow!("the revision returned no content for '{path}'"))?
+                .clone();
+            Ok(TrialFile {
+                path: path.clone(),
+                kind: entry.kind,
+                executable: entry.executable,
+                bytes,
+            })
+        })
+        .collect()
+}
+
+/// The write outcome: either every written file matches the revision, or the
+/// mismatching paths were found after the trial was removed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum WriteOutcome {
+    Written,
+    Mismatched { paths: Vec<String> },
+}
+
+/// Writes one trial file. Injectable so the re-read comparison can be proven
+/// against a writer that corrupts a path between the write and the re-read.
+trait TrialWriter {
+    fn write(&self, trial: &Path, file: &TrialFile) -> Result<()>;
+}
+
+/// The real writer: a plain directory, no version-control command.
+struct FileWriter;
+
+impl TrialWriter for FileWriter {
+    fn write(&self, trial: &Path, file: &TrialFile) -> Result<()> {
+        let target = trial.join(&file.path);
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)
+                .with_context(|| format!("create '{}'", parent.display()))?;
+        }
+        match file.kind {
+            EntryKind::Regular => {
+                std::fs::write(&target, &file.bytes)
+                    .with_context(|| format!("write '{}'", target.display()))?;
+                set_executable(&target, file.executable)?;
+            }
+            EntryKind::Symlink => create_symlink(&target, &file.bytes)?,
+            EntryKind::Submodule => bail!("'{}' is a repository link", file.path),
+        }
+        Ok(())
+    }
+}
+
+/// Refusal 12: no symlink leaves the spec copy. An absolute target always
+/// refuses; a relative target refuses when resolving it against the link's
+/// parent directory leaves the copy. The check runs before the trial
+/// directory exists, so a refusal writes nothing.
+fn require_symlink_targets(files: &[TrialFile]) -> Result<()> {
+    for file in files {
+        if file.kind != EntryKind::Symlink {
+            continue;
+        }
+        let target = std::str::from_utf8(&file.bytes).map_err(|error| {
+            anyhow::anyhow!(
+                "'{}' is a symlink whose target is not UTF-8: {error}",
+                file.path
+            )
+        })?;
+        let target_path = Path::new(target);
+        if target_path.is_absolute() {
+            bail!(
+                "'{}' is a symlink to the absolute target '{target}'; a clean-room trial copies no absolute symlink target",
+                file.path
+            );
+        }
+        let parent = Path::new(&file.path)
+            .parent()
+            .unwrap_or_else(|| Path::new(""));
+        if resolves_outside(parent, target_path) {
+            bail!(
+                "'{}' is a symlink to '{target}', which resolves outside the spec copy; a clean-room trial copies no symlink that leaves the spec copy",
+                file.path
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Resolve `target` against `parent` without touching the filesystem: a
+/// `..` that walks above the copy root leaves the copy.
+fn resolves_outside(parent: &Path, target: &Path) -> bool {
+    use std::path::Component;
+
+    let mut depth: usize = 0;
+    for component in parent.components().chain(target.components()) {
+        match component {
+            Component::Normal(_) => depth += 1,
+            Component::CurDir => {}
+            Component::ParentDir => match depth.checked_sub(1) {
+                Some(remaining) => depth = remaining,
+                None => return true,
+            },
+            Component::RootDir | Component::Prefix(_) => return true,
+        }
+    }
+    false
+}
+
+/// Create the trial, write every file, then re-read and compare each one. A
+/// mismatch removes the trial, so no partial evidence survives.
+fn write_trial(
+    trial: &Path,
+    files: &[TrialFile],
+    writer: &dyn TrialWriter,
+) -> Result<WriteOutcome> {
+    require_symlink_targets(files)?;
+    if let Some(parent) = trial
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent)
+            .with_context(|| format!("create '{}'", parent.display()))?;
+    }
+    std::fs::create_dir(trial)
+        .with_context(|| format!("create the trial at '{}'", trial.display()))?;
+    for file in files {
+        writer
+            .write(trial, file)
+            .with_context(|| format!("write '{}'", file.path))?;
+    }
+
+    let mut mismatched: Vec<String> = files
+        .iter()
+        .filter(|file| !written_matches(trial, file))
+        .map(|file| file.path.clone())
+        .collect();
+    if mismatched.is_empty() {
+        return Ok(WriteOutcome::Written);
+    }
+    mismatched.sort();
+    std::fs::remove_dir_all(trial)
+        .with_context(|| format!("remove the mismatching trial at '{}'", trial.display()))?;
+    Ok(WriteOutcome::Mismatched { paths: mismatched })
+}
+
+fn written_matches(trial: &Path, file: &TrialFile) -> bool {
+    let target = trial.join(&file.path);
+    let Ok(metadata) = std::fs::symlink_metadata(&target) else {
+        return false;
+    };
+    match file.kind {
+        EntryKind::Regular => {
+            metadata.file_type().is_file()
+                && executable_matches(&metadata, file.executable)
+                && std::fs::read(&target).is_ok_and(|bytes| bytes == file.bytes)
+        }
+        EntryKind::Symlink => {
+            metadata.file_type().is_symlink()
+                && std::fs::read_link(&target)
+                    .is_ok_and(|link| link.to_string_lossy().as_bytes() == file.bytes.as_slice())
+        }
+        EntryKind::Submodule => false,
+    }
+}
+
+#[cfg(unix)]
+fn set_executable(path: &Path, executable: bool) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    let mut permissions = std::fs::metadata(path)
+        .with_context(|| format!("read the mode of '{}'", path.display()))?
+        .permissions();
+    let mode = permissions.mode() & 0o777;
+    permissions.set_mode(if executable { mode | 0o111 } else { mode });
+    std::fs::set_permissions(path, permissions)
+        .with_context(|| format!("set the mode of '{}'", path.display()))
+}
+
+#[cfg(not(unix))]
+fn set_executable(_path: &Path, _executable: bool) -> Result<()> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn create_symlink(path: &Path, target: &[u8]) -> Result<()> {
+    let target = std::str::from_utf8(target).context("a symlink target is not UTF-8")?;
+    std::os::unix::fs::symlink(target, path)
+        .with_context(|| format!("create the symlink at '{}'", path.display()))
+}
+
+#[cfg(not(unix))]
+fn create_symlink(path: &Path, _target: &[u8]) -> Result<()> {
+    bail!(
+        "'{}' is a symlink; this platform cannot write one",
+        path.display()
+    )
+}
+
+#[cfg(unix)]
+fn executable_matches(metadata: &std::fs::Metadata, executable: bool) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    (metadata.permissions().mode() & 0o111 != 0) == executable
+}
+
+#[cfg(not(unix))]
+fn executable_matches(_metadata: &std::fs::Metadata, _executable: bool) -> bool {
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Writes the file the real writer would, then corrupts its content.
+    struct CorruptingWriter;
+
+    impl TrialWriter for CorruptingWriter {
+        fn write(&self, trial: &Path, file: &TrialFile) -> Result<()> {
+            FileWriter.write(trial, file)?;
+            std::fs::write(trial.join(&file.path), b"corrupted\n")?;
+            Ok(())
+        }
+    }
+
+    fn one_file() -> TrialFile {
+        TrialFile {
+            path: "src/kept.rs".to_string(),
+            kind: EntryKind::Regular,
+            executable: false,
+            bytes: b"pub fn kept() {}\n".to_vec(),
+        }
+    }
+
+    #[test]
+    fn a_re_read_mismatch_names_the_path_and_removes_the_trial() {
+        let container = tempfile::TempDir::new().unwrap();
+        let trial = container.path().join("trial");
+        let outcome = write_trial(&trial, &[one_file()], &CorruptingWriter)
+            .expect("the corrupting writer succeeds");
+        assert_eq!(
+            outcome,
+            WriteOutcome::Mismatched {
+                paths: vec!["src/kept.rs".to_string()]
+            }
+        );
+        assert!(!trial.exists(), "the mismatching trial must be removed");
+    }
+
+    #[test]
+    fn a_matching_write_keeps_the_trial() {
+        let container = tempfile::TempDir::new().unwrap();
+        let trial = container.path().join("trial");
+        let outcome =
+            write_trial(&trial, &[one_file()], &FileWriter).expect("the trial is written");
+        assert_eq!(outcome, WriteOutcome::Written);
+        assert_eq!(
+            std::fs::read(trial.join("src/kept.rs")).unwrap(),
+            one_file().bytes
+        );
+    }
+
+    #[test]
+    fn a_submodule_entry_in_the_copy_set_is_refused_as_a_repository_link() {
+        let entries = [RevisionEntry {
+            path: "vendor/lib".to_string(),
+            kind: EntryKind::Submodule,
+            executable: false,
+            gitlink: Some("0000000000000000000000000000000000000000".to_string()),
+        }];
+        let error = require_copy_set(&["vendor/lib".to_string()], &entries)
+            .expect_err("a repository link is refused");
+        assert_eq!(
+            error.to_string(),
+            "'vendor/lib' is a repository link; a clean-room trial copies no repository link"
+        );
+    }
+
+    #[test]
+    fn a_regular_entry_in_the_copy_set_passes_the_link_check() {
+        let entries = [RevisionEntry {
+            path: "src/kept.rs".to_string(),
+            kind: EntryKind::Regular,
+            executable: false,
+            gitlink: None,
+        }];
+        require_copy_set(&["src/kept.rs".to_string()], &entries)
+            .expect("a regular file is copied, not refused");
+    }
+
+    #[test]
+    fn a_relative_symlink_target_resolves_against_the_link_parent() {
+        assert!(resolves_outside(
+            Path::new("src"),
+            Path::new("../../outside")
+        ));
+        assert!(resolves_outside(Path::new(""), Path::new("..")));
+        assert!(!resolves_outside(Path::new("src"), Path::new("../sibling")));
+        assert!(!resolves_outside(Path::new("src"), Path::new("run.sh")));
+    }
+}

@@ -55,14 +55,21 @@ pub fn effective_addons(manifest: &crate::config::manifest::Manifest) -> BTreeMa
         .collect()
 }
 
-/// The add-on values a fresh init or a forced re-init would write.
+/// The add-on values a fresh init or a forced re-init would write: each
+/// addon's declared default, or `false` for every addon under `--no-addons`.
 pub fn proposed_addons(
     no_addons: bool,
     preserved: Option<&[(String, bool)]>,
 ) -> BTreeMap<String, bool> {
     let mut proposed: BTreeMap<String, bool> = crate::config::manifest::Addons::NAMES
         .iter()
-        .map(|name| ((*name).to_string(), !no_addons))
+        .map(|name| {
+            (
+                (*name).to_string(),
+                !no_addons
+                    && crate::config::addons::AddonSpec::declared_default(name).unwrap_or(false),
+            )
+        })
         .collect();
     if let Some(preserved) = preserved {
         for (name, enabled) in preserved {
@@ -109,6 +116,15 @@ pub fn read(change_dir: &Path) -> Result<Option<AddonLock>> {
         );
     }
     Ok(Some(lock))
+}
+
+/// Whether the change's recorded add-on lock has `ise` effective.
+///
+/// The change's lock is the authority, not the current project manifest: a
+/// change with no lock, or with `ise: false` in its lock, gains no boundary
+/// gate even if the project later enables `ise`.
+pub fn ise_effective_for_change(change_dir: &Path) -> Result<bool> {
+    Ok(read(change_dir)?.is_some_and(|lock| lock.addons.get("ise").copied().unwrap_or(false)))
 }
 
 fn write(change_dir: &Path, lock: &AddonLock) -> Result<()> {
@@ -210,9 +226,25 @@ mod tests {
         write_for_change(&change, &manifest).unwrap();
         let lock = read(&change).unwrap().expect("lock");
         assert_eq!(lock.version, 1);
-        assert_eq!(lock.addons.len(), 9);
-        assert!(lock.addons.values().all(|enabled| *enabled));
+        assert_eq!(lock.addons.len(), 10);
+        assert_eq!(lock.addons.get("ise"), Some(&false));
+        assert!(
+            lock.addons
+                .iter()
+                .filter(|(name, _)| name.as_str() != "ise")
+                .all(|(_, enabled)| *enabled)
+        );
         assert!(lock.overrides.is_empty());
+    }
+
+    #[test]
+    fn a_fresh_proposal_follows_each_declared_default() {
+        let proposed = proposed_addons(false, None);
+        assert_eq!(proposed.get("ise"), Some(&false));
+        assert_eq!(proposed.get("outline"), Some(&true));
+        let none = proposed_addons(true, None);
+        assert_eq!(none.len(), 10);
+        assert!(none.values().all(|enabled| !enabled));
     }
 
     #[test]

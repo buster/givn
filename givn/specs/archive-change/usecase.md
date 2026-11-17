@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:9110d19960efb32af61660066b22987abc19105c975a6282f5f36fd9f0a54396 -->
+<!-- givn:base-sha256:1d7d8d8bd7db3ed06a2afb4401b2c4a001bf2458fc55ece51b418424b5751e82 -->
 # Use case: archive-change
 
 ## Level
@@ -23,10 +23,11 @@ The developer archives a reviewed change.
 - The active version-control system is selected and its clean-state witness is available.
 - The system can publish a subset of paths as a revision.
 - The permanent corpus is available for update.
+- While `ise` is effective, `givn/specification.yaml` is readable through the one strict declaration loader.
 
 ## Main flow
 
-1. Run the archive gates, confirm the project state is clean in the active version-control system (only resolved evidence paths may be dirty), validate the current green change-scoped verification receipt when applicable or the explicit no-behavior-change exemption, and compare the step phrases bound by the change's delta step-definition files with the phrases bound by the permanent test tree (the project root minus the change, archive, history, version-control, build, and cache trees), all before any mutation; validate every delta for supported executable content and compatible inherited setup before moving the change or writing a receipt. A revision that changed only documentation or evidence keeps the receipt current.
+1. Run the archive gates, confirm the project state is clean in the active version-control system (only resolved evidence paths may be dirty), validate the current green change-scoped verification receipt when applicable or the explicit no-behavior-change exemption, and compare the step phrases bound by the change's delta step-definition files with the phrases bound by the permanent test tree (the project root minus the change, archive, history, version-control, build, and cache trees), and, while `ise` is effective, refuse a declaration whose retained path the move would orphan, all before any mutation; validate every delta for supported executable content and compatible inherited setup before moving the change or writing a receipt. A revision that changed only documentation or evidence keeps the receipt current.
 2. Write the pending receipt and move the active change into the archive location as one state transition; the receipt marks the archive unproven.
 3. Merge the accepted behavior and use-case documents (delta merge with base-revision match, retirement and grouping rules).
 4. Resolve the evidence scope: the archive directory, the README when the readme addon is on, and the configured coverage outputs.
@@ -41,6 +42,8 @@ The developer archives a reviewed change.
 - 1: uncommitted work outside the resolved evidence → the archive is blocked and names the offending files; protects the minimal guarantee.
 - 1: an applicable change-scoped verification receipt is missing or stale → the archive is refused before mutation; protects the success guarantee.
 - 1: a delta step definition phrase has no permanent definition → the archive is refused before mutation, names the project-relative delta file, and lists the missing phrases (a bounded list followed by a remainder count); protects the success guarantee.
+- 1: with `ise` effective, a retained role entry matches a path the archive will move and resolves nowhere after it → the archive is refused before mutation, names the role and entry, the moved path, and the archived path to declare instead; protects the success guarantee.
+- 1: with `ise` effective, the declaration cannot be loaded → the archive is refused before mutation and names the declaration with the loader's reason; protects the success guarantee.
 - 6: an unproven candidate's permanent test tree still lacks a delta step phrase → the candidate is refused before its verification scopes run again and stays unproven; protects the minimal guarantee.
 - 2: the archive move is interrupted → either the active change with its pending receipt or the pending candidate remains, and a rerun re-runs the gates and retries the move; protects the minimal guarantee.
 - 3: the delta merge is interrupted → the pending candidate records the merge as incomplete and a rerun completes the merge idempotently; protects the minimal guarantee.
@@ -80,6 +83,10 @@ The developer archives a reviewed change.
 - Delta step definitions are durable project source: the archive merges feature files and use-case documents only, and it never copies, moves, or deletes a step definition.
 - A delta step-definition copy may stay under the change's spec tree as history once every phrase it binds is also bound in the permanent test tree.
 - A resumed unproven candidate repeats the step-definition comparison before its verification scopes run again.
+- A declared retained path must survive the move: while `ise` is effective, archive refuses before mutation when a retained role entry matches a content path under `givn/changes/<id>/` that this archive moves, matches no content path outside that move, and matches none of the archived `givn/archive/<id>/` counterparts of the content paths it matches. The refusal names the role, the entry, the moved path, and the archived path to declare instead.
+- Entry matching uses the declaration's path patterns, so a glob that spans the change tree is refused like a literal entry, and an entry that still resolves after the move (through a surviving content path or an archived counterpart) is unaffected. The advice keeps the entry's shape: a literal entry is answered with its archived literal path, and a wildcard entry with the same pattern under `givn/archive`.
+- The retained-path guard runs on the fresh move only, against the active change directory; a pending candidate is resumed without it because the guarded transition already completed.
+- The guard reads `givn/specification.yaml` through the one strict declaration loader and only while `ise` is effective; a declaration the loader refuses blocks the archive by name, and a project with `ise` off reads no declaration.
 
 ## Examples
 
@@ -96,6 +103,10 @@ The developer archives a reviewed change.
 - No SCM: `givn archive --change multi-scm-support` in a plain directory exits non-zero with a named refusal and mutates nothing.
 - Unmerged step definition: a change's `specs/steps/catalog_steps.py` binds `an imported catalog`, while the permanent step files bind no such phrase; the archive exits non-zero before the move, names the project-relative `givn/changes/<id>/specs/steps/catalog_steps.py` and "an imported catalog", and the change stays under `givn/changes/`.
 - Merged step definition: the same phrase is bound in `tests/steps/catalog_steps.py` (or in a permanent step file under `givn/specs`); the archive proceeds, the change moves to `givn/archive/`, and the delta step file stays there as history.
+- Declared change artifact: an `ise`-effective project declares `limits: givn/changes/catopia-certification-authority/design.md` and runs `givn archive --change catopia-certification-authority`; the archive exits non-zero before the move, names the `limits` entry, `givn/changes/catopia-certification-authority/design.md`, and `givn/archive/catopia-certification-authority/design.md`, and the change stays active.
+- Surviving declarations: `limits: givn/archive/<id>/design.md`, `limits: docs/arc42/02-architecture-constraints.md`, and `limits: givn/**` are unaffected because each still resolves after the move; the archive proceeds.
+- ise off: a project with `ise` off and a declaration naming `givn/changes/<id>/design.md` archives normally because no declaration is read.
+- Unreadable declaration: with `ise` effective and `givn/specification.yaml` holding an unknown key, the archive exits non-zero before the move and names the declaration with the loader's reason.
 
 ## Minimal guarantee
 
@@ -119,6 +130,7 @@ The permanent corpus contains the accepted change, bound to a verification recei
 - extract-coverage-gate
 - enforce-post-merge-e2e-gate
 - require-merged-step-definitions
+- require-durable-retained-paths
 
 ## Interactions
 
@@ -133,6 +145,7 @@ The permanent corpus contains the accepted change, bound to a verification recei
 | extract-coverage-gate | archive with coverage | Consumer archives a change with coverage enabled and the coverage summary appears in README |
 | enforce-post-merge-e2e-gate | archive an E2E delta | Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner |
 | require-merged-step-definitions | archive a change whose delta step definitions are already in the permanent test tree | Consumer archives a change whose delta step definitions are already in the permanent test tree |
+| require-durable-retained-paths | archive a change whose declared retained paths survive the move (the refusal cases are regular variants) | Consumer archives a change whose declared retained paths survive the move |
 
 ## Includes
 

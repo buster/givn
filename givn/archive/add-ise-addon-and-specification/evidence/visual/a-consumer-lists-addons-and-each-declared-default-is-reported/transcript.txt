@@ -1,0 +1,43 @@
+Scenario: A consumer lists addons and each declared default is reported
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpJDRfdk
+exit code: 0
+--- stdout ---
+Available addons:
+
+  [enabled ]  arc42
+            Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters
+
+  [enabled ]  communication_policy
+            Communication policy — manages a fenced presentation and documentation block in AGENTS.md; the dialog obligation is independent of this addon
+
+  [enabled ]  readme
+            README scaffolding — writes an initial README.md to the project root
+
+  [enabled ]  coverage
+            Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML
+
+  [enabled ]  domain_modeling
+            Skill — maintain the standalone glossary and structural domain model before design; does not require arc42
+
+  [enabled ]  dev_principles
+            Skill — apply the team's engineering principles during implementation
+
+  [enabled ]  architecture_principles
+            Architecture-principles guidance — last-responsible-moment decision timing, consumer contracts, component splits and port/adapter boundaries; enabled by default
+
+  [enabled ]  challenge
+            Skill — research proposals, tests, specs, design, code, and whole changes before asking unresolved decisions; no lifecycle gate
+
+  [enabled ]  outline
+            Outline report — enabled by default; disable with `givn addons disable outline`
+
+  [disabled]  ise
+            Ise rebuildability — serves `givn instructions ise`, adds the two change records to design and review guidance, and scaffolds givn/specification.yaml; opt-in and requires architecture_principles
+
+These are effective values: each omitted key resolves that addon's declared default.
+Use `givn addons enable <name>` or `givn addons disable <name>`
+to toggle an addon. Changes are written to givn/config.yaml.
+
+--- stderr ---
+

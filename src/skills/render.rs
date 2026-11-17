@@ -25,6 +25,7 @@ pub const KNOWN_ADDON_KEYS: &[&str] = &[
     "readme",
     "outline",
     "coverage",
+    "ise",
 ];
 
 /// Whether a named addon is enabled on the effective manifest.
@@ -39,6 +40,7 @@ pub fn manifest_addon_enabled(manifest: &crate::config::manifest::Manifest, name
         "readme" => manifest.addons.readme,
         "outline" => manifest.addons.outline,
         "coverage" => manifest.addons.coverage,
+        "ise" => manifest.addons.ise,
         _ => false,
     }
 }

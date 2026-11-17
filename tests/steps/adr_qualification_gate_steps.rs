@@ -878,8 +878,8 @@ fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
     assert!(!marker.trim().is_empty());
 }
 
-#[then("the final register has 28 accepted decisions and no proposed decisions")]
-fn final_register_has_witness_publication_adr(world: &mut GivnWorld) {
+#[then("the final register has 32 accepted decisions and no proposed decisions")]
+fn final_register_has_frozen_package_adr(world: &mut GivnWorld) {
     let register = guidance(world);
     let accepted = register
         .lines()
@@ -889,8 +889,26 @@ fn final_register_has_witness_publication_adr(world: &mut GivnWorld) {
         .lines()
         .filter(|line| line.contains("| proposed |"))
         .count();
-    assert_eq!(accepted, 28, "unexpected accepted ADR count");
+    assert_eq!(accepted, 32, "unexpected accepted ADR count");
     assert_eq!(proposed, 0, "unexpected proposed ADR count");
+    for id in ["[ADR-078]", "[ADR-079]", "[ADR-080]"] {
+        let row = register
+            .lines()
+            .find(|line| line.contains(id))
+            .unwrap_or_else(|| panic!("the register carries no {id} row"));
+        assert!(
+            row.contains("| accepted |"),
+            "the {id} row is not accepted: {row}"
+        );
+    }
+    let summary = register
+        .lines()
+        .find(|line| line.contains("accepted records and no proposed records"))
+        .unwrap_or_else(|| panic!("the register carries no accepted-records summary"));
+    assert!(
+        summary.contains("32 accepted records"),
+        "the register summary disagrees with its accepted-row count: {summary}"
+    );
 }
 
 #[then("the final register has 24 accepted decisions and no proposed decisions")]
@@ -1825,4 +1843,104 @@ fn guidance_requires_one_complete_home(world: &mut GivnWorld) {
         flat_guidance(world).contains("If one of those is the complete home, do not create an ADR"),
         "guidance does not require one complete home for the decision"
     );
+}
+
+#[given("an initialized ADR qualification project with active change `adr-qualification-gate`")]
+fn initialized_adr_qualification_project(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let output = crate::common::run_givn(&env, &["new", "adr-qualification-gate"]);
+    assert!(
+        output.status.success(),
+        "create ADR qualification change failed"
+    );
+    world.env = Some(env);
+}
+
+fn project(world: &GivnWorld) -> &crate::common::TestEnv {
+    world
+        .env
+        .as_ref()
+        .expect("ADR qualification E2E project is missing")
+}
+
+#[when("the reviewer requests the `design-review` guidance through the Givn CLI")]
+fn reviewer_requests_design_review_guidance(world: &mut GivnWorld) {
+    let output = crate::common::run_givn(
+        project(world),
+        &[
+            "instructions",
+            "design-review",
+            "--change",
+            "adr-qualification-gate",
+        ],
+    );
+    world.last_output = Some(output);
+}
+
+#[then("the CLI exits with status 0")]
+fn cli_exits_with_status_zero(world: &mut GivnWorld) {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("no CLI output was captured");
+    assert!(output.status.success());
+}
+
+fn stdout(world: &GivnWorld) -> String {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("no ADR qualification CLI output was captured");
+    assert!(output.status.success(), "CLI command failed");
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[then("the output directs the reviewer to the recorded qualification and existing-ADR search")]
+fn output_directs_reviewer_to_recorded_qualification(world: &mut GivnWorld) {
+    let content = stdout(world);
+    assert!(
+        content.contains("concise qualification recorded once"),
+        "design-review guidance does not point to the recorded qualification: {content}"
+    );
+    assert!(
+        content.contains("existing-decision search"),
+        "design-review guidance does not require the existing-decision search: {content}"
+    );
+}
+
+#[then("the output does not demand a duplicate qualification worksheet")]
+fn output_does_not_demand_duplicate_worksheet(world: &mut GivnWorld) {
+    let content = stdout(world);
+    assert!(
+        content.contains("Do not demand a duplicate qualification worksheet"),
+        "design-review guidance does not reject a duplicate worksheet: {content}"
+    );
+    assert!(
+        !content.contains("qualification = alternatives"),
+        "design-review guidance still demands the old gate formula: {content}"
+    );
+}
+
+#[then("the output distinguishes authoring policy from runtime enforcement")]
+fn output_distinguishes_policy_from_runtime(world: &mut GivnWorld) {
+    let content = stdout(world);
+    assert!(
+        content.contains("authoring guidance, not runtime enforcement")
+            || content.contains("not runtime enforcement"),
+        "design-review guidance does not distinguish policy from runtime enforcement: {content}"
+    );
+}
+
+#[when("the author requests the Arc42 ADR guidance through the Givn CLI")]
+fn author_requests_arc42_adr_guidance(world: &mut GivnWorld) {
+    let output = crate::common::run_givn(
+        project(world),
+        &[
+            "instructions",
+            "arc42-docs",
+            "--change",
+            "adr-qualification-gate",
+        ],
+    );
+    world.last_output = Some(output);
 }

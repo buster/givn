@@ -1,0 +1,32 @@
+Scenario: Consumer archives a change whose declared retained paths survive the move
+argv: givn archive --change durable-paths
+cwd (fixture project root): /tmp/.tmpC3Wpyb
+exit: 0
+
+--- stdout (raw) ---
+[22:23:54] ✓ change verification receipt passed (2 scenario(s))
+[22:23:54] Archiving change 'durable-paths'...
+[22:23:54] Running archive gate hooks...
+[22:23:54] ✓ Gate hooks passed
+[22:23:54] ✓ run declaration passed
+[22:23:54] ✓ README completeness gate passed
+[22:23:54] Running static review gates...
+net delta: 1 added, 0 modified, 0 removed
+net delta json: {"added":1,"modified":0,"removed":0}
+  ✓ overlap dispositions passed
+capability 'demo-cap' already owned by /tmp/.tmpC3Wpyb/givn/specs/demo-cap
+[22:23:54] ✓ Static review gates passed
+[22:23:54] ✓ Candidate committed
+Archive proof excludes the entire archive directory; executable changes inside exempt paths may escape cheap input checks.
+[22:23:54] Running regular verification: ./emit-result.sh regular
+[22:23:54] ✓ development managed block refreshed
+[22:23:54] ✓ Archived 'durable-paths' to /tmp/.tmpC3Wpyb/givn/archive/durable-paths
+Verification receipt: /tmp/.tmpC3Wpyb/givn/archive/durable-paths/verification.json
+
+Change archived successfully.
+The delta specs have been merged into givn/specs/.
+
+--- stderr (raw) ---
+
+--- archived /tmp/.tmpC3Wpyb/givn/archive/durable-paths/design.md ---
+116 bytes

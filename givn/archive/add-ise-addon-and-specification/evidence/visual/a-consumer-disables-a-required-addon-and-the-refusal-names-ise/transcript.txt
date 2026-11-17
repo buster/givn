@@ -1,0 +1,9 @@
+Scenario: A consumer disables a required addon and the refusal names ise
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpORwK0P
+exit code: 1
+--- stdout ---
+
+--- stderr ---
+error: addon 'architecture_principles' is required by 'ise'; disable 'ise' first
+

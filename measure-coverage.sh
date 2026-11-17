@@ -1,11 +1,16 @@
 #!/bin/sh
-# Instrumented coverage over the feature suite, split into a non-e2e and an
-# e2e replay. The archive gate requires the two reports to differ —
-# duplicated output is rejected — so the two groups run as separate
-# instrumented passes with their own profraw sets.
+# Instrumented coverage over the two verification scopes. The archive gate
+# requires the two reports to differ — duplicated output is rejected — so the
+# regular and the @e2e group run as separate instrumented passes with their own
+# profraw sets.
 #
-# Test runner: cargo-nextest by default; GIVN_TEST_RUNNER=cargo falls back
-# to plain `cargo test`. Mirrors ./run-tests.sh.
+# The @e2e group is the standalone package: it links no product crate, so the
+# instrumented artifact is the built `givn` binary and the profile comes from
+# the scenarios that execute it. This script builds that binary and hands the
+# path to the package through `GIVN_BIN`; it never lets the runner rebuild it.
+#
+# Test runner: cargo-nextest by default; GIVN_TEST_RUNNER=cargo falls back to
+# plain `cargo test`. Mirrors ./run-tests.sh.
 set -eu
 runner=${GIVN_TEST_RUNNER:-nextest}
 
@@ -31,23 +36,40 @@ else
     }
 fi
 
-# Prepare the instrumented ready-fixture process before the replay. A cold
-# replay target would make the first run-execution scenario build the
-# fixture with plain cargo, replacing the instrumented givn binary the
-# scenarios spawn. The fixture links no production code and exits 0 with no
-# arguments; running it here discards its profraw with the clean below.
+E2E_TARGET_DIR="$PWD/target/e2e-package"
+PROFILE_DIR="$PWD/target/llvm-cov-target"
+
+# Build the instrumented product and ready fixture before either replay. A cold
+# target would make the first run-execution scenario build the fixture with
+# plain cargo; building both here keeps every artifact instrumented.
 cov_ready
+# `cargo llvm-cov run` is the supported entry point that builds a binary target
+# under instrumentation; `--no-report` keeps this step out of the report path.
+# `--no-run --no-report` is refused by cargo-llvm-cov 0.9.1.
+cargo llvm-cov run --no-report --locked --bin givn -- --version
+INSTRUMENTED_BIN="$PROFILE_DIR/debug/givn"
+[ -x "$INSTRUMENTED_BIN" ] || {
+    printf 'measure-coverage.sh: the instrumented givn binary is missing at %s\n' "$INSTRUMENTED_BIN" >&2
+    exit 2
+}
+READY_FIXTURE=$(cargo test --locked --no-run --test ready_fixture --message-format json 2>/dev/null |
+    sed -n 's/.*"executable":"\([^"]*ready_fixture[^"]*\)".*/\1/p' | tail -1)
 
 mkdir -p "$(dirname "$non_e2e_path")"
 cargo llvm-cov clean --profraw-only
 
-# --- non-e2e group ----------------------------------------------------------
-cov 'not @e2e'
+# --- regular group ----------------------------------------------------------
+cov 'not @e2e and not @givn.removed'
 
 cargo llvm-cov report --cobertura --output-path "$non_e2e_path"
 
 # --- e2e group --------------------------------------------------------------
+# The package runs the instrumented binary in child processes, so the profile
+# file pattern is exported for them; the harness forwards it through
+# `env_clear()` on purpose.
 cargo llvm-cov clean --profraw-only
-cov '@e2e'
+GIVN_BIN="$INSTRUMENTED_BIN" GIVN_READY_FIXTURE="$READY_FIXTURE" \
+    LLVM_PROFILE_FILE="$PROFILE_DIR/givn-%p-%m.profraw" \
+    ./run-tests.sh --e2e --package e2e
 
 cargo llvm-cov report --cobertura --output-path "$e2e_path"

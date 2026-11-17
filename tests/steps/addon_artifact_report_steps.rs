@@ -1,4 +1,4 @@
-//! Steps for the `givn addons list` materialization report (ADR-076).
+//! Steps for the `givn addons list` materialization report (ADR-080).
 //!
 //! The capability is `enable-optional-addons` under `initialize-project`. The
 //! real interface is a subprocess `givn addons list`; every Then step asserts

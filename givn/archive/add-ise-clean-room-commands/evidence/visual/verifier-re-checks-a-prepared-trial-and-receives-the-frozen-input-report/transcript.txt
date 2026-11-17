@@ -1,0 +1,13 @@
+Scenario: Verifier re-checks a prepared trial and receives the frozen-input report
+argv: givn ise verify --trial /tmp/.tmpzce7rz/record.yaml --at /tmp/.tmpzce7rz/trial
+cwd (fixture project root): /tmp/.tmpSzaxfc
+binary: the compiled `givn` the scenario spawns (CARGO_BIN_EXE_givn)
+exit code: 0
+
+--- stdout (raw) ---
+Trial: /tmp/.tmpzce7rz/trial
+Retained: clean
+E2E: clean
+
+--- stderr (raw) ---
+

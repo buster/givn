@@ -421,13 +421,18 @@ impl Worktree {
         ))
     }
 
-    /// Regular files under `root` in `revision`, with their entry kind.
+    /// Tracked files under `root` in `revision`, with their entry kind.
     pub fn revision_files(
         &self,
         revision: &str,
         root: &str,
-    ) -> Result<Vec<(String, crate::scm::EntryKind)>> {
-        let output = run_git(&self.root, &["ls-tree", "-r", "-z", revision, "--", root])?;
+    ) -> Result<Vec<crate::scm::RevisionEntry>> {
+        let mut args = vec!["ls-tree", "-r", "-z", revision];
+        if !root.is_empty() {
+            args.push("--");
+            args.push(root);
+        }
+        let output = run_git(&self.root, &args)?;
         if !output.status.success() {
             bail!(
                 "`git ls-tree` failed in '{}': {}",
@@ -448,6 +453,7 @@ impl Worktree {
             let mut parts = meta.split_whitespace();
             let mode = parts.next().unwrap_or("");
             let kind = parts.next().unwrap_or("");
+            let object = parts.next().unwrap_or("");
             let entry_kind = if kind == "commit" {
                 crate::scm::EntryKind::Submodule
             } else if mode == "120000" {
@@ -455,25 +461,24 @@ impl Worktree {
             } else {
                 crate::scm::EntryKind::Regular
             };
-            files.push((path, entry_kind));
+            let gitlink = (entry_kind == crate::scm::EntryKind::Submodule)
+                .then(|| object.to_string())
+                .filter(|object| !object.is_empty());
+            files.push(crate::scm::RevisionEntry {
+                path,
+                kind: entry_kind,
+                executable: entry_kind == crate::scm::EntryKind::Regular && mode == "100755",
+                gitlink,
+            });
         }
         Ok(files)
     }
 
-    /// Read the named blobs from `revision`.
-    pub fn revision_blobs(
-        &self,
-        revision: &str,
-        paths: &[String],
-    ) -> Result<Vec<(String, Vec<u8>)>> {
-        let mut blobs = Vec::new();
-        for path in paths {
-            let output = run_git(&self.root, &["show", &format!("{revision}:{path}")])?;
-            if output.status.success() {
-                blobs.push((path.clone(), output.stdout));
-            }
-        }
-        Ok(blobs)
+    /// One path's bytes at `revision`, or `None` when Git holds no blob for
+    /// it.
+    pub fn revision_blob(&self, revision: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        let output = run_git(&self.root, &["show", &format!("{revision}:{path}")])?;
+        Ok(output.status.success().then_some(output.stdout))
     }
 
     /// Changed paths under `root` from `base` to the current revision.

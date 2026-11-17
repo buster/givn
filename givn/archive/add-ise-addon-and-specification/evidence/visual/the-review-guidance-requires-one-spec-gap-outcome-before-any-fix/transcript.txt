@@ -1,0 +1,601 @@
+Scenario: The review guidance requires one spec gap outcome before any fix
+argv: givn (scenario invocation)
+cwd (fixture project root): /tmp/.tmpiTk82X
+exit code: 0
+--- stdout ---
+# Instruction: review
+
+Completeness-based coverage review. Goal: every uncovered region is
+deliberately classified and resolved. No percentage threshold.
+
+## Preconditions
+
+- **Tasks must be done.** If `givn status --change <id>` shows unchecked
+  tasks, warn the user and confirm before proceeding.
+- **Never change production code to force a pass.** A failing test is a
+  finding to classify or remediate through the loop, not an edit made to turn
+  the suite green.
+
+## Review context (mandatory)
+
+Default: perform the review in the current context and record
+`Review kind: self-review`. A self-review is not an independent review; do not
+label it independent.
+
+For a major change, or when the user requests it, perform the review in exactly
+one fresh context: one review subagent, one separate reviewer session, or one
+human reviewer. One context covers both the design-review and final-review
+obligations for the change. The reviewer must not be the author, must not
+receive the author's conversation history, and must review only.
+
+Do not start planning, design, hardening, coverage, implementation, or
+additional review subagents. Never start more than one review context.
+
+A change is major when any of these is true, and the change records the reason:
+
+- public contract, CLI or API change;
+- persistent data, schema or migration;
+- security, privacy or authorization;
+- concurrency or distributed behavior;
+- architecture boundary or external adapter;
+- irreversible or destructive operation;
+- multiple capabilities or high blast radius;
+- the user explicitly requests an independent review.
+
+If classification is ambiguous, ask the user one question. Do not infer "major"
+silently.
+
+The proposal records the requested kind. The design review and the review record
+`Review kind`, `Author`, and `Reviewer context`. For an independent review the
+reviewer context must differ from the author. A gate that requires independence
+accepts only `Review kind: independent`; a self-review is never turned into an
+independent claim by gate inference. If independence is required but no fresh
+context is available, ask the user; do not silently fall back to self-review.
+
+When the outline addon is enabled, its report is advisory evidence for the one
+recorded review context. A self-review uses the self context; an independent
+review uses the one independent reviewer. Never create a second outline review
+context, require an outline verdict, or treat the outline as a gate.
+
+The review writes only `review.md`. It does not edit production code, tests,
+specs, design, tasks, ADRs, glossary, coverage, or README.
+
+## Preflight (before review)
+
+The implementing agent runs the mechanical checks and fixes every failure before
+starting the review:
+
+- full `verify.command`;
+- full `verify.e2e_command`;
+- the project's coverage command with branch instrumentation;
+- `givn check review --change <id>`;
+- dead code and dead port/contract members;
+- receipt freshness;
+- canonical proposal and use-case format;
+- README badges and other generated evidence.
+
+Do not start the review on a tree that still fails a mechanical check.
+The review is for semantic findings, not for discovering work the implementer
+can verify deterministically.
+
+After review, fix every finding and verify each one. One targeted closure checks
+the recorded findings and material regressions introduced by their fixes; it is
+not another open-ended audit and does not require a redundant full-suite run.
+Critical defects remain repairable blockers. Minor naming, style polish, and
+unrelated findings go to the existing backlog or a separate follow-up batch. A
+new non-critical finding goes to the next change. A new critical finding
+invalidates the trial rather than extending the loop.
+
+## Step 0 (mandatory, first): implementation evidence check
+
+A change can reach review with every task checked off, the runner exiting
+0, and almost nothing actually implemented — if steps were left as
+empty/no-op stubs. Mechanical check, before trusting any other artifact:
+
+0. **Verify @e2e tag integrity.** Grep every delta `.feature` file in
+   `givn/changes/<change-id>/specs/`. If any scenario's tags were changed
+   from including `@e2e` to excluding it, record this as a
+   implementation-evidence finding: `@e2e` coverage was planned and then removed
+   to bypass the verify-e2e gate. The fix is to restore the `@e2e` tag and
+   configure `verify.e2e_command`. Tag removal is independently detected by
+   `givn check review` and `givn lint` through tasks.md cross-reference.
+
+1. Grep every step definition file for empty/trivial bodies: `{}`, `() {}`,
+   whitespace-only, bare `pass`/`return`, or a body with no reference to any
+   assertion library, mock, HTTP client, or domain object. Any match =
+   fabricated step.
+2. Cross-check every checked scenario has a `COMMIT:` revision. The commit
+   must contain the scenario's implementation or regression test; a
+   comment-only, whitespace-only, tag-only, task-only, feature-only, or
+   transcript-only change is not evidence. A shared batch revision is allowed
+   when the `COMMIT:` line names `Batch: <name>`.
+2a. A normal change must not use `CHARACTERIZATION` to avoid writing tests.
+   Characterization is reserved for reverse-engineering changes.
+2b. For high-risk rules (identity, omitted alternative, boundary, lifetime
+   limit, precedence), the reviewer may ask for a discrimination proof: revert
+   or mutate the production behavior and confirm the test fails. This is a
+   risk-based check, not a TDD record; exhaustive mutation testing is not
+   required.
+2c. A prior run's violation is not a compliance argument. Evaluate against the
+   rule, not the archive.
+
+Examples:
+
+  commit: only `# Scenario: ...` in production               -> not evidence
+  commit: only `@wip` removed                                -> not evidence
+  shared batch: two scenarios, same hash, `Batch: issuance`  -> valid
+  shared hash without `Batch:`                                -> invalid
+  normal change marked CHARACTERIZATION                       -> invalid
+3. Cross-check every component design.md promised (class/service/
+   controller/module) exists in the tree. List anything missing —
+   incomplete implementation, not a "hard to test" gap.
+   Also check that every declared contract is the only surface its consumers
+   use; an import of the component's implementation is a finding. Apply `givn
+   instructions architecture-principles` when the design declares contracts.
+   The composition root and the implementation's own tests are the exceptions.
+4. Confirm the runner's strict-mode proof is present with output in
+   tasks.md. Missing = every PASS in this change is unverified.
+5. **Read every `@e2e` scenario's Then steps.** If a scenario's Then steps
+   assert ONLY against a repository/database (no assertion on page content,
+   HTTP response, redirect, or CLI output), it is a downgraded e2e scenario
+   — an integration test wearing an `@e2e` tag. This is unfinished work,
+   not a coverage gap, regardless of the runner reporting GREEN. Record
+   each downgraded scenario found.
+6. **For a browser-UI capability, read every `@e2e` step definition's
+   implementation, not just its assertions.** If the step body sends an
+   HTTP request directly, or calls `fetch()`/`XMLHttpRequest` from inside
+   the page's JS context, instead of driving the browser (click/type/
+   navigate) through a real driver, it is a downgraded e2e scenario even if
+   its Then assertion checks page content — the interaction was never real.
+   Record each occurrence found.
+7. **Identify the exact file(s) `verify.e2e_command` actually invokes.**
+   Read the command itself from `givn/commands.yaml`, not just its name — a
+   file merely containing "e2e" in its path is not evidence it is bound to
+   that command. Then inspect the working state and search the tree for any other
+   `@e2e` step implementation for the same capability, including untracked
+   or uncommitted files. If more than one implementation exists, read all
+   of them. A weaker/downgraded implementation being reviewed while a
+   stronger, real-interface implementation already exists elsewhere in the
+   tree (committed or not) is itself a implementation-evidence finding — the
+   review must use and credit the strongest one, not whichever one
+   `verify.e2e_command` happens to point at if that is the wrong one.
+8. **Check E2E scope using the canonical specs instruction.** Confirm that
+   inventory entries are normalized distinct user actions and that each has one
+   E2E scenario. Variants, error cases, and output-affecting flag combinations
+   of the same action are regular scenarios. Excess E2E scenarios are a
+   implementation-evidence finding.
+9. **Confirm the E2E scope is selected explicitly.** When regular and E2E
+   verification share one runner command, an explicit scope selection such as
+   `GIVN_RESULT_SCOPE` must distinguish the executions. Equal test counts or
+   identical command strings do not by themselves invalidate honestly isolated
+   scopes. Read the archive verification receipt's per-scope evidence; required
+   executions and zero failed or skipped tests remain required, without an
+   extra isolation run. Do not re-run the suite in review; the receipt is the
+   execution evidence.
+10. **Diff the implementation against design.md's stated commands, file
+    layout, and framework choices — do not just check they exist.**
+    design.md names specific things: the exact `verify.e2e_command` value
+    (including its tag-filter flag), exact step-definition file paths (e.g.
+    separate files per capability), exact framework/driver. If the
+    as-built project deviates from what design.md explicitly named — same
+    step file used for both e2e and non-e2e when design.md named two, a
+    different or unfiltered command than design.md specified, a different
+    driver — and `design.md` was never updated to reflect a deliberate,
+    re-reviewed change, this is not a coverage gap or an acceptable
+    "practical" shortcut. It is an implementation that silently overrode an
+    already-reviewed design decision. Record it as a implementation-evidence
+    finding: the fix is to either (a) conform the implementation to
+    design.md as originally reviewed, or (b) update design.md with the
+    corrected decision and re-run design-review (and reassess the arc42
+    chapter table if the change is structural) before the task can be
+    considered done — never to silently keep the deviation.
+11. **Interaction coverage verification** — cross-reference the interaction
+    inventory in the owning use-case document against the design's
+    Interaction Coverage Matrix and the actual `.feature` file + step
+    definitions:
+    a. Read the owning `givn/specs/<usecase-id>/usecase.md` and list every
+       entry of its `## Interactions` section — the inventory lives there,
+       never in a `.feature` comment block.
+    b. Read the design's `Interaction Coverage Matrix` table. Confirm
+       every inventory entry appears as a row. Flag missing or extra rows
+       as a finding — every interaction must be mapped, no unmapped
+       interaction may exist.
+    c. For each matrix row, confirm an `@e2e` scenario with a matching
+       title exists in the `.feature` file. The scenario title need not be
+       identical to the inventory description, but it must clearly cover
+       the same interaction.
+    d. For each matrix row, grep the e2e step definition file(s) for the
+       promised driving mechanism. If the matrix says "Playwright: click
+       button X", the step file must import/use Playwright (not `reqwest`,
+       not raw HTTP). If the driving mechanism is an HTTP client for an
+       API-only capability, confirm the step file uses that HTTP client.
+       Mismatch = driving-mechanism finding: the implementation silently
+       used a different driver than the reviewed design committed to.
+    e. Record the full cross-reference as a table in the implementation evidence check
+       section of review.md.
+12. Any finding from 1-11 is unfinished work, not a coverage gap. Reopen the
+    batch: implement the missing behavior and tests, then refactor — driving
+    the real interface per design.md's "Anticipated interface obstacles" fix,
+    not by asserting on the repository instead. Do not write `REVIEW: PASS`
+    while any finding remains.
+
+Record the result even when clean: "0 empty step bodies found across N files."
+
+## Change strategy and Spec gap
+
+Read the change's design ledger and its proposal before classifying any
+difference.
+
+- **One `Spec gap` outcome before any fix.** Record exactly one `Spec gap`
+  outcome before any fix: `E2E test defect`, `implementation defect`,
+  `specification defect`, or `acceptable undocumented change`. More than one
+  outcome, or an outcome recorded after a fix, is a finding. The record names
+  the artifact that is wrong, not who found it.
+- **Only `specification defect` is a gap in the Specification.** An
+  `E2E test defect` is a gap in the E2E test, an `implementation defect` is a
+  gap in the build, and an `acceptable undocumented change` is no gap at all.
+- **An `E2E test defect` stops the Ise Test.** Stop the trial, correct the E2E
+  test, and restart the trial from the corrected suite. The `e2e` package is
+  part of the Specification, so the corrected test is a Specification
+  correction, not an exception to the freeze.
+- **Neighboring components.** Ask which components changed outside the
+  replaced component, and the reason for each change. Record the answer. This
+  is one review question, never a gate.
+
+## Arc42 implementation conformance
+
+## Architecture conformance from the first implementation
+
+Review checks substantive boundaries from the first implementation, not filenames
+or a later architecture polish pass:
+
+- cohesive responsibilities and narrow consumer contracts;
+- external adapters separate from the domain, with a separate composition root;
+- explicit dependency direction, with consumers using the declared boundary and
+  confirmed actual imports and calls rather than inferring boundaries from filenames;
+- a narrow module API may satisfy a contract unless isolation or substitution
+  needs an explicit interface;
+- confirmed Personas remain stakeholder review lenses, without invented
+  identities or an internal-change exemption (no internal-change exemption).
+
+Run this block after the implementation evidence check and before coverage classification.
+
+The check is mandatory. It catches both directions of
+drift: durable architecture documentation that is stale or missing a completed
+change, and architecture facts that the change's design, tasks, or completed
+implementation ignores or contradicts.
+
+1. Read the durable `docs/arc42/` chapters and the change-level `arc42.md`.
+2. Independently derive the affected chapters and concrete architecture facts
+   from the completed implementation, `design.md`, and `tasks.md` before
+   accepting the change-level Arc42 claims. The returned guidance compares
+   Arc42 design tasks and the completed implementation against available
+   evidence, not an unwritten review verdict or a future archive receipt.
+3. For every chapter marked affected by either assessment, open the chapter and
+   check that it contains current, decision-specific content rather than a
+   placeholder or stale contradiction.
+4. Cross-reference each relevant fact or decision against `design.md`, the
+   specific task(s) in `tasks.md`, and evidence from the completed
+   implementation. Record the full comparison in the `Arc42 implementation
+   conformance` block of `review.md`:
+
+   | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` | `tasks.md` | Implementation evidence | Match? |
+   |---|---|---|---|---|---|---|
+   | | | | | | | |
+
+5. Treat every omission, contradiction, stale chapter, or missing task mapping
+   as a finding and record and resolve every material conformance mismatch. Fix the affected Arc42 chapter, `arc42.md`, `design.md`,
+   `tasks.md`, or implementation, then repeat the comparison. If `design.md`
+   changes, run design-review again before continuing.
+6. Record `ARC42 CONFORMANCE: CLEAN` as the explicit clean marker only when
+   every row matches and all five sign-off checks in the template are checked.
+   Do not write `REVIEW: PASS`
+   while this block contains an unresolved finding.
+
+
+## Ubiquitous language conformance
+
+Before sign-off, run this mandatory
+check: confirm that the specs, design, and code reuse the durable glossary's
+exact terms — the ubiquitous language is used consistently everywhere and
+recorded in the project's `docs/glossary.md`. Every spec or design term the
+glossary does not hold, or any inconsistent reuse, is a finding: fix the
+affected artifact and record the resolved term in `docs/glossary.md`.
+
+Check the structural model at its owner: `docs/domain-model.md`. Assess the
+structural impact: did this change alter the structure or an included
+explanatory view? If it did,
+confirm the rendered diagram and the boundaries/relationships tables match the
+implemented change. If it did not, leave the model unchanged; a no-op document edit is not evidence of maintenance.
+
+Do not write `REVIEW: PASS` while a ubiquitous-language or structural finding
+remains.
+
+When a domain term, schema, or governing rule changes, sweep README, glossary, ADRs,
+docs, tests, and code symbols for old values. Update them or mark them stale at
+their entry point. A single authoritative source must emerge; two unqualified
+definitions are a finding.
+
+Examples: a glossary naming a deleted constant; a risk note still saying a
+migration backfills rows; a README still reporting the old rule or old coverage.
+
+## Coverage
+
+Coverage is measured by the implementation preflight with the project's coverage
+command and again by the archive against the committed candidate. Review uses
+the latest measured evidence and static inspection to classify gaps; do not
+write "not measured" as a substitute for classification. If no coverage evidence
+exists yet for this change, say so explicitly and classify from inspection —
+the archive receipt will carry the measured result. The givn archive
+verification and its Cobertura report are authoritative; an external reporter
+that cannot execute the project runner is a measurement gap, not absent
+coverage.
+
+Do not remove branch instrumentation to raise the line percentage. A line-only
+report is a finding; branch coverage is measured when the language supports it.
+
+Redundant unit tests (behaviour already covered by a `.feature` scenario
+through the black-box boundary) are removed — the `.feature` file is the
+source of truth.
+
+## Classification (three buckets — no fourth bucket)
+
+1. Dead code (YAGNI/KISS) → delete.
+2. Missing test coverage → add the tests, implement, refactor, and record the
+   batch commit.
+3. Legitimately hard to test (rare) → concrete technical justification.
+
+External-input validation is bucket 2 (missing test coverage) until a scenario
+or fault-injection test covers it. It is never bucket 3 ("legitimately hard to
+test"). A fake boundary makes the case testable; classify it as missing test,
+not defensive code.
+
+Example: a provider licence response whose id names another provider. The fake
+returns that payload; the scenario asserts refusal. Before the test exists, it
+is bucket 2, not "defensive."
+
+These three buckets are exhaustive. **Any classification outside them is
+itself a implementation-evidence finding, not a valid outcome** — e.g. "acceptable
+for this iteration scope," "sufficient for current scope," "future scope,"
+"good enough for now," or any similar invented exception that waves off a
+required check instead of fixing it or explicitly justifying it under
+bucket 3. A missing or downgraded `@e2e` scenario always classifies as
+bucket 2 (missing test coverage) — it can never be excused into a fourth,
+undefined bucket. If you find yourself writing a sentence that excuses a
+gap without naming one of the three buckets above, stop and reclassify it.
+
+## E2e coverage
+
+Apply the canonical E2E policy from `givn instructions specs --change <id>`.
+Review still verifies the real-interface primary assertion, the actual driver,
+the configured E2E command, and the normalized inventory-to-scenario mapping.
+Missing, downgraded, or over-produced coverage is unfinished work and must be
+fixed or classified under the three coverage buckets above.
+
+Before accepting a non-browser classification, state the opposite classification — a rendered page is a Web UI — and why it does not hold. A review that only restates the author's classification is incomplete.
+
+## Deferrals
+
+A deferral of a mandatory check without a recorded operator decision fails the review.
+
+## Use-case and Persona conformance
+
+Read the owning `usecase.md`, the proposal's use-case context, and any ideation
+change seed. Confirm implementation preserves the use-case guarantees, rules,
+typed relationships, capability ownership, and confirmed Persona-relevant
+outcomes. Actors remain interaction roles; Persona biographies remain review
+context. Record migration-ledger evidence where applicable. Do not sign off
+invented or silently promoted Personas.
+
+Record the disposition for every confirmed Persona; when none is confirmed, record the reason. A declared visual design contract — including `Interface: none` — requires at least one confirmed Persona; only a change that declares no visual design contract may record a reasoned `none`. A user-visible surface still requires at least one confirmed Persona.
+
+### Use-case scope rejection criteria
+
+A review fails when any of these holds. Each criterion names the observable
+document section that proves it.
+
+- **Goal conjunction** — `## Goal` joins two verb phrases, or
+  `## Success guarantee` names two outcomes.
+- **Missing primary actor** — `## Actors` has no identifiable primary, or
+  `## Trigger` does not name them.
+- **Placement failure** — `## Capabilities` contains a capability that fails
+  the placement test for this goal.
+- **Mutation under an observing goal** — a capability's scenarios assert a
+  state change while the guarantees declare observation.
+- **Extension without a step reference** — `## Extensions` omits its
+  main-flow step, or adds a new success outcome.
+- **Inconsistent preconditions** — a precondition is established by the flow;
+  the success guarantee is assumed; the trigger is a state or desire; an
+  unqualified guarantee whose prerequisite is open (`(open: Q<N>)`).
+- **Mechanism vocabulary** — `## Goal`, `## Trigger`, or the guarantees name
+  a mechanism.
+- **Component- or channel-shaped name** — a use-case or capability name names
+  a technical component or channel.
+- **Oversized leaf** — a leaf's `## Main flow` names three or more actor
+  goals.
+- **Relationship misuse** — `Extends` without a stated condition; an
+  end-user goal placed as a fragment or vice versa.
+
+## Visual review (conditional)
+
+Run this block when the change's design declares a visual interface (a
+`## Visual Design Contract` section whose `Interface:` is not `none`).
+
+- The evidence is complete: every delta `@e2e` scenario has one committed
+  final-state screenshot per contract viewport, or a transcript for a
+  terminal interface. Missing evidence blocks the review.
+- The vision review runs in the recorded review context: the reviewer sees the
+  committed screenshots and judges, for each confirmed Persona, whether that
+  Persona can reach its goal with what is shown. Record every finding with a
+  disposition, and never invent a Persona.
+- The vision review names the state screenshots the review saw for each declared UI state.
+- End the block with `VISUAL-REVIEW: PASS` only when the evidence is
+  complete, the baseline holds, and every Persona finding is dispositioned.
+- Every finding names a contract rule or a failed Persona goal: no pixel-level
+  or coordinate findings are accepted. A finding that only says "2px off" is
+  invalid.
+- A style improvement that stays within the contract updates the contract in
+  the same change; it is not a review failure, and the code is never rolled
+  back to match a stale reference.
+- When the active harness cannot process images, record
+  `VISUAL-REVIEW: UNVERIFIED`. That verdict blocks until a human sign-off
+  replaces it with `VISUAL-REVIEW: PASS`; it never silently passes.
+
+## Deterministic gate dispositions
+
+For every shape match involving the change, complete the **Overlap
+dispositions** table in `review.md`. Write the section with the exact
+heading `## Overlap dispositions` and one row per finding pair. The
+Decision column must be exactly one of `duplicate`, `variant`, or
+`boundary` (case-insensitive) — an empty or unrecognised word does not
+clear the finding. For every scenario longer than the gate threshold,
+record a **split-or-keep** decision: write the section with the exact
+heading `## Split-or-keep`, one row per long scenario, each Decision
+either `split` or `keep` with a brief keep reason. A chosen split must be
+completed before sign-off. For every removed+added pair, record whether the
+new scenario supersedes the removed one or is unrelated. These decisions
+are review evidence, not score thresholds. An overlap finding is
+advisory evidence until its disposition is recorded; the recorded disposition,
+not the finding's presence, is the completed verification evidence.
+
+## README impact decision
+
+The review must record the machine-checkable README impact decision — the
+review gate refuses sign-off without it:
+
+- `README-IMPACT: none` — this change did not touch the project's public face.
+- `README-IMPACT: updated - <comma-separated sections>` — the named README
+  sections (Description, Quick start, Prerequisites, Usage, Configuration,
+  Contributing, License) were refreshed to match this change.
+
+A user-visible change (a command, a flag, configuration, or output a consumer
+observes) requires the named sections to be actually edited in the README —
+declaring them updated is not editing them. An open placeholder in the README
+blocks the archive gate regardless of this line.
+
+## Sign-off checklist
+
+- Fabrication audit: clean (or all findings remediated).
+- Every checked task has a verified commit touching production code.
+- Every promised component exists.
+- Every consumer uses only its declared contract.
+- Strict-mode proof present and passing.
+- Scenario execution evidence is recorded per scope in the archive
+  verification receipt; review does not re-run the suite.
+- Coverage classification uses the most recent available measured evidence;
+  the archive receipt will carry the merged result.
+- Every coverage gap classified and resolved.
+- Dead code deleted. Missing tests added. Hard-to-test gaps justified.
+- Redundant unit tests removed.
+- No `@wip` tags remain. No implementation-layer detail in the spec.
+- Canonical E2E policy was read from the resolved specs instruction; every
+  normalized inventory action has one `@e2e` scenario and variants are regular
+  scenarios.
+- Every E2E scenario has a real-interface primary assertion and uses the
+  reviewed driver; browser UI scenarios are never replaced by HTTP/fetch.
+- The local run command starts the full stack (including digital twins)
+  cleanly, verified during this review.
+- The exact file(s) `verify.e2e_command` invokes were identified and read;
+  the tree (including untracked files) was searched for a second/parallel
+  e2e implementation before accepting a weaker one.
+- The E2E scope is selected explicitly (`GIVN_RESULT_SCOPE` or equivalent);
+  equal counts or command strings are acceptable only with that honest
+  isolation, and required executions report zero failures and skips.
+- Implementation (commands, file layout, framework/driver) matches what
+  design.md explicitly named — any deviation was resolved by updating
+  design.md and re-running design-review, never left as a silent shortcut.
+- Interaction coverage verified: every use-case inventory entry maps to a
+  design matrix row, an existing `@e2e` scenario, and step definitions
+  using the promised driving mechanism — no mismatches.
+- No finding was excused with a classification outside the three buckets
+  (no "acceptable for now," "future scope," "sufficient for current scope,"
+  or similar invented exception anywhere in this report).
+
+## Step orchestration (review spot-check)
+
+**Audience: the agent performing the review step, not a separate review author.**
+Before accepting `REVIEW: PASS`, re-check a sample rather than trusting a
+reported result:
+
+1. Grep two or three step definition files yourself for empty bodies (or all
+   when fewer than five) and confirm any "0 findings" claim.
+2. Confirm two or three checked-off tasks have revisions touching production
+   code, via `git show --stat <hash>`.
+3. Read every `@e2e` scenario's step definitions and confirm each has a
+   real-interface assertion — not repository-only, and for a browser-UI
+   capability actually driven through a real browser, never HTTP/fetch.
+4. Confirm the normalized action scope: no capability has more than one
+   `@e2e` scenario for the same action.
+5. Confirm which file(s) `verify.e2e_command` invokes, then search the tree
+   (including untracked files) for a parallel e2e implementation the report
+   did not mention. A report that never names the exact invoked file(s) or
+   never mentions the parallel-implementation check is incomplete — reject it.
+6. Read both `verify.command` and `verify.e2e_command` from
+   `givn/commands.yaml` yourself and confirm the E2E execution names an explicit
+   scope selection such as `GIVN_RESULT_SCOPE`. Equal counts or identical
+   command strings are acceptable only with that honest isolation, and a report
+   without the required execution evidence (zero failures and skips) is
+   incomplete.
+7. Spot-check one command, file-layout, or framework/driver decision
+   `design.md` names against what was actually built. A mismatch not backed by
+   an updated `design.md` plus a re-run design-review rejects PASS.
+8. Scan `review.md` itself for invented exception language ("acceptable for
+   now," "future scope," "sufficient for current scope," or similar) — any
+   such phrase rejects `REVIEW: PASS` regardless of what it excuses.
+9. Any contradiction: reject `REVIEW: PASS` and re-run the review with the
+   discrepancy named.
+
+## Advisory outline evidence
+
+When the `outline` addon is enabled, the outline report supports substantive,
+source-confirmed architecture review. It is advisory: it has no verdict, no
+metric waiver, no forced reviewer context, and no authority to block review or
+archive. A report produced during implementation is reused unless structural
+changes have made its relevant evidence stale; only structurally stale
+relevant evidence requires rerunning the outline. Nonstructural edits alone do
+not require a rerun.
+
+The report covers supported components and their relevant neighbors. Disclose
+which languages and components it covers and which it omits. Unsupported
+components receive direct source assessment using the same responsibility,
+interface, dependency-direction, and decomposition questions; unavailable
+outline support is not a failure and needs no waiver.
+
+Before the architecture questions, reconstruct each changed unit from its
+outline: state its responsibility in one sentence and its ordered call flow,
+without reading bodies or comments. Read the names as the contract: unit and
+type names, method names, parameter names and types, return types, and called
+type names must state the domain operation in the project's vocabulary. A
+generic or machinery name where a domain noun exists is a readability finding.
+If the outline cannot carry that story, record a substantive readability
+finding and reject PASS until the unit is made readable; do not substitute
+source reading or clean metrics for the outline. Source confirms a suspected
+problem; it does not explain the unit.
+
+Ask whether responsibilities are cohesive, public interfaces narrow,
+dependencies correctly directed, and decomposition understandable. Confirm any
+suspected problem against source before drawing conclusions or editing. The
+structural call order is not a complete runtime trace, and uncertain or omitted
+edges limit the conclusions.
+
+The outline alone cannot block review or archive; the report supplies no
+verdict. A substantive readability finding about the changed code is an
+ordinary review finding and can reject PASS.
+
+## Result
+
+Record the review context outside any code fence before the final marker:
+
+```text
+Review kind: self-review | independent
+Author: <author id>
+Reviewer context: <reviewer id>
+```
+
+End the file with `REVIEW: PASS` or `REVIEW: FAIL`. The archive gate reads
+this marker.
+
+Skill to load now: `givn-domain-modeling`
+
+--- stderr ---
+

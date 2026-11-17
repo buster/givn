@@ -16,18 +16,21 @@ is in the [ADR register](adr/README.md); mechanics are in
 | Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
-| Guidance | Skills only. Selected targets receive `<target>/skills/<name>/SKILL.md`; served instructions own the rules; project extensions are appended at request time. `givn-start` is the proportionate entry skill; `givn instructions` reports state without authorizing unrelated work. |
+| Guidance | Skills only. Selected targets receive `<target>/skills/<name>/SKILL.md`; served instructions own the rules; project extensions are appended at request time. Core step instructions name each on-demand stack instruction id and the condition that selects it instead of carrying per-runner mechanics; instruction length carries no numeric cap, and prose that adds no rule is the length defect (ADR-077). `givn-start` is the proportionate entry skill; `givn instructions` reports state without authorizing unrelated work. |
 | Agent targets | `opencode`, `agents`, `claude`, `omp`, and `maki`. Invocation is harness-owned; no generated command files. |
 | Commit attribution | `givn commit` is the SCM-neutral explicit-path commit path; on Git a checked-in message hook additionally stamps raw commits, while a Fossil checkout relies on `givn commit`. OpenCode, Claude, omp, and Maki adapters provide best-effort runtime values without making human commits a gate. |
-| Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |
-| Change verification | `givn check tasks` is the only change-scoped test execution: it records a receipt binding the tested revision, selected delta features, verify command, tested content, and green counts. Review validates that receipt without rerunning the change suite; archive still runs the merged suite once. |
+| Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. The E2E command runs the standalone `e2e` package; the regular command runs the in-process component tier. |
+| Acceptance package | The `@e2e` tier is a standalone `e2e` workspace package with its own workspace root, excluded from the published crate. It shares the feature files, selects by tag, reaches the product only through the built binary named by `GIVN_BIN`, and is the target of `verify.e2e_command`. |
+| Change verification | `givn check tasks` is the only change-scoped test execution: it records a receipt binding the tested revision, selected delta features, verify command, tested content, and green counts. With `ise` effective it also enforces the declared E2E package boundary, runs the change-scoped E2E scope when the delta has `@e2e` scenarios, and binds the E2E identity. Review validates that receipt without rerunning the change suite; archive still runs the merged suite once. |
+| Clean-room spec copy | `givn ise rebuild-all` reads one selected revision through the SCM seam and removes every tracked file under every `source:` root; `givn ise rebuild-component` removes only the paths it names. Both partition the declared roles, the always-carried declaration (`givn/specification.yaml`), and the `source:` roots by the declaration recorded at that revision, refuse the twelve conditions before any write, and write a plain directory outside the checkout with no version-control metadata. The manifest records the Specification, Source code kept, End-to-end (E2E), and removed-path evidence. `givn ise compare` confirms the manifest's `copy_directory`, refuses a file added under a declared Specification path and a copy that lost a recorded kept file, prints the `Specification files` and `End-to-end tests` subjects with their `changed`, `missing`, and `added` counts and one `- <path>` or `+ <path>` line per difference, and compares the frozen inputs with the copy and the checkout. All three commands are opt-in with `ise` and its `architecture_principles` prerequisite. |
 | Review diagnostics | `givn check review` reports every use-case schema and capability-routing problem in one pass, grouped by document, while the schema stays strict and the existing gate order is preserved. |
 | Review closure | One substantive review, then one targeted closure over recorded findings and material regressions from their fixes. Minor new observations enter the backlog; closure is not another open-ended audit. |
 | Archive publication | Forward-only and SCM-backed on Git or Fossil: the merged candidate is published before verification, each scope runs once and reports fail-closed counts, and the receipt is committed as finalization. Successful scope evidence is persisted and reused only when its inputs match. |
 | Product start | One author-owned `run:` declaration documents and gates how the built product starts; `givn run` executes it with a std-only readiness probe, a greppable ready line, a spec'd exit-code contract, and unix signal forwarding. |
 | Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |
 | Code-structure report | The enabled-by-default `outline` addon is advisory over production Rust, Python, Java, TypeScript, and JavaScript. It prints each unit's per-component call tree first, then metrics and classification as hints above a neutral `SourceAnalyzer` port. It stores no baseline, has no verdict vocabulary, and never gates. |
-| Arc42 | All addons are enabled by default; Arc42 chapters are scaffolded at fixed `docs/arc42/`. The first completed change establishes the twelve-chapter baseline; later changes update affected chapters. |
+| Addons | Every addon except an opt-in addon is enabled by default. `ise` joins as the one opt-in addon with an `architecture_principles` prerequisite, so a project that never enables it receives no new key, file, gate, or finding. Once a project enables it, an `ise`-effective change gains the declared E2E package boundary, the E2E-bound receipt, and the two clean-room commands. |
+| Arc42 | Arc42 chapters are scaffolded at fixed `docs/arc42/`. The first completed change establishes the twelve-chapter baseline; later changes update affected chapters. |
 | Structural overlap | Deterministic Fingerprint evidence and review dispositions. |
 | Migration | The supported baseline is 1.0. The shipped catalog is empty; pre-1.0 projects follow a documented manual transition. Future catalog routes use the same resolver and bundle contract. |
 | Migration-free upgrade | A release without a selected route synchronizes managed guidance and creates one allowlist-only commit when files changed. |
@@ -44,11 +47,13 @@ refused before use.
 `post` is not the source of the core review contract. The binary always runs the
 mandatory checks for explicit `givn check tasks` and `givn check review`:
 
-- tasks: WIP protection for a change delta and change verification;
+- tasks: WIP protection for a change delta, the declared E2E package boundary
+  when the change lock has `ise` effective, change verification, the
+  change-scoped E2E execution, and the E2E-bound receipt;
 - review: integrity, the deterministic run-declaration check, change-scoped
   lint, overlap dispositions, retirement disclosure, capability routing, the
-  change verification receipt, and scenario commits. The full suite is not
-  re-run in review.
+  change verification receipt including its E2E identity, and scenario
+  commits. The full suite is not re-run in review.
 
 Built-in hook names cannot be downgraded with `allow_failure`. Custom shell
 hooks can be configured and may be allowed to fail. A no-argument `givn check`

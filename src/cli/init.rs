@@ -138,7 +138,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         println!("\nEnabling addons...\n");
         if preserved_addons.is_some() {
             let manifest = crate::config::overlay::load_effective()?;
-            for addon in crate::cli::addons::KNOWN_ADDONS {
+            for addon in crate::config::addons::KNOWN_ADDONS {
                 if manifest
                     .addons
                     .get(addon.id)
@@ -148,7 +148,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
                 }
             }
         } else {
-            for addon in crate::cli::addons::KNOWN_ADDONS {
+            for addon in crate::config::addons::KNOWN_ADDONS {
                 if addon.default_enabled {
                     crate::cli::addons::enable_scaffold(addon.id)?;
                 }
@@ -233,7 +233,7 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         println!("           explicit false written for every addon");
     } else {
         let manifest = crate::config::overlay::load_effective()?;
-        let states: Vec<(&str, bool)> = crate::cli::addons::KNOWN_ADDONS
+        let states: Vec<(&str, bool)> = crate::config::addons::KNOWN_ADDONS
             .iter()
             .map(|addon| {
                 (

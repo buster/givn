@@ -17,6 +17,18 @@ pub enum EntryKind {
     Submodule,
 }
 
+/// One tracked path at a revision, with the facts a clean-room write and the
+/// checksum rule need.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RevisionEntry {
+    pub path: String,
+    pub kind: EntryKind,
+    pub executable: bool,
+    /// The recorded commit id for a repository link; `None` for every other
+    /// kind. A link hashes with this id as its content bytes.
+    pub gitlink: Option<String>,
+}
+
 /// One content path plus its backend-specific identity. `gitlink` carries a
 /// submodule's recorded object id; other paths leave it empty.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -35,6 +47,14 @@ pub enum Backend {
 }
 
 impl Backend {
+    /// The backend's name in the trial report and record.
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Git(_) => "git",
+            Self::Fossil(_) => "fossil",
+        }
+    }
+
     /// The current revision identifier of the project.
     pub fn revision(&self) -> Result<String> {
         match self {
@@ -179,24 +199,41 @@ impl Backend {
         }
     }
 
-    /// Regular files under `root` in `revision`, with their entry kind.
-    pub fn revision_files(&self, revision: &str, root: &str) -> Result<Vec<(String, EntryKind)>> {
+    /// Tracked files under `root` in `revision`, with their entry kind.
+    pub fn revision_files(&self, revision: &str, root: &str) -> Result<Vec<RevisionEntry>> {
         match self {
             Self::Git(worktree) => worktree.revision_files(revision, root),
             Self::Fossil(checkout) => checkout.revision_files(revision, root),
         }
     }
 
-    /// Read the named blobs from `revision`.
+    /// One path's bytes at `revision`, or `None` when the backend holds no
+    /// blob for it. The caller owns the refusal sentence, because which read
+    /// refused (the declaration or a trial input) changes the words.
+    pub fn revision_blob(&self, revision: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        match self {
+            Self::Git(worktree) => worktree.revision_blob(revision, path),
+            Self::Fossil(checkout) => checkout.revision_blob(revision, path),
+        }
+    }
+
+    /// Read the named blobs from `revision`. A path the backend cannot read
+    /// is a named refusal: a skipped path would silently shrink the trial.
     pub fn revision_blobs(
         &self,
         revision: &str,
         paths: &[String],
     ) -> Result<Vec<(String, Vec<u8>)>> {
-        match self {
-            Self::Git(worktree) => worktree.revision_blobs(revision, paths),
-            Self::Fossil(checkout) => checkout.revision_blobs(revision, paths),
+        let mut blobs = Vec::with_capacity(paths.len());
+        for path in paths {
+            match self.revision_blob(revision, path)? {
+                Some(bytes) => blobs.push((path.clone(), bytes)),
+                None => bail!(
+                    "'{path}' cannot be read from revision '{revision}'; the backend returned no blob for it"
+                ),
+            }
         }
+        Ok(blobs)
     }
 
     /// Changed paths under `root` from `base` to the current revision, plus

@@ -74,6 +74,25 @@ pub(crate) fn served_instruction(env: &common::TestEnv, id: &str) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
+/// Run `givn instructions <id> --change <change>` against a fixture, creating
+/// the `guidance-amendments` change when the synced fixture has none. Manifest
+/// artifact instructions need a real change context.
+pub(crate) fn request_change_guidance(env: &common::TestEnv, id: &str) -> Output {
+    let change = match single_active_change(env) {
+        Some(change) => change,
+        None => {
+            let output = common::run_givn(env, &["new", "guidance-amendments"]);
+            assert!(
+                output.status.success(),
+                "create the guidance fixture change failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
+            "guidance-amendments".to_string()
+        }
+    };
+    common::run_givn(env, &["instructions", id, "--change", &change])
+}
+
 /// The default fixture for the ideation guidance scenarios: a Givn project
 /// with every addon enabled, so the addon-gated instruction fragments render.
 #[given("a Givn project")]
@@ -533,7 +552,15 @@ fn agent_requests_every_served_step(world: &mut GivnWorld) {
     ids.sort();
     assert!(!ids.is_empty(), "no served instruction assets found");
 
+    // An addon-bound instruction is refused by name while its addon is off, so
+    // the corpus-wide request covers only the ids this fixture can serve.
+    let listing = common::run_givn(env, &["addons", "list"]);
+    let listing = String::from_utf8_lossy(&listing.stdout).into_owned();
+
     for id in &ids {
+        if listing.contains(&format!("[disabled]  {id}")) {
+            continue;
+        }
         let mut args = vec!["instructions", id.as_str()];
         let change;
         if MANIFEST_ARTIFACT_IDS.contains(&id.as_str()) {
@@ -1440,6 +1467,94 @@ fn no_hypothetical_providers(world: &mut GivnWorld) {
     );
 }
 
+// --- ise instruction --------------------------------------------------------
+
+/// An initialized project with `ise` effective. Enabling the addon scaffolds
+/// `givn/specification.yaml`; the serving scenarios do not read it.
+#[given("an ise-enabled project")]
+fn ise_enabled_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let output = common::run_givn(&env, &["addons", "enable", "ise"]);
+    assert!(
+        output.status.success(),
+        "givn addons enable ise failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.env = Some(env);
+}
+
+#[given("an initialized project with ise disabled")]
+fn initialized_project_with_ise_disabled(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+}
+
+#[when("the user requests the `ise` instruction")]
+fn user_requests_ise(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(common::run_givn(env, &["instructions", "ise"]));
+}
+
+#[when("the user requests the `ise` instruction as machine-readable output")]
+fn user_requests_ise_as_json(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.previous_output = Some(common::run_givn(env, &["instructions", "ise"]));
+    world.last_output = Some(common::run_givn(env, &["instructions", "ise", "--json"]));
+}
+
+#[then("the served instruction names the five rebuild obligations")]
+fn served_instruction_names_five_obligations(world: &mut GivnWorld) {
+    let content = crate::steps::stdout(world);
+    for label in [
+        "Specification completeness",
+        "two-layer test boundary",
+        "persisted-state continuity",
+        "change strategy",
+        "Spec gap",
+    ] {
+        assert!(
+            content.contains(label),
+            "the served ise instruction is missing {label:?}: {content}"
+        );
+    }
+}
+
+#[then("no served instruction content is printed")]
+fn no_served_instruction_content_printed(world: &mut GivnWorld) {
+    let out = crate::steps::stdout(world);
+    assert!(
+        out.trim().is_empty(),
+        "the refusal printed instruction content: {out}"
+    );
+}
+
+#[then("the machine-readable instruction field equals the served text")]
+fn machine_readable_instruction_equals_served_text(world: &mut GivnWorld) {
+    let text = world
+        .previous_output
+        .as_ref()
+        .expect("the text path was not requested")
+        .stdout
+        .clone();
+    let text = String::from_utf8_lossy(&text);
+    // The text path appends the optional skill route after one newline.
+    let text = text
+        .find("\nSkill to load now: ")
+        .map_or(text.as_ref(), |index| &text[..index]);
+    let json: serde_json::Value = serde_json::from_str(&crate::steps::stdout(world))
+        .expect("the machine-readable path did not emit JSON");
+    assert_eq!(
+        json["instruction"].as_str(),
+        Some(text),
+        "the machine-readable instruction differs from the served text"
+    );
+}
+
 // --- start entry point ------------------------------------------------------
 
 #[given("a Givn project with a project-owned explore instruction override")]
@@ -1450,4 +1565,452 @@ fn project_with_explore_override(world: &mut GivnWorld) {
     std::fs::write(dir.join("instructions.md"), "# Project explore override\n")
         .expect("write explore override");
     world.env = Some(env);
+}
+
+// --- stack-instruction load conditions --------------------------------------
+
+/// The stack instruction ids the core instructions name.
+pub(crate) const STACK_IDS: [&str; 6] = [
+    "steps-rust",
+    "steps-python",
+    "steps-node",
+    "steps-java",
+    "steps-go",
+    "steps-ruby",
+];
+
+/// The runners the stack instructions serve, in `STACK_IDS` order.
+pub(crate) const RUNNERS: [&str; 6] = [
+    "cucumber-rs",
+    "behave",
+    "cucumber-js",
+    "cucumber-jvm",
+    "godog",
+    "cucumber-ruby",
+];
+
+/// Per-runner strict-mode mechanisms: a stack body, never core text.
+pub(crate) const STRICT_MECHANISMS: [&str; 5] = [
+    ".fail_on_skipped()",
+    "--strict",
+    "godog.ErrPending",
+    "fail on pending",
+    "PendingException",
+];
+
+/// Per-stack single-scenario run commands: a stack body, never core text.
+pub(crate) const RUN_COMMANDS: [&str; 6] = [
+    "cargo test <name> -- --exact",
+    "behave -n",
+    "cucumber-js --name",
+    "mvn test -Dcucumber.filter.name",
+    "go test ./... -run TestFeatures",
+    "cucumber --name",
+];
+
+/// The served text of the last request, asserting it succeeded.
+fn served_text(world: &GivnWorld) -> String {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("no instruction was requested");
+    assert!(
+        output.status.success(),
+        "the instruction request failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[when("the author requests the steps instructions through the Givn CLI")]
+fn author_requests_steps_instructions(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(common::run_givn(env, &["instructions", "steps"]));
+}
+
+#[then(regex = r#"^the served text names "(.+)" when the change's runner is "(.+)"$"#)]
+fn served_text_names_stack_for_runner(world: &mut GivnWorld, id: String, runner: String) {
+    let content = served_text(world);
+    let sentence = format!("`{id}` when the change's runner is `{runner}`");
+    assert!(
+        content.contains(&sentence),
+        "the served text does not name {sentence:?}: {content}"
+    );
+}
+
+#[then(regex = r#"^the served text carries no bare "(.+)" direction without that condition$"#)]
+fn served_text_carries_no_bare_id(world: &mut GivnWorld, id: String) {
+    let content = served_text(world);
+    let runner = STACK_IDS
+        .iter()
+        .position(|candidate| *candidate == id)
+        .map(|index| RUNNERS[index])
+        .unwrap_or_else(|| panic!("`{id}` is not a stack instruction id"));
+    for line in content.lines().filter(|line| line.contains(&id)) {
+        assert!(
+            line.contains(runner),
+            "the served text names `{id}` without its load condition (`{runner}`) on the same line: {line}"
+        );
+    }
+}
+
+#[then("the served text carries no per-runner strict-mode mechanism")]
+fn served_text_carries_no_strict_mechanism(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for mechanism in STRICT_MECHANISMS {
+        assert!(
+            !content.contains(mechanism),
+            "the served text carries the per-runner strict-mode mechanism {mechanism:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text carries no per-stack single-scenario run command")]
+fn served_text_carries_no_run_command(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for command in RUN_COMMANDS {
+        assert!(
+            !content.contains(command),
+            "the served text carries the per-stack run command {command:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text still requires the runner's strict-mode proof")]
+fn served_text_requires_strict_proof(world: &mut GivnWorld) {
+    let content = served_text(world);
+    assert!(
+        content.contains("strict-mode config must be proven"),
+        "the served text dropped the requirement to prove the runner's strict-mode config: {content}"
+    );
+}
+
+// --- stack-instruction bodies -----------------------------------------------
+
+/// Per-runner not-implemented stub forms: a stack body, never core text.
+pub(crate) const STUB_FORMS: [&str; 7] = [
+    "unimplemented!()",
+    "todo!()",
+    "NotImplementedError",
+    "return \"pending\";",
+    "godog.ErrPending",
+    "pending(\"TODO\")",
+    "PendingException",
+];
+
+/// The stack-file bullet labels that carry a runner's binding mechanics.
+pub(crate) const BINDING_BULLETS: [&str; 3] = [
+    "Step definition file:",
+    "Binding form:",
+    "Unimplemented body:",
+];
+
+#[given("the author has requested the steps instructions")]
+fn author_has_requested_steps_instructions(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.previous_output = Some(common::run_givn(env, &["instructions", "steps"]));
+}
+
+#[when(regex = r#"^the author requests "(.+)"$"#)]
+fn author_requests_id(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.last_output = Some(common::run_givn(env, &["instructions", &id]));
+}
+
+#[then(regex = r#"^the served text carries "(.+)"$"#)]
+fn served_text_carries(world: &mut GivnWorld, text: String) {
+    let content = served_text(world);
+    assert!(
+        content.contains(&text),
+        "the served text does not carry {text:?}: {content}"
+    );
+}
+
+#[then(
+    "the previously served steps text carries none of the stub, strict mechanism, or run command"
+)]
+fn previous_steps_carries_no_stack_body(world: &mut GivnWorld) {
+    let content = previous_served_text(world);
+    for text in STUB_FORMS
+        .iter()
+        .chain(STRICT_MECHANISMS.iter())
+        .chain(RUN_COMMANDS.iter())
+    {
+        assert!(
+            !content.contains(text),
+            "the served steps text carries the per-runner body token {text:?}: {content}"
+        );
+    }
+}
+
+#[then("the previously served steps text carries no per-runner binding instruction")]
+fn previous_steps_carries_no_binding_instruction(world: &mut GivnWorld) {
+    let content = previous_served_text(world);
+    for bullet in BINDING_BULLETS {
+        assert!(
+            !content.contains(bullet),
+            "the served steps text carries the per-runner binding bullet {bullet:?}: {content}"
+        );
+    }
+}
+
+/// The served text of the request recorded before the last one.
+fn previous_served_text(world: &GivnWorld) -> String {
+    let output = world
+        .previous_output
+        .as_ref()
+        .expect("the steps instructions were not requested first");
+    assert!(
+        output.status.success(),
+        "the preceding steps request failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+// --- core-instruction absence -----------------------------------------------
+
+/// Per-runner step-definition paths: a stack body, never core text.
+pub(crate) const STEP_PATHS: [&str; 3] = ["tests/steps/", "features/steps/", "src/test/java"];
+
+/// The archive binding tokens `steps` keeps for every runner.
+const ARCHIVE_BINDING_TOKENS: [&str; 23] = [
+    "#[given(", "#[when(", "#[then(", "@given(", "@when(", "@then(", "@step(", "@Given(", "@When(",
+    "@Then(", "@And(", "@But(", "@Step(", "Given(", "When(", "Then(", "And(", "But(", "Step(",
+    ".Given(", ".When(", ".Then(", ".Step(",
+];
+
+/// The served texts of a request pair: the first is recorded in
+/// `additional_output`, the second is the last request.
+fn served_pair(
+    world: &GivnWorld,
+    first: &'static str,
+    second: &'static str,
+) -> [(&'static str, String); 2] {
+    let first_text = world
+        .additional_output
+        .as_deref()
+        .unwrap_or_else(|| panic!("the {first} guidance was not requested"));
+    let second_output = world
+        .last_output
+        .as_ref()
+        .unwrap_or_else(|| panic!("the {second} guidance was not requested"));
+    assert!(
+        second_output.status.success(),
+        "the {second} request failed: {}",
+        String::from_utf8_lossy(&second_output.stderr)
+    );
+    [
+        (first, first_text.to_string()),
+        (
+            second,
+            String::from_utf8_lossy(&second_output.stdout).into_owned(),
+        ),
+    ]
+}
+
+#[then("the served text carries no per-runner step-definition path")]
+fn served_text_carries_no_step_path(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for path in STEP_PATHS {
+        assert!(
+            !content.contains(path),
+            "the served text carries the per-runner step-definition path {path:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text carries no empty-body stub form")]
+fn served_text_carries_no_stub_form(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for stub in STUB_FORMS {
+        assert!(
+            !content.contains(stub),
+            "the served text carries the per-runner stub form {stub:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text carries no per-runner binding instruction")]
+fn served_text_carries_no_binding_instruction(world: &mut GivnWorld) {
+    let content = served_text(world);
+    for bullet in BINDING_BULLETS {
+        assert!(
+            !content.contains(bullet),
+            "the served text carries the per-runner binding bullet {bullet:?}: {content}"
+        );
+    }
+}
+
+#[then("the served text still requires one step definition file per capability")]
+fn served_text_requires_one_file_per_capability(world: &mut GivnWorld) {
+    let content = served_text(world);
+    assert!(
+        content.contains("One file per capability"),
+        "the served text dropped the one-file-per-capability rule: {content}"
+    );
+}
+
+#[then("the served text keeps the archive binding-token list for every runner")]
+fn served_text_keeps_archive_tokens(world: &mut GivnWorld) {
+    let content = served_text(world);
+    assert!(
+        content.contains("Archive reads these") && content.contains("binding tokens:"),
+        "the served text dropped the archive binding-token paragraph: {content}"
+    );
+    for token in ARCHIVE_BINDING_TOKENS {
+        assert!(
+            content.contains(token),
+            "the served text dropped the archive binding token {token:?}: {content}"
+        );
+    }
+}
+
+#[when("the author requests the specs and review instructions through the Givn CLI")]
+fn author_requests_specs_and_review(world: &mut GivnWorld) {
+    let specs = request_change_guidance(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+        "specs",
+    );
+    assert!(
+        specs.status.success(),
+        "the specs request failed: {}",
+        String::from_utf8_lossy(&specs.stderr)
+    );
+    world.additional_output = Some(String::from_utf8_lossy(&specs.stdout).into_owned());
+    let review = request_change_guidance(
+        world
+            .env
+            .as_ref()
+            .expect("a project root is required first"),
+        "review",
+    );
+    world.last_output = Some(review);
+}
+
+#[then("neither served text names a stack instruction")]
+fn neither_text_names_stack_instruction(world: &mut GivnWorld) {
+    for (label, content) in served_pair(world, "specs", "review") {
+        for id in STACK_IDS {
+            assert!(
+                !content.contains(id),
+                "the served {label} text names the stack instruction {id:?}: {content}"
+            );
+        }
+    }
+}
+
+#[then("neither served text carries a per-runner mechanism")]
+fn neither_text_carries_per_runner_mechanism(world: &mut GivnWorld) {
+    for (label, content) in served_pair(world, "specs", "review") {
+        for token in RUNNERS
+            .iter()
+            .chain(STUB_FORMS.iter())
+            .chain(STRICT_MECHANISMS.iter())
+            .chain(RUN_COMMANDS.iter())
+            .chain(BINDING_BULLETS.iter())
+        {
+            assert!(
+                !content.contains(token),
+                "the served {label} text carries the per-runner mechanism {token:?}: {content}"
+            );
+        }
+    }
+}
+
+// --- tasks guidance ---------------------------------------------------------
+
+#[when(
+    "the author requests the tasks and reverse-engineering tasks instructions through the Givn CLI"
+)]
+fn author_requests_tasks_and_reverse_tasks(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let tasks = request_change_guidance(env, "tasks");
+    assert!(
+        tasks.status.success(),
+        "the tasks request failed: {}",
+        String::from_utf8_lossy(&tasks.stderr)
+    );
+    world.additional_output = Some(String::from_utf8_lossy(&tasks.stdout).into_owned());
+    world.last_output = Some(request_change_guidance(env, "tasks-reverse"));
+}
+
+#[then("the tasks text names \"steps\" as the stack mapping")]
+fn tasks_text_names_steps_mapping(world: &mut GivnWorld) {
+    let mapping = "`givn instructions steps` maps the project's runner to the stack instruction";
+    for (label, content) in served_pair(world, "tasks", "tasks-reverse") {
+        assert!(
+            content.contains(mapping),
+            "the served {label} text does not name `steps` as the stack mapping ({mapping:?}): {content}"
+        );
+    }
+}
+
+#[then("neither served text carries a per-runner step path, stub, or strict mechanism")]
+fn neither_text_carries_per_runner_body(world: &mut GivnWorld) {
+    for (label, content) in served_pair(world, "tasks", "tasks-reverse") {
+        for token in STEP_PATHS
+            .iter()
+            .chain(STUB_FORMS.iter())
+            .chain(STRICT_MECHANISMS.iter())
+            .chain(RUN_COMMANDS.iter())
+            .chain(BINDING_BULLETS.iter())
+        {
+            assert!(
+                !content.contains(token),
+                "the served {label} text carries the per-runner token {token:?}: {content}"
+            );
+        }
+    }
+}
+
+#[then("both served texts still require the strict-mode proof")]
+fn both_texts_require_strict_proof(world: &mut GivnWorld) {
+    for (label, content) in served_pair(world, "tasks", "tasks-reverse") {
+        assert!(
+            content.contains("proof-of-strictness"),
+            "the served {label} text dropped the proof-of-strictness requirement: {content}"
+        );
+    }
+}
+
+// --- stack instruction id registration --------------------------------------
+
+#[then(regex = r#"^stderr lists the known instruction ids including "(.+)"$"#)]
+fn stderr_lists_known_ids_including(world: &mut GivnWorld, id: String) {
+    let stderr = crate::steps::stderr(world);
+    let list = stderr
+        .split_once("Known artifacts: ")
+        .map(|(_, list)| list)
+        .unwrap_or_else(|| panic!("the refusal carries no known-id list: {stderr}"));
+    let known: Vec<&str> = list.split(", ").map(str::trim).collect();
+    assert!(
+        known.contains(&id.as_str()),
+        "the known-id list does not carry `{id}`: {known:?}"
+    );
+}
+
+#[when(regex = r#"^the author requests "(.+)" as machine-readable output$"#)]
+fn author_requests_machine_readable(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.previous_output = Some(common::run_givn(env, &["instructions", &id]));
+    world.last_output = Some(common::run_givn(env, &["instructions", &id, "--json"]));
 }

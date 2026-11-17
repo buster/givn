@@ -7,6 +7,7 @@
 pub mod cli;
 pub mod cobertura;
 pub mod config;
+pub mod e2e_boundary;
 pub mod error;
 pub mod fossil;
 pub mod gherkin;
@@ -14,6 +15,7 @@ pub mod git;
 pub mod history;
 pub mod hooks;
 pub mod integrity_hook;
+pub mod ise;
 pub mod outline;
 pub mod overlap;
 pub mod proof;

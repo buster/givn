@@ -1,0 +1,21 @@
+{
+  "schema": 2,
+  "change": "move-givn-e2e-to-black-box-package",
+  "status": "passed",
+  "head": "c20b2f13e0e9142c9d4f0bff5a37af7d9f91a34d",
+  "features_path": "givn/changes/move-givn-e2e-to-black-box-package/specs",
+  "features_digest": "52b195e79764d4d870169438c09fc3f21ac34d319d87c473189129ffe5932bf0",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "f171013d7174e4d9cc8706fc810ee24c904cd55cbed5aee45f1e2314747876ff",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0
+  },
+  "finished_at_unix": 1794860775
+}
