@@ -49,6 +49,12 @@ pub(crate) const TARGET_FILE_CONTENT: &str = "existing target\n";
 pub(crate) const RECEIPT_CONTENT: &str = "schema: 1\n";
 /// The bytes the existing-manifest fixture writes.
 pub(crate) const MANIFEST_CONTENT: &str = "scope: ise-manifest/v1\n";
+/// The non-hex value the malformed-checksum fixture writes into the
+/// Specification checksums map.
+pub(crate) const MALFORMED_CHECKSUM: &str = "abc123";
+/// The bytes the unreadable-manifest fixture writes: an unclosed flow
+/// sequence is a YAML syntax error, not a missing field.
+pub(crate) const UNREADABLE_MANIFEST_CONTENT: &str = "scope: [\n";
 /// The declared `structure` entry a repository-link revision carries.
 pub(crate) const VENDOR_LINK_PATH: &str = "vendor/lib";
 /// The nested repository marker a revision can carry.
@@ -158,6 +164,16 @@ impl IseCleanRoomState {
         self.receipt_path
             .as_deref()
             .expect("the When created the targets")
+    }
+
+    /// One path in the fixture container that is not the spec copy; a fixture
+    /// that records it creates the directory so the path still resolves.
+    pub(crate) fn sibling_target(&self, name: &str) -> PathBuf {
+        self.targets
+            .as_ref()
+            .expect("the When created the targets")
+            .path()
+            .join(name)
     }
 }
 

@@ -316,7 +316,7 @@ Feature: Spec-copy verification
     And  comparison prints "+ config/kept.toml"
     And  comparison exits 1
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses while the ise addon is off
     Given  a prepared spec copy with a manifest
     And  the project disables ise after preparation
@@ -324,7 +324,7 @@ Feature: Spec-copy verification
     Then  comparison fails and exits 1, naming "ise"
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses while architecture principles are off
     Given  a prepared spec copy with a manifest
     And  the project disables architecture principles after preparation
@@ -332,49 +332,49 @@ Feature: Spec-copy verification
     Then  comparison fails and exits 1, naming "architecture_principles"
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a manifest whose scope is not ise-manifest/v1
     Given  a prepared spec copy whose manifest names the scope "ise-trial/v1"
     When  the verifier compares the spec copy with the manifest
     Then  comparison fails and exits 1, naming the manifest and "ise-manifest/v1"
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a manifest with an unknown field
     Given  a prepared spec copy whose manifest carries an unknown field
     When  the verifier compares the spec copy with the manifest
     Then  comparison fails and exits 1, naming the manifest and the unknown field
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a manifest with a missing field
     Given  a prepared spec copy whose manifest is missing the "counts" field
     When  the verifier compares the spec copy with the manifest
     Then  comparison fails and exits 1, naming the manifest and the missing field
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a manifest with a malformed checksum
     Given  a prepared spec copy whose manifest holds a malformed Specification checksum
     When  the verifier compares the spec copy with the manifest
     Then  comparison fails and exits 1, naming the manifest and the malformed checksum
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses an unreadable manifest
     Given  a prepared spec copy whose manifest is not readable YAML
     When  the verifier compares the spec copy with the manifest
     Then  comparison fails and exits 1, naming the manifest and the parse error
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a manifest whose copy directory is not the copy
     Given  a prepared spec copy whose manifest names another copy directory
     When  the verifier compares the spec copy with the manifest
     Then  comparison fails and exits 1, naming the manifest and the copy
     And  comparison prints no "Specification files:" line
 
-  @givn.added @wip
+  @givn.added
   Scenario: Comparison refuses a manifest inside the copy
     Given  a prepared spec copy with its manifest inside the copy
     When  the verifier compares the spec copy with the manifest

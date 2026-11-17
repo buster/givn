@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -44,6 +44,59 @@ impl Manifest {
         serde_yaml_ng::to_string(self).context("serialize the manifest")
     }
 
+    /// Read the one `ise-manifest/v1` shape. The scope is exact, every listed
+    /// field is required, no unknown field is accepted, and every checksum and
+    /// rollup is 64 lowercase hex characters. An older scope is refused by
+    /// name and never migrated.
+    pub(super) fn read(path: &Path) -> Result<Self> {
+        let text = std::fs::read_to_string(path)
+            .with_context(|| format!("read the manifest '{}'", path.display()))?;
+        let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text)
+            .with_context(|| format!("the manifest '{}' is not readable YAML", path.display()))?;
+        let manifest: Self = serde_yaml_ng::from_value(document).with_context(|| {
+            format!(
+                "the manifest '{}' does not match ise-manifest/v1",
+                path.display()
+            )
+        })?;
+        if manifest.scope != CONTENT_SCOPE {
+            bail!(
+                "the manifest '{}' records the scope '{}'; the reader requires '{CONTENT_SCOPE}'",
+                path.display(),
+                manifest.scope
+            );
+        }
+        manifest.require_checksums(path)?;
+        Ok(manifest)
+    }
+
+    /// Refuse a checksum or rollup that is not 64 lowercase hex characters.
+    fn require_checksums(&self, path: &Path) -> Result<()> {
+        for (recorded_path, checksum) in &self.checksums.specification {
+            require_checksum(
+                path,
+                &format!("the Specification checksum of '{recorded_path}'"),
+                checksum,
+            )?;
+        }
+        for (recorded_path, checksum) in &self.checksums.end_to_end {
+            require_checksum(
+                path,
+                &format!("the End-to-end checksum of '{recorded_path}'"),
+                checksum,
+            )?;
+        }
+        for (recorded_path, checksum) in &self.checksums.scenarios {
+            require_checksum(
+                path,
+                &format!("the scenario checksum of '{recorded_path}'"),
+                checksum,
+            )?;
+        }
+        require_checksum(path, "specification_checksum", &self.specification_checksum)?;
+        require_checksum(path, "end_to_end_checksum", &self.end_to_end_checksum)
+    }
+
     /// Write the manifest to a new path. An existing or unwritable target is
     /// an error naming the path; the writer never replaces a file.
     pub(super) fn write(&self, path: &Path) -> Result<()> {
@@ -56,6 +109,21 @@ impl Manifest {
         file.write_all(text.as_bytes())
             .with_context(|| format!("write the manifest '{}'", path.display()))
     }
+}
+
+/// Refuse one recorded checksum value that is not 64 lowercase hex characters.
+fn require_checksum(manifest: &Path, what: &str, value: &str) -> Result<()> {
+    let is_hex = value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte));
+    if is_hex {
+        return Ok(());
+    }
+    bail!(
+        "the manifest '{}' records {what} '{value}'; every checksum is 64 lowercase hex characters",
+        manifest.display()
+    )
 }
 
 /// The five placement counts the manifest records.

@@ -14,8 +14,8 @@ use crate::common;
 use crate::steps::clean_room_preparation_steps::{prepare_trial, project_env};
 use crate::steps::ise_clean_room_support::{
     self, ADDED_E2E_FEATURE_CONTENT, ADDED_E2E_FEATURE_PATH, ADDED_E2E_ROOT_MANIFEST_PATH,
-    ADDED_E2E_STEP_PATH, FOSSIL_FEATURE_PATH, REFERENCE_PATH, REPLACED_SOURCE_PATH,
-    VERIFY_E2E_STEP_PATH, VERIFY_KEPT_PATH,
+    ADDED_E2E_STEP_PATH, FOSSIL_FEATURE_PATH, MALFORMED_CHECKSUM, REFERENCE_PATH,
+    REPLACED_SOURCE_PATH, UNREADABLE_MANIFEST_CONTENT, VERIFY_E2E_STEP_PATH, VERIFY_KEPT_PATH,
 };
 use crate::steps::{GivnWorld, output, stderr, stdout};
 
@@ -79,7 +79,7 @@ fn assert_failed_naming(world: &GivnWorld, names: &[&str]) {
     }
 }
 
-fn rewrite_record(world: &GivnWorld, mutate: impl FnOnce(&mut serde_yaml_ng::Mapping)) {
+fn rewrite_manifest(world: &GivnWorld, mutate: impl FnOnce(&mut serde_yaml_ng::Mapping)) {
     let path = record(world);
     let mut mapping = ise_clean_room_support::record_mapping(&path);
     mutate(&mut mapping);
@@ -147,7 +147,7 @@ fn prepared_git_trial_with_a_corrupted_record(world: &mut GivnWorld) {
 #[given(regex = r#"^a prepared Git trial with a receipt carrying an unknown field$"#)]
 fn prepared_git_trial_with_an_unknown_field(world: &mut GivnWorld) {
     prepare(world);
-    rewrite_record(world, |mapping| {
+    rewrite_manifest(world, |mapping| {
         mapping.insert(
             serde_yaml_ng::Value::String("extra_field".to_string()),
             serde_yaml_ng::Value::Number(1.into()),
@@ -158,7 +158,7 @@ fn prepared_git_trial_with_an_unknown_field(world: &mut GivnWorld) {
 #[given(regex = r#"^a prepared Git trial with a receipt missing the counts field$"#)]
 fn prepared_git_trial_missing_the_counts_field(world: &mut GivnWorld) {
     prepare(world);
-    rewrite_record(world, |mapping| {
+    rewrite_manifest(world, |mapping| {
         mapping.remove(serde_yaml_ng::Value::String("counts".to_string()));
     });
 }
@@ -166,7 +166,7 @@ fn prepared_git_trial_missing_the_counts_field(world: &mut GivnWorld) {
 #[given(regex = r#"^a prepared Git trial with a record that is not a trial record$"#)]
 fn prepared_git_trial_with_a_foreign_record(world: &mut GivnWorld) {
     prepare(world);
-    rewrite_record(world, |mapping| {
+    rewrite_manifest(world, |mapping| {
         mapping.insert(
             serde_yaml_ng::Value::String("content_scope".to_string()),
             serde_yaml_ng::Value::String("other/v1".to_string()),
@@ -177,7 +177,7 @@ fn prepared_git_trial_with_a_foreign_record(world: &mut GivnWorld) {
 #[given(regex = r#"^a prepared Git trial with a receipt carrying the schema 2$"#)]
 fn prepared_git_trial_with_another_schema(world: &mut GivnWorld) {
     prepare(world);
-    rewrite_record(world, |mapping| {
+    rewrite_manifest(world, |mapping| {
         mapping.insert(
             serde_yaml_ng::Value::String("schema".to_string()),
             serde_yaml_ng::Value::Number(2.into()),
@@ -190,7 +190,7 @@ fn prepared_git_trial_with_another_schema(world: &mut GivnWorld) {
 )]
 fn prepared_git_trial_with_a_short_replaced_digest(world: &mut GivnWorld) {
     prepare(world);
-    rewrite_record(world, |mapping| {
+    rewrite_manifest(world, |mapping| {
         mapping.insert(
             serde_yaml_ng::Value::String("replaced_digest".to_string()),
             serde_yaml_ng::Value::String("abc123".to_string()),
@@ -343,7 +343,7 @@ fn verifier_rewrites_the_written_path(world: &mut GivnWorld) {
         .join("elsewhere");
     std::fs::create_dir_all(&elsewhere).expect("create the other trial directory");
     let elsewhere = elsewhere.to_string_lossy().into_owned();
-    rewrite_record(world, |mapping| {
+    rewrite_manifest(world, |mapping| {
         mapping.insert(
             serde_yaml_ng::Value::String("written_path".to_string()),
             serde_yaml_ng::Value::String(elsewhere),
@@ -354,7 +354,7 @@ fn verifier_rewrites_the_written_path(world: &mut GivnWorld) {
 
 #[when(regex = r#"^the verifier rewrites the record's backend to "fossil" and re-checks it$"#)]
 fn verifier_rewrites_the_backend(world: &mut GivnWorld) {
-    rewrite_record(world, |mapping| {
+    rewrite_manifest(world, |mapping| {
         mapping.insert(
             serde_yaml_ng::Value::String("backend".to_string()),
             serde_yaml_ng::Value::String("fossil".to_string()),
@@ -827,17 +827,7 @@ fn comparison_prints_no_such_line(world: &mut GivnWorld, needle: String) {
 
 #[then(regex = r#"^comparison fails and exits 1, naming "([^"]+)"$"#)]
 fn comparison_fails_and_names(world: &mut GivnWorld, name: String) {
-    assert_eq!(
-        output(world).status.code(),
-        Some(1),
-        "stderr={}",
-        stderr(world)
-    );
-    let text = stderr(world);
-    assert!(
-        text.contains(&name),
-        "stderr {text:?} does not name {name:?}"
-    );
+    comparison_refused_naming(world, &[name.as_str()]);
 }
 
 #[then(regex = r#"^comparison prints exactly one "([^"]+)" line under the "([^"]+)" subject$"#)]
@@ -959,4 +949,160 @@ fn developer_rewrites_the_checkout_role(world: &mut GivnWorld, role: String, pat
 )]
 fn developer_adds_an_ignored_e2e_file(world: &mut GivnWorld) {
     ise_clean_room_support::add_ignored_e2e_file(project_env(world));
+}
+
+// --- Batch 11: compare-refusals -------------------------------------------
+
+/// Assert the comparison refused with the `ise compare:` prefix, naming every
+/// entry of `names`.
+fn comparison_refused_naming(world: &mut GivnWorld, names: &[&str]) {
+    assert_eq!(
+        output(world).status.code(),
+        Some(1),
+        "stderr={}",
+        stderr(world)
+    );
+    let text = stderr(world);
+    assert!(
+        text.starts_with("ise compare: "),
+        "stderr {text:?} does not carry the `ise compare:` prefix"
+    );
+    for name in names {
+        assert!(
+            text.contains(name),
+            "stderr {text:?} does not name {name:?}"
+        );
+    }
+}
+
+/// The manifest path the comparison was given, as the refusal must print it.
+fn manifest_argument(world: &GivnWorld) -> String {
+    record(world).to_string_lossy().into_owned()
+}
+
+#[given(regex = r#"^a prepared spec copy whose manifest names the scope "([^"]+)"$"#)]
+fn prepared_spec_copy_naming_the_scope(world: &mut GivnWorld, scope: String) {
+    prepare_spec_copy(world);
+    rewrite_manifest(world, |mapping| {
+        mapping.insert(
+            serde_yaml_ng::Value::String("scope".to_string()),
+            serde_yaml_ng::Value::String(scope),
+        );
+    });
+}
+
+#[given(regex = r#"^a prepared spec copy whose manifest carries an unknown field$"#)]
+fn prepared_spec_copy_with_an_unknown_field(world: &mut GivnWorld) {
+    prepare_spec_copy(world);
+    rewrite_manifest(world, |mapping| {
+        mapping.insert(
+            serde_yaml_ng::Value::String("extra_field".to_string()),
+            serde_yaml_ng::Value::Number(1.into()),
+        );
+    });
+}
+
+#[given(regex = r#"^a prepared spec copy whose manifest is missing the "([^"]+)" field$"#)]
+fn prepared_spec_copy_missing_a_field(world: &mut GivnWorld, field: String) {
+    prepare_spec_copy(world);
+    rewrite_manifest(world, |mapping| {
+        mapping.remove(serde_yaml_ng::Value::String(field));
+    });
+}
+
+#[given(
+    regex = r#"^a prepared spec copy whose manifest holds a malformed Specification checksum$"#
+)]
+fn prepared_spec_copy_with_a_malformed_checksum(world: &mut GivnWorld) {
+    prepare_spec_copy(world);
+    rewrite_manifest(world, |mapping| {
+        let checksums = mapping
+            .get_mut(serde_yaml_ng::Value::String("checksums".to_string()))
+            .and_then(serde_yaml_ng::Value::as_mapping_mut)
+            .expect("the manifest has a checksums mapping");
+        let specification = checksums
+            .get_mut(serde_yaml_ng::Value::String("specification".to_string()))
+            .and_then(serde_yaml_ng::Value::as_mapping_mut)
+            .expect("the manifest's checksums has a specification map");
+        let path = specification
+            .keys()
+            .next()
+            .expect("the Specification checksum map is not empty")
+            .clone();
+        specification.insert(
+            path,
+            serde_yaml_ng::Value::String(MALFORMED_CHECKSUM.to_string()),
+        );
+    });
+}
+
+#[given(regex = r#"^a prepared spec copy whose manifest is not readable YAML$"#)]
+fn prepared_spec_copy_with_an_unreadable_manifest(world: &mut GivnWorld) {
+    prepare_spec_copy(world);
+    std::fs::write(record(world), UNREADABLE_MANIFEST_CONTENT).expect("corrupt the manifest");
+}
+
+#[given(regex = r#"^a prepared spec copy whose manifest names another copy directory$"#)]
+fn prepared_spec_copy_naming_another_copy(world: &mut GivnWorld) {
+    prepare_spec_copy(world);
+    let elsewhere = world.ise_clean_room.sibling_target("elsewhere");
+    std::fs::create_dir_all(&elsewhere).expect("create the other copy directory");
+    let recorded = elsewhere.to_string_lossy().into_owned();
+    rewrite_manifest(world, |mapping| {
+        mapping.insert(
+            serde_yaml_ng::Value::String("copy_directory".to_string()),
+            serde_yaml_ng::Value::String(recorded),
+        );
+    });
+}
+
+#[given(regex = r#"^a prepared spec copy with its manifest inside the copy$"#)]
+fn prepared_spec_copy_with_the_manifest_inside_the_copy(world: &mut GivnWorld) {
+    prepare_spec_copy(world);
+    let inside = trial(world).join("manifest.yaml");
+    std::fs::rename(record(world), &inside).expect("move the manifest inside the spec copy");
+    world.ise_clean_room.receipt_path = Some(inside);
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming the manifest$"#)]
+fn comparison_fails_naming_the_manifest(world: &mut GivnWorld) {
+    let manifest = manifest_argument(world);
+    comparison_refused_naming(world, &[manifest.as_str()]);
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming the manifest and "([^"]+)"$"#)]
+fn comparison_fails_naming_the_manifest_and(world: &mut GivnWorld, name: String) {
+    let manifest = manifest_argument(world);
+    comparison_refused_naming(world, &[manifest.as_str(), name.as_str()]);
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming the manifest and the unknown field$"#)]
+fn comparison_fails_naming_the_manifest_and_the_unknown_field(world: &mut GivnWorld) {
+    let manifest = manifest_argument(world);
+    comparison_refused_naming(world, &[manifest.as_str(), "extra_field"]);
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming the manifest and the missing field$"#)]
+fn comparison_fails_naming_the_manifest_and_the_missing_field(world: &mut GivnWorld) {
+    let manifest = manifest_argument(world);
+    comparison_refused_naming(world, &[manifest.as_str(), "counts"]);
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming the manifest and the malformed checksum$"#)]
+fn comparison_fails_naming_the_manifest_and_the_malformed_checksum(world: &mut GivnWorld) {
+    let manifest = manifest_argument(world);
+    comparison_refused_naming(world, &[manifest.as_str(), MALFORMED_CHECKSUM]);
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming the manifest and the parse error$"#)]
+fn comparison_fails_naming_the_manifest_and_the_parse_error(world: &mut GivnWorld) {
+    let manifest = manifest_argument(world);
+    comparison_refused_naming(world, &[manifest.as_str(), "not readable YAML"]);
+}
+
+#[then(regex = r#"^comparison fails and exits 1, naming the manifest and the copy$"#)]
+fn comparison_fails_naming_the_manifest_and_the_copy(world: &mut GivnWorld) {
+    let manifest = manifest_argument(world);
+    let copy = trial(world).canonicalize().expect("resolve the spec copy");
+    comparison_refused_naming(world, &[manifest.as_str(), copy.to_string_lossy().as_ref()]);
 }

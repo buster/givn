@@ -1,18 +1,20 @@
 //! `givn ise compare`: the spec copy against the manifest.
 //!
-//! The add-on precondition runs before the manifest is read. The recorded
-//! manifest is the authority: its Specification checksums are compared with
-//! the copy's bytes, the copy's declaration bounds the added-file refusal,
-//! and the recorded kept paths must still be present. The recorded
-//! Specification and End-to-end paths are also compared with the checkout's
-//! content paths, and a content path the manifest does not record is added
-//! when the checkout's declaration matches it.
+//! The add-on precondition runs before the manifest is read. The manifest is
+//! read as one strict `ise-manifest/v1` document: the scope, the field set,
+//! and every checksum and rollup must match, and the manifest must belong to
+//! the given copy and lie outside it. The recorded manifest is then the
+//! authority: its Specification checksums are compared with the copy's bytes,
+//! the copy's declaration bounds the added-file refusal, and the recorded kept
+//! paths must still be present. The recorded Specification and End-to-end
+//! paths are also compared with the checkout's content paths, and a content
+//! path the manifest does not record is added when the checkout's declaration
+//! matches it.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use serde::Deserialize;
 
 use crate::config::declaration::{DECLARATION_PATH, Role, SpecificationDeclaration};
 use crate::config::overlay::load_effective_at;
@@ -67,31 +69,6 @@ impl CompareReport {
     }
 }
 
-/// The manifest fields the comparison consumes. The strict shape is a later
-/// batch; this reader defaults every field so a missing or foreign field is
-/// not refused here.
-#[derive(Debug, Default, Deserialize)]
-struct Recorded {
-    #[serde(default)]
-    specification_files: Vec<String>,
-    #[serde(default)]
-    source_kept_files: Vec<String>,
-    #[serde(default)]
-    end_to_end_files: Vec<String>,
-    #[serde(default)]
-    checksums: Checksums,
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct Checksums {
-    #[serde(default)]
-    specification: BTreeMap<String, String>,
-    #[serde(default)]
-    end_to_end: BTreeMap<String, String>,
-    #[serde(default)]
-    scenarios: BTreeMap<String, String>,
-}
-
 /// Compare a prepared spec copy with the manifest that recorded it.
 pub fn compare(project_root: &Path, request: &CompareRequest) -> Result<CompareReport> {
     let effective = load_effective_at(project_root).with_context(|| {
@@ -102,11 +79,13 @@ pub fn compare(project_root: &Path, request: &CompareRequest) -> Result<CompareR
     })?;
     require_addons(&effective)?;
 
-    let recorded = read_recorded(&request.manifest)?;
+    let recorded = manifest::Manifest::read(&request.manifest)?;
     let copy = request
         .copy
         .canonicalize()
         .with_context(|| format!("resolve the spec copy '{}'", request.copy.display()))?;
+    require_recorded_copy(&request.manifest, &recorded, &copy)?;
+    require_manifest_outside_the_copy(&request.manifest, &copy)?;
     let declaration = copy_declaration(&copy)?;
     require_no_added_specification_paths(&copy, &recorded, &declaration)?;
     require_kept_paths_present(&copy, &recorded)?;
@@ -253,7 +232,7 @@ impl Checkout {
 
     /// The content paths the manifest does not record but the checkout's
     /// declaration matches, each with whether `End-to-end tests` owns it.
-    fn added(&self, recorded: &Recorded) -> Result<Vec<(String, bool)>> {
+    fn added(&self, recorded: &manifest::Manifest) -> Result<Vec<(String, bool)>> {
         let Some(declaration) = &self.declaration else {
             return Ok(Vec::new());
         };
@@ -302,12 +281,43 @@ impl Checkout {
     }
 }
 
-/// The recorded manifest fields, read permissively for this batch.
-fn read_recorded(path: &Path) -> Result<Recorded> {
-    let text = std::fs::read_to_string(path)
-        .with_context(|| format!("read the manifest '{}'", path.display()))?;
-    serde_yaml_ng::from_str(&text)
-        .with_context(|| format!("read the manifest '{}'", path.display()))
+/// The manifest must belong to the copy it describes: its recorded
+/// `copy_directory` resolves to the canonical `--copy` argument.
+fn require_recorded_copy(
+    manifest: &Path,
+    recorded: &manifest::Manifest,
+    copy: &Path,
+) -> Result<()> {
+    let recorded_copy = Path::new(&recorded.copy_directory);
+    let matches = recorded_copy
+        .canonicalize()
+        .map(|resolved| resolved == copy)
+        .unwrap_or(false);
+    if matches {
+        return Ok(());
+    }
+    bail!(
+        "the manifest '{}' records the copy directory '{}' but the copy is '{}'; the manifest must belong to the copy it describes",
+        manifest.display(),
+        recorded_copy.display(),
+        copy.display()
+    )
+}
+
+/// The manifest path must lie outside the copy: the manifest is evidence
+/// about the copy, never content of it.
+fn require_manifest_outside_the_copy(manifest: &Path, copy: &Path) -> Result<()> {
+    let resolved = manifest
+        .canonicalize()
+        .with_context(|| format!("resolve the manifest '{}'", manifest.display()))?;
+    if !resolved.starts_with(copy) {
+        return Ok(());
+    }
+    bail!(
+        "the manifest '{}' is inside the spec copy '{}'; the manifest is evidence outside the copy",
+        manifest.display(),
+        copy.display()
+    )
 }
 
 /// The spec copy's declaration: the added-file refusal is read with the
@@ -324,7 +334,7 @@ fn copy_declaration(copy: &Path) -> Result<SpecificationDeclaration> {
 /// copy never carries an `e2e` match.
 fn require_no_added_specification_paths(
     copy: &Path,
-    recorded: &Recorded,
+    recorded: &manifest::Manifest,
     declaration: &SpecificationDeclaration,
 ) -> Result<()> {
     let globs: Vec<Glob> = declaration
@@ -371,7 +381,7 @@ fn require_no_added_specification_paths(
 
 /// Refuse a copy that lost a recorded kept path. Kept content is not verified,
 /// so an edit is allowed and only a deletion refuses.
-fn require_kept_paths_present(copy: &Path, recorded: &Recorded) -> Result<()> {
+fn require_kept_paths_present(copy: &Path, recorded: &manifest::Manifest) -> Result<()> {
     for path in &recorded.source_kept_files {
         if std::fs::symlink_metadata(copy.join(path)).is_err() {
             bail!(
