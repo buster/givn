@@ -730,7 +730,7 @@ evidence first; C5 lands the receipt and the gate evidence.
     Commit the transcript as C7.
   - Design constraints: design `## Verification plan` item 8; the merged
     permanent corpus is the tested tree.
-  - [x] COMMIT: `6af30485b9ccb48f1b64bc51ff4964c54a0e9e17` -- Batch: review-and-archive
+  - [x] COMMIT: `1908aaa2323e0890057fe2a9260021eb9bc3f916` -- Batch: review-and-archive
 
 - [x] Run the self-dogfood sequence
   - Paths:
@@ -750,7 +750,12 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Design constraints: `AGENTS.md` `## Self-dogfood after each change`;
     design `## Verification plan` item 8. This is a post-archive maintenance
     task, not a delta scenario.
-  - [x] COMMIT: `6af30485b9ccb48f1b64bc51ff4964c54a0e9e17` -- Batch: review-and-archive
+  - [x] COMMIT: `1908aaa2323e0890057fe2a9260021eb9bc3f916` -- Batch: review-and-archive
+
+Post-archive evidence: `evidence/post-archive.txt` and
+`evidence/self-dogfood.txt` are committed with this tasks record. The archive
+commit the batch revisions name is
+`1908aaa2323e0890057fe2a9260021eb9bc3f916`.
 
 ## Closeout: merged step definitions
 
