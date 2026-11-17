@@ -1,8 +1,9 @@
 //! Placement of one revision's tracked paths.
 //!
-//! The partition owns refusals 5 to 7: every declared retained entry must
-//! match the revision, no replacement may be retained, and every replacement
-//! must lie under a source root. Every check precedes the first write.
+//! The partition owns refusals 5 to 7: every declared Specification entry
+//! must match the revision, no replacement may be retained, and every
+//! replacement must lie under a source root. Every check precedes the first
+//! write.
 
 use std::collections::BTreeSet;
 
@@ -79,7 +80,7 @@ pub(super) fn partition(
     revision: &str,
 ) -> Result<Partition> {
     let roles = retained_roles(declaration);
-    require_declared_retained_entries(&roles, entries, revision)?;
+    require_declaration_entries(&roles, entries, revision)?;
     let source_roots: Vec<Glob> = declaration
         .source_roots()
         .iter()
@@ -241,10 +242,10 @@ fn named_candidates(tracked: &BTreeSet<&str>, values: &[String]) -> Result<BTree
     Ok(candidates)
 }
 
-/// Refusal 5: every declared retained entry must match a tracked path or a
-/// derived directory at the revision; an entry that matches nothing names
+/// Refusal 5: every declared Specification entry must match a tracked path or
+/// a derived directory at the revision; an entry that matches nothing names
 /// itself and the revision.
-fn require_declared_retained_entries(
+fn require_declaration_entries(
     roles: &[(Role, &str, Glob)],
     entries: &[RevisionEntry],
     revision: &str,
@@ -255,7 +256,7 @@ fn require_declared_retained_entries(
             .any(|entry| glob_matches_path_or_parent(glob, &entry.path));
         if !matches {
             bail!(
-                "the declared {} entry '{pattern}' matches nothing at revision '{revision}'",
+                "the declared Specification entry '{pattern}' in the {} role matches nothing at revision '{revision}'",
                 role.as_str()
             );
         }

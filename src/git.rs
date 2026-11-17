@@ -469,20 +469,11 @@ impl Worktree {
         Ok(files)
     }
 
-    /// Read the named blobs from `revision`.
-    pub fn revision_blobs(
-        &self,
-        revision: &str,
-        paths: &[String],
-    ) -> Result<Vec<(String, Vec<u8>)>> {
-        let mut blobs = Vec::new();
-        for path in paths {
-            let output = run_git(&self.root, &["show", &format!("{revision}:{path}")])?;
-            if output.status.success() {
-                blobs.push((path.clone(), output.stdout));
-            }
-        }
-        Ok(blobs)
+    /// One path's bytes at `revision`, or `None` when Git holds no blob for
+    /// it.
+    pub fn revision_blob(&self, revision: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        let output = run_git(&self.root, &["show", &format!("{revision}:{path}")])?;
+        Ok(output.status.success().then_some(output.stdout))
     }
 
     /// Changed paths under `root` from `base` to the current revision.

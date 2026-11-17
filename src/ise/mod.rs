@@ -271,10 +271,11 @@ fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
     })
 }
 
-/// The declaration recorded at the selected revision: the revision must record
-/// it, and its bytes are parsed by the one strict loader. The working tree is
-/// never consulted, so the partition and the trial use the roles and the
-/// content the revision declared.
+/// The declaration recorded at the selected revision. The four unreadable
+/// cases are distinct refusals: the tree does not record the path; the tree
+/// records it but the backend returns no blob; the blob is not UTF-8; the
+/// blob is malformed. The working tree is never consulted, so the partition
+/// and the trial use the roles and the content the revision declared.
 fn revision_declaration(
     backend: &Backend,
     revision: &str,
@@ -285,12 +286,14 @@ fn revision_declaration(
             "the revision '{revision}' does not record '{DECLARATION_PATH}'; a clean-room trial always carries the declaration"
         );
     }
-    let mut blobs = backend
-        .revision_blobs(revision, &[DECLARATION_PATH.to_string()])
-        .with_context(|| format!("read '{DECLARATION_PATH}' at revision '{revision}'"))?;
-    let (_, bytes) = blobs
-        .pop()
-        .expect("the scm seam returns a blob for every requested path");
+    let bytes = backend
+        .revision_blob(revision, DECLARATION_PATH)
+        .with_context(|| format!("read '{DECLARATION_PATH}' at revision '{revision}'"))?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "'{DECLARATION_PATH}' is recorded at revision '{revision}' but the backend returned no blob for it"
+            )
+        })?;
     let content = std::str::from_utf8(&bytes)
         .map_err(|error| anyhow::anyhow!("{DECLARATION_PATH}: {error}"))?;
     SpecificationDeclaration::from_content(content).map_err(|error| anyhow::anyhow!("{error}"))

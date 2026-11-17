@@ -598,6 +598,12 @@ fn commit_revision_without_its_blob(world: &mut GivnWorld) {
     world.ise_clean_room.unreadable_revision = Some(revision);
 }
 
+#[given(regex = r#"^the committed declaration's blob is absent from the object store$"#)]
+fn remove_the_committed_declaration_blob(world: &mut GivnWorld) {
+    let revision = ise_clean_room_support::remove_declaration_blob(project_env(world));
+    world.ise_clean_room.unreadable_revision = Some(revision);
+}
+
 #[given(regex = r#"^a committed revision with "givn/specs/demo\.feature"$"#)]
 fn commit_revision_with_demo_feature(world: &mut GivnWorld) {
     ise_clean_room_support::commit_demo_feature(project_env(world));
@@ -1844,6 +1850,19 @@ fn assert_refusal_prefix(world: &GivnWorld) {
     );
 }
 
+/// Assert exit 1, the verb's refusal prefix, and every named token in stderr.
+fn assert_refusal_names(world: &GivnWorld, needles: &[&str]) {
+    assert_exit_one(world);
+    assert_refusal_prefix(world);
+    let text = stderr(world);
+    for needle in needles {
+        assert!(
+            text.contains(needle),
+            "stderr {text:?} does not carry {needle:?}"
+        );
+    }
+}
+
 /// Run one rebuild command against the planned targets and record its verb.
 fn run_rebuild(world: &mut GivnWorld, args: &[&str], verb: &'static str) {
     world.ise_clean_room.ensure_targets();
@@ -1873,6 +1892,18 @@ fn rebuild_whole_product_into_a_spec_copy(world: &mut GivnWorld, revision: Strin
         ],
         "ise rebuild-all",
     );
+}
+
+#[when(
+    regex = r#"^the developer rebuilds the whole product from the first revision into a spec copy$"#
+)]
+fn rebuild_whole_product_from_the_first_revision(world: &mut GivnWorld) {
+    let revision = world
+        .ise_clean_room
+        .first_revision
+        .clone()
+        .expect("the Given recorded the first revision");
+    rebuild_whole_product_into_a_spec_copy(world, revision);
 }
 
 #[when(regex = r#"^the developer runs rebuild-all from "([^"]+)" with no target$"#)]
@@ -1942,6 +1973,108 @@ fn the_command_fails_and_names(world: &mut GivnWorld, needle: String) {
     assert!(
         text.contains(&needle),
         "stderr {text:?} does not name {needle:?}"
+    );
+}
+
+#[then(
+    regex = r#"^the command fails and names "givn/specification\.yaml" and the loader's reason$"#
+)]
+fn the_command_fails_and_names_the_loader_reason(world: &mut GivnWorld) {
+    assert_refusal_names(
+        world,
+        &[
+            ise_clean_room_support::DECLARATION_PATH,
+            &format!("unknown key '{}'", ise_clean_room_support::MALFORMED_KEY),
+        ],
+    );
+}
+
+#[then(regex = r#"^the command fails and names the revision$"#)]
+fn the_command_fails_and_names_the_revision(world: &mut GivnWorld) {
+    let revision = world
+        .ise_clean_room
+        .requested_revision
+        .clone()
+        .expect("the When recorded the revision");
+    assert_refusal_names(world, &[&revision]);
+}
+
+#[then(regex = r#"^the command fails and names the unreadable path and the revision$"#)]
+fn the_command_fails_and_names_the_unreadable_blob(world: &mut GivnWorld) {
+    let revision = world
+        .ise_clean_room
+        .unreadable_revision
+        .clone()
+        .expect("the Given recorded the unreadable revision");
+    assert_refusal_names(world, &[ise_clean_room_support::KEPT_PATH, &revision]);
+}
+
+#[then(
+    regex = r#"^the command fails and names "givn/specification\.yaml", the revision, and "does not record"$"#
+)]
+fn the_command_fails_and_names_the_not_recorded_refusal(world: &mut GivnWorld) {
+    let revision = world
+        .ise_clean_room
+        .first_revision
+        .clone()
+        .expect("the Given recorded the first revision");
+    assert_refusal_names(
+        world,
+        &[
+            ise_clean_room_support::DECLARATION_PATH,
+            &revision,
+            "does not record",
+        ],
+    );
+    let text = stderr(world);
+    assert!(
+        !text.contains("returned no blob"),
+        "stderr {text:?} names the blob-absent phrase instead of the tree check"
+    );
+}
+
+#[then(regex = r#"^the command fails and names "givn/specification\.yaml" and the UTF-8 error$"#)]
+fn the_command_fails_and_names_the_utf8_error(world: &mut GivnWorld) {
+    assert_refusal_names(
+        world,
+        &[ise_clean_room_support::DECLARATION_PATH, "invalid utf-8"],
+    );
+}
+
+#[then(
+    regex = r#"^the command fails and names "givn/specification\.yaml", the revision, and "returned no blob"$"#
+)]
+fn the_command_fails_and_names_the_no_blob_refusal(world: &mut GivnWorld) {
+    let revision = world
+        .ise_clean_room
+        .unreadable_revision
+        .clone()
+        .expect("the Given recorded the unreadable revision");
+    assert_refusal_names(
+        world,
+        &[
+            ise_clean_room_support::DECLARATION_PATH,
+            &revision,
+            "returned no blob",
+        ],
+    );
+    let text = stderr(world);
+    assert!(
+        !text.contains("does not record"),
+        "stderr {text:?} names the tree-check phrase instead of the blob read"
+    );
+}
+
+#[then(regex = r#"^the command fails and names "docs/contract\.md" and the revision$"#)]
+fn the_command_fails_and_names_the_missing_specification_entry(world: &mut GivnWorld) {
+    let revision = ise_clean_room_support::head_revision(project_env(world));
+    assert_refusal_names(
+        world,
+        &[
+            ise_clean_room_support::CONTRACT_PATH,
+            revision.as_str(),
+            "declared Specification entry",
+        ],
     );
 }
 

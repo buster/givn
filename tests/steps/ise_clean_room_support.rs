@@ -919,10 +919,26 @@ pub(crate) fn remove_kept_blob(env: &common::TestEnv) -> String {
         &structure_declaration(&format!("{KEPT_PATH:?}"), "\"src/**\""),
     );
     let revision = commit_files(env, &[(KEPT_PATH, KEPT_CONTENT)], "fixture: kept file");
-    let object = common::git(env, &["rev-parse", &format!("{revision}:{KEPT_PATH}")]);
+    remove_blob_object(env, &revision, KEPT_PATH);
+    revision
+}
+
+/// Delete the loose object of `HEAD:givn/specification.yaml`, so the tree
+/// still lists the declaration while no blob can be read for it. Returns the
+/// revision whose tree records the declaration.
+pub(crate) fn remove_declaration_blob(env: &common::TestEnv) -> String {
+    let revision = head_revision(env);
+    remove_blob_object(env, &revision, DECLARATION_PATH);
+    revision
+}
+
+/// Remove the loose object one revision holds for one path. A fresh fixture
+/// repository never runs `gc`, so the object is still loose.
+fn remove_blob_object(env: &common::TestEnv, revision: &str, path: &str) {
+    let object = common::git(env, &["rev-parse", &format!("{revision}:{path}")]);
     assert!(
         object.status.success(),
-        "git rev-parse for the kept blob failed: {}",
+        "git rev-parse for {path} failed: {}",
         String::from_utf8_lossy(&object.stderr)
     );
     let id = String::from_utf8_lossy(&object.stdout).trim().to_string();
@@ -932,7 +948,6 @@ pub(crate) fn remove_kept_blob(env: &common::TestEnv) -> String {
         .join(&id[..2])
         .join(&id[2..]);
     std::fs::remove_file(&loose).expect("remove the loose blob object");
-    revision
 }
 
 /// Commit a `.gitignore` rule and then create the ignored file untracked.

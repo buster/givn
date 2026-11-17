@@ -114,14 +114,14 @@ Feature: Clean-room preparation
   Scenario: Preparation partitions with the declaration recorded at the selected revision
     Given the retired scenario is replaced by "Preparation partitions with the declaration at the selected revision"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses when the declaration is missing
     Given  a Git project with ise enabled and no declaration
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
     Then  the command fails and names "givn/specification.yaml"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a malformed declaration
     Given  a Git project with ise enabled and a malformed declaration
     When  the developer rebuilds the whole product from "HEAD" into a spec copy
@@ -243,14 +243,14 @@ Feature: Clean-room preparation
     Then  the command succeeds and prints "Source code removed: 0"
     And  the spec copy holds "src/keys/parser.rs"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses an absent revision
     Given  a Git project with ise enabled and a declaration
     When  the developer rebuilds the whole product from "0000000000000000000000000000000000000000" into a spec copy
     Then  the command fails and names the revision
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses when a revision blob cannot be read
     Given  a Git project with ise enabled and a declaration with one source root "src/**"
     And  a committed revision whose tracked blob is absent from the object store
@@ -289,28 +289,28 @@ Feature: Clean-room preparation
     Then  the command fails and names "givn/specification.yaml" as a Specification file
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a revision that does not record the declaration
     Given  a Git project with ise enabled whose first revision predates the declaration
     When  the developer rebuilds the whole product from the first revision into a spec copy
     Then  the command fails and names "givn/specification.yaml", the revision, and "does not record"
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a malformed declaration at the selected revision
     Given  a Git project with ise enabled, a malformed declaration in its first revision, and a valid declaration at "HEAD"
     When  the developer rebuilds the whole product from the first revision into a spec copy
     Then  the command fails and names "givn/specification.yaml" and the loader's reason
     And  the spec copy path and the manifest path remain absent
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Preparation refuses a declaration that is not UTF-8
     Given  a Git project with ise enabled, a non-UTF-8 declaration in its first revision, and a valid declaration at "HEAD"
     When  the developer rebuilds the whole product from the first revision into a spec copy
     Then  the command fails and names "givn/specification.yaml" and the UTF-8 error
     And  the spec copy path and the manifest path remain absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a declaration the revision records but cannot read
     Given  a Git project with ise enabled and a declaration
     And  the committed declaration's blob is absent from the object store
@@ -351,7 +351,7 @@ Feature: Clean-room preparation
     And  the manifest's removed paths are:
       | src/keys/parser.rs |
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation refuses a Specification path missing at the revision
     Given  a Git project with ise enabled and a declaration whose "contracts" role names "docs/contract.md"
     And  a committed revision without "docs/contract.md"

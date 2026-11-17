@@ -4,7 +4,6 @@
 //! Consumers act on the returned [`Backend`] or receive a named refusal; they
 //! never derive the backend themselves.
 
-use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -204,6 +203,16 @@ impl Backend {
         }
     }
 
+    /// One path's bytes at `revision`, or `None` when the backend holds no
+    /// blob for it. The caller owns the refusal sentence, because which read
+    /// refused (the declaration or a trial input) changes the words.
+    pub fn revision_blob(&self, revision: &str, path: &str) -> Result<Option<Vec<u8>>> {
+        match self {
+            Self::Git(worktree) => worktree.revision_blob(revision, path),
+            Self::Fossil(checkout) => checkout.revision_blob(revision, path),
+        }
+    }
+
     /// Read the named blobs from `revision`. A path the backend cannot read
     /// is a named refusal: a skipped path would silently shrink the trial.
     pub fn revision_blobs(
@@ -211,18 +220,14 @@ impl Backend {
         revision: &str,
         paths: &[String],
     ) -> Result<Vec<(String, Vec<u8>)>> {
-        let blobs = match self {
-            Self::Git(worktree) => worktree.revision_blobs(revision, paths),
-            Self::Fossil(checkout) => checkout.revision_blobs(revision, paths),
-        }?;
-        let mut unread: BTreeSet<&str> = paths.iter().map(String::as_str).collect();
-        for (path, _) in &blobs {
-            unread.remove(path.as_str());
-        }
-        if let Some(path) = unread.first() {
-            bail!(
-                "'{path}' cannot be read from revision '{revision}'; the backend returned no blob for it"
-            );
+        let mut blobs = Vec::with_capacity(paths.len());
+        for path in paths {
+            match self.revision_blob(revision, path)? {
+                Some(bytes) => blobs.push((path.clone(), bytes)),
+                None => bail!(
+                    "'{path}' cannot be read from revision '{revision}'; the backend returned no blob for it"
+                ),
+            }
         }
         Ok(blobs)
     }
