@@ -76,7 +76,7 @@ Batch 1 `command-surface` — 9 scenarios, `clean-room-preparation`.
 
 Batch 2 `revision-declaration` — 9 scenarios, `clean-room-preparation`.
 - Scenarios: `Preparation refuses when the declaration is missing`, `Preparation refuses a malformed declaration`, `Preparation refuses an absent revision`, `Preparation refuses when a revision blob cannot be read`, `Preparation refuses a revision that does not record the declaration`, `Preparation refuses a malformed declaration at the selected revision`, `Preparation refuses a declaration that is not UTF-8`, `Preparation refuses a declaration the revision records but cannot read`, `Preparation refuses a Specification path missing at the revision`.
-- RED proof: `Preparation refuses a Specification path missing at the revision` is the batch's real assertion failure: the pre-batch refusal is produced by `require_declared_retained_entries` and names the entry as `retained`, so the step's assertion on the phrase `Specification file` fails. `Preparation refuses a declaration the revision records but cannot read` fails on the same run only if the step asserts the declaration read path rather than the prefix; the wording `returned no blob` already exists in `Backend::revision_blobs`, so this scenario is recorded as existing behaviour protected and asserts the exact path, revision, and phrase. The three declaration-content refusals are protected; each asserts the distinct named output D10 fixes.
+- RED proof: `Preparation refuses a Specification path missing at the revision` is the batch's real assertion failure: the pre-batch refusal is produced by `require_declared_retained_entries` and names the entry by its role only, so the step's assertion on the phrase `declared Specification entry` fails. `Preparation refuses a declaration the revision records but cannot read` fails on the same run only if the step asserts the declaration read path rather than the prefix; the wording `returned no blob` already exists in `Backend::revision_blobs`, so this scenario is recorded as existing behaviour protected and asserts the exact path, revision, and phrase. The three declaration-content refusals are protected; each asserts the distinct named output D10 fixes.
 - Implementation slice: `revision_declaration` distinguishes not-recorded, no-blob, non-UTF-8, and malformed; `require_declared_retained_entries` becomes the Specification-entry check and names the entry and the revision; `--at` keeps the explicit-revision and `HEAD` paths. The declaration stays the revision's blob, never the working tree.
 - Verification: the narrow command for each title; then `givn check tasks --change strengthen-ise-specification`.
 
@@ -389,70 +389,87 @@ Files modified: `src/main.rs`, `src/cli/ise.rs`, `src/ise/mod.rs`,
 ### Batch 2: `revision-declaration`
 
 Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
+`src/git.rs`, `src/fossil.rs`,
+`givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/clean-room-preparation.feature`,
 `tests/steps/clean_room_preparation_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Preparation refuses a
+- [x] Evidence for this batch: paste the RED run for `Preparation refuses a
       Specification path missing at the revision` and the GREEN run of all
       nine scenarios.
       ```text
-      <!-- paste: RED command + assertion failure; GREEN commands + pass summary -->
+      RED (GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs,
+      before the production edit):
+      cargo test --test features_runner -- \
+        "prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a Specification path missing at the revision" \
+        --exact --nocapture
+        Step panicked. Captured output: stderr "ise rebuild-all: the declared
+        contracts entry 'docs/contract.md' matches nothing at revision
+        '0461b6a92c1de450e4e76c0bc5b4a469757ad22e'" does not carry "declared
+        Specification entry".
+
+      The other eight passed on that run: the tree check, the blob refusal, the
+      UTF-8 decode, and the loader are existing behaviour protected, and each
+      asserts its own path, revision, and phrase.
+
+      GREEN (narrow run per title, after the production edit):
+        9 scenarios (9 passed), 0 failed.
       ```
 
-- [ ] Scenario: `Preparation refuses when the declaration is missing`
+- [x] Scenario: `Preparation refuses when the declaration is missing`
   - Design constraints: no declaration committed; Then exit 1, stderr names
     `givn/specification.yaml`, and both targets stay absent. Contract: the
     revision tree lacks the path, so `revision_declaration` names it.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses a malformed declaration`
+- [x] Scenario: `Preparation refuses a malformed declaration`
   - Design constraints: one unknown top-level key in the committed declaration;
     Then exit 1, stderr names `givn/specification.yaml` and the loader's reason
     (`unknown key 'component'`), and both targets stay absent. Contract:
     `SpecificationDeclaration::from_content` on the revision blob.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses an absent revision`
+- [x] Scenario: `Preparation refuses an absent revision`
   - Design constraints: `--at 0000000000000000000000000000000000000000`; Then
     exit 1, stderr names the revision, and both targets stay absent. Contract:
     `Backend::commit_exists` before the tree read.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses when a revision blob cannot be read`
+- [x] Scenario: `Preparation refuses when a revision blob cannot be read`
   - Design constraints: a tracked blob is removed from the object store while
     the tree still lists it; Then exit 1, stderr names the path and the
     revision, and both targets stay absent. Contract:
     `Backend::revision_blobs` refusal during the copy read.
   - Files: `src/scm.rs`, `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses a revision that does not record the declaration`
+- [x] Scenario: `Preparation refuses a revision that does not record the declaration`
   - Design constraints: the first revision predates the declaration; Then exit 1,
     stderr names `givn/specification.yaml`, the revision, and `does not record`;
     the blob-absent phrase must not satisfy it. Contract: the tree check in
     `revision_declaration`, before any blob read.
   - Files: `src/ise/mod.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses a malformed declaration at the selected revision`
+- [x] Scenario: `Preparation refuses a malformed declaration at the selected revision`
   - Design constraints: a malformed declaration in the first revision and a
     valid one at HEAD; Then exit 1, stderr names the path and the loader's
     reason for the selected revision, never HEAD's. Contract: the blob is read
     at the selected revision.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses a declaration that is not UTF-8`
+- [x] Scenario: `Preparation refuses a declaration that is not UTF-8`
   - Design constraints: a non-UTF-8 declaration in the first revision, valid at
     HEAD; Then exit 1, stderr names the path and the UTF-8 decoding error.
     Contract: `std::str::from_utf8` on the revision blob.
   - Files: `src/ise/mod.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses a declaration the revision records but cannot read`
+- [x] Scenario: `Preparation refuses a declaration the revision records but cannot read`
   - Design constraints: the loose object for `HEAD:givn/specification.yaml` is
     removed and the tree still lists it; Then exit 1, stderr names the path, the
     revision, and `returned no blob`, and the not-recorded phrase must not
@@ -461,15 +478,15 @@ Files modified: `src/ise/mod.rs`, `src/ise/partition.rs`, `src/scm.rs`,
     the assertion is that the declaration read produces it rather than a panic.
   - Files: `src/scm.rs`, `src/ise/mod.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
-- [ ] Scenario: `Preparation refuses a Specification path missing at the revision`
+- [x] Scenario: `Preparation refuses a Specification path missing at the revision`
   - Design constraints: the `contracts` role names `docs/contract.md` and the
     revision does not hold it; Then exit 1 and stderr names the path and the
-    revision. Contract: the declared-entry check renamed from retained to
-    Specification file.
+    revision. Contract: the declared-entry check renamed from the role noun to
+    `Specification entry`, naming the entry and the revision.
   - Files: `src/ise/partition.rs`, `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `revision-declaration`
+  - [x] COMMIT: `1b69e56fde6269a7c4ab4f4695fb54f0346eaa28` -- Batch: `revision-declaration`
 
 ### Batch 3: `component-paths`
 
