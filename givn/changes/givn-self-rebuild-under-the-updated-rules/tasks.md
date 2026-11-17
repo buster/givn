@@ -265,7 +265,7 @@ delta scope runs both scenarios and a `@wip` scenario still executes.
 Every command runs from the repository root. Evidence paths are relative to
 `givn/changes/givn-self-rebuild-under-the-updated-rules/`.
 
-- [ ] Record the accepted declaration
+- [x] Record the accepted declaration
   - Paths: `evidence/ise/declaration-lint.txt`, `evidence/ise/declaration.diff`.
   - Run:
     ```sh
@@ -287,9 +287,9 @@ Every command runs from the repository root. Evidence paths are relative to
   - Design constraints: design `## Pre-trial checks`; the proposal's accepted
     declaration bullet. The declaration and the pin are the only files the diff
     may report.
-  - [ ] COMMIT: `___` -- Batch: pre-trial
+  - [x] COMMIT: `6799399` -- Batch: pre-trial
 
-- [ ] Prove the frozen package reaches no product crate
+- [x] Prove the frozen package reaches no product crate
   - Paths: `evidence/ise/e2e-dependencies.txt`.
   - Run:
     ```sh
@@ -302,9 +302,9 @@ Every command runs from the repository root. Evidence paths are relative to
     prints nothing); `e2e` is its own workspace root.
   - Design constraints: D3 and D6; the frozen package is authority outside the
     trial and links no product crate.
-  - [ ] COMMIT: `___` -- Batch: pre-trial
+  - [x] COMMIT: `6799399` -- Batch: pre-trial
 
-- [ ] Export the coverage and the End-to-end inventory
+- [x] Export the coverage and the End-to-end inventory
   - Paths: `evidence/ise/spec-coverage.json`, `evidence/ise/e2e-inventory.md`.
   - Run:
     ```sh
@@ -322,9 +322,9 @@ Every command runs from the repository root. Evidence paths are relative to
     trial revision recomputes both values.
   - Design constraints: design `## Evidence artifacts`; the inventory is what
     the report's `end_to_end_files` and the `S14` comparison read.
-  - [ ] COMMIT: `___` -- Batch: pre-trial
+  - [x] COMMIT: `6799399` -- Batch: pre-trial
 
-- [ ] Scan the Cargo stores for a published copy
+- [x] Scan the Cargo stores for a published copy
   - Paths: `evidence/ise/clean-room-scan.txt`.
   - Run:
     ```sh
@@ -347,7 +347,7 @@ Every command runs from the repository root. Evidence paths are relative to
   - Design constraints: D6 and the design's carried clean-room-scan decision;
     `~/.cargo/registry/git` is
     not a store, and the sandbox binds `~/.cargo/registry` and `~/.cargo/git`.
-  - [ ] COMMIT: `___` -- Batch: pre-trial
+  - [x] COMMIT: `6799399` -- Batch: pre-trial
 
 - [ ] Commit the pre-trial inputs
   - Paths: `evidence/ise/declaration-lint.txt`,

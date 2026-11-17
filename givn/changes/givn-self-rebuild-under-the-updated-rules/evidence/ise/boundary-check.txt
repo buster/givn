@@ -1,0 +1,31 @@
+Mandatory checks for 'tasks':
+  ⚠ task preflight: review.md is missing
+  ✓ scenario commits passed (2 scenario(s))
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.11s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-d59691a9e2740d4a)
+Feature: specification-declaration
+  Scenario: A declaration that names build inputs under the four content roles is accepted
+   ✔  Given an ise-enabled project selecting opencode whose declaration places build inputs under the four content roles
+   ✔  When the consumer runs `givn lint`
+   ✔  Then the command exits 0
+   ✔  And stderr contains no declaration-schema error
+   ✔  And stderr contains no declared-path advisory for the build inputs
+Feature: Clean-room preparation
+  Scenario: Preparation carries every declared build input into the spec copy
+   ✔  Given a Git project with ise enabled and a declaration whose build inputs sit under the four content roles
+   ✔  And a committed revision with those build inputs, one source file, and an End-to-end manifest
+   ✔  When the developer rebuilds the whole product from "HEAD" into a spec copy
+   ✔  Then the command succeeds and prints "Specification files: 7"
+   ✔  And the spec copy holds "Cargo.toml" and "Cargo.lock"
+   ✔  And the spec copy holds "rust-toolchain.toml" and "assets/templates/glossary.md"
+   ✔  And the spec copy holds "assets/instructions/ise.md" and "givn/specs/demo.feature"
+   ✔  And the spec copy omits "src/main.rs" and "e2e/Cargo.toml"
+[Summary]
+2 features
+2 scenarios (2 passed)
+13 steps (13 passed)
+  ✓ change verification receipt: 2 scenario(s), 0 failed, 0 skipped at 6799399fbd3e49d4a880302de3e4f244d51bc4f2
+  ✓ E2E verification: not_applicable
+  ✓ verify passed
