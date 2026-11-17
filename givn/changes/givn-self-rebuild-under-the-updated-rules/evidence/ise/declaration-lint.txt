@@ -1,0 +1,20 @@
+Declaration lint, scratch `git archive HEAD` copy (HEAD 9e803807) with the
+change's declaration and `rust-toolchain.toml` applied.
+
+Command: givn lint
+Exit: 0
+Declaration-schema errors: none
+Build-input role-placement findings: none (`specification_path_missing`,
+`specification_role_duplicate`, `specification_e2e_boundary`)
+
+Expected advisory for a declared build input:
+[SPEC ] advisory  assets/templates/spec.feature  the .feature file matches no 'behavior' glob; it is not retained by the declared Specification
+
+The template stays under `structure`: it is a declared build input, and moving
+it to `behavior` would select it as a behavior feature and add its placeholder
+`@e2e` scenario to the manifest's End-to-end set.
+
+Other `[SPEC ]` advisories: 51, all naming undeclared `test-corpus/**`
+features. They are outside the declaration and not build inputs. Other
+findings are the `[SEED ]` archived-seed advisory and the corpus overlap
+`[SHAPE ]`/`[SUBST]` advisories; no declaration finding is hidden.

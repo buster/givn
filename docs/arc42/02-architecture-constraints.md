@@ -88,9 +88,14 @@ contract.
 
 Every registered addon except an Opt-in addon is enabled by default; `ise` is
 the one Opt-in addon. Givn itself is `ise`-effective: `givn/specification.yaml`
-names `src/**` and `tests/**` as the replaceable source roots, so a
-whole-product rebuild removes every tracked file under them while the `e2e`
-package and the declaration stay. The `arc42` addon:
+names the build manifest and lockfile under `contracts`, the toolchain pin
+under `limits`, the document and report templates under `structure`, and the
+served instruction, skill, integration, hook, addon, and project-hint text
+under `behavior`. The `e2e` package's own manifest and lockfile are the test
+build's inputs and stay under the `e2e` role. `src/**` and `tests/**` are the
+replaceable source roots. A whole-product rebuild removes every tracked file
+under those roots; the four content roles, the `e2e` package, and the
+declaration stay. The `arc42` addon:
 
 - expands to a required `arc42-docs` artifact after `design`;
 - adds `arc42-docs` to `apply.requires` and to `design-review` dependencies;
