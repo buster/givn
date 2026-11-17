@@ -140,6 +140,12 @@ Batch 12 `declaration-boundary` — 1 scenario (`@givn.modified`), `specificatio
 - Implementation slice: none in production; the step asserts exit 1 and stderr naming `givn/specification.yaml`, which `src/cli/lint/specification.rs` already produces.
 - Verification: the narrow command for the title; then `givn check tasks --change strengthen-ise-specification`.
 
+Batch 13 `cross-capability-rebinding` — 2 scenarios (`@givn.modified`), `create-change/prose-consolidation` and `fragments/instruction-integrity`.
+- Scenarios: `Served ise guidance states that the trial always carries the declaration`, `The ise instruction says declared retained paths survive archiving`.
+- RED proof: the two permanent scenarios fail on the served-text assertion before the delta entries exist: `the served ise guidance does not state that the trial always carries the declaration` and `the served ise instruction omits the retained-path survival rule`. The delta scenarios assert `The spec copy always carries the declaration itself`, `implicit Specification entry, not a sixth role`, and `a declared Specification path` survives `givn archive`, plus the archive refusal.
+- Implementation slice: the two delta features and four Then bindings; the `@e2e` fixture rebinding in `e2e/tests/steps/clean_room_preparation_steps.rs` (`rebuild-component ... --manifest`), `e2e/tests/steps/trial_input_verification_steps.rs` (`ise compare --manifest ... --copy`), `e2e/tests/steps/clean_room_preparation_e2e_steps.rs`, `e2e/tests/steps/trial_input_verification_e2e_steps.rs`, and `e2e/tests/steps/ise_clean_room_support.rs` (manifest constant, accessor, and fixtures). No production change.
+- Verification: the narrow command for each title; the delta `@e2e` scope; the permanent `@e2e` tier; then `givn check tasks --change strengthen-ise-specification`.
+
 Durable-doc edits have no scenario batch. They are committed with the plan in the
 setup batch and verified in the closeout against the served instruction, the
 reference, the glossary, the ideation topic, the arc42 chapters, the ADR-076
@@ -223,7 +229,9 @@ acceptance authority.
         GIVN_CUCUMBER_TAGS='not @e2e and not @givn.removed' \
         cargo nextest list --locked --test features_runner | grep -c '::'
       ```
-      Expected: 98 scenarios in the delta, 96 regular, 2 excluded as `@e2e`.
+      Expected: 100 scenarios in the delta, 98 regular, 2 excluded as `@e2e`;
+      the setup run observed 98 before `cross-capability-rebinding` added two
+      regular scenarios.
       Observed: 98 delta scenarios, 96 regular (2 `@e2e` excluded); scopes are
       `./run-tests.sh --non-e2e` and `./run-tests.sh --e2e --package e2e` in
       `givn/commands.yaml`.
@@ -1620,6 +1628,89 @@ already binds every phrase).
     behaviour protected: the refusal exists; only the code assertion is new.
   - Files: `tests/steps/specification_declaration_steps.rs`.
   - [x] COMMIT: `f21807f8b3497173c9ec2984461dfea8d1b14c55` -- Batch: `declaration-boundary`
+
+### Batch 13: `cross-capability-rebinding`
+
+Files modified: `givn/changes/strengthen-ise-specification/specs/create-change/prose-consolidation.feature`,
+`givn/changes/strengthen-ise-specification/specs/fragments/instruction-integrity.feature`,
+`tests/steps/prose_consolidation_steps.rs`,
+`tests/steps/instruction_integrity_steps.rs`,
+`e2e/tests/steps/clean_room_preparation_steps.rs`,
+`e2e/tests/steps/clean_room_preparation_e2e_steps.rs`,
+`e2e/tests/steps/trial_input_verification_steps.rs`,
+`e2e/tests/steps/trial_input_verification_e2e_steps.rs`,
+`e2e/tests/steps/ise_clean_room_support.rs`.
+
+- [x] Evidence for this batch: RED on the two permanent scenarios, then GREEN on
+      the delta scenarios and both e2e scopes.
+      ```text
+      RED (permanent corpus, before the delta entries):
+      GIVN_FEATURES=$PWD/givn/specs cargo nextest run --locked --test features_runner \
+        'create-change/prose-consolidation.feature::Served ise guidance states that the trial always carries the declaration'
+        ✘  Then the guidance states that the trial always carries the declaration itself
+           Step panicked. Captured output: the served ise guidance does not state
+           that the trial always carries the declaration: # Instruction: ise ...
+        [Summary] 1 feature; 1 scenario (1 failed); 3 steps (2 passed, 1 failed)
+
+      GIVN_FEATURES=$PWD/givn/specs cargo nextest run --locked --test features_runner \
+        'fragments/instruction-integrity.feature::The ise instruction says declared retained paths survive archiving'
+        ✘  Then the served instruction says a declared retained path must survive `givn archive`
+           Step panicked. Captured output: the served ise instruction omits the
+           retained-path survival rule: # Instruction: ise ...
+        [Summary] 1 feature; 1 scenario (1 failed); 3 steps (2 passed, 1 failed)
+
+      RED (permanent @e2e tier, before the fixture rebinding):
+        Scenario: Developer prepares a clean-room trial from a recorded revision
+          ✘  Then preparation succeeds
+             Step panicked. Captured output: assertion `left == right` failed:
+             stderr=error: unrecognized subcommand 'replace'
+        Scenario: Verifier re-checks a prepared trial and receives the frozen-input report
+          ✘  Given a prepared Git trial with a receipt
+             Step panicked. Captured output: preparing the fixture trial failed:
+             error: unrecognized subcommand 'replace'
+        [Summary] 2 features; 2 scenarios (2 failed); 5 steps (3 passed, 2 failed)
+
+      GREEN (delta scope):
+      GIVN_FEATURES=$PWD/givn/changes/strengthen-ise-specification cargo nextest run --locked --test features_runner \
+        'specs/create-change/prose-consolidation.feature::Served ise guidance states that the trial always carries the declaration' \
+        'specs/fragments/instruction-integrity.feature::The ise instruction says declared retained paths survive archiving'
+        [Summary] 2 tests run: 2 passed, 98 skipped
+
+      GREEN (delta @e2e scope, GIVN_FEATURES=givn/changes/strengthen-ise-specification):
+        [Summary] 2 features; 2 scenarios (2 passed); 16 steps (16 passed)
+
+      GREEN (permanent @e2e tier, ./run-tests.sh --e2e --package e2e):
+        [Summary] 56 features; 119 scenarios (119 passed); 781 steps (781 passed)
+      ```
+
+- [x] Scenario: `Served ise guidance states that the trial always carries the declaration`
+  - Design constraints: the served ise guidance says `The spec copy always
+    carries the declaration itself` and names `givn/specification.yaml` an
+    `implicit Specification entry, not a sixth role`; Then asserts both
+    sentences from the served instruction. The permanent title stays and the
+    delta replaces it at merge.
+  - Files: `givn/changes/strengthen-ise-specification/specs/create-change/prose-consolidation.feature`,
+    `tests/steps/prose_consolidation_steps.rs`.
+  - [x] COMMIT: `73bcd1bc0e3888a4585ff6c887cd6fab88098324` -- Batch: `cross-capability-rebinding`
+
+- [x] Scenario: `The ise instruction says declared retained paths survive archiving`
+  - Design constraints: the served ise instruction says `a declared
+    Specification path` survives `givn archive` and that `givn archive` refuses
+    such a declaration before moving the change; Then asserts the normalized
+    sentences and reuses the existing archive-location binding. The permanent
+    title stays and the delta replaces it at merge.
+  - Files: `givn/changes/strengthen-ise-specification/specs/fragments/instruction-integrity.feature`,
+    `tests/steps/instruction_integrity_steps.rs`.
+  - [x] COMMIT: `73bcd1bc0e3888a4585ff6c887cd6fab88098324` -- Batch: `cross-capability-rebinding`
+
+- [x] E2E fixture slice: `clean_room_preparation_steps.rs` prepares with
+      `ise rebuild-component <path>... --manifest <file>`;
+      `trial_input_verification_steps.rs` compares with
+      `ise compare --manifest <file> --copy <dir>`; the e2e report assertions
+      read `Copy directory:`, `Manifest:`, and the two subject lines; the
+      support constant and accessor write the existing and blocked manifest
+      fixtures as `ise-manifest/v1`. Lands in the same revision as the two
+      scenarios above.
 
 ## E2E smoke tests
 

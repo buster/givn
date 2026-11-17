@@ -116,6 +116,8 @@ Decides D14: the rebuild commands refuse to write a symlink with an absolute tar
 | A Specification file under a source root survives `rebuild-all` | D11; corrected scenarios | `Preparation leaves an ignored file out of the spec copy`; `Preparation preserves the executable bit and the symlink target`; `Preparation reads an explicit revision and reports it`; `A whole-product rebuild keeps a Specification file under a source root` |
 | A symlink with an absolute target, or a relative target outside the copy, is refused | D14; delta Rules and reference Refusals | `Preparation refuses a symlink whose target resolves outside the spec copy`; `Preparation refuses an absolute symlink target` |
 | The retired command names and flags exit 2 | D5 | `The retired command names and flags exit 2` |
+| The served ise guidance names the spec copy as the declaration's carrier | D5, D13; `assets/instructions/ise.md`, `docs/reference.md` | `Served ise guidance states that the trial always carries the declaration` |
+| The served ise instruction states that a declared Specification path survives `givn archive` and names the move | D5, D13; `assets/instructions/ise.md`, `docs/glossary.md` | `The ise instruction says declared retained paths survive archiving` |
 | No rebuild runs for this change | D12 | No Ise Test mode; no spec copy is prepared by this change |
 
 Persona impact: the `developer--primary-user` reads a manifest they can reproduce and commands that name their action, evidenced by the clean `compare` scenario and the report lines; the `agent--technical-role` reads a Specification that states the bytes and the four rule sentences, evidenced by the golden checksum scenario and the delta Rules; the `givn-maintainer--owner` gains a scope cut and a proof, evidenced by `The retired command names and flags exit 2` and the corpus table. No Persona biography enters Gherkin.
@@ -130,6 +132,8 @@ Persona impact: the `developer--primary-user` reads a manifest they can reproduc
 | `trial-input-verification` (`@e2e`) | `e2e/tests/steps/trial_input_verification_e2e_steps.rs` | n/a - permanent file, rewritten in place |
 | shared fixtures | `tests/steps/ise_clean_room_support.rs` | n/a - permanent file, edited in place |
 | `specification-declaration` | `tests/steps/specification_declaration_steps.rs` | n/a - permanent file, edited in place |
+| `prose-consolidation` (non-`@e2e`) | `tests/steps/prose_consolidation_steps.rs` | n/a - permanent file, edited in place |
+| `instruction-integrity` (non-`@e2e`) | `tests/steps/instruction_integrity_steps.rs` | n/a - permanent file, edited in place |
 
 The feature files are authoritative for the exact phrase literals; this table lists the new and changed families, not every variant. A phrase in the delta that is absent here is still bound by the named file before GREEN, and the task setup task proves strictness once.
 
@@ -164,6 +168,9 @@ New and changed phrases:
 | `a Git project with ise enabled and a declaration with one source root "<glob>"` | `clean_room_preparation_steps.rs` | Source-only declaration with five empty roles. |
 | `a declaration whose "<role>" role names "<path>" and "<path>" and whose source root is "<glob>"` | `clean_room_preparation_steps.rs` | Multi-entry role for the containment-count fixture. |
 | `the spec copy holds no ".git" entry and no ".fslckout" entry` | `clean_room_preparation_steps.rs` | No version-control metadata in the copy. |
+| `the guidance states that the spec copy always carries the declaration itself` | `prose_consolidation_steps.rs` | Asserts the served ise sentence. |
+| `the guidance states that it is an implicit Specification entry, not a sixth role` | `prose_consolidation_steps.rs` | Asserts the second served ise sentence. |
+| "the served instruction says a declared Specification path must survive `givn archive`" | `instruction_integrity_steps.rs` | Asserts the path noun and the archive refusal. |
 | `the spec copy's "<path>" is the declaration committed at the selected revision` | `clean_room_preparation_steps.rs` | The copy carries the revision's declaration. |
 | `a committed revision with "<path>", a Specification file through the "<role>" role` | `clean_room_preparation_steps.rs` | Fixture role qualifier; decides whether the path is a Specification file. |
 | `a committed revision with "<path>" and a symlink "<path>" to an absolute target inside the spec copy` | `clean_room_preparation_steps.rs` | Commits the file and a symlink whose target is the absolute path under the planned spec copy; the link resolves inside the copy. |
@@ -310,7 +317,9 @@ Excluded: `tests/`, `e2e/`, generated code, and fixture modules. Declared before
 
 ## Corpus Rebinding
 
-The delta performs the rebinding. Every permanent scenario whose feature text contains `Replaced:`, `Retained:`, `Kept source:`, `Outside the declaration:`, `Not replaced:`, `Backend:`, `receipt`, `--full`, `--path`, `trial`, or `full replacement` has a `@givn.removed` or `@givn.modified` entry in this change. Counts: `clean-room-preparation` 56 permanent scenarios = 29 removed + 27 modified; `trial-input-verification` 27 permanent scenarios = 27 removed, replaced by the comparison set; the delta adds 70 scenarios, 39 in `clean-room-preparation` and 31 in `trial-input-verification`. Every permanent title in the two prepare features has one op; the declaration feature holds one modified title and six unmodified scenarios. The five former step-definition survivors are renamed with a removed entry and a new added scenario.
+The delta performs the rebinding. Every permanent scenario whose feature text contains `Replaced:`, `Retained:`, `Kept source:`, `Outside the declaration:`, `Not replaced:`, `Backend:`, `receipt`, `--full`, `--path`, `trial`, or `full replacement` has a `@givn.removed` or `@givn.modified` entry in this change. Counts: `clean-room-preparation` 56 permanent scenarios = 29 removed + 27 modified; `trial-input-verification` 27 permanent scenarios = 27 removed, replaced by the comparison set; the delta adds 72 scenarios: 39 in `clean-room-preparation`, 31 in `trial-input-verification`, and two cross-capability `@givn.modified` entries (`create-change/prose-consolidation.feature` and `fragments/instruction-integrity.feature`) whose permanent titles assert the same retired nouns in served text. Every permanent title in the two prepare features has one op; the declaration feature holds one modified title and six unmodified scenarios. The five former step-definition survivors are renamed with a removed entry and a new added scenario.
+
+The `@e2e` fixtures follow the same binding. `e2e/tests/steps/clean_room_preparation_steps.rs` prepares with `ise rebuild-component <path>... --manifest <file>` and reads `Copy directory:`/`Manifest:`; `e2e/tests/steps/trial_input_verification_steps.rs` compares with `ise compare --manifest <file> --copy <dir>`; and `e2e/tests/steps/ise_clean_room_support.rs` writes the existing and blocked manifest fixtures as `ise-manifest/v1` at the manifest path. The pre-merge permanent `@e2e` report assertions read the settled labels, so the tier runs the settled commands until the delta replaces those scenarios.
 
 | Permanent scenario (exact title) | Plane | Edit |
 |---|---|---|
@@ -397,6 +406,8 @@ The delta performs the rebinding. Every permanent scenario whose feature text co
 | `Verification bounds the frozen paths it refuses` | delta | Removed; replaced by `Comparison refuses a file added under a declared Specification path`. |
 | `Verification keeps a trial prepared before the package was excluded re-checkable` | delta | Removed; the `ise-trial/v1` shape is refused by name; replaced by `Comparison refuses a manifest whose scope is not ise-manifest/v1`. |
 | `A frozen role that covers the declaration re-checks clean` | delta | Removed; replaced by `Verifier compares the spec copy with the manifest`. |
+| `Served ise guidance states that the trial always carries the declaration` | delta | Modified: the served text says `The spec copy always carries the declaration itself` and `implicit Specification entry, not a sixth role`; the title stays. |
+| `The ise instruction says declared retained paths survive archiving` | delta | Modified: the served text says `a declared Specification path` must survive `givn archive`; the title stays. |
 
 ## Retained-Content Effect
 
