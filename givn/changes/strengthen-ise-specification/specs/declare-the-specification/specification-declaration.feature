@@ -2,7 +2,7 @@
 
 Feature: specification-declaration
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: An unreadable declaration is refused by name
     Given  an ise-enabled project selecting opencode whose declaration path is a directory
     When  the user runs `givn lint`
