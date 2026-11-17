@@ -1315,117 +1315,149 @@ Files modified: `src/scm.rs`, `src/git.rs`, `src/fossil.rs`,
 `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Comparison names an added
+- [x] Evidence for this batch: paste the RED run for `Comparison names an added
       @e2e scenario file in the checkout` and `Comparison reports a
       Specification changed after the copy was written`, then the GREEN run of
       all thirteen scenarios.
       ```text
-      <!-- paste: RED commands + assertion failures; GREEN commands + pass summary -->
+      RED: GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs cargo test --locked --test features_runner -- "prepare-an-ise-test/trial-input-verification.feature::Comparison names an added @e2e scenario file in the checkout" --exact --nocapture
+        Then comparison prints "Specification files: match" and "End-to-end tests: 1 added"
+        Step panicked. Captured output: stdout "Specification files: match\nEnd-to-end tests: match\n" does not print the line "End-to-end tests: 1 added"
+      1 scenario (1 failed), 4 steps (3 passed, 1 failed)
+
+      RED: GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs cargo test --locked --test features_runner -- "prepare-an-ise-test/trial-input-verification.feature::Comparison reports a Specification changed after the copy was written" --exact --nocapture
+        Then comparison prints "Specification files: 1 changed, 1 added"
+        Step panicked. Captured output: stdout "Specification files: 1 changed\n- givn/specification.yaml\nSpecification changed after the copy was written\nEnd-to-end tests: match\n" does not print the line "Specification files: 1 changed, 1 added"
+      1 scenario (1 failed), 4 steps (3 passed, 1 failed)
+
+      GREEN: the thirteen scenarios, one run each:
+        PASS  Comparison names an End-to-end test changed in the checkout
+        PASS  Comparison names an @e2e scenario changed in the checkout
+        PASS  Comparison names a content-only change to an @e2e feature in the checkout
+        PASS  Comparison names an added End-to-end file in the checkout
+        PASS  Comparison names an added @e2e scenario file in the checkout
+        PASS  Comparison names an added End-to-end root in the checkout declaration
+        PASS  Comparison names an added Specification file in the checkout
+        PASS  Comparison names a missing Specification file in the checkout
+        PASS  Comparison names a missing End-to-end test in the checkout
+        PASS  Comparison names a missing @e2e feature in the checkout
+        PASS  Comparison names every drifting path in one run
+        PASS  Comparison ignores an ignored file under the End-to-end package
+        PASS  Comparison reports a Specification changed after the copy was written
+        === passed=13 failed=0
+
+      GREEN: GIVN_FEATURES=givn/changes/strengthen-ise-specification/specs cargo test --locked --test features_runner -- --tags "not @e2e and not @givn.removed and not @wip"
+        2 features
+        86 scenarios (86 passed)
+        468 steps (468 passed)
+
+      cargo fmt --all -- --check: clean
+      cargo clippy --workspace --all-targets --locked -- -D warnings: clean
       ```
 
-- [ ] Scenario: `Comparison names an End-to-end test changed in the checkout`
+- [x] Scenario: `Comparison names an End-to-end test changed in the checkout`
   - Design constraints: edit `tests/e2e/steps/keys.rs` in the checkout; Then
     `End-to-end tests: 1 changed`, `- tests/e2e/steps/keys.rs`, exit 1.
     Contract: the recorded content checksum differs on a checkout content path.
   - Files: `src/ise/compare.rs`, `src/scm.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names an @e2e scenario changed in the checkout`
+- [x] Scenario: `Comparison names an @e2e scenario changed in the checkout`
   - Design constraints: edit a selected `@e2e` scenario in
     `givn/specs/demo/spec.feature` in the checkout; Then `Specification files:
     match`, `End-to-end tests: 1 changed`, `- <feature path>`, exit 1. Contract:
     the scenario checksum differs and the E2E subject owns the feature path.
   - Files: `src/ise/compare.rs`, `src/gherkin/content.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names a content-only change to an @e2e feature in the checkout`
+- [x] Scenario: `Comparison names a content-only change to an @e2e feature in the checkout`
   - Design constraints: rewrite only the `Feature:` description; the selected
     scenario text is unchanged; Then `Specification files: match`, `End-to-end
     tests: 1 changed`, `- <feature path>`, exit 1. Contract: the content checksum
     differs even when the scenario checksum matches.
   - Files: `src/ise/compare.rs`, `src/ise/manifest.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names an added End-to-end file in the checkout`
+- [x] Scenario: `Comparison names an added End-to-end file in the checkout`
   - Design constraints: add `tests/e2e/steps/extra.rs` under the declared
     `tests/e2e` package; Then `Specification files: match`, `End-to-end tests: 1
     added`, `+ tests/e2e/steps/extra.rs`, exit 1. Contract: an added content path
     in the declared E2E set is owned by the E2E subject and contributes no
     Specification count.
   - Files: `src/ise/compare.rs`, `src/scm.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names an added @e2e scenario file in the checkout`
+- [x] Scenario: `Comparison names an added @e2e scenario file in the checkout`
   - Design constraints: add `givn/specs/demo/extra.feature` carrying one `@e2e`
     scenario; Then `Specification files: match`, `End-to-end tests: 1 added`,
     `+ <path>`, exit 1. Contract: a feature path carrying a selected `@e2e`
     scenario is E2E-owned even when a role matches it.
   - Files: `src/ise/compare.rs`, `src/gherkin/content.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names an added End-to-end root in the checkout declaration`
+- [x] Scenario: `Comparison names an added End-to-end root in the checkout declaration`
   - Design constraints: add `e2e: ["tests/extra-e2e"]` and commit
     `tests/extra-e2e/Cargo.toml`; Then `Specification files: 1 changed`,
     `- givn/specification.yaml`, `+ tests/extra-e2e/Cargo.toml`, `End-to-end
     tests: 1 added`, exit 1. Contract: the checkout declaration derives the
     added-path scan; its own edit is a changed Specification file.
   - Files: `src/ise/compare.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names an added Specification file in the checkout`
+- [x] Scenario: `Comparison names an added Specification file in the checkout`
   - Design constraints: add `docs/extra.md` under the `docs/**` contracts role;
     Then `Specification files: 1 added`, `+ docs/extra.md`, `End-to-end tests:
     match`, exit 1. Contract: a role match outside the E2E set is Specification
     -owned.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names a missing Specification file in the checkout`
+- [x] Scenario: `Comparison names a missing Specification file in the checkout`
   - Design constraints: delete `docs/reference.md` from the checkout; Then
     `Specification files: 1 missing`, `- docs/reference.md`, `End-to-end tests:
     match`, exit 1. Contract: a recorded path absent from the checkout is
     missing for its subject.
   - Files: `src/ise/compare.rs`, `src/scm.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names a missing End-to-end test in the checkout`
+- [x] Scenario: `Comparison names a missing End-to-end test in the checkout`
   - Design constraints: delete `tests/e2e/steps/keys.rs` from the checkout; Then
     `End-to-end tests: 1 missing`, `- <path>`, exit 1.
   - Files: `src/ise/compare.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names a missing @e2e feature in the checkout`
+- [x] Scenario: `Comparison names a missing @e2e feature in the checkout`
   - Design constraints: delete `givn/specs/demo/spec.feature` from the checkout;
     Then `Specification files: match`, `End-to-end tests: 1 missing`, `- <path>`,
     exit 1. Contract: the recorded `@e2e` feature path is E2E-owned.
   - Files: `src/ise/compare.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison names every drifting path in one run`
+- [x] Scenario: `Comparison names every drifting path in one run`
   - Design constraints: edit a copy Specification file, edit, delete, and add
     checkout paths, and edit an E2E test; Then `Specification files: 2 changed,
     1 missing, 1 added` and `End-to-end tests: 1 changed`, one `-` or `+` line
     per path, exit 1. Contract: the fixed count order and one run for every
     difference.
   - Files: `src/ise/compare.rs`, `tests/steps/trial_input_verification_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison ignores an ignored file under the End-to-end package`
+- [x] Scenario: `Comparison ignores an ignored file under the End-to-end package`
   - Design constraints: add an ignored file under the checkout's `e2e` package;
     Then `End-to-end tests: match` and exit 0. Contract: content paths are
     tracked plus untracked non-ignored, never ignored files. This is the
     discrimination check for the enumeration.
   - Files: `src/scm.rs`, `src/git.rs`, `src/ise/compare.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
-- [ ] Scenario: `Comparison reports a Specification changed after the copy was written`
+- [x] Scenario: `Comparison reports a Specification changed after the copy was written`
   - Design constraints: rewrite the checkout declaration's `structure` role to
     `config/kept.toml`; Then `Specification files: 1 changed, 1 added`,
     `- givn/specification.yaml`, `Specification changed after the copy was
     written`, `+ config/kept.toml`, exit 1. Contract: the declaration edit is a
     changed Specification file and its new entry an added path.
   - Files: `src/ise/compare.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `compare-checkout`
+  - [x] COMMIT: `47436a33` -- Batch: `compare-checkout`
 
 ### Batch 11: `compare-refusals`
 
