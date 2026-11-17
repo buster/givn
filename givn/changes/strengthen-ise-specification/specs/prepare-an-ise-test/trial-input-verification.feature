@@ -139,6 +139,16 @@ Feature: Spec-copy verification
     And  comparison exits 1
 
   @givn.added
+  Scenario: Comparison names a missing declaration in the copy
+    Given  a prepared spec copy with a manifest
+    When  the agent deletes the Specification file "givn/specification.yaml" the spec copy was written with
+    And  the verifier compares the spec copy with the manifest
+    Then  comparison prints "Specification files: 1 missing"
+    And  comparison prints "- givn/specification.yaml"
+    And  comparison prints "End-to-end tests: match"
+    And  comparison exits 1
+
+  @givn.added
   Scenario: Comparison reports no difference after the agent adds Source code
     Given  a prepared spec copy with a manifest
     When  the agent adds a rebuild file at a removed path
@@ -337,6 +347,14 @@ Feature: Spec-copy verification
     Given  a prepared spec copy whose manifest names the scope "ise-trial/v1"
     When  the verifier compares the spec copy with the manifest
     Then  comparison fails and exits 1, naming the manifest and "ise-manifest/v1"
+    And  comparison prints no "Specification files:" line
+
+  @givn.added
+  Scenario: Comparison refuses a retired ise-trial/v1 record by scope
+    Given  a prepared spec copy whose manifest is a retired ise-trial/v1 record
+    When  the verifier compares the spec copy with the manifest
+    Then  comparison fails and exits 1, naming the manifest and "ise-trial/v1"
+    And  comparison fails and exits 1, naming the manifest and "ise-manifest/v1"
     And  comparison prints no "Specification files:" line
 
   @givn.added

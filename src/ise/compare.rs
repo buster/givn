@@ -86,8 +86,9 @@ pub fn compare(project_root: &Path, request: &CompareRequest) -> Result<CompareR
         .with_context(|| format!("resolve the spec copy '{}'", request.copy.display()))?;
     require_recorded_copy(&request.manifest, &recorded, &copy)?;
     require_manifest_outside_the_copy(&request.manifest, &copy)?;
-    let declaration = copy_declaration(&copy)?;
-    require_no_added_specification_paths(&copy, &recorded, &declaration)?;
+    if let Some(declaration) = copy_declaration(&copy) {
+        require_no_added_specification_paths(&copy, &recorded, &declaration)?;
+    }
     require_kept_paths_present(&copy, &recorded)?;
 
     let mut specification: BTreeMap<String, Difference> = BTreeMap::new();
@@ -321,12 +322,13 @@ fn require_manifest_outside_the_copy(manifest: &Path, copy: &Path) -> Result<()>
 }
 
 /// The spec copy's declaration: the added-file refusal is read with the
-/// declaration the copy carries, not the checkout's.
-fn copy_declaration(copy: &Path) -> Result<SpecificationDeclaration> {
-    let path = copy.join(DECLARATION_PATH);
-    let content = std::fs::read_to_string(&path)
-        .with_context(|| format!("read the spec copy's declaration '{}'", path.display()))?;
-    SpecificationDeclaration::from_content(&content).map_err(|error| anyhow::anyhow!("{error}"))
+/// declaration the copy carries, not the checkout's. A declaration the copy
+/// does not carry, or one the loader refuses, contributes no roles: the
+/// recorded declaration checksum already reports it as missing or changed.
+fn copy_declaration(copy: &Path) -> Option<SpecificationDeclaration> {
+    std::fs::read_to_string(copy.join(DECLARATION_PATH))
+        .ok()
+        .and_then(|content| SpecificationDeclaration::from_content(&content).ok())
 }
 
 /// Refuse a copy that holds a file under any declared Specification role the

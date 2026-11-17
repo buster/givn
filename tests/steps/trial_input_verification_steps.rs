@@ -991,6 +991,37 @@ fn prepared_spec_copy_naming_the_scope(world: &mut GivnWorld, scope: String) {
     });
 }
 
+#[given(regex = r#"^a prepared spec copy whose manifest is a retired ise-trial/v1 record$"#)]
+fn prepared_spec_copy_with_a_retired_record(world: &mut GivnWorld) {
+    prepare_spec_copy(world);
+    std::fs::write(
+        record(world),
+        "\
+schema: 1
+content_scope: ise-trial/v1
+backend: git
+revision: 0000000000000000000000000000000000000000
+named_paths: []
+replaced_paths: []
+counts:
+  retained: 0
+  kept_source: 0
+  replaced: 0
+  outside_declaration: 0
+  not_replaced: 0
+retained_digest: 0000000000000000000000000000000000000000000000000000000000000000
+e2e_digest: 0000000000000000000000000000000000000000000000000000000000000000
+replaced_digest: 0000000000000000000000000000000000000000000000000000000000000000
+retained_files: {}
+e2e_files: {}
+e2e_scenarios: {}
+written_path: /tmp/retired-trial
+givn_version: 0.9.20
+",
+    )
+    .expect("write the retired trial record");
+}
+
 #[given(regex = r#"^a prepared spec copy whose manifest carries an unknown field$"#)]
 fn prepared_spec_copy_with_an_unknown_field(world: &mut GivnWorld) {
     prepare_spec_copy(world);

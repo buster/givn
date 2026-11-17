@@ -37,6 +37,16 @@ pub(super) struct Manifest {
     pub givn_version: String,
 }
 
+/// The scope a manifest document records, under the current shape's `scope`
+/// or the retired shape's `content_scope`. Reading it before deserialization
+/// refuses an `ise-trial/v1` record by name instead of by its first unknown
+/// field.
+fn recorded_scope(document: &serde_yaml_ng::Value) -> Option<&str> {
+    ["scope", "content_scope"]
+        .iter()
+        .find_map(|key| document.get(*key).and_then(serde_yaml_ng::Value::as_str))
+}
+
 impl Manifest {
     /// Serialize the manifest with the field order the `ise-manifest/v1`
     /// scope names.
@@ -53,19 +63,21 @@ impl Manifest {
             .with_context(|| format!("read the manifest '{}'", path.display()))?;
         let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text)
             .with_context(|| format!("the manifest '{}' is not readable YAML", path.display()))?;
+        if let Some(recorded) =
+            recorded_scope(&document).filter(|recorded| *recorded != CONTENT_SCOPE)
+        {
+            bail!(
+                "the manifest '{}' records the scope '{}'; the reader requires '{CONTENT_SCOPE}'",
+                path.display(),
+                recorded
+            );
+        }
         let manifest: Self = serde_yaml_ng::from_value(document).with_context(|| {
             format!(
                 "the manifest '{}' does not match ise-manifest/v1",
                 path.display()
             )
         })?;
-        if manifest.scope != CONTENT_SCOPE {
-            bail!(
-                "the manifest '{}' records the scope '{}'; the reader requires '{CONTENT_SCOPE}'",
-                path.display(),
-                manifest.scope
-            );
-        }
         manifest.require_checksums(path)?;
         Ok(manifest)
     }
@@ -234,8 +246,8 @@ pub(super) fn end_to_end_rollup(
     rollup(&union)
 }
 
-/// The report's abbreviation: the first 12 lowercase hex characters and an
-/// ellipsis. The manifest keeps the full value.
+/// The report's abbreviation: the first 12 lowercase hex characters. The
+/// manifest keeps the full value.
 pub(crate) fn abbreviate(digest: &str) -> String {
-    format!("{}…", digest.chars().take(12).collect::<String>())
+    digest.chars().take(12).collect()
 }
