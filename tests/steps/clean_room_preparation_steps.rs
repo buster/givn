@@ -319,6 +319,20 @@ fn git_project_with_a_declaration(world: &mut GivnWorld) {
     world.env = Some(ise_clean_room_support::ise_project());
 }
 
+#[given(
+    "a Git project with ise enabled and a declaration whose build inputs sit under the four content roles"
+)]
+fn git_project_with_build_input_declaration(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::build_input_project());
+}
+
+#[given(
+    "a committed revision with those build inputs, one source file, and an End-to-end manifest"
+)]
+fn committed_revision_with_the_build_inputs(world: &mut GivnWorld) {
+    ise_clean_room_support::commit_build_inputs(project_env(world));
+}
+
 #[when(regex = r#"^the developer prepares a trial from "([^"]+)" with a full replacement$"#)]
 fn developer_prepares_a_full_trial(world: &mut GivnWorld, revision: String) {
     world.ise_clean_room.ensure_targets();

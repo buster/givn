@@ -247,6 +247,70 @@ pub(crate) fn contracts_declaration(retained: &str, source: &str) -> String {
     )
 }
 
+/// The five declared build-input paths and one committed content each: the
+/// build manifest and lockfile under `contracts`, the toolchain pin under
+/// `limits`, the template under `structure`, and the served instruction text
+/// under `behavior`.
+pub(crate) const BUILD_INPUT_FILES: [(&str, &str); 5] = [
+    (
+        "Cargo.toml",
+        "[package]\nname = \"demo\"\nversion = \"0.1.0\"\n",
+    ),
+    ("Cargo.lock", "version = 4\n"),
+    ("rust-toolchain.toml", "[toolchain]\nchannel = \"1.97.1\"\n"),
+    ("assets/templates/glossary.md", "glossary template\n"),
+    ("assets/instructions/ise.md", "ise instruction\n"),
+];
+
+/// A declaration that places the five build inputs under the four content
+/// roles, retains the behavior corpus and the served instruction text, and
+/// names `e2e` as the End-to-end role path. The declaration and the six files
+/// it retains are seven Specification files.
+pub(crate) fn build_input_declaration(e2e: &str) -> String {
+    format!(
+        "behavior: [\"givn/specs/**\", \"assets/instructions/ise.md\"]\n\
+         structure: [\"assets/templates/glossary.md\"]\n\
+         contracts: [\"Cargo.toml\", \"Cargo.lock\"]\n\
+         limits: [\"rust-toolchain.toml\"]\n\
+         e2e: [{e2e}]\n\
+         source: [\"src/**\"]\n"
+    )
+}
+
+/// Every file the build-input declaration names outside its `e2e` role: the
+/// five build inputs, the behavior feature, and one source file.
+pub(crate) fn build_input_files() -> Vec<(&'static str, &'static str)> {
+    let mut files: Vec<(&'static str, &'static str)> = BUILD_INPUT_FILES.to_vec();
+    files.push((DEMO_FEATURE_PATH, DEMO_FEATURE_CONTENT));
+    files.push(("src/main.rs", "fn main() {}\n"));
+    files
+}
+
+/// Write every file the build-input declaration names outside its `e2e` role.
+pub(crate) fn write_build_inputs(env: &common::TestEnv) {
+    for (path, content) in build_input_files() {
+        let target = env.path(path);
+        std::fs::create_dir_all(target.parent().expect("the file has a parent"))
+            .expect("create the build-input parent directory");
+        std::fs::write(&target, content).expect("write the build-input file");
+    }
+}
+
+/// An initialized Git project with `ise` enabled and the build-input
+/// declaration committed, before the build inputs themselves exist at a
+/// revision.
+pub(crate) fn build_input_project() -> common::TestEnv {
+    ise_project_with_declaration(&build_input_declaration("\"e2e\""))
+}
+
+/// Commit the declared build inputs, the behavior feature, one source file,
+/// and the End-to-end package manifest.
+pub(crate) fn commit_build_inputs(env: &common::TestEnv) -> String {
+    let mut files = build_input_files();
+    files.push(("e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"));
+    commit_files(env, &files, "fixture: declared build inputs")
+}
+
 /// The declaration with one unknown top-level key beside the six valid keys.
 pub(crate) fn malformed_declaration() -> String {
     format!("{MALFORMED_KEY}: [\"x\"]\n{}", default_declaration())

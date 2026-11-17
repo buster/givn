@@ -145,7 +145,7 @@ this change; no file under `givn/specs/**`, `e2e/**`, `assets/**`,
 
 ## Setup
 
-- [ ] Land the plan on the change branch
+- [x] Land the plan on the change branch
   - Paths: `givn/changes/givn-self-rebuild-under-the-updated-rules/` (proposal,
     specs, design, design-review, arc42, config-lock, tasks),
     `docs/arc42/02-architecture-constraints.md`,
@@ -169,7 +169,7 @@ Batch: setup'
     before implementation); `arc42.md` rows 2, 4, and 11 are already realized by
     the three chapter diffs the design review hashed. No production file
     changes.
-  - [ ] COMMIT: `___` -- Batch: setup
+  - [x] COMMIT: `ee16f1f` -- Batch: setup
 
 ## Batch: `declaration-and-copy`
 

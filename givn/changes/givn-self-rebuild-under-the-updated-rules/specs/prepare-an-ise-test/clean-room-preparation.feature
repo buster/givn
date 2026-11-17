@@ -1,7 +1,7 @@
 @givn.delta @clean-room-preparation
 Feature: Clean-room preparation
 
-  @givn.added @wip
+  @givn.added
   Scenario: Preparation carries every declared build input into the spec copy
     Given  a Git project with ise enabled and a declaration whose build inputs sit under the four content roles
     And  a committed revision with those build inputs, one source file, and an End-to-end manifest

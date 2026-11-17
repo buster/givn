@@ -117,6 +117,23 @@ fn ise_project_with_recorded_declaration(world: &mut GivnWorld, mutation: String
     world.specification_declaration.recorded = Some(declaration);
 }
 
+#[given(
+    "an ise-enabled project selecting opencode whose declaration places build inputs under the four content roles"
+)]
+fn ise_project_with_build_input_declaration(world: &mut GivnWorld) {
+    ise_enabled_project(world);
+    write_declaration(
+        world,
+        &crate::steps::ise_clean_room_support::build_input_declaration("\"tests/e2e\""),
+    );
+    crate::steps::ise_clean_room_support::write_build_inputs(env(world));
+    let manifest = env(world).path("tests/e2e/Cargo.toml");
+    std::fs::create_dir_all(manifest.parent().expect("the manifest has a parent"))
+        .expect("create the End-to-end package directory");
+    std::fs::write(&manifest, "[package]\nname = \"e2e\"\n")
+        .expect("write the End-to-end package manifest");
+}
+
 #[given("an ise-enabled project selecting opencode whose declaration is not valid YAML")]
 fn ise_project_with_unparsable_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
@@ -205,6 +222,43 @@ fn exits_one_and_names(world: &mut GivnWorld, name: String) {
         observed.contains(&name),
         "stderr does not name {name:?}:\n{observed}"
     );
+}
+
+/// A declaration schema refusal is the blocking `[DECL ]` finding: the
+/// declaration is absent, unreadable, or not valid YAML.
+#[then("stderr contains no declaration-schema error")]
+fn stderr_contains_no_declaration_schema_error(world: &mut GivnWorld) {
+    let observed = stderr(world);
+    assert!(
+        !observed.contains("[DECL ]"),
+        "stderr carries a declaration refusal:\n{observed}"
+    );
+}
+
+/// The fixture declares every build input the whole-product rebuild reads, so
+/// no advisory may report a declared path as missing, duplicated, or inside
+/// the End-to-end boundary.
+#[then("stderr contains no declared-path advisory for the build inputs")]
+fn stderr_contains_no_declared_path_advisory_for_the_build_inputs(world: &mut GivnWorld) {
+    const BUILD_INPUT_SUBJECTS: [&str; 5] = [
+        "Cargo.toml",
+        "Cargo.lock",
+        "rust-toolchain.toml",
+        "assets/",
+        "e2e",
+    ];
+    let observed = stderr(world);
+    for line in observed
+        .lines()
+        .filter(|line| line.starts_with("[SPEC ] advisory"))
+    {
+        for subject in BUILD_INPUT_SUBJECTS {
+            assert!(
+                !line.contains(subject),
+                "the declared-path advisory names the build input {subject:?}:\n{line}"
+            );
+        }
+    }
 }
 
 #[then("stderr contains no declaration finding")]
