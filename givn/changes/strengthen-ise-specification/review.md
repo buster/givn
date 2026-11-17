@@ -131,7 +131,7 @@ same action.
 Every permanent scenario in `clean-room-preparation` (56) and
 `trial-input-verification` (27) has exactly one `@givn.removed` or
 `@givn.modified` operation; every modified/removed title exists in the
-permanent corpus; no added title collides. The four other delta features
+permanent corpus; no added title collides. The three other delta features
 modify one permanent title each. A sweep of the permanent corpus for `trial`,
 `receipt`, `ise replace`, `ise verify`, `Retained:`, `Replaced:`,
 `Kept source:`, `Outside the declaration:`, `Not replaced:`, `--full`, and
@@ -515,8 +515,8 @@ README-IMPACT: updated - Configuration
       stated bytes and rule (`specification_checksum 35444598...`,
       `end_to_end_checksum 00580162...`, per-path values match).
 - [x] The retired surface is replaced in the merged corpus; the two
-      cross-capability scenarios are the only additions outside the two prepare
-      features.
+      cross-capability scenarios are the only extra delta entries outside the
+      two prepare features and they are `@givn.modified`.
 - [ ] The design review is current with `design.md` (B4).
 - [ ] The report checksum line matches the stated 12 hex characters (B1).
 - [ ] A deleted declaration is reported as `missing` (B2).
