@@ -16,7 +16,7 @@ cargo install --path . --locked --force
 givn skills sync
 givn instructions
 ./run-tests.sh
-./run-tests.sh --e2e
+./run-tests.sh --e2e --package e2e
 ```
 
 The installed `$HOME/.cargo/bin/givn` must be the current checkout's
