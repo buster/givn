@@ -88,6 +88,33 @@ fn report_prints_the_frozen_package_line(world: &mut GivnWorld) {
     assert_report_line(world, "End-to-end tests: not copied (2 files)");
 }
 
+#[then(
+    regex = r#"^the report abbreviates the retained digest and the e2e digest to 12 lowercase hex characters and an ellipsis$"#
+)]
+fn report_abbreviates_the_digests(world: &mut GivnWorld) {
+    // The retired scenario text names the ellipsis; the settled report prints
+    // exactly 12 lowercase hex characters. The delta removes the scenario this
+    // phrase belongs to, so the binding retires with it.
+    let text = stdout(world);
+    for prefix in ["Specification checksum: ", "End-to-end checksum: "] {
+        let value = text
+            .lines()
+            .find_map(|line| line.strip_prefix(prefix))
+            .unwrap_or_else(|| panic!("stdout {text:?} has no {prefix:?} line"));
+        assert_eq!(
+            value.len(),
+            12,
+            "{prefix}{value:?} is not 12 hex characters"
+        );
+        assert!(
+            value
+                .chars()
+                .all(|character| character.is_ascii_hexdigit() && !character.is_ascii_uppercase()),
+            "{prefix}{value:?} is not lowercase hex"
+        );
+    }
+}
+
 #[then(regex = r#"^the report prints the written trial path and the receipt path$"#)]
 fn report_prints_the_write_targets(world: &mut GivnWorld) {
     assert_report_line(

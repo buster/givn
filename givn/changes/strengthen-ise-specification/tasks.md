@@ -1626,11 +1626,13 @@ already binds every phrase).
     `SpecificationDeclaration::load` owns the working-tree read and returns the
     malformed case; `src/cli/lint/specification.rs` maps it to exit 1. Existing
     behaviour protected: the refusal exists; only the code assertion is new.
-  - Files: `tests/steps/specification_declaration_steps.rs`.
-  - Recorded revision: the plan commit that introduced the delta scenario and
-    its `the command exits 1` assertion; `f21807f8` only removed `@wip`, so it
-    is no longer this task's evidence.
-  - [x] COMMIT: `76159193af3085c3873357e387e7067ed06de0f6` -- Batch: `declaration-boundary`
+  - Files: `tests/steps/specification_declaration_steps.rs`,
+    `givn/changes/strengthen-ise-specification/specs/declare-the-specification/specification-declaration.feature`.
+  - Recorded revision: the commit that binds the scenario's `the command exits
+    1 and names "givn/specification.yaml"` assertion in the capability's step
+    file; the plan commit `76159193` introduced the scenario but its message
+    does not name the batch, and `f21807f8` only removed `@wip`.
+  - [x] COMMIT: `44168260477aa48dc373caa7a19007e8a76d96f8` -- Batch: `declaration-boundary`
 
 ### Batch 13: `cross-capability-rebinding`
 
@@ -1758,8 +1760,10 @@ transcripts under `givn/changes/strengthen-ise-specification/evidence/visual/`.
       ```
 
 - [x] Blocker B1: `abbreviate` returns the first 12 lowercase hex characters
-      with no ellipsis; the e2e assertion reads the same value and the dead
-      `report_abbreviates_the_digests` binding is removed.
+      with no ellipsis, and the delta checksum-line assertion reads that value.
+      The retired permanent `@e2e` scenario keeps a pre-merge translation
+      binding for its old phrase; it asserts the same no-ellipsis value, so the
+      full permanent tier stays green until the delta removes the scenario.
       Files: `src/ise/manifest.rs`,
       `e2e/tests/steps/clean_room_preparation_e2e_steps.rs`, and the committed
       transcripts.
@@ -1771,13 +1775,19 @@ transcripts under `givn/changes/strengthen-ise-specification/evidence/visual/`.
       Files: `givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/usecase.md`.
   - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
 
-- [x] Blocker B6: batch 12 records `76159193`, the plan commit that introduced
-      the delta scenario and its exit-code assertion; `f21807f8` removed only
-      `@wip` and is no longer evidence.
-      Files: `givn/changes/strengthen-ise-specification/tasks.md`.
+- [x] Blocker B6: batch 12 records `44168260`, the commit that changes the
+      scenario's Then to `the command exits 1 and names
+      "givn/specification.yaml"` and binds that assertion in the capability's
+      step file. The plan commit `76159193` introduced the scenario but its
+      message does not name the batch; `f21807f8` removed only `@wip`.
+      Files: `givn/changes/strengthen-ise-specification/tasks.md`,
+      `tests/steps/specification_declaration_steps.rs`,
+      `givn/changes/strengthen-ise-specification/specs/declare-the-specification/specification-declaration.feature`.
 
 - [x] Blocker B7: the Capability Routing table declares `EXTEND
-      prose-consolidation` and `NEW in fragments` beside the three ISE rows.
+      prose-consolidation` and `EXTEND instruction-integrity` beside the three
+      ISE rows; the gate reports the fragments capability as already owned, so
+      `NEW in fragments` was refused and `EXTEND` is recorded.
       Files: `givn/changes/strengthen-ise-specification/proposal.md`.
   - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
 

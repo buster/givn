@@ -150,7 +150,8 @@ New and changed phrases:
 | `the developer rebuilds the whole product from the first revision into a spec copy` | `clean_room_preparation_steps.rs` | `--at <first>`. |
 | `the spec copy holds "<path>"`, `the spec copy omits "<path>"` | `clean_room_preparation_steps.rs` | Replaces the trial-path assertions. |
 | `the report prints "Specification files: 2", ...` | `clean_room_preparation_steps.rs` | Existing multi-line report step, new literals. |
-| `the report prints a "Specification checksum:" line and an "End-to-end checksum:" line of 12 lowercase hex characters each` | `clean_room_preparation_steps.rs` | Exact 12-hex match, no ellipsis. |
+| `the report prints a "Specification checksum:" line and an "End-to-end checksum:" line of 12 lowercase hex characters each` | `clean_room_preparation_e2e_steps.rs` | Exact 12-hex match, no ellipsis. |
+| `the report abbreviates the retained digest and the e2e digest to 12 lowercase hex characters and an ellipsis` | `clean_room_preparation_e2e_steps.rs` | Pre-merge translation for the permanent `@e2e` scenario the delta removes; asserts the settled 12-hex value with no ellipsis. |
 | `the manifest records the scope, the revision, the removed paths, the five counts, the checksums, the copy directory, and the Givn version` | `clean_room_preparation_steps.rs` | Reads the YAML manifest. |
 | `the manifest's specification checksum is "<hex>"`, `the manifest's end-to-end checksum is "<hex>"` | `clean_room_preparation_steps.rs` | Full 64 hex. |
 | `the manifest's removed paths are:` | `clean_room_preparation_steps.rs` | Table of paths. |

@@ -158,7 +158,7 @@ The `specification_files`, `source_kept_files`, and `end_to_end_files` lists are
 | `trial-input-verification` | `EXTEND givn-workflow-enforcement` (17.00) | `EXTEND trial-input-verification` | `compare` performs the existing re-check action under the settled name, with the same three subjects: the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. No new action exists. |
 | `specification-declaration` | `EXTEND givn-workflow-enforcement` (17.00) | `EXTEND specification-declaration` | The unreadable working-tree declaration is an existing refusal of `givn lint`; the change pins its exit code and states the reader's file-access boundary. No new action exists. |
 | `prose-consolidation` | not ranked | `EXTEND prose-consolidation` | The delta rewrites one permanent `prose-consolidation` scenario so the served `ise` guidance states the settled vocabulary; the permanent feature lives in `givn/specs/create-change/` and the delta sits in `specs/create-change/`. No new action exists. |
-| `instruction-integrity` | not ranked | `NEW in fragments` | The delta rewrites one permanent `instruction-integrity` scenario so the served `ise` instruction states the retained-path rule; the permanent feature lives in `givn/specs/fragments/`, which `resolve_permanent_usecase` skips. No new action exists. |
+| `instruction-integrity` | not ranked | `EXTEND instruction-integrity` | The delta rewrites one permanent `instruction-integrity` scenario so the served `ise` instruction states the retained-path rule; the capability is owned by `givn/specs/fragments/` and the delta sits in `specs/fragments/`. No new action exists. |
 
 ## Out of Scope
 
