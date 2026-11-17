@@ -1815,6 +1815,24 @@ transcripts under `givn/changes/strengthen-ise-specification/evidence/visual/`.
     `givn/changes/strengthen-ise-specification/specs/prepare-an-ise-test/trial-input-verification.feature`.
   - [x] COMMIT: `8c8ddbc77017c0910e954a9bb466aa8a470e4f43` -- Batch: `review-blockers`
 
+- [x] Change gate after the fixes: the tasks gate passes with 102 delta
+      scenarios; the review gate reaches only the recorded `REVIEW: FAIL`
+      verdict, with routing and scenario-commit checks green.
+      ```text
+      GIVN_FEATURES=givn/changes/strengthen-ise-specification ./run-tests.sh --non-e2e
+        100 tests run: 100 passed, 2 skipped; exit 0
+      GIVN_FEATURES=givn/changes/strengthen-ise-specification ./run-tests.sh --e2e --package e2e
+        2 scenarios (2 passed), 16 steps (16 passed); exit 0
+      ./run-tests.sh --e2e --package e2e
+        119 scenarios (119 passed); exit 0
+      cargo fmt --all -- --check; root and e2e clippy -D warnings   exit 0
+      givn check tasks --change strengthen-ise-specification        exit 0
+      givn check review --change strengthen-ise-specification       exit 1
+        net delta: 72 added, 30 modified, 56 removed
+        scenario commits: 102 passed
+        integrity: review.md actual verdict is FAIL
+      ```
+
 ## E2E smoke tests
 
 Two `@e2e` scenarios carry the real-interface proof, both driving the compiled
