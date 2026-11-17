@@ -236,7 +236,7 @@ Batch: pre-trial-inputs'
 
 ## Batch: spec-copy
 
-- [ ] Write the spec copy from the trial revision
+- [x] Write the spec copy from the trial revision
   - Paths: `evidence/ise/rebuild-report.txt`, `evidence/ise/manifest.yaml`; the
     copy and the manifest stay outside the checkout at
     `/tmp/givn-ise-self-rebuild-<stamp>` and `/tmp/givn-ise-self-rebuild-<stamp>.yaml`,
@@ -271,9 +271,9 @@ Batch: pre-trial-inputs'
     `Dry-Run Ise`, every tracked file under `src/**` and `tests/**` removed);
     D7 (the five withheld build inputs are absent from the copy); `--dry-run` is
     not passed, because it writes no copy for a builder.
-  - [ ] COMMIT: `___` -- Batch: spec-copy
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: spec-copy
 
-- [ ] Verify the rebuild boundary in the spec copy
+- [x] Verify the rebuild boundary in the spec copy
   - Paths: the copy only.
   - Acceptance (all hold before the builder starts):
     ```sh
@@ -291,9 +291,9 @@ Batch: pre-trial-inputs'
     copied unchanged; no Source code kept; every `src/**` and `tests/**` file
     removed; the `e2e` package never copied; `Cargo.toml`, `Cargo.lock`, and
     `assets/**` outside the copy).
-  - [ ] COMMIT: `___` -- Batch: spec-copy
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: spec-copy
 
-- [ ] Compare the spec copy with the manifest before the build
+- [x] Compare the spec copy with the manifest before the build
   - Paths: `evidence/ise/compare-before.txt`
   - Run:
     ```sh
@@ -307,11 +307,11 @@ Batch: pre-trial-inputs'
   - Design constraints: the comparison prints two subject lines, names every
     difference once, and exits 0 only when both say `match`; a file added under
     a declared Specification path is refused before any count line.
-  - [ ] COMMIT: `___` -- Batch: spec-copy
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: spec-copy
 
 ## Batch: clean-room-build
 
-- [ ] Prove the cargo cache holds no product source or archive
+- [x] Prove the cargo cache holds no product source or archive
   - Paths: the transcript goes into `evidence/ise/builder-notes.md` (the builder
     records its inputs there).
   - Run:
@@ -328,9 +328,9 @@ Batch: pre-trial-inputs'
     `.crate` archives and `registry/git` holds git checkouts, so all three roots
     are scanned. The registry is read-only in the sandbox and populated before
     the sandbox starts by the host build against the checkout's lockfile.
-  - [ ] COMMIT: `___` -- Batch: clean-room-build
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: clean-room-build
 
-- [ ] Start the builder sandbox with the probed mount set
+- [x] Start the builder sandbox with the probed mount set
   - Paths: `evidence/ise/builder-notes.md`; the copy mounted at `/work`.
   - Acceptance: the sandbox starts with the exact `bwrap` invocation from
     `design.md` `## Clean-Room Builder Boundary`; inside it `cargo --version`
@@ -344,9 +344,9 @@ Batch: pre-trial-inputs'
     builder's own file tools run outside the sandbox, so the mount set and the
     builder notes are the control, and the design does not claim the mount
     enforces read isolation.
-  - [ ] COMMIT: `___` -- Batch: clean-room-build
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: clean-room-build
 
-- [ ] Rebuild the binary in the copy from the Specification and the disclosed inputs
+- [x] Rebuild the binary in the copy from the Specification and the disclosed inputs
   - Paths: the copy only; `evidence/ise/builder-notes.md`.
   - Acceptance: the builder authors `Cargo.toml`, `Cargo.lock`, `src/**`, and
     `assets/**` from the Specification plus the five disclosed inputs, and any
@@ -368,9 +368,9 @@ Batch: pre-trial-inputs'
     infrastructure, not product construction); the embedded tree is
     `rust_embed`'s `#[folder = "assets/"]` plus five `include_str!` compile
     inputs.
-  - [ ] COMMIT: `___` -- Batch: clean-room-build
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: clean-room-build
 
-- [ ] Verify the copy after the build and record the rebuilt version
+- [x] Verify the copy after the build and record the rebuilt version
   - Paths: `evidence/ise/compare-after.txt`, `evidence/ise/rebuilt-version.txt`
   - Run:
     ```sh
@@ -391,11 +391,11 @@ Batch: pre-trial-inputs'
   - Design constraints: the comparison allows added source and refuses an added
     Specification path or a deleted kept path; the rebuilt binary is evidence and
     is never installed or promoted.
-  - [ ] COMMIT: `___` -- Batch: clean-room-build
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: clean-room-build
 
 ## Batch: frozen-acceptance
 
-- [ ] Run the frozen End-to-end package against the rebuilt binary
+- [x] Run the frozen End-to-end package against the rebuilt binary
   - Paths: `evidence/ise/e2e-result.json`
   - Run:
     ```sh
@@ -421,11 +421,11 @@ Batch: pre-trial-inputs'
   - Design constraints: D3; the runner selects the tier and the package
     explicitly, refuses a zero-scenario, failed, or skipped run, and writes the
     scoped result file.
-  - [ ] COMMIT: `___` -- Batch: frozen-acceptance
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: frozen-acceptance
 
 ## Batch: gap-triage
 
-- [ ] Classify every difference before any edit
+- [x] Classify every difference before any edit
   - Paths: `evidence/ise/spec-gaps.md`
   - Acceptance: one row per failing scenario, each with the frozen scenario
     title, the failing step, the observed result, the expected result, the
@@ -445,9 +445,9 @@ Batch: pre-trial-inputs'
   - Design constraints: D2 (classify before repair, one outcome and one wrong
     artifact before any edit); `create-change/spec-gap` guidance; only
     `specification defect` is a gap in the Specification.
-  - [ ] COMMIT: `___` -- Batch: gap-triage
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: gap-triage
 
-- [ ] Route each implementation defect back to the builder inside the same trial
+- [x] Route each implementation defect back to the builder inside the same trial
   - Paths: the copy; `evidence/ise/spec-gaps.md`,
     `evidence/ise/compare-after.txt`, `evidence/ise/e2e-result.json`.
   - Acceptance: no edit to `givn/specs/**`, `givn/specification.yaml`,
@@ -459,9 +459,9 @@ Batch: pre-trial-inputs'
   - Design constraints: D2's `implementation defect` route; D7 (a defect in the
     builder's authored file is repaired in the copy, never by changing the
     Specification).
-  - [ ] COMMIT: `___` -- Batch: gap-triage
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: gap-triage
 
-- [ ] Restart the trial after an `E2E test defect`
+- [x] Restart the trial after an `E2E test defect`
   - Paths: the corrected `e2e/**` file; regenerated
     `evidence/ise/e2e-inventory.md` and `evidence/ise/spec-coverage.json`; a new
     `/tmp` copy and manifest; `evidence/ise/trial-revision.txt`.
@@ -480,9 +480,9 @@ Batch: pre-trial-inputs'
     restarts after the test is corrected; a scenario is frozen only after it was
     observed failing against the pre-change implementation for the intended
     reason; D1's restart rule.
-  - [ ] COMMIT: `___` -- Batch: gap-triage
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: gap-triage
 
-- [ ] Record the disclosed-input specification defect
+- [x] Record the disclosed-input specification defect
   - Paths: `evidence/ise/spec-gaps.md`
   - Acceptance: exactly one `specification defect` row naming
     `givn/specification.yaml` as the wrong artifact and the surface the builder
@@ -493,11 +493,11 @@ Batch: pre-trial-inputs'
   - Design constraints: D7 (the trial records that the five inputs are not
     derivable from the Specification); the row names the artifact that should
     declare the surface, never who found it.
-  - [ ] COMMIT: `___` -- Batch: gap-triage
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: gap-triage
 
 ## Batch: evidence-commit
 
-- [ ] Record the trial revision and commit the trial evidence
+- [x] Record the trial revision and commit the trial evidence
   - Paths: `givn/changes/enable-ise-and-run-the-givn-self-rebuild/evidence/ise/`
     (every file the trial produced, `trial-revision.txt` included), the corrected
     test if an `E2E test defect` occurred, and `tasks.md` ticks.
@@ -515,9 +515,9 @@ Batch: pre-trial-inputs'
     `givn/history/`.
   - Design constraints: D1 (the revision is recorded explicitly and cannot
     live in the revision it names); D2 and the proposal's evidence list.
-  - [ ] COMMIT: `___` -- Batch: evidence-commit
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: evidence-commit
 
-- [ ] Verify both suite scopes on the final revision
+- [x] Verify both suite scopes on the final revision
   - Paths: none; this gate runs the configured commands.
   - Run:
     ```sh
@@ -531,11 +531,11 @@ Batch: pre-trial-inputs'
     `verify.command` and `verify.e2e_command`; the change adds no production
     code, so the suite protects existing behavior and no new scenario is
     required.
-  - [ ] COMMIT: `___` -- Batch: evidence-commit
+  - [x] COMMIT: `1b1c108f06ed0c9aa8b0013b79e8d21622f82722` -- Batch: evidence-commit
 
 ## Batch: review-and-archive
 
-- [ ] Produce the review-time boundary transcript
+- [x] Produce the review-time boundary transcript
   - Paths: `evidence/ise/boundary-review-check.txt`
   - Precondition: `review.md` exists with `Review kind:`, `Reviewer context:`,
     the actual verdict, `README-IMPACT:`, and `PERSONAS:`.
@@ -559,9 +559,9 @@ Batch: pre-trial-inputs'
   - Design constraints: D6 (the not-applicable path writes no receipt; the
     boundary preflight is the acceptance check review can make); the transcript
     is boundary evidence, not suite evidence.
-  - [ ] COMMIT: `___` -- Batch: review-and-archive
+  - [x] COMMIT: `3a46c41cdd5a2091562b187a3fa43429ac2f0f63` -- Batch: review-and-archive
 
-- [ ] Run `givn archive` and record the receipts
+- [x] Run `givn archive` and record the receipts
   - Paths: `givn/archive/enable-ise-and-run-the-givn-self-rebuild/`
   - Run:
     ```sh
@@ -581,11 +581,11 @@ Batch: pre-trial-inputs'
   - Design constraints: `specs` is skipped (`.givn-skip`) and the proposal
     declares `Behavior change: none`; no trial file enters the checkout except
     the recorded evidence; nothing is installed, tagged, or released.
-  - [ ] COMMIT: `___` -- Batch: review-and-archive
+  - [x] COMMIT: `3a46c41cdd5a2091562b187a3fa43429ac2f0f63` -- Batch: review-and-archive
 
 ## Batch: self-dogfood
 
-- [ ] Correct the stale self-dogfood command in `AGENTS.md`
+- [x] Correct the stale self-dogfood command in `AGENTS.md`
   - Paths: `AGENTS.md` `## Self-dogfood after each change`.
   - Change: `./run-tests.sh --e2e` becomes
     `./run-tests.sh --e2e --package e2e`. `run-tests.sh` refuses the former with
@@ -598,9 +598,9 @@ Batch: pre-trial-inputs'
     design-review advisory applied; `AGENTS.md` is project-owned content outside
     the generated `givn` block, so no served guidance changes and no delta
     scenario belongs to this edit.
-  - [ ] COMMIT: `___` -- Batch: self-dogfood
+  - [x] COMMIT: `3a46c41cdd5a2091562b187a3fa43429ac2f0f63` -- Batch: self-dogfood
 
-- [ ] Run the self-dogfood sequence and commit its transcript
+- [x] Run the self-dogfood sequence and commit its transcript
   - Paths: `givn/archive/enable-ise-and-run-the-givn-self-rebuild/evidence/ise/self-dogfood.txt`
   - Run, from the corrected `AGENTS.md`:
     ```sh
@@ -618,4 +618,4 @@ Batch: pre-trial-inputs'
   - Design constraints: `design.md` Verification item 10 and the post-archive
     record rule; the sequence runs after archive, so the installed binary and
     the regenerated skills are current before the next change starts.
-  - [ ] COMMIT: `___` -- Batch: self-dogfood
+  - [x] COMMIT: `3a46c41cdd5a2091562b187a3fa43429ac2f0f63` -- Batch: self-dogfood
