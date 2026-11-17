@@ -520,7 +520,7 @@ The batch runs the design's verification plan items 4 to 7. The `givn check
 tasks` run needs a clean committed tree before it starts, so C4 lands the suite
 evidence first; C5 lands the receipt and the gate evidence.
 
-- [ ] Run the nine prefixed single-scenario commands
+- [x] Run the nine prefixed single-scenario commands
   - Paths: none; paste the nine summaries in this task.
   - Run the design's exact command, changing only the feature path and the
     scenario title:
@@ -565,9 +565,9 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Design constraints: design `## Test runner and strict mode`; every command
     names its corpus through `GIVN_FEATURES`; the bare runner cannot assert a
     count, so the printed summary is the evidence.
-  - [ ] COMMIT: `___` -- Batch: verification
+  - [x] COMMIT: `8bb50f67ed1821d4b2c6186334620c5b313affa6` -- Batch: verification
 
-- [ ] Run the delta suite
+- [x] Run the delta suite
   - Run:
     ```sh
     GIVN_FEATURES=givn/changes/align-ise-rules-with-passuff-evidence/specs \
@@ -584,9 +584,9 @@ evidence first; C5 lands the receipt and the gate evidence.
     ```
   - Design constraints: design `## Verification plan` item 2; the delta batch
     is the change's own behavior corpus.
-  - [ ] COMMIT: `___` -- Batch: verification
+  - [x] COMMIT: `8bb50f67ed1821d4b2c6186334620c5b313affa6` -- Batch: verification
 
-- [ ] Run the permanent scope before archive
+- [x] Run the permanent scope before archive
   - Run:
     ```sh
     GIVN_FEATURES=givn/specs ./run-tests.sh --non-e2e
@@ -606,9 +606,9 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Design constraints: design `## Verification plan` item 5; the permanent
     bodies are written in batch 1 so no permanent scenario carries an unbound
     step before archive.
-  - [ ] COMMIT: `___` -- Batch: verification
+  - [x] COMMIT: `8bb50f67ed1821d4b2c6186334620c5b313affa6` -- Batch: verification
 
-- [ ] Run the E2E scope before archive
+- [x] Run the E2E scope before archive
   - Run:
     ```sh
     GIVN_FEATURES=givn/specs ./run-tests.sh --e2e --package e2e
@@ -628,7 +628,7 @@ evidence first; C5 lands the receipt and the gate evidence.
   - Design constraints: design `## Verification plan` item 6 and the design's
     E2E smoke test infrastructure section; the change adds no runner
     configuration and no `@e2e` scenario.
-  - [ ] COMMIT: `___` -- Batch: verification
+  - [x] COMMIT: `8bb50f67ed1821d4b2c6186334620c5b313affa6` -- Batch: verification
 
 - [ ] Run the change gate
   - Precondition: the batch 3 suite tasks are ticked, their evidence is pasted,
@@ -647,6 +647,26 @@ evidence first; C5 lands the receipt and the gate evidence.
     `declares zero scenarios`. The `⚠ task preflight: review.md is missing`
     warning is expected until batch 4 writes `review.md`. Paste the output and
     the receipt's counts. The receipt and this task's tick are committed as C5.
+  - Evidence:
+    ```text
+    $ givn check tasks --change align-ise-rules-with-passuff-evidence
+    [Summary]
+    2 features
+    9 scenarios (9 passed)
+    55 steps (55 passed)
+      ✓ change verification receipt: 9 scenario(s), 0 failed, 0 skipped at 8bb50f67ed1821d4b2c6186334620c5b313affa6
+      ✓ E2E verification: not_applicable
+      ✓ verify passed
+    exit 0
+
+    verification/tasks-result.json
+    {"failed":0,"passed":9,"scope":"change","skipped":0,"total":9}
+
+    verification/tasks-verification.json
+    "status": "passed", "head": "8bb50f67ed1821d4b2c6186334620c5b313affa6",
+    "result": {"scope": "change", "total": 9, "passed": 9, "failed": 0, "skipped": 0},
+    "e2e_scope": {"status": "not_applicable"}
+    ```
   - Design constraints: design `## Verification plan` item 4; the change gate
     is the receipt the review and archive read.
   - [ ] COMMIT: `___` -- Batch: verification

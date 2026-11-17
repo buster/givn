@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "change": "align-ise-rules-with-passuff-evidence",
+  "status": "passed",
+  "head": "8bb50f67ed1821d4b2c6186334620c5b313affa6",
+  "features_path": "givn/changes/align-ise-rules-with-passuff-evidence/specs",
+  "features_digest": "dd04dfe3304603b69a01ec15fe8af0524386137d1194e8c95c763c3d4bd30b18",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "cab53d3470693f8cf66f4cc48c2364d70292cf362447bc1c22a4e3519e99bc2a",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "skipped": 0
+  },
+  "e2e_identity": {
+    "package_digests": {
+      "e2e": "e28bcc31683350cb759845e6725183290ace6431125dc0380455c744e5acbfce"
+    },
+    "runner_command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+    "givn_version": "0.9.20"
+  },
+  "e2e_scope": {
+    "status": "not_applicable",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0
+  },
+  "finished_at_unix": 1794943276
+}
