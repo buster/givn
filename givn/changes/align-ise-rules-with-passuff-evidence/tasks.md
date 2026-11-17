@@ -630,7 +630,7 @@ evidence first; C5 lands the receipt and the gate evidence.
     configuration and no `@e2e` scenario.
   - [x] COMMIT: `8bb50f67ed1821d4b2c6186334620c5b313affa6` -- Batch: verification
 
-- [ ] Run the change gate
+- [x] Run the change gate
   - Precondition: the batch 3 suite tasks are ticked, their evidence is pasted,
     and C4 is committed; the tree is clean (`git status --porcelain` prints
     nothing) because `run_change_verification` refuses a dirty tree. Every one
@@ -669,7 +669,7 @@ evidence first; C5 lands the receipt and the gate evidence.
     ```
   - Design constraints: design `## Verification plan` item 4; the change gate
     is the receipt the review and archive read.
-  - [ ] COMMIT: `___` -- Batch: verification
+  - [x] COMMIT: `3d8f62e39e577154edae24718922baf557c3c7a2` -- Batch: verification
 
 ## Batch 4: `review-and-archive`
 
