@@ -984,18 +984,57 @@ for the `@e2e` scenario slug below.
 ### Batch 7: `checksums`
 
 Files modified: `src/ise/manifest.rs`, `src/ise/mod.rs`,
-`src/gherkin/content.rs` (verify only; `e2e_scenario_digest` already hashes the
-stated layout), `tests/steps/clean_room_preparation_steps.rs`,
+`src/gherkin/content.rs` (the pinned richer checksum requires dropping the two
+delimiter-adjacent docstring breaks, so the digest rule was corrected here),
+`docs/reference.md`, `docs/arc42/08-crosscutting-concepts.md` (the stated
+docstring rule corrected to match the pinned bytes),
+`tests/steps/clean_room_preparation_steps.rs`,
 `tests/steps/ise_clean_room_support.rs`.
 
-- [ ] Evidence for this batch: paste the RED run for `Preparation records the
+- [x] Evidence for this batch: paste the RED run for `Preparation records the
       canonical checksums for a pinned fixture` and the GREEN run of all three
       scenarios, with the full 64-hex values visible.
       ```text
-      <!-- paste: RED command + first failing map row; GREEN commands + pass summary -->
+      RED (before implementation):
+      $ GIVN_FEATURES=givn/changes/strengthen-ise-specification cargo nextest run --locked --test features_runner \
+          'specs/prepare-an-ise-test/clean-room-preparation.feature::Preparation records the canonical checksums for a pinned fixture'
+      ✘ the manifest's scenario checksum for "givn/specs/demo.feature" is "791f7b34…88006c"
+        left: None
+       right: Some("791f7b34866c710ad541e06fb1d354d3ed4fedd7c46404465183d0a68d88006c")
+
+      $ GIVN_FEATURES=givn/changes/strengthen-ise-specification cargo nextest run --locked --test features_runner \
+          'specs/prepare-an-ise-test/clean-room-preparation.feature::Preparation checksums a repository link in the End-to-end set'
+      ✘ the command succeeds and prints "End-to-end tests: not copied (2 files)"
+        left: Some(1)
+       right: Some(0)
+        stderr=ise rebuild-all: 'tests/e2e/vendor/dep' is a repository link; a clean-room trial copies no repository link
+
+      GREEN:
+      $ GIVN_FEATURES=givn/changes/strengthen-ise-specification cargo nextest run --locked --test features_runner \
+          'specs/prepare-an-ise-test/clean-room-preparation.feature::Preparation records the canonical checksums' \
+          'specs/prepare-an-ise-test/clean-room-preparation.feature::Preparation checksums a repository link in the End-to-end set'
+      PASS …::Preparation records the canonical checksums for a pinned fixture
+      PASS …::Preparation checksums a repository link in the End-to-end set
+      PASS …::Preparation records the canonical checksums for a richer feature
+      Summary [1.017s] 3 tests run: 3 passed, 95 skipped
+
+      Pinned values asserted: scenario 791f7b34866c710ad541e06fb1d354d3ed4fedd7c46404465183d0a68d88006c,
+      specification 35444598f1c4238a9db8c2cdea5b5cf5391604a3608aebd6fe2e9f91f105b917,
+      end-to-end 00580162d8a019161c476e2772c5a85e7506fc0c254cbc28424299343b479b07,
+      richer scenario d5e995848ed1491e131b5f13504c3295e79f23646909ff5d4fb3b548d03e0520,
+      richer specification c1102713bbf0a24482eaf6e3b8ff5b787ffa32d9ff414dc1c9434cba7a192e0e,
+      richer end-to-end 2c16dfedf4203acf3a1d2f67340b4897d5e1c04c26a8d212fa95f1b8e0eb2844.
+
+      Byte mismatch found before GREEN: the parser keeps the line break after the
+      opening docstring delimiter and the one before the closing delimiter, so the
+      pre-batch `e2e_scenario_digest` produced `c24173c6…70b71a` for the richer
+      feature while the pinned value is `d5e99584…e0520` and the design's
+      Independent Second Implementation records the docstring as
+      `"line one\n  indented\nline four"`. `content.rs` now drops exactly those two
+      breaks; the two stated rules name that normalization. No pinned value changed.
       ```
 
-- [ ] Scenario: `Preparation records the canonical checksums for a pinned fixture`
+- [x] Scenario: `Preparation records the canonical checksums for a pinned fixture`
   - Design constraints: `canonical_checksum_project()` writes the normative
     bytes from the use-case example, excludes `givn/config.yaml` through
     `.git/info/exclude`, and commits; Then the manifest's scenario checksum for
@@ -1006,9 +1045,9 @@ stated layout), `tests/steps/clean_room_preparation_steps.rs`,
     rollups; no helper imports `crate::ise`.
   - Files: `src/ise/manifest.rs`, `tests/steps/ise_clean_room_support.rs`,
     `tests/steps/clean_room_preparation_steps.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `checksums`
+  - [x] COMMIT: `1c6439a26121b42b375a4ffdbc8446a8300e49be` -- Batch: `checksums`
 
-- [ ] Scenario: `Preparation records the canonical checksums for a richer feature`
+- [x] Scenario: `Preparation records the canonical checksums for a richer feature`
   - Design constraints: `rich_checksum_project()` replaces the feature with the
     background, docstring with delimiter-adjacent breaks, escaped table, and
     outline; Then the scenario checksum is `d5e99584…e0520`,
@@ -1016,9 +1055,9 @@ stated layout), `tests/steps/clean_room_preparation_steps.rs`,
     `2c16dfed…2844`. Contract: the scenario checksum hashes title, NUL,
     executable content, NUL per selected scenario in file order.
   - Files: `src/ise/manifest.rs`, `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `checksums`
+  - [x] COMMIT: `1c6439a26121b42b375a4ffdbc8446a8300e49be` -- Batch: `checksums`
 
-- [ ] Scenario: `Preparation checksums a repository link in the End-to-end set`
+- [x] Scenario: `Preparation checksums a repository link in the End-to-end set`
   - Design constraints: `e2e: ["tests/e2e"]`, a committed
     `tests/e2e/Cargo.toml` and a gitlink at `tests/e2e/vendor/dep`; Then
     `End-to-end tests: not copied (2 files)`, the copy omits the gitlink, and
@@ -1027,7 +1066,7 @@ stated layout), `tests/steps/clean_room_preparation_steps.rs`,
     copy set still refuses.
   - Files: `src/ise/manifest.rs`, `src/ise/mod.rs`,
     `tests/steps/ise_clean_room_support.rs`.
-  - [ ] COMMIT: `<hash>` -- Batch: `checksums`
+  - [x] COMMIT: `1c6439a26121b42b375a4ffdbc8446a8300e49be` -- Batch: `checksums`
 
 ### Batch 8: `write-targets`
 
