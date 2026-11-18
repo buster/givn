@@ -2,7 +2,9 @@
 
 Review kind: self-review
 Author: Main (omp session)
-Reviewer context: Main (self-review; the same context performs the final review)
+Reviewer context: Main (omp session)
+
+The author performed the design review and the final review in the same context.
 
 ## Grilling
 
