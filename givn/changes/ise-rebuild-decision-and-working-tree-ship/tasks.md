@@ -45,13 +45,14 @@ existing behaviour protected and manufactures no production diff.
 
 ## Setup
 
-- [ ] **C1 — Commit the plan.** `givn commit` the change directory (this file,
-  `proposal.md`, `specs/`, `design.md`, `arc42.md`, `design-review.md`,
-  `evidence/`).
+- [x] **C1 — Commit the plan.** `givn commit` the change directory (this file,
+  `proposal.md`, `design.md`, `arc42.md`, `design-review.md`, `evidence/`).
 
   Design constraints: none.
 
-- [ ] **C2 — Confirm the runner and strict mode.** `verify.command` is
+  `COMMIT: 320c9a1 -- Batch: setup`
+
+- [x] **C2 — Confirm the runner and strict mode.** `verify.command` is
   `./run-tests.sh --non-e2e`; `verify.e2e_command` is
   `./run-tests.sh --e2e --package e2e`. `tests/features_runner.rs` calls
   `.fail_on_skipped()`; a skipped or undefined regular step fails the run. The
@@ -62,14 +63,14 @@ existing behaviour protected and manufactures no production diff.
   `GIVN_FEATURES=givn/specs GIVN_CUCUMBER_TAGS='not @e2e and not @givn.removed'`:
   `1117 tests run: 1117 passed, 115 skipped`.
 
-  `COMMIT: ___ -- Batch: setup`
+  `COMMIT: 0e5c905 -- Batch: setup`
 
-- [ ] **C3 — Confirm the single-scenario command.** Run one delta scenario with
+- [x] **C3 — Confirm the single-scenario command.** Run one delta scenario with
   `GIVN_FEATURES=givn/changes/ise-rebuild-decision-and-working-tree-ship/specs
   GIVN_CUCUMBER_TAGS='not @e2e and not @givn.removed' cargo nextest run --locked
   --test features_runner -E 'test("...")'`.
 
-  `COMMIT: ___ -- Batch: setup`
+  `COMMIT: 0e5c905 -- Batch: setup`
 
 ## Batch `working-tree-ship-guidance`
 
@@ -80,7 +81,7 @@ two delta feature files and the two permanent step files.
 
 ### Scenario: The ise instruction teaches the working-tree ship sequence
 
-- [ ] **Given** an ise-enabled project, **When** the consumer requests the `ise`
+- [x] **Given** an ise-enabled project, **When** the consumer requests the `ise`
   instruction, **Then** the served instruction teaches the five steps in order
   and states the non-requirements.
 
@@ -91,68 +92,68 @@ two delta feature files and the two permanent step files.
   revision, early archive merge, generated spec-copy manifest, history-hiding
   repository view, or sandbox is required. D5.
 
-  `COMMIT: ___ -- Batch: working-tree-ship-guidance`
+  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
 
 ### Scenario: The ise instruction states the working-tree ship limitation
 
-- [ ] **Then** the served instruction states that a passing verification proves
+- [x] **Then** the served instruction states that a passing verification proves
   tested behaviour and does not prove the Specification alone was sufficient.
 
   Design constraints: `ise.md` "Limitation" paragraph. D6. No clean-room claim
   for the working-tree path.
 
-  `COMMIT: ___ -- Batch: working-tree-ship-guidance`
+  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
 
 ### Scenario: The ise instruction distinguishes the working-tree ship from copy preparation
 
-- [ ] **Then** the served instruction states that the working-tree ship rebuilds
+- [x] **Then** the served instruction states that the working-tree ship rebuilds
   in the current project working tree and that the spec-copy commands prepare an
   external copy and never edit the working tree.
 
   Design constraints: `ise.md` "Two rebuild practices" and "Commands"; D5 keeps
   `givn ise rebuild-component` as an external-copy preparer.
 
-  `COMMIT: ___ -- Batch: working-tree-ship-guidance`
+  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
 
 ### Scenario: The ise instruction restarts verification when the Specification changes after a rebuild starts
 
-- [ ] **Then** the served instruction states that a changed Specification or E2E
+- [x] **Then** the served instruction states that a changed Specification or E2E
   suite records a new frozen revision and reruns the relevant verification.
 
   Design constraints: `ise.md` limitation section; D5. The acceptance target is
   never moved to make the rebuilt code pass.
 
-  `COMMIT: ___ -- Batch: working-tree-ship-guidance`
+  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
 
 ### Scenario: The ise instruction cites the principle source
 
-- [ ] **Then** the served instruction cites `https://iseprinciple.org`.
+- [x] **Then** the served instruction cites `https://iseprinciple.org`.
 
   Design constraints: `ise.md` first paragraph; the site is framework-agnostic
   and names no Givn command, flag, or record.
 
-  `COMMIT: ___ -- Batch: working-tree-ship-guidance`
+  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
 
 ### Scenario: The design guidance names the working-tree ship practice
 
-- [ ] **Then** the served design guidance states that a Single-Component Rebuild
+- [x] **Then** the served design guidance states that a Single-Component Rebuild
   with `Rebuilt code: ship` follows the working-tree sequence and names the `ise`
   instruction as the owner.
 
   Design constraints: `design.md` decision block; D5. The design instruction
   points at the `ise` instruction and does not restate the sequence.
 
-  `COMMIT: ___ -- Batch: working-tree-ship-guidance`
+  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
 
 ### Scenario: The design guidance omits the Rebuilt code line for No rebuild
 
-- [ ] **Then** the served design guidance states that a `No rebuild` change
+- [x] **Then** the served design guidance states that a `No rebuild` change
   records no `Rebuilt code` line.
 
   Design constraints: `design.md` decision block; D1 and D8. A rebuilding change
   records `discard` or `ship`.
 
-  `COMMIT: ___ -- Batch: working-tree-ship-guidance`
+  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
 
 ## Verification
 
