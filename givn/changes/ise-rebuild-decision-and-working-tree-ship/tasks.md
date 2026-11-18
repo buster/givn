@@ -184,17 +184,17 @@ two delta feature files and the two permanent step files.
 
   - [x] COMMIT: 1c95772 -- Batch: review-and-archive
 
-- [ ] **C5 — Archive.** `givn archive --change
+- [x] **C5 — Archive.** `givn archive --change
   ise-rebuild-decision-and-working-tree-ship` publishes the proven archive.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: ebede7 -- Batch: review-and-archive
 
-- [ ] **C5 — Post-archive suites.** Run the regular and e2e suites against the
+- [x] **C5 — Post-archive suites.** Run the regular and e2e suites against the
   merged corpus; both exit 0.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: ebede7 -- Batch: review-and-archive
 
-- [ ] **C5 — Self-dogfood.** Install the checkout's binary, `givn skills sync`,
+- [x] **C5 — Self-dogfood.** Install the checkout's binary, `givn skills sync`,
   `givn instructions`, and the required suites per `AGENTS.md`.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: ebede7 -- Batch: review-and-archive
