@@ -19,3 +19,18 @@ Feature: ise-rebuild-decision
     Then  the command exits 0
     And  the served design-review guidance keeps a rebuilding change with no recorded Rebuilt code line a finding
     And  the served design-review guidance keeps an unresolved Ise rebuild decision a finding
+
+  @ise-rebuild-decision
+  Scenario: The design guidance names the working-tree ship practice
+    Given  a Givn project with the ise addon enabled and the skills synchronized
+    When  the consumer requests the design guidance for an active change
+    Then  the command exits 0
+    And  the served design guidance states that a Single-Component Rebuild with `Rebuilt code: ship` follows the working-tree sequence
+    And  the served design guidance names the `ise` instruction as the owner of that sequence
+
+  @ise-rebuild-decision
+  Scenario: The design guidance omits the Rebuilt code line for No rebuild
+    Given  a Givn project with the ise addon enabled and the skills synchronized
+    When  the consumer requests the design guidance for an active change
+    Then  the command exits 0
+    And  the served design guidance states that a No rebuild change records no Rebuilt code line
