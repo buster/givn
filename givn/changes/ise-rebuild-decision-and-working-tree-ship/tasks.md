@@ -179,10 +179,10 @@ two delta feature files and the two permanent step files.
 
 ## Review and archive
 
-- [ ] **C4 — Independent review.** The reviewer context `agent://DesignReviewIseVocab`
+- [x] **C4 — Independent review.** The reviewer context `agent://DesignReviewIseVocab`
   performs the final review and writes `review.md` with `REVIEW: PASS`.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: 1c95772 -- Batch: review-and-archive
 
 - [ ] **C5 — Archive.** `givn archive --change
   ise-rebuild-decision-and-working-tree-ship` publishes the proven archive.
