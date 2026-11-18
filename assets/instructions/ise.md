@@ -1,8 +1,10 @@
 # Instruction: ise
 
-The `ise` addon governs a System that can be rebuilt: its `Specification`
-stays declared while the `Source code` behind it is replaceable. This
-instruction names the obligations every ise change carries.
+The `ise` addon applies [The Ise Principle](https://iseprinciple.org) to a
+Givn project: a System whose `Specification` stays declared while the `Source
+code` behind it is replaceable. The site is framework-agnostic and does not
+depend on Givn. This instruction names the obligations every ise change
+carries.
 
 **Opt-in.** This instruction applies while `addons.ise` is enabled in
 `givn/config.yaml`. `givn instructions ise` refuses by name while the addon is

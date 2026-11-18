@@ -101,9 +101,11 @@ fail if the project configuration drifts from the record. An operator can use
 | `givn/commands.yaml` | Define project-specific test runner, coverage, and startup commands. |
 | `givn skills sync` | Regenerate agent skill files after changing config. |
 | `givn commit -m "<msg>" <paths...>` | Commit explicit paths for a behavior batch without sweeping in unrelated working-tree edits. |
-| `givn ise rebuild-all --into <dir> [--manifest <file>]` | Write the spec copy in which the whole product is rebuilt: every declared source root is removed from it. |
-| `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the manifest and the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. |
+| `givn ise rebuild-all --into <dir> [--manifest <file>]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. |
+| `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. |
+| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. |
+
+The `ise` addon applies [The Ise Principle](https://iseprinciple.org) to a Givn project. The site is framework-agnostic and does not depend on Givn.
 
 ## Documentation
 
