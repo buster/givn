@@ -56,6 +56,15 @@ fn served_design_points_at_the_ise_instruction(world: &mut GivnWorld) {
     );
 }
 
+#[then("the served design guidance states that a No rebuild change records no Rebuilt code line")]
+fn served_design_omits_rebuilt_code_for_no_rebuild(world: &mut GivnWorld) {
+    let content = served_guidance(world);
+    assert!(
+        content.contains("A `No rebuild` change records no `Rebuilt code` line"),
+        "the served design guidance does not omit the Rebuilt code line for No rebuild: {content}"
+    );
+}
+
 #[then(
     "the served design-review guidance keeps a rebuilding change with no recorded Rebuilt code line a finding"
 )]

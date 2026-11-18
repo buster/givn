@@ -4046,7 +4046,7 @@ fn served_instruction_teaches_working_tree_sequence(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the served instruction states that no spec copy, candidate revision, early archive merge, generated spec-copy manifest, history-hiding repository view, or sandbox is required"
+    "the served instruction states that no spec copy, candidate revision, early archive merge, generated spec-copy manifest, repository view that hides history, or sandbox is required"
 )]
 fn served_instruction_states_ship_needs_no_copy(world: &mut GivnWorld) {
     assert_served_text_contains(
@@ -4106,6 +4106,11 @@ fn served_instruction_requires_new_frozen_revision(world: &mut GivnWorld) {
 #[then("the served instruction states that the relevant verification reruns against it")]
 fn served_instruction_reruns_verification(world: &mut GivnWorld) {
     assert_served_text_contains(world, &["rerun the relevant verification"]);
+}
+
+#[then("the served instruction cites https://iseprinciple.org")]
+fn served_instruction_cites_the_principle(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["https://iseprinciple.org"]);
 }
 
 fn active_project(world: &GivnWorld) -> &crate::common::TestEnv {
