@@ -92,7 +92,7 @@ unreachable revision fails review and archive.
 
 - [x] Adversarial result-path checks.
   - Evidence: `tests/ise_component_tier_gate.rs` — 12 passed: missing runner, exact counts, mismatch, not-run, read-only compare, reserved contract path, `../copy/trial.json` escape, a broken symlink result path, a foreign-product End-to-end result, a product path outside the copy, a product parent symlink outside the copy, and a contract change during the scripts.
-  - COMMIT: `bdc01ecb64c74682b62c06e0020b7d2052522a51` -- Batch: component-tier-gate
+  - COMMIT: `c58e61d60117a41ed624368c7ee8850f8de048f6` -- Batch: component-tier-gate-hardening
 
 ## Closeout
 
