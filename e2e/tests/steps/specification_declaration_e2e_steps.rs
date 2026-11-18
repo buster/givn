@@ -1,4 +1,4 @@
-//! E2E step definitions for the `specification-declaration` capability.
+//! E2E step definitions for the `specification-manifest` capability.
 //!
 //! The scenario drives the real `givn lint` against a project-owned
 //! declaration and reads its recorded output; it never imports
@@ -20,7 +20,7 @@ source: [\"src/**\", \"tests/**\"]
 ";
 
 #[given(
-    "an ise-enabled project selecting opencode with a declaration naming the five roles and two source roots"
+    "an ise-enabled project selecting opencode with a Specification Manifest naming the five categories and two source roots"
 )]
 fn ise_enabled_project_with_declared_roles(world: &mut GivnWorld) {
     let env = common::make_init_root();
@@ -35,7 +35,7 @@ fn ise_enabled_project_with_declared_roles(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[then("stderr contains no declaration-schema error")]
+#[then("stderr contains no manifest-schema error")]
 fn stderr_contains_no_declaration_schema_error(world: &mut GivnWorld) {
     let observed = stderr(world);
     assert!(
@@ -44,7 +44,7 @@ fn stderr_contains_no_declaration_schema_error(world: &mut GivnWorld) {
     );
 }
 
-#[then("stderr contains the declared-path advisory for the contracts role")]
+#[then("stderr contains the declared-path advisory for the contracts category")]
 fn stderr_contains_the_contracts_role_advisory(world: &mut GivnWorld) {
     let observed = stderr(world);
     let expected = "the 'contracts' role declares 'docs/reference.md', which matches no path in \
