@@ -26,19 +26,19 @@ The served ise instruction defines its rebuild vocabulary inline, so an ise-enab
 
 ## Setup
 
-- [ ] **C1 — Commit the plan.** `givn commit` the change directory (this file, `proposal.md`, `design.md`, `arc42.md`, `design-review.md`).
+- [x] **C1 — Commit the plan.** `givn commit` the change directory (this file, `proposal.md`, `design.md`, `arc42.md`, `design-review.md`).
 
   Design constraints: none.
 
-  - [ ] COMMIT: ___ -- Batch: setup
+  - [x] COMMIT: bcaab9c -- Batch: setup
 
-- [ ] **C2 — Confirm the runner and strict mode.** `verify.command` is `./run-tests.sh --non-e2e`; `verify.e2e_command` is `./run-tests.sh --e2e --package e2e`. `.fail_on_skipped()` is present on both runners.
+- [x] **C2 — Confirm the runner and strict mode.** `verify.command` is `./run-tests.sh --non-e2e`; `verify.e2e_command` is `./run-tests.sh --e2e --package e2e`. `.fail_on_skipped()` is present on both runners.
 
-  - [ ] COMMIT: ___ -- Batch: setup
+  - [x] COMMIT: bcaab9c -- Batch: setup
 
-- [ ] **C3 — Confirm the single-scenario command.** Run one delta scenario with the design's `GIVN_FEATURES=... cargo nextest run --locked --test features_runner -E 'test(...)'`.
+- [x] **C3 — Confirm the single-scenario command.** Run one delta scenario with the design's `GIVN_FEATURES=... cargo nextest run --locked --test features_runner -E 'test(...)'`.
 
-  - [ ] COMMIT: ___ -- Batch: setup
+  - [x] COMMIT: bcaab9c -- Batch: setup
 
 ## Batch `self-contained-guidance`
 
@@ -46,19 +46,19 @@ Planned proof: with the old `docs/reference.md` delegation restored, `The ise in
 
 ### Scenario: The ise instruction's file references resolve in a consumer project
 
-- [ ] **Given** an ise-enabled project with the reference check available, **When** the consumer requests the `ise` instruction, **Then** every file reference in the served text resolves in the consumer project.
+- [x] **Given** an ise-enabled project with the reference check available, **When** the consumer requests the `ise` instruction, **Then** every file reference in the served text resolves in the consumer project.
 
   Design constraints: `ise.md` "Vocabulary" defines `spec copy`, `spec-copy manifest`, `checksum`, `Rebuild impact record`, and `Replaced unit` inline. The checker is `tests/common/reference_check.rs`; the served text is the label. D1, D3.
 
-  - [ ] COMMIT: ___ -- Batch: self-contained-guidance
+  - [x] COMMIT: b2f586c -- Batch: self-contained-guidance
 
 ### Scenario: Printed guidance omits the opt-in ise rules
 
-- [ ] **Given** an ise-off project with an active change and the reference check available, **When** the author requests every printed instruction, **Then** `Ise rebuild decision`, `Rebuilt code`, `Spec gap`, `Rebuild impact record`, `Specification Manifest`, and `Ise Test` are absent.
+- [x] **Given** an ise-off project with an active change and the reference check available, **When** the author requests every printed instruction, **Then** `Ise rebuild decision`, `Rebuilt code`, `Spec gap`, `Rebuild impact record`, `Specification Manifest`, and `Ise Test` are absent.
 
   Design constraints: the conditional `{{#if addons.ise}}` blocks must stay off; the corpus includes the startup guidance and the graph artifacts. D2.
 
-  - [ ] COMMIT: ___ -- Batch: self-contained-guidance
+  - [x] COMMIT: b2f586c -- Batch: self-contained-guidance
 
 ## Verification
 
