@@ -36,10 +36,12 @@ verify:
   e2e_command: "givn missing-e2e-runner"  # unconfigured sentinel
 
   # --- Rebuilt product binding (whole-system Ise trial) ----------------------
-  # The product path relative to the spec copy. `givn ise verify-trial`
-  # requires this file after the component command, hashes it, passes its
-  # absolute path in `product_env`, and requires the End-to-end result to name
-  # the same bytes and every declared scenario title.
+  # The product path relative to the spec copy: a regular file or a directory
+  # of binaries. `givn ise verify-trial` requires it after the component
+  # command, hashes the file bytes or the directory tree, passes its absolute
+  # path in `product_env`, and requires the End-to-end result to name the same
+  # path and digest. `product_env` is the project's variable, for example
+  # `GIVN_BIN` or `PASSUFF_BIN_DIR`.
   # product_path: "target/debug/my-product"
   # product_env: "GIVN_BIN"
 

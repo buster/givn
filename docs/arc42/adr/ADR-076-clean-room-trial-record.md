@@ -268,10 +268,9 @@ declared counts, zero failed and zero skipped, the rebuilt product bound by
 path and SHA-256, and declared coverage, re-checks the frozen inputs after the
 scripts, then writes `ise-trial-result/v1`. A count-only result or a foreign
 product refuses. A `--component-not-run` decision is refused when component
-units are declared. A change whose design records `Whole-system rebuild` must
-commit the clean record under `evidence/ise/trial-result.json`; `givn check
-tasks` refuses otherwise, so the workflow cannot call a whole-system change
-green without the trial gate.
+units are declared. Givn does not inspect a `givn/trials/**` or other external
+report; external and manual reports are outside Givn enforcement. Only
+`verify-trial` writes the clean `ise-trial-result/v1`.
 
 The optional `verification` field's default is absence, so an older manifest
 still compares; `verify-trial` refuses an older manifest by name because it

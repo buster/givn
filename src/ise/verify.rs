@@ -225,6 +225,23 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         }
     };
 
+    if let Some(product) = &product
+        && let Err(error) = product.ensure_unchanged()
+    {
+        let report = TrialReport {
+            scope: "ise-trial-result/v1",
+            revision: recorded.revision.clone(),
+            copy_directory: recorded.copy_directory.clone(),
+            component: component.clone(),
+            end_to_end: end_to_end.clone(),
+            coverage: None,
+            product: Some(product.report()),
+            clean: false,
+        };
+        write_result(&result, &report)?;
+        return Err(error);
+    }
+
     let coverage = match &contract.coverage {
         Some(coverage) => match run_coverage(coverage, &copy, &contract) {
             Ok(coverage) => Some(coverage),
@@ -255,6 +272,11 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         (Ok(manifest), Ok(contract)) => manifest != manifest_before || contract != contract_before,
         _ => true,
     };
+    let product_changed = product
+        .as_ref()
+        .map(ProductBinding::ensure_unchanged)
+        .transpose()
+        .err();
     let comparison_clean = matches!(
         super::compare(
             project_root,
@@ -265,7 +287,7 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         ),
         Ok(report) if report.is_clean()
     );
-    if inputs_changed || !comparison_clean {
+    if inputs_changed || product_changed.is_some() || !comparison_clean {
         let report = TrialReport {
             scope: "ise-trial-result/v1",
             revision: recorded.revision.clone(),
@@ -277,7 +299,9 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
             clean: false,
         };
         write_result(&result, &report)?;
-        bail!("the frozen inputs changed while the trial executed; the trial result is not clean");
+        bail!(
+            "the frozen inputs or rebuilt product changed while the trial executed; the trial result is not clean"
+        );
     }
 
     let report = TrialReport {
@@ -372,7 +396,9 @@ fn run_component(
         ));
     }
 
-    remove_previous(result_file);
+    if let Err(error) = remove_previous(result_file) {
+        return Err(TierFailure::new(error, failed(tier)));
+    }
     let status = crate::subprocess::sh_streamed(
         &tier.command,
         &[
@@ -460,6 +486,17 @@ struct ProductBinding {
 }
 
 impl ProductBinding {
+    fn ensure_unchanged(&self) -> Result<()> {
+        let observed = digest_product(&self.path)?;
+        if observed != self.sha256 {
+            bail!(
+                "the rebuilt product '{}' changed after the component command",
+                self.path.display()
+            );
+        }
+        Ok(())
+    }
+
     fn report(&self) -> ProductReport {
         ProductReport {
             path: self.path.to_string_lossy().into_owned(),
@@ -470,6 +507,85 @@ impl ProductBinding {
     fn text(&self) -> std::borrow::Cow<'_, str> {
         self.path.to_string_lossy()
     }
+}
+
+/// Hash a product file's bytes or a product directory's regular-file tree.
+/// Directory entries are sorted by relative path and include the executable
+/// marker, so two binaries and their modes are part of one identity.
+fn digest_product(path: &Path) -> Result<String> {
+    let metadata = std::fs::symlink_metadata(path)
+        .with_context(|| format!("read the rebuilt product '{}'", path.display()))?;
+    let file_type = metadata.file_type();
+    if file_type.is_symlink() {
+        bail!("the rebuilt product '{}' is a symlink", path.display());
+    }
+    if file_type.is_file() {
+        let bytes = std::fs::read(path)
+            .with_context(|| format!("read the rebuilt product '{}'", path.display()))?;
+        return Ok(Sha256::digest(&bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect());
+    }
+    if !file_type.is_dir() {
+        bail!(
+            "the rebuilt product '{}' is neither a regular file nor a directory",
+            path.display()
+        );
+    }
+    let mut files: Vec<(String, bool, Vec<u8>)> = Vec::new();
+    collect_product_files(path, path, &mut files)?;
+    if files.is_empty() {
+        bail!(
+            "the rebuilt product directory '{}' contains no regular file",
+            path.display()
+        );
+    }
+    files.sort_by(|left, right| left.0.cmp(&right.0));
+    let mut hasher = Sha256::new();
+    for (relative, executable, bytes) in files {
+        hasher.update(relative.as_bytes());
+        hasher.update(b"\0");
+        hasher.update(if executable { b"1" } else { b"0" });
+        hasher.update(b"\0");
+        hasher.update(&bytes);
+        hasher.update(b"\0");
+    }
+    Ok(hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
+}
+
+fn collect_product_files(
+    root: &Path,
+    directory: &Path,
+    files: &mut Vec<(String, bool, Vec<u8>)>,
+) -> Result<()> {
+    for entry in std::fs::read_dir(directory)
+        .with_context(|| format!("read the rebuilt product '{}'", directory.display()))?
+    {
+        let entry = entry?;
+        let path = entry.path();
+        let metadata = std::fs::symlink_metadata(&path)?;
+        let file_type = metadata.file_type();
+        if file_type.is_symlink() {
+            bail!("the rebuilt product '{}' is a symlink", path.display());
+        }
+        if file_type.is_dir() {
+            collect_product_files(root, &path, files)?;
+        } else if file_type.is_file() {
+            let relative = path
+                .strip_prefix(root)
+                .expect("the walk starts at the product root")
+                .to_string_lossy()
+                .replace('\\', "/");
+            let bytes = std::fs::read(&path)?;
+            files.push((relative, is_executable(&metadata), bytes));
+        }
+    }
+    Ok(())
 }
 
 /// Bind the contract's declared product path to bytes inside the copy.
@@ -485,9 +601,11 @@ fn bind_product(contract: &Contract, copy: &Path) -> Result<Option<ProductBindin
     let target = copy.join(&product.path);
     let metadata = std::fs::symlink_metadata(&target)
         .with_context(|| format!("read the rebuilt product '{}'", target.display()))?;
-    if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+    if metadata.file_type().is_symlink()
+        || !(metadata.file_type().is_file() || metadata.file_type().is_dir())
+    {
         bail!(
-            "the rebuilt product '{}' must be a regular file inside the spec copy",
+            "the rebuilt product '{}' must be a regular file or directory inside the spec copy",
             product.path
         );
     }
@@ -499,12 +617,7 @@ fn bind_product(contract: &Contract, copy: &Path) -> Result<Option<ProductBindin
             product.path
         );
     }
-    let bytes = std::fs::read(&resolved)
-        .with_context(|| format!("read the rebuilt product '{}'", resolved.display()))?;
-    let sha256 = Sha256::digest(&bytes)
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect();
+    let sha256 = digest_product(&resolved)?;
     Ok(Some(ProductBinding {
         path: resolved,
         sha256,
@@ -546,7 +659,9 @@ fn run_end_to_end(
         .as_ref()
         .map(|product| product.env.as_str())
         .unwrap_or("GIVN_BIN");
-    remove_previous(result_file);
+    if let Err(error) = remove_previous(result_file) {
+        return Err(TierFailure::new(error, failed(tier)));
+    }
     let status = match crate::subprocess::sh_streamed(
         &tier.command,
         &[
@@ -628,9 +743,9 @@ fn run_coverage(
     let non_e2e = under_copy(copy, &coverage.non_e2e_path, "coverage.non_e2e_path")?;
     let e2e = under_copy(copy, &coverage.e2e_path, "coverage.e2e_path")?;
     let output = under_copy(copy, &coverage.output_path, "coverage.output_path")?;
-    remove_previous(&non_e2e);
-    remove_previous(&e2e);
-    remove_previous(&output);
+    remove_previous(&non_e2e)?;
+    remove_previous(&e2e)?;
+    remove_previous(&output)?;
     let status = crate::subprocess::sh_streamed(
         &coverage.measure_command,
         &[
@@ -650,7 +765,9 @@ fn run_coverage(
         );
     }
     require_still_under_copy(copy, &non_e2e, "coverage.non_e2e_path")?;
-    require_still_under_copy(copy, &e2e, "coverage.e2e_path")?;
+    if e2e.exists() {
+        require_still_under_copy(copy, &e2e, "coverage.e2e_path")?;
+    }
     if output.exists() {
         require_still_under_copy(copy, &output, "coverage.output_path")?;
     }
@@ -666,26 +783,46 @@ fn run_coverage(
     }
     let component = coverage_numbers(&component_report, "measured");
 
-    let end_to_end_report = crate::cobertura::parse(&e2e)
-        .with_context(|| format!("read the End-to-end coverage '{}'", e2e.display()))?;
-    let end_to_end = if end_to_end_report.lines_valid == 0 {
+    let end_to_end_report = if !e2e.exists() {
         if !coverage.e2e_subprocess {
             bail!(
-                "the End-to-end coverage report measured zero lines; declare `coverage.e2e_subprocess: true` only when the suite runs the product as an uninstrumented subprocess"
+                "the End-to-end coverage report '{}' is missing; declare `coverage.e2e_subprocess: true` only when the suite runs the product as an uninstrumented subprocess",
+                coverage.e2e_path
             );
         }
-        coverage_numbers(&end_to_end_report, "subprocess-uninstrumented")
+        None
     } else {
-        crate::cobertura::validate(&end_to_end_report)
-            .context("the End-to-end coverage report is invalid")?;
-        if end_to_end_report.lines_covered == 0 {
-            bail!("the End-to-end coverage report measured no executed line");
+        let report = crate::cobertura::parse(&e2e)
+            .with_context(|| format!("read the End-to-end coverage '{}'", e2e.display()))?;
+        if report.lines_valid == 0 {
+            if !coverage.e2e_subprocess {
+                bail!(
+                    "the End-to-end coverage report measured zero lines; declare `coverage.e2e_subprocess: true` only when the suite runs the product as an uninstrumented subprocess"
+                );
+            }
+            None
+        } else {
+            crate::cobertura::validate(&report)
+                .context("the End-to-end coverage report is invalid")?;
+            if report.lines_covered == 0 {
+                bail!("the End-to-end coverage report measured no executed line");
+            }
+            Some(report)
         }
-        coverage_numbers(&end_to_end_report, "measured")
+    };
+    let end_to_end = match &end_to_end_report {
+        Some(report) => coverage_numbers(report, "measured"),
+        None => CoverageNumbers {
+            status: "subprocess-uninstrumented",
+            lines_covered: 0,
+            lines_valid: 0,
+            branches_covered: 0,
+            branches_valid: 0,
+        },
     };
 
-    if component_report.lines_valid > 0 && end_to_end_report.lines_valid > 0 {
-        crate::cobertura::assert_distinct(&component_report, &end_to_end_report)
+    if let Some(report) = &end_to_end_report {
+        crate::cobertura::assert_distinct(&component_report, report)
             .context("the two coverage reports are not independent")?;
     }
 
@@ -754,60 +891,73 @@ fn read_counts(path: &Path, label: &str, expected_scope: &str) -> Result<TrialRu
     Ok(result)
 }
 
-/// Require the runner result to name every declared scenario title.
+/// Require the runner result to carry the declared scenario multiset exactly:
+/// one identity per execution unit, duplicate titles preserved.
 fn require_scenarios(tier: &super::contract::Tier, counts: &TrialRunnerResult) -> Result<()> {
     if tier.scenarios.is_empty() {
         return Ok(());
     }
-    let executed: std::collections::BTreeSet<&str> =
-        counts.scenarios.iter().map(String::as_str).collect();
-    let missing: Vec<&str> = tier
-        .scenarios
-        .iter()
-        .map(String::as_str)
-        .filter(|title| !executed.contains(title))
-        .collect();
-    let declared: std::collections::BTreeSet<&str> =
-        tier.scenarios.iter().map(String::as_str).collect();
-    let extra: Vec<&str> = counts
-        .scenarios
-        .iter()
-        .map(String::as_str)
-        .filter(|title| !declared.contains(title))
-        .collect();
-    if !missing.is_empty() || !extra.is_empty() {
-        let mut reasons = Vec::new();
-        if !missing.is_empty() {
-            let shown: Vec<&str> = missing.iter().take(10).copied().collect();
-            let remainder = missing.len() - shown.len();
-            let more = if remainder == 0 {
-                String::new()
-            } else {
-                format!(" (and {remainder} more)")
-            };
-            reasons.push(format!(
-                "does not name {} declared scenario(s): {}{more}",
-                missing.len(),
-                shown.join(", ")
-            ));
-        }
-        if !extra.is_empty() {
-            let shown: Vec<&str> = extra.iter().take(10).copied().collect();
-            let remainder = extra.len() - shown.len();
-            let more = if remainder == 0 {
-                String::new()
-            } else {
-                format!(" (and {remainder} more)")
-            };
-            reasons.push(format!(
-                "names {} title(s) outside the declared corpus: {}{more}",
-                extra.len(),
-                shown.join(", ")
-            ));
-        }
-        bail!("the runner result {}", reasons.join("; "));
+    let mut declared_count: std::collections::BTreeMap<&str, usize> =
+        std::collections::BTreeMap::new();
+    for title in &tier.scenarios {
+        *declared_count.entry(title.as_str()).or_default() += 1;
     }
-    Ok(())
+    let mut observed_count: std::collections::BTreeMap<&str, usize> =
+        std::collections::BTreeMap::new();
+    for title in &counts.scenarios {
+        *observed_count.entry(title.as_str()).or_default() += 1;
+    }
+
+    let mut missing: Vec<&str> = Vec::new();
+    let mut extra: Vec<&str> = Vec::new();
+    let titles: std::collections::BTreeSet<&str> = declared_count
+        .keys()
+        .chain(observed_count.keys())
+        .copied()
+        .collect();
+    for title in titles {
+        let declared = declared_count.get(title).copied().unwrap_or(0);
+        let observed = observed_count.get(title).copied().unwrap_or(0);
+        for _ in observed..declared {
+            missing.push(title);
+        }
+        for _ in declared..observed {
+            extra.push(title);
+        }
+    }
+    if missing.is_empty() && extra.is_empty() {
+        return Ok(());
+    }
+    let mut reasons = Vec::new();
+    if !missing.is_empty() {
+        let shown: Vec<&str> = missing.iter().take(10).copied().collect();
+        let remainder = missing.len() - shown.len();
+        let more = if remainder == 0 {
+            String::new()
+        } else {
+            format!(" (and {remainder} more)")
+        };
+        reasons.push(format!(
+            "does not name {} declared scenario unit(s): {}{more}",
+            missing.len(),
+            shown.join(", ")
+        ));
+    }
+    if !extra.is_empty() {
+        let shown: Vec<&str> = extra.iter().take(10).copied().collect();
+        let remainder = extra.len() - shown.len();
+        let more = if remainder == 0 {
+            String::new()
+        } else {
+            format!(" (and {remainder} more)")
+        };
+        reasons.push(format!(
+            "names {} title unit(s) outside the declared corpus: {}{more}",
+            extra.len(),
+            shown.join(", ")
+        ));
+    }
+    bail!("the runner result {}", reasons.join("; "))
 }
 
 /// Require the End-to-end result to name the rebuilt product it drove.
@@ -961,15 +1111,15 @@ fn absolute_text(path: &Path) -> std::borrow::Cow<'_, str> {
     path.to_string_lossy()
 }
 
-/// Remove a previous raw result so a stale file cannot satisfy the gate.
-fn remove_previous(path: &Path) {
-    if let Err(error) = std::fs::remove_file(path)
-        && error.kind() != std::io::ErrorKind::NotFound
-    {
-        eprintln!(
-            "warning: could not remove the previous result '{}': {error}",
-            path.display()
-        );
+/// Remove a previous raw result so a stale file cannot satisfy the gate. A
+/// removal failure is itself a refusal; a warning is not fail-closed.
+fn remove_previous(path: &Path) -> Result<()> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => {
+            Err(error).with_context(|| format!("remove the previous result '{}'", path.display()))
+        }
     }
 }
 
@@ -977,6 +1127,17 @@ fn remove_previous(path: &Path) {
 fn not_runnable(command: &str) -> bool {
     let command = command.trim();
     command.is_empty() || command.starts_with("givn missing-")
+}
+
+#[cfg(unix)]
+fn is_executable(metadata: &std::fs::Metadata) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    metadata.permissions().mode() & 0o111 != 0
+}
+
+#[cfg(not(unix))]
+fn is_executable(_metadata: &std::fs::Metadata) -> bool {
+    false
 }
 
 #[cfg(test)]
@@ -1060,6 +1221,45 @@ mod tests {
             failure.error.to_string().contains("does not name"),
             "{:?}",
             failure.error
+        );
+    }
+
+    #[test]
+    fn duplicate_and_outline_units_are_a_multiset() {
+        let tier = super::super::contract::Tier {
+            command: "true".to_string(),
+            features: "givn/specs".to_string(),
+            execution_units: 4,
+            scenarios: vec![
+                "dup".to_string(),
+                "dup".to_string(),
+                "outline".to_string(),
+                "outline".to_string(),
+            ],
+        };
+        let exact = TrialRunnerResult {
+            total: 4,
+            passed: 4,
+            scenarios: vec![
+                "dup".to_string(),
+                "dup".to_string(),
+                "outline".to_string(),
+                "outline".to_string(),
+            ],
+            ..TrialRunnerResult::default()
+        };
+        require_scenarios(&tier, &exact).expect("the exact multiset passes");
+
+        let collapsed = TrialRunnerResult {
+            total: 2,
+            passed: 2,
+            scenarios: vec!["dup".to_string(), "outline".to_string()],
+            ..TrialRunnerResult::default()
+        };
+        let error = require_scenarios(&tier, &collapsed).expect_err("a collapsed set refuses");
+        assert!(
+            error.to_string().contains("declared scenario unit"),
+            "{error}"
         );
     }
 
@@ -1267,6 +1467,26 @@ mod tests {
         )
         .expect_err("a zero-line e2e report refuses without the declaration");
         assert!(format!("{error:#}").contains("e2e_subprocess"), "{error:#}");
+    }
+
+    #[test]
+    fn coverage_accepts_a_missing_e2e_report_when_declared() {
+        let directory = tempfile::TempDir::new().unwrap();
+        let script = directory.path().join("measure.sh");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\nset -eu\n: \"${GIVN_COVERAGE_OUTPUT_PATH:?missing}\"\nmkdir -p coverage\nprintf '%s' '<?xml version=\"1.0\"?><coverage line-rate=\"0.5\" branch-rate=\"0\" lines-covered=\"5\" lines-valid=\"10\" branches-covered=\"0\" branches-valid=\"0\" timestamp=\"0\" version=\"1\"><packages /></coverage>' > \"$GIVN_COVERAGE_NON_E2E_PATH\"\n",
+        )
+        .unwrap();
+        let contract = contract_with_coverage(coverage_contract(&script, true));
+        let coverage = run_coverage(
+            contract.coverage.as_ref().unwrap(),
+            directory.path(),
+            &contract,
+        )
+        .expect("a missing e2e report is accepted with the declaration");
+        assert_eq!(coverage.end_to_end.status, "subprocess-uninstrumented");
+        assert!(!directory.path().join("coverage/e2e.xml").exists());
     }
 
     #[test]

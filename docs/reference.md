@@ -208,9 +208,12 @@ rather than rewritten unsafely.
   `coverage.e2e_path`, `coverage.output_path`, and `coverage.e2e_subprocess`
   (default false; true only when the End-to-end suite runs the product as an
   uninstrumented subprocess) — archive coverage gate and trial coverage.
-- `verify.product_path` (relative to the spec copy) and `verify.product_env`
-  (default `GIVN_BIN`) — the rebuilt product the trial End-to-end run must
-  drive; the result must carry its path and SHA-256.
+- `verify.product_path` (relative to the spec copy; a regular file or a
+  directory of binaries) and `verify.product_env` (default `GIVN_BIN`, for
+  example `PASSUFF_BIN_DIR`) — the rebuilt product the trial End-to-end run
+  must drive; the result must carry its path and SHA-256. A directory digest
+  covers every regular file beneath it, sorted by relative path, with the
+  executable marker.
 - `run.command`, `run.product_type` (`server`/`cli`/`library`), exactly one of
   `run.port` or `run.port_env` for servers, `run.ready_path`, and
   `run.ready_timeout_s` (default 60). The block replaces whole, like `verify`.
@@ -803,9 +806,9 @@ command exits `0` only when `clean` is true.
 refused when the Specification declares component execution units; it never
 turns a declared corpus into a pass.
 
-A change whose design records `Whole-system rebuild` must commit a clean
-`ise-trial-result/v1` under `evidence/ise/trial-result.json`; `givn check tasks`
-refuses the change otherwise.
+Givn does not inspect external or manual trial reports such as
+`givn/trials/**/report.md`; they are outside Givn enforcement. Only
+`givn ise verify-trial` writes an `ise-trial-result/v1` with `clean: true`.
 
 ### Archive verification and recovery
 

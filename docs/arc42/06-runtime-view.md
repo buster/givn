@@ -1167,9 +1167,10 @@ checksums.
    A missing or malformed result, a count-only or title-less result, a non-zero
    exit, a failed or skipped scenario, or a count mismatch writes an
    `ise-trial-result/v1` record with `clean: false` and returns exit 1.
-6. Require `product.path` as a regular non-symlink file inside the copy, read
-   its bytes once, and compute their SHA-256. A missing or non-regular product
-   refuses.
+6. Require `product.path` as a regular non-symlink file or directory inside
+   the copy. A file hashes its bytes; a directory hashes every regular file
+   beneath it, sorted by relative path, with the executable marker. A missing,
+   symlinked, escaping, or empty product refuses.
 7. Run the frozen End-to-end command in the project working tree with
    `GIVN_RESULT_SCOPE=e2e`, the declared `product.env`, `GIVN_TRIAL_PRODUCT`,
    and `GIVN_TRIAL_PRODUCT_SHA256`. Require every declared title, the exact
@@ -1179,8 +1180,8 @@ checksums.
    the copy with `GIVN_COVERAGE_NON_E2E_PATH`, `GIVN_COVERAGE_E2E_PATH`,
    `GIVN_COVERAGE_OUTPUT_PATH`, and `GIVN_FEATURES`. Require a component report
    with non-zero measured and executed lines, distinct instrumented tier
-   reports, and the declared `coverage.e2e_subprocess` for a 0-line End-to-end
-   report.
+   reports, and the declared `coverage.e2e_subprocess` for a missing or 0-line
+   End-to-end report.
 9. Re-run the frozen-input comparison. A checkout, manifest, or contract change
    during the scripts writes `clean: false` and returns exit 1.
 10. Write `ise-trial-result/v1` with both tiers' titles/counts, the product
@@ -1188,9 +1189,8 @@ checksums.
     `Trial result: passed` and exit 0 only when every condition held.
     `--component-not-run` is accepted only when the declared component count is
     zero; it records `not_run` and never produces a pass over a declared corpus.
-    A change whose design records `Whole-system rebuild` must commit the clean
-    record under `evidence/ise/trial-result.json`; `givn check tasks` refuses
-    otherwise.
+    Givn does not read `givn/trials/**` or another external report; external
+    and manual reports are outside Givn enforcement.
 
 The End-to-end (E2E) package and the selected `@e2e` scenarios are the frozen
 inputs the `End-to-end tests` line compares with the project working tree. A file the

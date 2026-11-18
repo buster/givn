@@ -49,8 +49,9 @@ pub(super) struct Tier {
     /// Plain scenarios count once; a Scenario Outline counts once per example
     /// row, matching the runner's expanded count.
     pub execution_units: usize,
-    /// The declared scenario titles in file order. The runner result must name
-    /// every one, so a count-only result cannot satisfy the gate.
+    /// One scenario title per execution unit in file order. A duplicate title
+    /// appears once per occurrence, and an outline title once per example row;
+    /// the runner result must carry the same multiset.
     pub scenarios: Vec<String>,
 }
 
@@ -256,7 +257,9 @@ fn execution_units(
                 &mut counts.component
             };
             tier.units += units;
-            tier.scenarios.push(scenario.name.clone());
+            for _ in 0..units {
+                tier.scenarios.push(scenario.name.clone());
+            }
         }
     }
     Ok(counts)
@@ -309,6 +312,30 @@ mod tests {
             "Feature: demo\n  Scenario Outline: one\n    Given <value>\n    Examples:\n      | value |\n      | a     |\n    Examples:\n      | value |\n      | b     |\n      | c     |\n",
         );
         assert_eq!(scenario_execution_units(&scenario), 3);
+    }
+
+    #[test]
+    fn duplicate_titles_and_outline_rows_are_one_unit_each() {
+        let declaration = SpecificationDeclaration::from_content(
+            "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: []\nlimits: []\ne2e: []\nsource: [\"src/**\"]\n",
+        )
+        .unwrap();
+        let feature = "Feature: demo\n\n  Scenario: dup\n    Given nothing\n\n  Scenario: dup\n    Given nothing\n\n  Scenario Outline: outline\n    Given <value>\n\n    Examples:\n      | value |\n      | one   |\n      | two   |\n";
+        let blobs = BTreeMap::from([(
+            "givn/specs/demo.feature".to_string(),
+            feature.as_bytes().to_vec(),
+        )]);
+        let counts = execution_units(&declaration, &["givn/specs/demo.feature"], &blobs).unwrap();
+        assert_eq!(counts.component.units, 4);
+        assert_eq!(
+            counts.component.scenarios,
+            vec![
+                "dup".to_string(),
+                "dup".to_string(),
+                "outline".to_string(),
+                "outline".to_string()
+            ]
+        );
     }
 
     #[test]

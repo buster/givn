@@ -48,7 +48,7 @@ persistent result record, and touches three capabilities.
 - **Strict mode.** `tests/features_runner.rs` keeps `.fail_on_skipped()`.
   The change adds no runner and no skip path.
 - **Acceptance test.** `cargo test --test ise_component_tier_gate --
-  --test-threads=1` — 12 passed, including the missing runner, count-only result, foreign product,
+  --test-threads=1` — 12 passed and `cargo test --test ise_passuff_trial -- --test-threads=1` — 2 passed, including the missing runner, count-only result, foreign product,
   exact counts, mismatch, not-run, read-only compare, reserved path, traversal,
   symlink, product-path escape, product parent symlink, and post-run contract
   drift cases.
@@ -85,7 +85,7 @@ No other delta scenario shares a shape, and no delta scenario exceeds the
 |---|---|
 | `givn lint --change ise-component-tier-gate` | exit 0; 3 files checked, clean; only `[SHAPE]`/`[SUBST]` advisories with dispositions |
 | `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e` | exit 0; 9 tests, 9 passed, 56 steps |
-| `givn check tasks --change ise-component-tier-gate` | exit 0; 9 scenario(s), 0 failed, 0 skipped; E2E `not_applicable`; `verify passed` |
+| `givn check tasks --change ise-component-tier-gate` | exit 0; 9 scenario(s), 0 failed, 0 skipped; E2E `not_applicable`; `verify passed`; it does not inspect a trial report |
 | `./run-tests.sh --non-e2e` | exit 0; 1126 tests, 1126 passed, 115 nextest units excluded by the regular tag expression |
 | `./run-tests.sh --e2e --package e2e` | exit 0; 56 features, 120 scenarios (120 passed), 785 steps |
 | `GIVN_FEATURES=givn/specs/prepare-an-ise-test ./run-tests.sh --e2e --package e2e` | exit 0; 2 scenarios, 16 steps |
@@ -112,15 +112,21 @@ No blocking finding remains.
 | F10: full E2E preflight was red on missing browser dependencies | closed: `npm ci --prefix e2e/browser` and Chromium install; full E2E 120/120 |
 | F11: End-to-end ran in the checkout without binding the rebuilt product | closed: contract `product.path`/`product.env`; gate hashes the copy product, passes `GIVN_TRIAL_PRODUCT`/`GIVN_TRIAL_PRODUCT_SHA256`, and requires the result's product path and digest; `an_e2e_result_bound_to_another_product_refuses` |
 | F12: a count-only printf result passed 10/10 | closed: both tiers require every declared scenario title; `a_count_only_result_refuses_when_titles_are_declared` and the delta count-only scenario |
-| F13: `verify-trial` was optional and a whole-system change could bypass it | closed: `check tasks` requires a clean committed `ise-trial-result/v1` for a `Whole-system rebuild` design; `validate_trial_result` unit test |
+| F13: a phrase-triggered `check tasks` gate did not cover `givn/trials` and wrote the receipt first | closed by removal: no Givn workflow gate; external/manual reports are outside enforcement, and only `verify-trial` writes a clean result |
 | F14: coverage omitted `GIVN_COVERAGE_OUTPUT_PATH` | closed: contract `coverage.output_path`; the unit-test measure script fails when the variable is absent |
 | F15: a script could edit frozen inputs after the pre-run comparison | closed: `verify-trial` re-runs `compare` after the scripts, compares the initial manifest/contract bytes, and writes `clean: false` on drift; contract bytes are parsed from the checksummed bytes |
 | F16: `product.path` could contain `..` or a parent symlink and escape the copy | closed: contract validation requires relative/no `..`; `bind_product` canonicalizes the target and refuses one outside the copy; tests `a_product_path_outside_the_copy_refuses` and `a_product_parent_symlink_outside_the_copy_refuses` |
 | F17: a count-only result could pass with undeclared titles | closed: `require_scenarios` rejects missing and extra titles; unit test `an_undeclared_extra_title_refuses` |
-| F18: the whole-system workflow gate read uncommitted evidence | closed: `check tasks` requires the evidence path tracked at HEAD and identical to the committed blob; test `a_whole_system_change_requires_a_committed_clean_trial_result` |
+| F18: the workflow gate read uncommitted evidence | closed by removal: there is no workflow gate or receipt-ordered check to bypass |
 | F19: coverage paths could be redirected by a symlink | closed: `coverage.output_path` is validated, each coverage target is resolved under the copy before and after measurement |
 | F20: a contract change during the scripts was not fail-closed | closed: initial manifest/contract bytes are re-read after the scripts; `a_contract_change_during_the_scripts_refuses` |
 | F21: the review records were stale | closed: this record and `design-review.md` are refreshed for the 9-scenario, 12-acceptance state and D1-D8. |
+| F22: a phrase-triggered `check tasks` gate missed `givn/trials` and wrote the receipt first | closed by removal: `check tasks` does not inspect a trial result; only `verify-trial` writes a clean `ise-trial-result/v1`, and external/manual reports are outside Givn enforcement |
+| F23: a single-file product could not bind Passuff's two binaries | closed: `product.path` accepts a file or directory; a directory digest covers every regular file with relative path and executable marker; Passuff-shaped fixture uses `PASSUFF_BIN_DIR` and executes both binaries |
+| F24: duplicate titles and outline rows collapsed in scenario evidence | closed: `scenarios` carries one title per execution unit; `verify-trial` compares multisets exactly; contract and verifier unit tests cover duplicates and outline rows |
+| F25: a copy without the E2E package could not produce an E2E coverage report | closed: `coverage.e2e_subprocess: true` accepts a missing or 0-line E2E report and records `subprocess-uninstrumented`; the Passuff-shaped fixture writes only the component report |
+| F26: stale raw results and product changes were not fully fail-closed | closed: result removal fails closed; product is re-hashed after E2E and coverage; contract/manifest byte drift writes `clean: false` |
+| F27: the product env was only echoed by the fixture | closed: the Passuff-shaped fixture executes both rebuilt binaries from `$PASSUFF_BIN_DIR` and records the directory digest; an E2E script using checkout binaries records a different digest and refuses. The trust boundary remains stated: an arbitrary script can still lie about what it ran. |
 
 ## Review checks
 

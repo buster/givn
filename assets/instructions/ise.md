@@ -125,9 +125,10 @@ A refusal prints `ise rebuild-all:`, `ise rebuild-component:`, `ise compare:`, o
 Every rebuild writes a generated verification contract into the spec copy and
 records its path and checksum in the spec-copy manifest. The contract names the
 component command and feature path, the frozen End-to-end command and feature
-path, the declared execution-unit count and scenario titles for each tier, the
-rebuilt product path and the environment variable the End-to-end command reads,
-and the coverage commands and paths when the coverage addon is effective.
+path, the declared execution-unit count and one scenario title per unit for
+each tier, the rebuilt product path (file or directory) and the environment
+variable the End-to-end command reads, and the coverage commands and paths when
+the coverage addon is effective.
 `verify.product_path`, `verify.product_env`, `coverage.non_e2e_path`,
 `coverage.e2e_path`, and `coverage.output_path` configure those entries.
 
@@ -141,18 +142,21 @@ component corpus ran. A whole-system trial result requires
 
 - runs the component command inside the spec copy and the frozen End-to-end
   command in the checkout, each with a fresh runner result;
-- requires each result to name every declared scenario title and no undeclared
-  title, and to report the executed count exactly equal to the declared count, with zero failed and zero
+- requires each result to carry the declared scenario multiset exactly
+  (duplicate titles and outline rows included), and to report the executed
+  count exactly equal to the declared count, with zero failed and zero
   skipped; a count-only result refuses;
-- requires the declared rebuilt product as a regular file inside the copy,
-  hashes its bytes, passes the absolute path in `verify.product_env`,
-  `GIVN_TRIAL_PRODUCT`, and its digest in `GIVN_TRIAL_PRODUCT_SHA256`, and
-  requires the End-to-end result to name the same product path and digest;
+- requires the declared rebuilt product as a regular file or directory inside
+  the copy, hashes the file bytes or the directory tree, passes the absolute
+  path in `verify.product_env`, `GIVN_TRIAL_PRODUCT`, and its digest in
+  `GIVN_TRIAL_PRODUCT_SHA256`, and requires the End-to-end result to name the
+  same product path and digest;
 - runs the coverage measurement when the contract carries one with
   `GIVN_COVERAGE_NON_E2E_PATH`, `GIVN_COVERAGE_E2E_PATH`, and
   `GIVN_COVERAGE_OUTPUT_PATH`, requires a non-zero component line measurement,
-  requires independent tier reports, and accepts a 0-line End-to-end report
-  only when the project declares `coverage.e2e_subprocess: true`;
+  requires independent tier reports, and accepts a missing or 0-line
+  End-to-end report only when the project declares
+  `coverage.e2e_subprocess: true`;
 - re-checks the frozen inputs after the scripts ran, so an edited checkout,
   manifest, or contract makes the trial not clean;
 - writes an `ise-trial-result/v1` record with both tiers' `declared`,
@@ -167,10 +171,11 @@ zero-line component report, or a post-run input change refuses and records
 declares no component execution units; with units declared it refuses and
 records the decision without a pass.
 
-A change whose design records `Whole-system rebuild` must commit a clean
-`ise-trial-result/v1` under `evidence/ise/trial-result.json`; `givn check
-tasks` refuses the change otherwise. The workflow therefore has no green
-whole-system route that skips `givn ise verify-trial`.
+Givn does not inspect an external trial report or a project's trial-record
+directory: those reports are outside Givn enforcement. The honest claim is that
+`givn ise verify-trial` is the only command that writes an
+`ise-trial-result/v1` with `clean: true`; a report written by another tool,
+including a manual trial report, is not a Givn trial result.
 
 Do not present `givn ise compare`'s two `match` lines as a whole-system
 rebuild result. Do not present a green frozen End-to-end suite as coverage of

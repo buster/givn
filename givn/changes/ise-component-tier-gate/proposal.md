@@ -36,7 +36,7 @@ A whole-system rebuild writes a verification contract into the spec copy. The co
 
 `givn ise compare` remains read-only. It verifies the frozen Specification files, the End-to-end tests, and the verification contract, and prints `Trial result: unverified (frozen inputs only; run givn ise verify-trial ...)`. Its exit 0 means input equality only.
 
-`givn ise verify-trial --manifest <file> --copy <dir> --result <file>` is the only command that can report a whole-system trial result. It runs the verification contract: the component command inside the spec copy, the frozen End-to-end command in the checkout, and the coverage measurement when the addon is effective. It binds the End-to-end run to the rebuilt product by hashing a declared product path, passing it through a declared environment variable, and requiring the End-to-end result to name the same product digest. It requires fresh runner results that name every declared scenario title as well as exact declared execution-unit counts, zero failed and zero skipped, non-zero component line coverage, and distinct instrumented tier reports. A count-only or title-less result refuses. It writes an `ise-trial-result/v1` record with both tiers' declared, executed, and scenario-title evidence, the product path and digest, and per-tier line and branch coverage. A whole-system rebuild change must commit a clean record before `givn check tasks` passes.
+`givn ise verify-trial --manifest <file> --copy <dir> --result <file>` is the only command that can report a whole-system trial result. It runs the verification contract: the component command inside the spec copy, the frozen End-to-end command in the checkout, and the coverage measurement when the addon is effective. It binds the End-to-end run to the rebuilt product by hashing a declared product file or directory, passing it through a declared environment variable, and requiring the End-to-end result to name the same product digest. It requires fresh runner results that carry the declared scenario multiset exactly as well as exact declared execution-unit counts, zero failed and zero skipped, non-zero component line coverage, and distinct instrumented tier reports. A count-only, title-less, or collapsed-multiplicity result refuses, and a product directory supports a multi-binary product such as Passuff. It writes an `ise-trial-result/v1` record with both tiers' declared, executed, and scenario-title evidence, the product path and digest, and per-tier line and branch coverage. Givn does not inspect external or manual trial reports; only `verify-trial` writes the clean result.
 
 A trial whose component corpus is not executed refuses by name. It never prints a pass line and never writes `clean: true`. An explicit component not-run decision is accepted only when the declared component corpus is empty; otherwise the command refuses.
 
@@ -116,10 +116,10 @@ A trial whose component corpus is not executed refuses by name. It never prints 
   2. **Counts only** — gain: the smallest result contract; cost: the release note's execution claim is unsupported; in practice: a script that prints 10 passes.
 - Disposition: answered — operator direction 2026-11-19: require titles.
 
-### D8 — Is `verify-trial` optional for a whole-system change?
+### D8 — How does Givn treat an external or manual trial report?
 
-- Question: Can a whole-system rebuild change pass `givn check tasks` without a trial result?
+- Question: Should `check tasks` infer a whole-system trial from a `design.md` phrase or inspect `givn/trials/**`?
 - Options:
-  1. **Mandatory workflow gate** — `check tasks` requires a clean `ise-trial-result/v1` under the change's evidence when the design records `Whole-system rebuild`; gain: the workflow cannot call the change green without the trial; cost: a whole-system change must commit the result before the tasks gate; in practice: a missing result refuses.
-  2. **Optional tooling** — gain: no extra task; cost: the old unverified route remains; in practice: a change archives without a trial.
-- Disposition: answered — operator direction 2026-11-19: make it mandatory for whole-system rebuild changes.
+  1. **No Givn workflow gate** — `verify-trial` is the only command that writes a clean `ise-trial-result/v1`; external and manual reports are outside Givn enforcement; gain: no false mandatory claim and no receipt bypass; cost: a harness must call `verify-trial` itself; in practice: a `givn/trials/**/report.md` is not read by Givn.
+  2. **Phrase-triggered gate** — `check tasks` scans `design.md` and evidence; gain: a change gets a reminder; cost: it misses the actual `givn/trials` path, writes the receipt before the gate, and archive reads the receipt; in practice: the gate is bypassed and the claim is false.
+- Disposition: answered — operator direction 2026-11-19: remove the phrase-triggered gate and state the trust boundary.

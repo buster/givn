@@ -102,12 +102,18 @@ unreachable revision fails review and archive.
 - [x] The acceptance test is real and runnable.
   - [x] COMMIT: `bdc01ecb64c74682b62c06e0020b7d2052522a51` -- Batch: closeout
   - Evidence: `cargo test --test ise_component_tier_gate -- --test-threads=1` — 12 passed.
+- [x] A Passuff-shaped trial binds two rebuilt binaries and accepts a missing E2E coverage report.
+  - [x] COMMIT: `PENDING-HARDENING` -- Batch: component-tier-gate-hardening
+  - Evidence: `cargo test --test ise_passuff_trial -- --test-threads=1` — 2 passed: the copy has no `crates/passuff-e2e`, `PASSUFF_BIN_DIR` holds `passuff` and `passuff-tui`, the E2E script executes both, the coverage script writes only the component report, and an E2E script using checkout binaries records a different digest and refuses.
 
 ## Verification evidence
 
 ```text
 $ cargo test --test ise_component_tier_gate -- --test-threads=1
 running 12 tests ... test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+
+$ cargo test --test ise_passuff_trial -- --test-threads=1
+running 2 tests ... test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
 $ GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e
 Summary [ 1.504s] 9 tests run: 9 passed, 0 skipped

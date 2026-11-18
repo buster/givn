@@ -1460,8 +1460,9 @@ re-prepares it.
 `givn/ise-verification.yaml` into the copy and records its path and checksum in
 `verification`. The contract is strict (`ise-verification/v1`): it names the
 component command and feature path, the frozen End-to-end command and feature
-path, each tier's declared execution-unit count and scenario titles, the
-rebuilt `product.path` and `product.env`, and the coverage commands and paths
+path, each tier's declared execution-unit count and one scenario title per
+unit, the rebuilt `product.path` (file or directory) and `product.env`, and the
+coverage commands and paths
 when the addon is effective. An execution unit is one plain scenario or one
 Scenario Outline example row.
 
@@ -1477,12 +1478,12 @@ file in the copy, hashes its bytes, passes the path in `product.env`,
 requires the End-to-end result to carry the same product path and digest. With
 coverage, it requires a non-zero component line measurement, distinct
 instrumented tier reports, and a declared `coverage.e2e_subprocess` for a
-0-line End-to-end report, passing all three `GIVN_COVERAGE_*` paths. It
+missing or 0-line End-to-end report, passing all three `GIVN_COVERAGE_*` paths. It
 re-checks the frozen inputs after the scripts and writes `ise-trial-result/v1`
 with both tiers' titles/counts, the product identity, per-tier coverage, and
-`clean`; only `clean: true` prints the pass line and exits 0. A change whose
-design records `Whole-system rebuild` must commit the clean record under
-`evidence/ise/trial-result.json`; `givn check tasks` refuses otherwise.
+`clean`; only `clean: true` prints the pass line and exits 0. Givn does not
+read or gate a `givn/trials/**` or other external report; external and manual
+reports are outside Givn enforcement.
 
 **Checksums.** One path checksum is
 `sha256(path, NUL, kind, NUL, executable, NUL, content)`, where `kind` is `f`

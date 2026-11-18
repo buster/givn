@@ -622,7 +622,7 @@ fn a_contract_change_during_the_scripts_refuses() {
 
     assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
     assert!(
-        stderr(&output).contains("frozen inputs changed"),
+        stderr(&output).contains("frozen inputs or rebuilt product changed"),
         "stderr={}",
         stderr(&output)
     );

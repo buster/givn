@@ -65,14 +65,14 @@ component:
   command: <verify.command>
   features: <verify.features_path>
   execution_units: <plain scenarios + outline example rows>
-  scenarios: [<every declared component title>]
+  scenarios: [<one title per component execution unit>]
 end_to_end:
   command: <verify.e2e_command>
   features: <verify.features_path>
   execution_units: <selected @e2e units>
-  scenarios: [<every declared @e2e title>]
+  scenarios: [<one title per @e2e execution unit>]
 product:                        # required when either tier declares units
-  path: <verify.product_path, relative to the copy>
+  path: <verify.product_path; file or directory, relative to the copy>
   env: <verify.product_env, default GIVN_BIN>
 coverage:                       # present only when addons.coverage is true
   measure_command: <coverage.measure_command>
@@ -178,6 +178,8 @@ record whose copy file is missing or whose bytes differ refuses the comparison.
   returns exit 1.
 - **Post-run drift** — the final comparison refuses if the checkout, manifest,
   or contract changed while the scripts ran.
+- **External report** — a `givn/trials/**` or other manual report is not read or
+  gated; it cannot claim to be an `ise-trial-result/v1` issued by Givn.
 
 ## Step Definitions
 
@@ -251,16 +253,18 @@ fixture.
   Realized in `config::manifest::Coverage::e2e_subprocess` and
   `ise::verify::run_coverage`.
 - `Decides D6`: The End-to-end run is bound to a declared `verify.product_path`
-  and `verify.product_env`; the result must carry the product path and
-  SHA-256. Realized in `ise::verify::bind_product`,
+  (file or directory) and `verify.product_env`; the result must carry the
+  product path and SHA-256; the product is re-hashed after E2E and coverage. Realized in `ise::verify::bind_product`,
   `ise::verify::require_product`, and the fixture scripts.
-- `Decides D7`: A runner result must name every declared scenario title and
-  no undeclared title; a count-only or extra-title result refuses. Realized in `ise::verify::require_scenarios` and
+- `Decides D7`: A runner result must carry the declared scenario multiset
+  exactly, including duplicate titles and outline rows; a count-only, missing,
+  extra-title, or collapsed-multiplicity result refuses. Realized in `ise::verify::require_scenarios` and
   the `scenarios` arrays in both test runners.
-- `Decides D8`: A `Whole-system rebuild` change must commit a clean
-  `ise-trial-result/v1` under `evidence/ise/trial-result.json`; `givn check
-  tasks` refuses otherwise. Realized in
-  `cli::check::require_whole_system_trial_result`.
+- `Decides D8`: No phrase-triggered `check tasks` gate. `givn ise verify-trial`
+  is the only command that writes a clean `ise-trial-result/v1`; external or
+  manual reports, including `givn/trials/**`, are outside Givn enforcement.
+  Realized by the absence of a workflow check and by the honest wording in the
+  served `ise` instruction and reference.
 - `Ise rebuild decision`: `No rebuild`. This change edits the existing Source
   code in place; no Component's Source code is replaced and no `Rebuilt code`
   line is recorded.
