@@ -84,14 +84,14 @@ Planned proof: with the old `docs/reference.md` delegation restored, `The ise in
 
   - [x] COMMIT: 3f472f1 -- Batch: review-and-archive
 
-- [ ] **C5 — Archive.** `givn archive --change make-ise-guidance-self-contained` publishes the proven archive.
+- [x] **C5 — Archive.** `givn archive --change make-ise-guidance-self-contained` publishes the proven archive.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: 8fe3bb9 -- Batch: review-and-archive
 
-- [ ] **C5 — Post-archive suites.** Run the regular and e2e suites against the merged corpus; both exit 0.
+- [x] **C5 — Post-archive suites.** Run the regular and e2e suites against the merged corpus; both exit 0.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: 8fe3bb9 -- Batch: review-and-archive
 
-- [ ] **C5 — Self-dogfood.** Install the checkout's binary, `givn skills sync`, `givn instructions`, and the required suites per `AGENTS.md`.
+- [x] **C5 — Self-dogfood.** Install the checkout's binary, `givn skills sync`, `givn instructions`, and the required suites per `AGENTS.md`.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: 8fe3bb9 -- Batch: review-and-archive
