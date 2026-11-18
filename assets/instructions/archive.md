@@ -49,6 +49,7 @@ holds:
    missing phrases (a bounded list followed by `+N more`). The repair is to
    merge each definition into its permanent per-capability step file and rerun
    the archive.
+{{#if addons.ise}}
 6. When `ise` is effective, every declared Specification-role entry in
    `givn/specification.yaml` still resolves after the move. An entry that
    matches a content path under `givn/changes/<id>/` survives only when it also
@@ -60,6 +61,7 @@ holds:
    resolves after the move (for example `givn/**`) is unaffected, and a project
    with `ise` off reads no declaration. A declaration the loader refuses blocks
    the gate by name.
+{{/if}}
 
 A gate failure exits non-zero with a clear error; nothing is archived. A
 resumed unproven candidate repeats the step-definition comparison before its
