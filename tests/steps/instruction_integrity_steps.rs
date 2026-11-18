@@ -2719,6 +2719,14 @@ fn author_requests_every_printed_instruction(world: &mut GivnWorld) {
         corpus.push_str(&format!("\n### instructions/{id}\n\n"));
         corpus.push_str(&String::from_utf8_lossy(&output.stdout));
     }
+    let startup = crate::common::run_givn(env, &["instructions"]);
+    assert!(
+        startup.status.success(),
+        "givn instructions failed: {}",
+        String::from_utf8_lossy(&startup.stderr)
+    );
+    corpus.push_str("\n### instructions/startup\n\n");
+    corpus.push_str(&String::from_utf8_lossy(&startup.stdout));
     world.additional_output = Some(corpus);
 }
 
@@ -4101,6 +4109,44 @@ fn served_instruction_separates_copy_from_ship(world: &mut GivnWorld) {
 )]
 fn served_instruction_requires_new_frozen_revision(world: &mut GivnWorld) {
     assert_served_text_contains(world, &["record a new frozen revision"]);
+}
+
+#[then("the served ise instruction's file references resolve in the consumer project")]
+fn served_ise_file_references_resolve(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let text = cli_stdout(world);
+    let sources = vec![crate::common::reference_check::GuidanceSource {
+        label: "givn instructions ise".to_string(),
+        text,
+    }];
+    let findings = crate::common::reference_check::unresolved_references(&root, &sources);
+    assert!(
+        findings.is_empty(),
+        "unresolved ise guidance references:\n{}",
+        crate::common::reference_check::describe(&findings)
+    );
+}
+
+#[then("the printed guidance carries no ise-only phrases")]
+fn printed_guidance_carries_no_ise_phrases(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .clone()
+        .expect("printed instructions were not collected")
+        .to_lowercase();
+    for phrase in [
+        "ise rebuild decision",
+        "rebuilt code",
+        "spec gap",
+        "rebuild impact record",
+        "specification manifest",
+        "ise test",
+    ] {
+        assert!(
+            !text.contains(phrase),
+            "ise-only phrase {phrase:?} appears in ise-off guidance"
+        );
+    }
 }
 
 #[then("the served instruction states that the relevant verification reruns against it")]

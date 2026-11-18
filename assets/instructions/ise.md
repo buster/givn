@@ -12,10 +12,21 @@ off.
 
 **Vocabulary.** This instruction uses `Component`, `Component Interface`,
 contract, `Specification`, `Source code`, and `System` because `ise` requires
-`architecture_principles`; that instruction defines them. `Spec copy`,
-`spec-copy manifest`, and `checksum` are defined by `docs/reference.md` and the
-project glossary. `Rebuild impact record` and `Replaced unit` are defined by
-the project glossary.
+`architecture_principles`; that instruction defines them. It defines the
+rebuild-specific terms it uses:
+
+- **spec copy**: the plain directory outside the project that
+  `givn ise rebuild-all` or `givn ise rebuild-component` writes from a selected
+  revision.
+- **spec-copy manifest**: the generated `ise-manifest/v1` file recording that
+  copy's revision, inventories, counts, checksums, and location; it is
+  ephemeral evidence, never project content.
+- **checksum**: the SHA-256 of one path's identity (path, entry kind,
+  executable marker, and content bytes) or of a sorted `path, checksum` rollup.
+- **Rebuild impact record**: the trial review's table of files added, modified,
+  deleted, moved, or renamed outside the declared Specification and the
+  replaced unit, plus consolidations, each with its reason.
+- **Replaced unit**: the Source code span one rebuild replaces.
 
 ## The Ise rebuild decision
 
