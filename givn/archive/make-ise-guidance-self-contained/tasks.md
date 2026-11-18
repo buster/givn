@@ -86,7 +86,7 @@ Planned proof: with the old `docs/reference.md` delegation restored, `The ise in
 
 - [x] **C5 — Archive.** `givn archive --change make-ise-guidance-self-contained` publishes the proven archive.
 
-  - [x] COMMIT: 8fe3bb9 -- Batch: review-and-archive
+  - [x] COMMIT: 26d3e4e2 -- Batch: review-and-archive
 
 - [x] **C5 — Post-archive suites.** Run the regular and e2e suites against the merged corpus; both exit 0.
 
