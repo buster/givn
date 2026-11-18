@@ -90,8 +90,8 @@ Planned proof: with the old `docs/reference.md` delegation restored, `The ise in
 
 - [x] **C5 — Post-archive suites.** Run the regular and e2e suites against the merged corpus; both exit 0.
 
-  - [x] COMMIT: 8fe3bb9 -- Batch: review-and-archive
+  - [x] COMMIT: 2588f93 -- Batch: review-and-archive
 
 - [x] **C5 — Self-dogfood.** Install the checkout's binary, `givn skills sync`, `givn instructions`, and the required suites per `AGENTS.md`.
 
-  - [x] COMMIT: 8fe3bb9 -- Batch: review-and-archive
+  - [x] COMMIT: 2588f93 -- Batch: review-and-archive
