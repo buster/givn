@@ -157,25 +157,25 @@ two delta feature files and the two permanent step files.
 
 ## Verification
 
-- [ ] **C3 — Delta run.** Run the two delta features through the regular scope;
+- [x] **C3 — Delta run.** Run the two delta features through the regular scope;
   all seven scenarios pass. Record the summary.
 
-  `COMMIT: ___ -- Batch: verification`
+  `COMMIT: 8a7efce -- Batch: verification`
 
-- [ ] **C4 — Full regular suite.** `./run-tests.sh --non-e2e` exits 0 with
+- [x] **C4 — Full regular suite.** `./run-tests.sh --non-e2e` exits 0 with
   `1117 passed`. Record the summary.
 
-  `COMMIT: ___ -- Batch: verification`
+  `COMMIT: 8a7efce -- Batch: verification`
 
-- [ ] **C5 — E2E scope.** `./run-tests.sh --e2e --package e2e` exits 0; the
+- [x] **C5 — E2E scope.** `./run-tests.sh --e2e --package e2e` exits 0; the
   direct `@e2e` decision scenario passes. Record the summary.
 
-  `COMMIT: ___ -- Batch: verification`
+  `COMMIT: 8a7efce -- Batch: verification`
 
-- [ ] **C6 — Change gate.** `givn check tasks --change
+- [x] **C6 — Change gate.** `givn check tasks --change
   ise-rebuild-decision-and-working-tree-ship` writes its receipt and exits 0.
 
-  `COMMIT: ___ -- Batch: verification`
+  `COMMIT: 8a7efce -- Batch: verification`
 
 ## Review and archive
 
