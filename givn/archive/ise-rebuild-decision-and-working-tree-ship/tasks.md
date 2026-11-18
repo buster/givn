@@ -187,7 +187,7 @@ two delta feature files and the two permanent step files.
 - [x] **C5 — Archive.** `givn archive --change
   ise-rebuild-decision-and-working-tree-ship` publishes the proven archive.
 
-  - [x] COMMIT: ebede7 -- Batch: review-and-archive
+  - [x] COMMIT: 0adaf36f -- Batch: review-and-archive
 
 - [x] **C5 — Post-archive suites.** Run the regular and e2e suites against the
   merged corpus; both exit 0.
