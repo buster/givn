@@ -1,0 +1,15 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-f4084977d776fdd7)
+Feature: Trial input verification
+  Scenario: Verification records the exact declared counts
+   ✔  Given a committed verification fixture with ten component scenarios and one End-to-end scenario
+   ✔  When the verifier prepares a trial with ten component scenarios and one End-to-end scenario
+   ✔  And the agent writes a component verification script reporting 10 executed scenarios
+   ✔  And the verifier runs the trial verification
+   ✔  Then the trial verification succeeds and prints "Component scenarios: 10/10 executed, 0 failed, 0 skipped"
+   ✔  And the trial verification succeeds and prints "End-to-end tests: 1/1 executed, 0 failed, 0 skipped"
+   ✔  And the trial result records "clean": true
+[Summary]
+1 feature
+1 scenario (1 passed)
+7 steps (7 passed)
