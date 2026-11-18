@@ -464,6 +464,7 @@ fn manifest_records_the_rebuild_evidence(world: &mut GivnWorld) {
         "source_kept_files",
         "specification_checksum",
         "specification_files",
+        "verification",
     ];
     expected.sort();
     assert_eq!(keys, expected, "the manifest does not record every field");

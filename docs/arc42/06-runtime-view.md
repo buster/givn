@@ -1012,9 +1012,9 @@ advisory outline guide ([`docs/outline.md`](../outline.md)). Historical gate
 material remains in archived changes and ADR history; it is not current
 architecture.
 
-## 6.21 `givn ise rebuild-all`, `givn ise rebuild-component`, and `givn ise compare`
+## 6.21 `givn ise rebuild-all`, `givn ise rebuild-component`, `givn ise compare`, and `givn ise verify-trial`
 
-All three commands are bound to `addons.ise` and its `architecture_principles`
+All four commands are bound to `addons.ise` and its `architecture_principles`
 prerequisite in the effective project config. With either off, each refuses by
 name before reading the Specification Manifest or a spec-copy manifest. The change's
 `config-lock.yaml` is not their authority; it decides the change-scoped
@@ -1076,9 +1076,15 @@ names it.
     with an absolute target, even one that resolves inside the copy, or with a
     relative target that resolves outside it, refuses, names the link path and
     the target, and writes nothing.
-11. Write the manifest with `create_new` when `--manifest` is given. A manifest
-    write failure removes the copy; without `--manifest`, nothing is printed
-    after the report.
+11. Write the generated `givn/ise-verification.yaml` contract into the copy.
+    The contract carries the component command and feature path, the frozen
+    End-to-end command and feature path, each tier's declared execution-unit
+    count, and the coverage command and paths when the addon is effective. A
+    revision that already tracks the reserved path refuses before any write.
+12. Write the manifest with `create_new` when `--manifest` is given, including
+    the contract's path and checksum. A contract or manifest write failure
+    removes the copy; without `--manifest`, nothing is printed after the
+    report.
 
 The report prints the eleven fixed lines `Backend`, `Revision`, `Specification
 files`, `Source code kept`, `Source code removed`, `Outside the spec copy`,
@@ -1100,6 +1106,8 @@ checksums.
 3. Confirm the manifest belongs to this copy: the canonicalized
    `copy_directory` equals `--copy`, and the manifest path lies outside the
    copy. A mismatch refuses and names the manifest and the copy.
+   When the manifest records a verification contract, read it from the copy and
+   require its checksum; a missing or changed contract refuses.
 4. Load the copy's Specification Manifest when it is present. A copy without
    one, or one that cannot be read, contributes no categories: the added-file
    refusal is skipped, and the recorded path reports `missing` or `changed` like
@@ -1107,7 +1115,8 @@ checksums.
 5. Walk the copy. A file under a declared manifest entry that the
    manifest's `specification_files` does not list refuses before any count,
    naming at most twenty sorted paths and the remainder count. A declared
-   manifest entry is a match of any of the five categories, including `e2e`. A
+   manifest entry is a match of any of the five categories, including `e2e`.
+   The recorded verification contract path is excluded from that refusal. A
    path in `source_kept_files` that the copy lost refuses before any count,
    naming the deleted path.
 6. Compare each recorded Specification file with the copy: a missing path or a
@@ -1137,7 +1146,38 @@ checksums.
    one `+ <path>` line per added path, and exit 1; or print both as `match` and
    exit 0. A path that differs on both sides prints one line, counted and owned
    by `End-to-end tests` when the project side owns it and by `Specification
-   files` otherwise.
+   files` otherwise. In both cases print `Trial result: unverified`; the
+   comparison executes no contract command and its exit 0 proves frozen-input
+   equality only.
+
+### Verify trial
+
+1. Load the effective configuration and require `ise` plus its prerequisite.
+2. Run the read-only comparison. A non-clean comparison refuses before any
+   trial command runs.
+3. Read the manifest and the generated contract. A manifest without a
+   verification record, a missing contract, or a checksum mismatch refuses by
+   name.
+4. Resolve `--result` under the project root and refuse a path inside the copy.
+   Remove the two raw runner-result paths so a stale result cannot pass.
+5. Run the component command inside the copy with `GIVN_FEATURES`,
+   `GIVN_RESULT_FILE`, and `GIVN_RESULT_SCOPE=component`. Require a fresh
+   result whose `total` equals the declared count exactly, with failed and
+   skipped zero and reconciling counts. A missing or malformed result, a
+   non-zero exit, a failed or skipped scenario, or a count mismatch writes an
+   `ise-trial-result/v1` record with `clean: false` and returns exit 1.
+6. Run the frozen End-to-end command in the project working tree with
+   `GIVN_RESULT_SCOPE=e2e` and apply the same exact-count and green checks.
+7. When the contract carries coverage, run `coverage.measure_command` inside
+   the copy with the three `GIVN_COVERAGE_*` paths and `GIVN_FEATURES`. Require
+   a component report with non-zero measured and executed lines, distinct
+   instrumented tier reports, and the declared `coverage.e2e_subprocess` for a
+   0-line End-to-end report.
+8. Write `ise-trial-result/v1` with both executed/declared pairs, per-tier
+   coverage, and `clean`. Print the tier lines and `Trial result: passed` and
+   exit 0 only when every condition held. `--component-not-run` is accepted
+   only when the declared component count is zero; it records `not_run` and
+   never produces a pass over a declared corpus.
 
 The End-to-end (E2E) package and the selected `@e2e` scenarios are the frozen
 inputs the `End-to-end tests` line compares with the project working tree. A file the

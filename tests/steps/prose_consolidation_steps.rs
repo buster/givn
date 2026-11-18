@@ -1090,3 +1090,23 @@ fn no_propose_or_archive_command(world: &mut GivnWorld) {
         }
     }
 }
+
+#[then("the guidance names \"givn ise verify-trial\" as the whole-system result gate")]
+fn guidance_names_verify_trial(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("givn ise verify-trial") && content.contains("whole-system trial result"),
+        "the served ise guidance does not name the whole-system trial gate: {content}"
+    );
+}
+
+#[then("the guidance states that \"givn ise compare\" proves frozen-input equality only")]
+fn guidance_compare_is_input_equality_only(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("`givn ise compare` is read-only")
+            && content.contains("frozen-input")
+            && content.contains("Trial result: unverified"),
+        "the served ise guidance does not separate input equality from a trial result: {content}"
+    );
+}

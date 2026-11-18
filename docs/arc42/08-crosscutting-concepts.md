@@ -1415,6 +1415,7 @@ verification receipt (`change-proof/v1`) nor a change artifact.
 | `specification_checksum`, `end_to_end_checksum` | Full rollups |
 | `copy_directory` | The absolute spec copy directory |
 | `givn_version` | The running Givn version |
+| `verification` | Optional `{path, checksum}` for the generated `givn/ise-verification.yaml`; absent in manifests written before the contract existed |
 
 `specification_files` always includes `givn/specification.yaml` as an implicit
 entry, and `counts.specification_files` equals that list's length, so a Specification
@@ -1442,14 +1443,37 @@ under a declared manifest entry is a Specification change, not the System, and
 is refused. A declared manifest entry is a match of any of the five categories,
 including `e2e`, although the copy never carries an `e2e` match.
 
-**Compatibility.** `ise-manifest/v1` requires every field it lists; this scope
-has no optional field. A field added later is optional only when the scope
-states its default, and a field with no derivable default opens a new scope. An
-unknown field, a missing field, a malformed checksum, or a mismatched scope is
-refused naming the manifest and the expected value, so a reader never guesses.
-The manifest carries no backend: `compare` re-selects it from the project working tree. The earlier `ise-trial/v1` record
-shape is refused by name and is not migrated: a spec copy is ephemeral, and one
-command re-prepares it.
+**Compatibility.** `ise-manifest/v1` requires every field it lists except
+`verification`, whose absence is the older shape. The optional field's default
+is absence: a comparison of an older manifest still checks the frozen inputs,
+while `verify-trial` refuses an older manifest by name because it cannot prove
+the trial contract. A field added later is optional only when the scope states
+its default, and a field with no derivable default opens a new scope. An
+unknown field, a missing required field, a malformed checksum, or a mismatched
+scope is refused naming the manifest and the expected value, so a reader never
+guesses. The manifest carries no backend: `compare` re-selects it from the
+project working tree. The earlier `ise-trial/v1` record shape is refused by
+name and is not migrated: a spec copy is ephemeral, and one command
+re-prepares it.
+
+**Verification contract and trial gate.** Every rebuild also writes
+`givn/ise-verification.yaml` into the copy and records its path and checksum in
+`verification`. The contract is strict (`ise-verification/v1`): it names the
+component command and feature path, the frozen End-to-end command and feature
+path, each tier's declared execution-unit count, and the coverage command and
+paths when the addon is effective. An execution unit is one plain scenario or
+one Scenario Outline example row.
+
+`givn ise compare` remains read-only and prints `Trial result: unverified`; its
+exit 0 proves frozen-input equality only. `givn ise verify-trial` is the only
+command that executes the contract. It removes each raw result path first,
+runs the component command inside the copy and the frozen End-to-end command in
+the project working tree, and requires each fresh result to equal its declared
+count exactly with zero failed and zero skipped. With coverage, it requires a
+non-zero component line measurement, distinct instrumented tier reports, and a
+declared `coverage.e2e_subprocess` for a 0-line End-to-end report. It writes
+`ise-trial-result/v1` with both executed/declared pairs, per-tier coverage, and
+`clean`; only `clean: true` prints the pass line and exits 0.
 
 **Checksums.** One path checksum is
 `sha256(path, NUL, kind, NUL, executable, NUL, content)`, where `kind` is `f`

@@ -235,6 +235,10 @@ pub struct Coverage {
     /// Cobertura XML.
     #[serde(default = "default_cobertura_output")]
     pub output_path: String,
+    /// The End-to-end suite runs the product as a subprocess and cannot
+    /// instrument it. A 0-line e2e report is accepted only when this is true.
+    #[serde(default)]
+    pub e2e_subprocess: bool,
 }
 
 fn sentinel() -> String {
@@ -261,6 +265,7 @@ impl Default for Coverage {
             non_e2e_path: default_non_e2e_path(),
             e2e_path: default_e2e_path(),
             output_path: default_cobertura_output(),
+            e2e_subprocess: false,
         }
     }
 }

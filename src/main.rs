@@ -304,6 +304,22 @@ enum IseCommands {
         #[arg(long)]
         copy: PathBuf,
     },
+    /// Execute a trial's verification contract and require its declared tiers.
+    VerifyTrial {
+        /// The manifest the preparation wrote.
+        #[arg(long)]
+        manifest: PathBuf,
+        /// The spec copy the manifest describes.
+        #[arg(long)]
+        copy: PathBuf,
+        /// Write the ise-trial-result/v1 record to this path.
+        #[arg(long)]
+        result: PathBuf,
+        /// Record an explicit not-run decision; refused when component
+        /// execution units are declared.
+        #[arg(long)]
+        component_not_run: Option<String>,
+    },
 }
 
 /// The `history` command's subcommands: the read view is the command itself.
@@ -679,6 +695,20 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 IseCommands::Compare { manifest, copy } => {
                     cli::ise::compare(&project_root, &ise::CompareRequest { manifest, copy })
                 }
+                IseCommands::VerifyTrial {
+                    manifest,
+                    copy,
+                    result,
+                    component_not_run,
+                } => cli::ise::verify_trial(
+                    &project_root,
+                    &ise::VerifyRequest {
+                        manifest,
+                        copy,
+                        result,
+                        component_not_run,
+                    },
+                ),
             };
             if exit_code != 0 {
                 std::process::exit(exit_code);

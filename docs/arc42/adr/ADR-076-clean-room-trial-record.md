@@ -241,3 +241,43 @@ implementation of the stated rule.
 - Arc42 chapters [2](../02-architecture-constraints.md),
   [6](../06-runtime-view.md), and [8](../08-crosscutting-concepts.md) carry the
   current facts.
+
+## Amendment 2026-11-18: the verification contract and the trial gate
+
+The 2026-11-16 amendment fixed three commands and one `ise-manifest/v1` field
+set. It left the record able to prove frozen-input equality but unable to prove
+that the kept component corpus executed: a trial could pass with the frozen
+`@e2e` suite green and zero component scenarios run.
+
+This amendment adds one generated `givn/ise-verification.yaml` contract and one
+`givn ise verify-trial` command. The rebuild writes the contract into the spec
+copy and records its path and checksum in the manifest's optional
+`verification: {path, checksum}` field. The contract names the component and
+frozen End-to-end commands and feature paths, each tier's declared
+execution-unit count, and the coverage command and paths when the coverage
+addon is effective. An execution unit is one plain scenario or one Scenario
+Outline example row, matching the runner's expanded count.
+
+`givn ise compare` remains read-only. It verifies a recorded contract's
+checksum, excludes the reserved path from its added-Specification-file refusal,
+and prints `Trial result: unverified`; its exit 0 proves frozen-input equality
+only. `givn ise verify-trial` is the only command that executes the contract:
+it requires fresh results, exact declared counts, zero failed and zero skipped,
+and declared coverage, then writes `ise-trial-result/v1`. A
+`--component-not-run` decision is refused when component units are declared.
+
+The optional `verification` field's default is absence, so an older manifest
+still compares; `verify-trial` refuses an older manifest by name because it
+cannot prove the contract. The field belongs to `ise-manifest/v1` rather than a
+new scope because absence is a derivable default and the frozen-input fields
+are unchanged. **Rejected alternative:** executing the contract inside
+`givn ise compare`. A comparison of an untrusted copy would run copied scripts,
+and exit 0 would conflate input equality with trial success.
+
+### Amendment Confirmation
+
+`Preparation writes a runnable verification contract`, `Comparison labels
+frozen-input equality as unverified`, `Verification refuses a missing component
+runner`, `Verification records the exact declared counts`, `Verification
+refuses an exact count mismatch`, and `A not-run decision cannot replace
+declared component units` drive the real commands through the binary.

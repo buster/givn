@@ -1005,6 +1005,92 @@ fn verify_declaration() -> String {
         .to_string()
 }
 
+/// The feature path the trial-gate fixture commits: ten component scenarios
+/// and one `@e2e` scenario.
+pub(crate) const TRIAL_GATE_FEATURE_PATH: &str = "givn/specs/gate.feature";
+/// The component count the trial-gate fixture declares.
+pub(crate) const TRIAL_GATE_COMPONENT_SCENARIOS: usize = 10;
+
+/// A Git project with `ise` enabled and a verification contract that names
+/// `sh ./scripts/verify.sh` and `sh ./scripts/e2e.sh`. Coverage is off, so the
+/// gate exercises the component tier without a Cobertura fixture.
+pub(crate) fn trial_gate_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(
+        env.path("givn/config.yaml"),
+        "addons:\n  ise: true\n  coverage: false\n",
+    )
+    .expect("write the fixture config");
+    std::fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n",
+    )
+    .expect("write the fixture commands");
+    std::fs::write(
+        env.path("givn/specification.yaml"),
+        "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: []\nlimits: []\ne2e: [\"tests/e2e\"]\nsource: [\"src/**\", \"scripts/**\"]\n",
+    )
+    .expect("write the fixture declaration");
+    env
+}
+
+/// Commit the trial-gate revision: ten component scenarios, one `@e2e`
+/// scenario, the frozen package, one source file, and the e2e script.
+pub(crate) fn commit_trial_gate_revision(env: &common::TestEnv) -> String {
+    let mut feature = String::from("Feature: trial gate\n\n");
+    for index in 1..=TRIAL_GATE_COMPONENT_SCENARIOS {
+        feature.push_str(&format!(
+            "  Scenario: component {index}\n    Given nothing\n\n"
+        ));
+    }
+    feature.push_str("  @e2e\n  Scenario: acceptance\n    Given nothing\n");
+    commit_files(
+        env,
+        &[
+            (
+                "givn/config.yaml",
+                "addons:\n  ise: true\n  coverage: false\n",
+            ),
+            (
+                "givn/commands.yaml",
+                "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n",
+            ),
+            (
+                "givn/specification.yaml",
+                "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: []\nlimits: []\ne2e: [\"tests/e2e\"]\nsource: [\"src/**\", \"scripts/**\"]\n",
+            ),
+            (TRIAL_GATE_FEATURE_PATH, &feature),
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+            ("tests/e2e/steps/demo.rs", "// e2e steps\n"),
+            ("src/one.rs", "pub fn one() {}\n"),
+            (
+                "scripts/e2e.sh",
+                "#!/bin/sh\nprintf '{\"scope\":\"e2e\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
+            ),
+        ],
+        "fixture: trial gate revision",
+    )
+}
+
+/// Write the component script the builder authors inside the copy.
+pub(crate) fn write_trial_gate_component_script(copy: &Path, total: usize) {
+    let path = copy.join("scripts/verify.sh");
+    std::fs::create_dir_all(path.parent().expect("script parent")).expect("create script parent");
+    std::fs::write(
+        &path,
+        if total == 0 {
+            "#!/bin/sh\ntrue\n".to_string()
+        } else {
+            format!(
+                "#!/bin/sh\nprintf '{{\"scope\":\"component\",\"total\":{total},\"passed\":{total},\"failed\":0,\"skipped\":0}}\\n' > \"$GIVN_RESULT_FILE\"\n"
+            )
+        },
+    )
+    .expect("write the component script");
+}
+
 /// Commit the files the verify fixtures freeze: the `@e2e` feature, the
 /// contract and limits documents, the two e2e package files, one kept source
 /// file, the replaced source file, and the file outside every role. Returns

@@ -114,10 +114,50 @@ working tree.
 |---|---|
 | `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which every declared `source:` entry is removed. |
 | `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which one Component's Source code is removed; neighbouring Components and their Component Interfaces stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Reports every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. |
+| `givn ise compare --manifest <file> --copy <dir>` | Reports frozen-input equality: the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests against the manifest. It executes no trial command and claims no trial result. |
+| `givn ise verify-trial --manifest <file> --copy <dir> --result <file> [--component-not-run <reason>]` | Executes the generated verification contract and records the only whole-system trial result. |
 
-A refusal prints `ise rebuild-all:`, `ise rebuild-component:`, or
-`ise compare:` to match the command that refused.
+A refusal prints `ise rebuild-all:`, `ise rebuild-component:`, `ise compare:`, or
+`ise verify-trial:` to match the command that refused.
+
+## The verification contract and the trial result
+
+Every rebuild writes a generated verification contract into the spec copy and
+records its path and checksum in the spec-copy manifest. The contract names the
+component command and feature path, the frozen End-to-end command and feature
+path, the declared execution-unit count for each tier, and the coverage command
+and report paths when the coverage addon is effective.
+
+An execution unit is one plain scenario, or one example row of a Scenario
+Outline. The declared count matches what the runner expands and executes.
+
+`givn ise compare` is read-only. Its two `match` lines prove frozen-input
+equality. It prints `Trial result: unverified` and never claims that the
+component corpus ran. A whole-system trial result requires
+`givn ise verify-trial`, which:
+
+- runs the component command inside the spec copy and the frozen End-to-end
+  command in the checkout, each with a fresh runner result;
+- requires the executed count to equal the declared count exactly, with zero
+  failed and zero skipped;
+- runs the coverage measurement when the contract carries one, requires a
+  non-zero component line measurement, requires independent tier reports, and
+  accepts a 0-line End-to-end report only when the project declares
+  `coverage.e2e_subprocess: true`;
+- writes an `ise-trial-result/v1` record with `component.declared` and
+  `component.executed`, `end_to_end.declared` and `end_to_end.executed`, and
+  per-tier line and branch coverage.
+
+A missing runner result, a stale result, a count mismatch, a failed or skipped
+scenario, or a zero-line component report refuses and records `clean: false`.
+The command prints no pass line. An explicit `--component-not-run <reason>`
+decision is accepted only when the Specification declares no component
+execution units; with units declared it refuses and records the decision
+without a pass.
+
+Do not present `givn ise compare`'s two `match` lines as a whole-system
+rebuild result. Do not present a green frozen End-to-end suite as coverage of
+the component corpus.
 
 ## The spec copy rule
 

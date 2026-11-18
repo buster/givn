@@ -32,7 +32,8 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn archive --change <id> [--verbose]` | Publish and verify a completed change forward-only on Git or Fossil. `--verbose` streams gate output with timestamps. Add-on drift from the change lock blocks archive. |
 | `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. Requires `ise` and `architecture_principles`; `--at` defaults to `HEAD`. |
 | `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. Requires at least one path. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. Exit `0` clean, `1` refusal or difference. |
+| `givn ise compare --manifest <file> --copy <dir>` | Report frozen-input equality between the spec-copy manifest, the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. It executes no trial command and prints `Trial result: unverified`. Exit `0` clean, `1` refusal or difference. |
+| `givn ise verify-trial --manifest <file> --copy <dir> --result <file> [--component-not-run <reason>]` | Execute the generated `givn/ise-verification.yaml` contract: run the component command inside the copy and the frozen End-to-end command in the checkout, require exact declared execution-unit counts with zero failed or skipped, run coverage when declared, and write an `ise-trial-result/v1` record. Exit `0` only for `clean: true`. |
 | `givn eject <target> [--force]` | Materialize an embedded facet for editing, for example `design:template`, `review:instruction`, `skill:givn-propose`, `manifest`, `readme:template`. |
 | `givn addons list` / `enable <name>` / `disable <name>` | Show effective state and toggle one addon. `enable` checks the registered prerequisite relation first, scaffolds addon-owned files, and resyncs; `disable` refuses while a dependent addon is on, removes the workflow effect, and leaves existing project files. While a locked change is active, mutation is refused; the operator path is `--operator --reason "<reason>"` on an interactive terminal, recorded in the change lock. |
 | `givn skills sync` | Regenerate skills, reporters, managed `AGENTS.md` blocks, and ignore state for the persisted target selection. Recognizable old generated command files are removed; custom files are preserved with a manual notice. |
@@ -204,7 +205,9 @@ rather than rewritten unsafely.
 - `verify.features_path` — where the runner reads features (default
   `givn/specs`).
 - `coverage.measure_command`, `coverage.merge_command`, `coverage.non_e2e_path`,
-  `coverage.e2e_path`, `coverage.output_path` — archive coverage gate.
+  `coverage.e2e_path`, `coverage.output_path`, and `coverage.e2e_subprocess`
+  (default false; true only when the End-to-end suite runs the product as an
+  uninstrumented subprocess) — archive coverage gate and trial coverage.
 - `run.command`, `run.product_type` (`server`/`cli`/`library`), exactly one of
   `run.port` or `run.port_env` for servers, `run.ready_path`, and
   `run.ready_timeout_s` (default 60). The block replaces whole, like `verify`.
@@ -738,6 +741,53 @@ edits the copy.
 Every check runs before the report, so one run names every differing path.
 Exit codes: `0` clean or success, `1` refusal, difference, or read failure, `2`
 a clap usage error.
+
+`givn ise compare` is read-only and reports input equality only. After the two
+subject lines it prints:
+
+```text
+Trial result: unverified (frozen inputs only; run `givn ise verify-trial ...`)
+```
+
+Exit `0` means the frozen inputs match; it does not mean the component corpus
+ran.
+
+**Verify trial.** `givn ise verify-trial --manifest <file> --copy <dir>
+--result <file>` is the only command that reports a whole-system trial result.
+It first requires `givn ise compare`'s frozen inputs to match, then reads the
+generated `givn/ise-verification.yaml` from the copy. The rebuild records that
+contract's path and checksum in the `ise-manifest/v1` manifest; a missing,
+changed, or unlisted contract refuses before any command runs.
+
+The contract names a component command and feature path, a frozen End-to-end
+command and feature path, an execution-unit count for each tier, and the
+coverage command and report paths when the coverage addon is effective. An
+execution unit is one plain scenario or one example row of a Scenario Outline.
+
+The command removes each raw result file, runs the component command inside the
+copy with `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and
+`GIVN_RESULT_SCOPE=component`, then runs the frozen End-to-end command in the
+project working tree with `GIVN_RESULT_SCOPE=e2e`. Each run must produce a fresh
+result whose `total` equals the declared count exactly, with zero failed,
+zero skipped, and reconciling `passed + failed + skipped == total`. A missing
+result, a stale result, a non-zero failure or skip, or a count mismatch refuses
+and records `clean: false`; no pass line prints.
+
+When the contract carries coverage, the command removes both reports, runs
+`coverage.measure_command` inside the copy with `GIVN_COVERAGE_NON_E2E_PATH`,
+`GIVN_COVERAGE_E2E_PATH`, and `GIVN_FEATURES`, requires a component report with
+non-zero measured lines and executed lines, requires independent tier reports,
+and accepts a 0-line End-to-end report only when `coverage.e2e_subprocess: true`
+is declared.
+
+The result file is an `ise-trial-result/v1` JSON record with the revision, the
+copy directory, `component.declared` and `component.executed`,
+`end_to_end.declared` and `end_to_end.executed`, per-tier line and branch
+coverage, and `clean`. The command exits `0` only when `clean` is true.
+
+`--component-not-run <reason>` records an explicit not-run decision. It is
+refused when the Specification declares component execution units; it never
+turns a declared corpus into a pass.
 
 ### Archive verification and recovery
 
