@@ -43,7 +43,7 @@ Reviewer context: DesignReviewGate (independent reviewer subagent)
 
 - `cargo test --test ise_component_tier_gate -- --test-threads=1` — 12 passed.
 - `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e` — 9 passed.
-- `cargo test --lib ise::` — 19 passed.
+- `cargo test --lib ise::` — 21 passed.
 - `givn lint --change ise-component-tier-gate` — clean (only advisory overlap findings).
 - `./run-tests.sh --non-e2e` — 1126 passed, 115 skipped.
 - `./run-tests.sh --e2e --package e2e` — 120 passed, 785 steps.

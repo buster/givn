@@ -48,9 +48,10 @@ persistent result record, and touches three capabilities.
 - **Strict mode.** `tests/features_runner.rs` keeps `.fail_on_skipped()`.
   The change adds no runner and no skip path.
 - **Acceptance test.** `cargo test --test ise_component_tier_gate --
-  --test-threads=1` — 9 passed, including the missing runner, count-only result, foreign product,
+  --test-threads=1` — 12 passed, including the missing runner, count-only result, foreign product,
   exact counts, mismatch, not-run, read-only compare, reserved path, traversal,
-  and symlink cases.
+  symlink, product-path escape, product parent symlink, and post-run contract
+  drift cases.
 - **Terminal evidence.** The real `givn ise compare` and
   `givn ise verify-trial` transcript is committed at
   `givn/changes/ise-component-tier-gate/evidence/visual/verification-records-the-exact-declared-counts/transcript.txt`.
@@ -82,7 +83,7 @@ No other delta scenario shares a shape, and no delta scenario exceeds the
 
 | Gate | Result |
 |---|---|
-| `givn lint --change ise-component-tier-gate` | exit 0; 3 files checked, clean; only `[SUBST]` advisories |
+| `givn lint --change ise-component-tier-gate` | exit 0; 3 files checked, clean; only `[SHAPE]`/`[SUBST]` advisories with dispositions |
 | `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e` | exit 0; 9 tests, 9 passed, 56 steps |
 | `givn check tasks --change ise-component-tier-gate` | exit 0; 9 scenario(s), 0 failed, 0 skipped; E2E `not_applicable`; `verify passed` |
 | `./run-tests.sh --non-e2e` | exit 0; 1126 tests, 1126 passed, 115 nextest units excluded by the regular tag expression |
