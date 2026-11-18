@@ -80,9 +80,9 @@ Planned proof: with the old `docs/reference.md` delegation restored, `The ise in
 
 ## Review and archive
 
-- [ ] **C4 — Self review.** Perform the final review in this context and write `review.md` with `REVIEW: PASS` and the persona disposition.
+- [x] **C4 — Self review.** Perform the final review in this context and write `review.md` with `REVIEW: PASS` and the persona disposition.
 
-  - [ ] COMMIT: ___ -- Batch: review-and-archive
+  - [x] COMMIT: 3f472f1 -- Batch: review-and-archive
 
 - [ ] **C5 — Archive.** `givn archive --change make-ise-guidance-self-contained` publishes the proven archive.
 
