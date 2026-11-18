@@ -6,7 +6,7 @@ Reviewer context: `agent://DesignReviewIseVocab` (fresh context, did not author 
 
 ## Operator decisions recorded during grilling
 
-- **Direct-work boundary.** The operator decided that the new working-tree guidance text is direct work, like the 1:1 vocabulary renames. The change's delta carries only the new regression scenarios; the guidance text lives in the direct commits `bbd7de5`, `4b30dfb`, and `92ad0a5`.
+- **Direct-work boundary.** The operator decided that the new working-tree guidance text is direct work, like the 1:1 vocabulary renames. The change's delta carries only the new regression scenarios; the guidance text lives in the direct commits `bbd7de5`, `4b30dfb`, `92ad0a5`, and the e2e binding fix `8a7efce`.
 - **Vocabulary scope.** The operator selected the full sweep, then directed that plain 1:1 renamings land as direct work. The unchanged `prepare-an-ise-test` narrative and its two feature files keep their step text as the recorded exception; their report labels remain `Specification files:`.
 - **Reference direction.** The site stays framework-agnostic and names no Givn command, flag, or record; Givn cites https://iseprinciple.org. The site's earlier CLI `--dry-run` comparison, the preview distinction, and the `Rebuilt code` record heading were removed.
 

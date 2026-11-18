@@ -58,10 +58,10 @@ None. The delta reads no persisted state and writes none. `ise-manifest/v1` is u
 
 ## Step Definitions
 
-| Step definition file | Capability | Permanent merge target |
+| Capability | Step definition file | Permanent merge target |
 |---|---|---|
-| `tests/steps/instruction_integrity_steps.rs` | `instruction-integrity` | the same file |
-| `tests/steps/change_strategy_steps.rs` | `ise-rebuild-decision` | the same file |
+| `instruction-integrity` | `tests/steps/instruction_integrity_steps.rs` | the same file |
+| `ise-rebuild-decision` | `tests/steps/change_strategy_steps.rs` | the same file |
 
 This table lists the delta's new bindings; the direct-work bindings are listed in Architecture Impact. The new phrases bind in the permanent files before the delta runs. Archive's phrase comparison therefore finds a permanent binding for every delta phrase.
 

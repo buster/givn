@@ -1,7 +1,7 @@
 # Tasks: ise-rebuild-decision-and-working-tree-ship
 
 The direct vocabulary and guidance work is committed before this plan (`bbd7de5`,
-`4b30dfb`, `92ad0a5`). This change adds the regression scenarios that assert the
+`4b30dfb`, `92ad0a5`, `8a7efce`). This change adds the regression scenarios that assert the
 working-tree practice, its limitation, the copy distinction, the restart rule,
 the No rebuild line, and the principle citation. Every scenario is regular and
 asserts served CLI text; no `src/**` file changes.
@@ -50,7 +50,7 @@ existing behaviour protected and manufactures no production diff.
 
   Design constraints: none.
 
-  `COMMIT: 320c9a1 -- Batch: setup`
+  - [x] COMMIT: 320c9a1 -- Batch: setup
 
 - [x] **C2 — Confirm the runner and strict mode.** `verify.command` is
   `./run-tests.sh --non-e2e`; `verify.e2e_command` is
@@ -63,14 +63,14 @@ existing behaviour protected and manufactures no production diff.
   `GIVN_FEATURES=givn/specs GIVN_CUCUMBER_TAGS='not @e2e and not @givn.removed'`:
   `1117 tests run: 1117 passed, 115 skipped`.
 
-  `COMMIT: 0e5c905 -- Batch: setup`
+  - [x] COMMIT: 320c9a1 -- Batch: setup
 
 - [x] **C3 — Confirm the single-scenario command.** Run one delta scenario with
   `GIVN_FEATURES=givn/changes/ise-rebuild-decision-and-working-tree-ship/specs
   GIVN_CUCUMBER_TAGS='not @e2e and not @givn.removed' cargo nextest run --locked
   --test features_runner -E 'test("...")'`.
 
-  `COMMIT: 0e5c905 -- Batch: setup`
+  - [x] COMMIT: 320c9a1 -- Batch: setup
 
 ## Batch `working-tree-ship-guidance`
 
@@ -92,7 +92,7 @@ two delta feature files and the two permanent step files.
   revision, early archive merge, generated spec-copy manifest, history-hiding
   repository view, or sandbox is required. D5.
 
-  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
+  - [x] COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance
 
 ### Scenario: The ise instruction states the working-tree ship limitation
 
@@ -102,7 +102,7 @@ two delta feature files and the two permanent step files.
   Design constraints: `ise.md` "Limitation" paragraph. D6. No clean-room claim
   for the working-tree path.
 
-  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
+  - [x] COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance
 
 ### Scenario: The ise instruction distinguishes the working-tree ship from copy preparation
 
@@ -113,7 +113,7 @@ two delta feature files and the two permanent step files.
   Design constraints: `ise.md` "Two rebuild practices" and "Commands"; D5 keeps
   `givn ise rebuild-component` as an external-copy preparer.
 
-  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
+  - [x] COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance
 
 ### Scenario: The ise instruction restarts verification when the Specification changes after a rebuild starts
 
@@ -123,7 +123,7 @@ two delta feature files and the two permanent step files.
   Design constraints: `ise.md` limitation section; D5. The acceptance target is
   never moved to make the rebuilt code pass.
 
-  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
+  - [x] COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance
 
 ### Scenario: The ise instruction cites the principle source
 
@@ -132,7 +132,7 @@ two delta feature files and the two permanent step files.
   Design constraints: `ise.md` first paragraph; the site is framework-agnostic
   and names no Givn command, flag, or record.
 
-  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
+  - [x] COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance
 
 ### Scenario: The design guidance names the working-tree ship practice
 
@@ -143,7 +143,7 @@ two delta feature files and the two permanent step files.
   Design constraints: `design.md` decision block; D5. The design instruction
   points at the `ise` instruction and does not restate the sequence.
 
-  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
+  - [x] COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance
 
 ### Scenario: The design guidance omits the Rebuilt code line for No rebuild
 
@@ -153,48 +153,48 @@ two delta feature files and the two permanent step files.
   Design constraints: `design.md` decision block; D1 and D8. A rebuilding change
   records `discard` or `ship`.
 
-  `COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance`
+  - [x] COMMIT: 0e5c905 -- Batch: working-tree-ship-guidance
 
 ## Verification
 
 - [x] **C3 — Delta run.** Run the two delta features through the regular scope;
   all seven scenarios pass. Record the summary.
 
-  `COMMIT: 8a7efce -- Batch: verification`
+  - [x] COMMIT: 8a7efce -- Batch: verification
 
 - [x] **C4 — Full regular suite.** `./run-tests.sh --non-e2e` exits 0 with
   `1117 passed`. Record the summary.
 
-  `COMMIT: 8a7efce -- Batch: verification`
+  - [x] COMMIT: 8a7efce -- Batch: verification
 
 - [x] **C5 — E2E scope.** `./run-tests.sh --e2e --package e2e` exits 0; the
   direct `@e2e` decision scenario passes. Record the summary.
 
-  `COMMIT: 8a7efce -- Batch: verification`
+  - [x] COMMIT: 8a7efce -- Batch: verification
 
 - [x] **C6 — Change gate.** `givn check tasks --change
   ise-rebuild-decision-and-working-tree-ship` writes its receipt and exits 0.
 
-  `COMMIT: 8a7efce -- Batch: verification`
+  - [x] COMMIT: 8a7efce -- Batch: verification
 
 ## Review and archive
 
 - [ ] **C4 — Independent review.** The reviewer context `agent://DesignReviewIseVocab`
   performs the final review and writes `review.md` with `REVIEW: PASS`.
 
-  `COMMIT: ___ -- Batch: review-and-archive`
+  - [ ] COMMIT: ___ -- Batch: review-and-archive
 
 - [ ] **C5 — Archive.** `givn archive --change
   ise-rebuild-decision-and-working-tree-ship` publishes the proven archive.
 
-  `COMMIT: ___ -- Batch: review-and-archive`
+  - [ ] COMMIT: ___ -- Batch: review-and-archive
 
 - [ ] **C5 — Post-archive suites.** Run the regular and e2e suites against the
   merged corpus; both exit 0.
 
-  `COMMIT: ___ -- Batch: review-and-archive`
+  - [ ] COMMIT: ___ -- Batch: review-and-archive
 
 - [ ] **C5 — Self-dogfood.** Install the checkout's binary, `givn skills sync`,
   `givn instructions`, and the required suites per `AGENTS.md`.
 
-  `COMMIT: ___ -- Batch: review-and-archive`
+  - [ ] COMMIT: ___ -- Batch: review-and-archive
