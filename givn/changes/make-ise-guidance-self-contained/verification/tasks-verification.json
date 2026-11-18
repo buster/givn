@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "change": "make-ise-guidance-self-contained",
+  "status": "passed",
+  "head": "ee66b009e4f4c73033038c437a0f28e6c3588b8c",
+  "features_path": "givn/changes/make-ise-guidance-self-contained/specs",
+  "features_digest": "deddb3ee4fd12da0e381eae3cd8703715086802efab23c666e628c5baa9da251",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "c01697747ba9ad73c98ab3da767da6c6909436ce9d96eacc256a3817cce1fd45",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "e2e_identity": {
+    "package_digests": {
+      "e2e": "cb9294a1b5bd54488866652f3d968a934d4ac0bddd97f5836a40c11d187ae654"
+    },
+    "runner_command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+    "givn_version": "0.9.20"
+  },
+  "e2e_scope": {
+    "status": "not_applicable",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0
+  },
+  "finished_at_unix": 1795019647
+}

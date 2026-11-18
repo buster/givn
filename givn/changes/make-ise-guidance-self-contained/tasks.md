@@ -62,21 +62,21 @@ Planned proof: with the old `docs/reference.md` delegation restored, `The ise in
 
 ## Verification
 
-- [ ] **C3 — Delta run.** Run the two delta scenarios; both pass.
+- [x] **C3 — Delta run.** Run the two delta scenarios; both pass.
 
-  - [ ] COMMIT: ___ -- Batch: verification
+  - [x] COMMIT: ee66b00 -- Batch: verification
 
-- [ ] **C4 — Full regular suite.** `./run-tests.sh --non-e2e` exits 0; record the summary.
+- [x] **C4 — Full regular suite.** `./run-tests.sh --non-e2e` exits 0; record the summary.
 
-  - [ ] COMMIT: ___ -- Batch: verification
+  - [x] COMMIT: ee66b00 -- Batch: verification
 
-- [ ] **C5 — E2E scope.** `./run-tests.sh --e2e --package e2e` exits 0; record the summary.
+- [x] **C5 — E2E scope.** `./run-tests.sh --e2e --package e2e` exits 0; record the summary.
 
-  - [ ] COMMIT: ___ -- Batch: verification
+  - [x] COMMIT: ee66b00 -- Batch: verification
 
-- [ ] **C6 — Change gate.** `givn check tasks --change make-ise-guidance-self-contained` writes its receipt and exits 0.
+- [x] **C6 — Change gate.** `givn check tasks --change make-ise-guidance-self-contained` writes its receipt and exits 0.
 
-  - [ ] COMMIT: ___ -- Batch: verification
+  - [x] COMMIT: ee66b00 -- Batch: verification
 
 ## Review and archive
 
