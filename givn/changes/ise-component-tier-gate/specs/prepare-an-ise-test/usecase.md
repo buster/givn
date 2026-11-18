@@ -177,11 +177,7 @@ A refusal leaves the checkout byte-for-byte unchanged and writes no spec copy di
 
 ## Success guarantee
 
-**Copy outcome.** A spec copy directory outside the checkout holds the declared Specification, its declaration included, and the Source code kept, with the component's paths removed and with no End-to-end (E2E) test.
-
-**Comparison condition.** When a manifest path was given, the comparison re-checks the copy's Specification files, the checkout's Specification files, the checkout's End-to-end (E2E) tests, and the generated verification contract against that manifest, and exits 0 only when `Specification files` and `End-to-end tests` both say `match`. That exit proves frozen-input equality only; it prints `Trial result: unverified`.
-
-**Trial result condition.** `givn ise verify-trial` exits 0 only when the component and End-to-end tiers each executed exactly their declared execution-unit count with zero failed and zero skipped, the frozen inputs matched, and any declared coverage passed. Its `ise-trial-result/v1` record then carries `clean: true`; every other outcome records `clean: false` and prints no pass line.
+**Trial outcome.** A spec copy directory outside the checkout holds the declared Specification, its declaration included, and the Source code kept, with the component's paths removed and no End-to-end (E2E) test; when a manifest path was given, its frozen Specification, End-to-end, and generated-contract inputs match and the comparison prints `Trial result: unverified`; and when `givn ise verify-trial` is claimed, both tiers execute exactly their declared execution-unit counts with zero failed and zero skipped, any declared coverage passes, the `ise-trial-result/v1` record carries `clean: true`, and the only pass line is printed.
 
 ## Personas
 

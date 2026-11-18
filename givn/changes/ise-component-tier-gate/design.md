@@ -187,10 +187,16 @@ fixture.
 
 - Regular scope: `./run-tests.sh --non-e2e`
 - Delta scope: `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e`
+- E2E scope: `./run-tests.sh --e2e --package e2e` (`verify.e2e_command`)
+- ISE E2E scope: `GIVN_FEATURES=givn/specs/prepare-an-ise-test ./run-tests.sh --e2e --package e2e`
 - Single scenario: `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs cargo test --locked --test features_runner -- --exact "<usecase>/<capability>.feature::<title>"`
 - Strict mode: `tests/features_runner.rs` keeps `.fail_on_skipped()`; an
   unbound or skipped step fails the run.
 - Acceptance test: `cargo test --test ise_component_tier_gate -- --test-threads=1`
+- Full E2E preflight: after `./setup-e2e-browser.sh` installed the pinned
+  Playwright package and Chromium, `./run-tests.sh --e2e --package e2e` passed
+  120 of 120 scenarios (785 steps). The earlier 14 development-report failures
+  were the missing browser dependency, not a change defect.
 
 ## Use-case traceability
 
@@ -202,6 +208,14 @@ fixture.
 | A not-run decision never hides a declared corpus | Flag accepted only at zero declared units | `A not-run decision cannot replace declared component units` |
 | Coverage is honest per tier | Non-zero component measurement, distinct reports, declared subprocess e2e | `verify` coverage unit tests (`coverage_rejects_a_zero_line_component_report`, `coverage_rejects_a_zero_line_e2e_report_without_the_declaration`, `coverage_accepts_a_declared_subprocess_e2e_report`) |
 | Served guidance names the split | `ise.md` names the gate and the input-only comparison | `Served ise guidance distinguishes the trial gate from input equality` |
+
+## Interaction Coverage Matrix
+
+| Inventory entry | `@e2e` scenario | Real interface | Driving mechanism |
+|---|---|---|---|
+| clean-room-preparation: write the spec copy with `rebuild-all` or `rebuild-component` | Developer rebuilds the whole product from its Specification | Git revision read plus plain-directory write | The scenario drives the built `givn` binary's `ise rebuild-all` against a real Git fixture. |
+| trial-input-verification: compare the frozen inputs, then run the trial verification when claiming a result | Verifier compares the spec copy with the manifest | CLI subprocess | The scenarios drive `givn ise compare` and `givn ise verify-trial` against a real Git fixture and real `sh` scripts. |
+| serve-extended-rules: request effective instructions by id | An agent receives the extended rules through the Givn CLI | CLI subprocess | The scenario requests `givn instructions ise` through the built binary. |
 
 ## Decisions
 
@@ -234,6 +248,12 @@ The terminal contract is the fixed line order: two subject lines then
 `Trial result: unverified` for `compare`; the component line, End-to-end line,
 optional coverage lines, then `Trial result: passed` for a clean
 `verify-trial`. Persona: `developer--primary-user`.
+
+Capture mechanism and evidence path: the real `givn ise compare` and
+`givn ise verify-trial` commands run against a committed ten-component,
+one-`@e2e` fixture; their terminal transcript is committed at
+`givn/changes/ise-component-tier-gate/evidence/visual/verification-records-the-exact-declared-counts/transcript.txt`.
+It carries both states and the fixed line order.
 
 ## Risks
 

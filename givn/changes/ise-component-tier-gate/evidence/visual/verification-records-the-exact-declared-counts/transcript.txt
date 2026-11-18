@@ -1,15 +1,23 @@
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
-     Running tests/features_runner.rs (target/debug/deps/features_runner-f4084977d776fdd7)
-Feature: Trial input verification
-  Scenario: Verification records the exact declared counts
-   ✔  Given a committed verification fixture with ten component scenarios and one End-to-end scenario
-   ✔  When the verifier prepares a trial with ten component scenarios and one End-to-end scenario
-   ✔  And the agent writes a component verification script reporting 10 executed scenarios
-   ✔  And the verifier runs the trial verification
-   ✔  Then the trial verification succeeds and prints "Component scenarios: 10/10 executed, 0 failed, 0 skipped"
-   ✔  And the trial verification succeeds and prints "End-to-end tests: 1/1 executed, 0 failed, 0 skipped"
-   ✔  And the trial result records "clean": true
-[Summary]
-1 feature
-1 scenario (1 passed)
-7 steps (7 passed)
+$ givn ise rebuild-all --into "/tmp/ise-trial-transcript.nCBY9H/copy" --manifest "/tmp/ise-trial-transcript.nCBY9H/manifest.yaml"
+Backend: git
+Revision: 3354c2d821d21d5500e6239f6e47a8fd817b3d27
+Specification files: 2
+Source code kept: 0
+Source code removed: 2
+Outside the spec copy: 2
+Files beside removed paths: 0
+Specification checksum: e23859f4eef3
+End-to-end checksum: e007acf4d2a6
+End-to-end tests: not copied (2 files)
+Copy directory: /tmp/ise-trial-transcript.nCBY9H/copy
+Manifest: /tmp/ise-trial-transcript.nCBY9H/manifest.yaml
+
+$ givn ise compare --manifest "/tmp/ise-trial-transcript.nCBY9H/manifest.yaml" --copy "/tmp/ise-trial-transcript.nCBY9H/copy"
+Specification files: match
+End-to-end tests: match
+Trial result: unverified (frozen inputs only; run `givn ise verify-trial --manifest /tmp/ise-trial-transcript.nCBY9H/manifest.yaml --copy /tmp/ise-trial-transcript.nCBY9H/copy --result <file>`)
+
+$ givn ise verify-trial --manifest "/tmp/ise-trial-transcript.nCBY9H/manifest.yaml" --copy "/tmp/ise-trial-transcript.nCBY9H/copy" --result "/tmp/ise-trial-transcript.nCBY9H/trial-result.json"
+Component scenarios: 10/10 executed, 0 failed, 0 skipped
+End-to-end tests: 1/1 executed, 0 failed, 0 skipped
+Trial result: passed

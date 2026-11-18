@@ -109,6 +109,9 @@ Summary [ 214.612s] 1126 tests run: 1126 passed, 115 skipped
 $ GIVN_FEATURES=givn/specs/prepare-an-ise-test ./run-tests.sh --e2e --package e2e
 2 features, 2 scenarios (2 passed), 16 steps (16 passed)
 
+$ ./run-tests.sh --e2e --package e2e
+56 features, 120 scenarios (120 passed), 785 steps (785 passed)
+
 $ givn lint --change ise-component-tier-gate
 givn lint: 3 file(s) checked — clean
 ```
