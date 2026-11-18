@@ -138,13 +138,15 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         );
     }
 
+    let manifest_before = std::fs::read(&request.manifest)
+        .with_context(|| format!("read the manifest '{}'", request.manifest.display()))?;
     let recorded = Manifest::read(&request.manifest)?;
     let copy = request
         .copy
         .canonicalize()
         .with_context(|| format!("resolve the spec copy '{}'", request.copy.display()))?;
     require_recorded_copy(&request.manifest, &recorded, &copy)?;
-    let (contract, _) = read_contract(&recorded, &copy)?;
+    let (contract, contract_before) = read_contract(&recorded, &copy)?;
 
     let result = super::resolved_target(&request.result, project_root)?;
     if std::fs::symlink_metadata(&result).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
@@ -245,16 +247,25 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
     };
 
     // Re-check frozen inputs after the scripts ran. This closes the window
-    // where a script edits the checkout, the manifest, or the contract and
-    // then the gate reports the earlier comparison as clean.
-    let after = super::compare(
-        project_root,
-        &CompareRequest {
-            manifest: request.manifest.clone(),
-            copy: request.copy.clone(),
-        },
-    )?;
-    if !after.is_clean() {
+    // The initial manifest and contract bytes are the authority: a changed
+    // checkout, manifest, contract, or comparison error writes clean:false.
+    let manifest_after = std::fs::read(&request.manifest);
+    let contract_after = std::fs::read(copy.join(super::contract::CONTRACT_PATH));
+    let inputs_changed = match (manifest_after, contract_after) {
+        (Ok(manifest), Ok(contract)) => manifest != manifest_before || contract != contract_before,
+        _ => true,
+    };
+    let comparison_clean = matches!(
+        super::compare(
+            project_root,
+            &CompareRequest {
+                manifest: request.manifest.clone(),
+                copy: request.copy.clone(),
+            },
+        ),
+        Ok(report) if report.is_clean()
+    );
+    if inputs_changed || !comparison_clean {
         let report = TrialReport {
             scope: "ise-trial-result/v1",
             revision: recorded.revision.clone(),
@@ -299,7 +310,7 @@ impl TierFailure {
 }
 
 /// Read the generated contract and require the manifest's checksum.
-fn read_contract(recorded: &Manifest, copy: &Path) -> Result<(Contract, String)> {
+fn read_contract(recorded: &Manifest, copy: &Path) -> Result<(Contract, Vec<u8>)> {
     let Some(verification) = &recorded.verification else {
         bail!(
             "the manifest records no verification contract; rebuild the trial with this Givn version before claiming a whole-system result"
@@ -326,7 +337,7 @@ fn read_contract(recorded: &Manifest, copy: &Path) -> Result<(Contract, String)>
             verification.path
         );
     }
-    Ok((Contract::from_bytes(&bytes, &path)?, checksum))
+    Ok((Contract::from_bytes(&bytes, &path)?, bytes))
 }
 
 /// Run the component tier inside the spec copy.
@@ -420,6 +431,28 @@ fn run_component(
     Ok(measured(tier, &counts))
 }
 
+/// Resolve a contract-relative path through its deepest existing ancestor and
+/// require the result to stay under the canonical copy.
+fn under_copy(copy: &Path, relative: &str, what: &str) -> Result<PathBuf> {
+    let target = copy.join(relative);
+    let resolved = super::resolved_target(&target, copy)?;
+    if !resolved.starts_with(copy) {
+        bail!("{what} '{relative}' resolves outside the spec copy");
+    }
+    Ok(resolved)
+}
+
+/// Re-resolve a path after the measure command and require it still stays under
+/// the copy; a builder-created parent symlink must not redirect a report.
+fn require_still_under_copy(copy: &Path, path: &Path, what: &str) -> Result<()> {
+    let resolved = std::fs::canonicalize(path)
+        .with_context(|| format!("resolve {what} '{}'", path.display()))?;
+    if !resolved.starts_with(copy) {
+        bail!("{what} '{}' resolves outside the spec copy", path.display());
+    }
+    Ok(())
+}
+
 /// The rebuilt product's absolute path and content digest.
 struct ProductBinding {
     path: PathBuf,
@@ -458,14 +491,22 @@ fn bind_product(contract: &Contract, copy: &Path) -> Result<Option<ProductBindin
             product.path
         );
     }
-    let bytes = std::fs::read(&target)
-        .with_context(|| format!("read the rebuilt product '{}'", target.display()))?;
+    let resolved = std::fs::canonicalize(&target)
+        .with_context(|| format!("resolve the rebuilt product '{}'", target.display()))?;
+    if !resolved.starts_with(copy) {
+        bail!(
+            "the rebuilt product '{}' resolves outside the spec copy",
+            product.path
+        );
+    }
+    let bytes = std::fs::read(&resolved)
+        .with_context(|| format!("read the rebuilt product '{}'", resolved.display()))?;
     let sha256 = Sha256::digest(&bytes)
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect();
     Ok(Some(ProductBinding {
-        path: target,
+        path: resolved,
         sha256,
     }))
 }
@@ -584,10 +625,12 @@ fn run_coverage(
     if not_runnable(&coverage.measure_command) {
         bail!("the coverage addon is effective but coverage.measure_command is not configured");
     }
-    let non_e2e = copy.join(&coverage.non_e2e_path);
-    let e2e = copy.join(&coverage.e2e_path);
+    let non_e2e = under_copy(copy, &coverage.non_e2e_path, "coverage.non_e2e_path")?;
+    let e2e = under_copy(copy, &coverage.e2e_path, "coverage.e2e_path")?;
+    let output = under_copy(copy, &coverage.output_path, "coverage.output_path")?;
     remove_previous(&non_e2e);
     remove_previous(&e2e);
+    remove_previous(&output);
     let status = crate::subprocess::sh_streamed(
         &coverage.measure_command,
         &[
@@ -605,6 +648,11 @@ fn run_coverage(
             "the trial coverage measurement exited {}",
             status.code().unwrap_or(-1)
         );
+    }
+    require_still_under_copy(copy, &non_e2e, "coverage.non_e2e_path")?;
+    require_still_under_copy(copy, &e2e, "coverage.e2e_path")?;
+    if output.exists() {
+        require_still_under_copy(copy, &output, "coverage.output_path")?;
     }
 
     let component_report = crate::cobertura::parse(&non_e2e)
@@ -719,21 +767,47 @@ fn require_scenarios(tier: &super::contract::Tier, counts: &TrialRunnerResult) -
         .map(String::as_str)
         .filter(|title| !executed.contains(title))
         .collect();
-    if missing.is_empty() {
-        return Ok(());
+    let declared: std::collections::BTreeSet<&str> =
+        tier.scenarios.iter().map(String::as_str).collect();
+    let extra: Vec<&str> = counts
+        .scenarios
+        .iter()
+        .map(String::as_str)
+        .filter(|title| !declared.contains(title))
+        .collect();
+    if !missing.is_empty() || !extra.is_empty() {
+        let mut reasons = Vec::new();
+        if !missing.is_empty() {
+            let shown: Vec<&str> = missing.iter().take(10).copied().collect();
+            let remainder = missing.len() - shown.len();
+            let more = if remainder == 0 {
+                String::new()
+            } else {
+                format!(" (and {remainder} more)")
+            };
+            reasons.push(format!(
+                "does not name {} declared scenario(s): {}{more}",
+                missing.len(),
+                shown.join(", ")
+            ));
+        }
+        if !extra.is_empty() {
+            let shown: Vec<&str> = extra.iter().take(10).copied().collect();
+            let remainder = extra.len() - shown.len();
+            let more = if remainder == 0 {
+                String::new()
+            } else {
+                format!(" (and {remainder} more)")
+            };
+            reasons.push(format!(
+                "names {} title(s) outside the declared corpus: {}{more}",
+                extra.len(),
+                shown.join(", ")
+            ));
+        }
+        bail!("the runner result {}", reasons.join("; "));
     }
-    let shown: Vec<&str> = missing.iter().take(10).copied().collect();
-    let remainder = missing.len() - shown.len();
-    let more = if remainder == 0 {
-        String::new()
-    } else {
-        format!(" (and {remainder} more)")
-    };
-    bail!(
-        "the runner result does not name {} declared scenario(s): {}{more}",
-        missing.len(),
-        shown.join(", ")
-    )
+    Ok(())
 }
 
 /// Require the End-to-end result to name the rebuilt product it drove.
@@ -984,6 +1058,51 @@ mod tests {
         .expect_err("a count-only result refuses");
         assert!(
             failure.error.to_string().contains("does not name"),
+            "{:?}",
+            failure.error
+        );
+    }
+
+    #[test]
+    fn an_undeclared_extra_title_refuses() {
+        let directory = tempfile::TempDir::new().unwrap();
+        let path = directory.path().join("result.json");
+        let script = directory.path().join("verify.sh");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\nprintf '{\"scope\":\"component\",\"total\":2,\"passed\":2,\"failed\":0,\"skipped\":0,\"scenarios\":[\"declared\",\"foreign\"]}\n' > \"$GIVN_RESULT_FILE\"\n",
+        )
+        .unwrap();
+        let tier = super::super::contract::Tier {
+            command: format!("sh {}", script.display()),
+            features: "givn/specs".to_string(),
+            execution_units: 1,
+            scenarios: vec!["declared".to_string()],
+        };
+        let failure = run_component(
+            &Contract {
+                scope: "ise-verification/v1".to_string(),
+                revision: "abc".to_string(),
+                component: tier,
+                end_to_end: super::super::contract::Tier {
+                    command: "true".to_string(),
+                    features: "givn/specs".to_string(),
+                    execution_units: 0,
+                    scenarios: vec![],
+                },
+                coverage: None,
+                product: None,
+            },
+            directory.path(),
+            &path,
+            None,
+        )
+        .expect_err("an extra title refuses");
+        assert!(
+            failure
+                .error
+                .to_string()
+                .contains("outside the declared corpus"),
             "{:?}",
             failure.error
         );

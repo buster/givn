@@ -254,8 +254,8 @@ fixture.
   and `verify.product_env`; the result must carry the product path and
   SHA-256. Realized in `ise::verify::bind_product`,
   `ise::verify::require_product`, and the fixture scripts.
-- `Decides D7`: A runner result must name every declared scenario title; a
-  count-only result refuses. Realized in `ise::verify::require_scenarios` and
+- `Decides D7`: A runner result must name every declared scenario title and
+  no undeclared title; a count-only or extra-title result refuses. Realized in `ise::verify::require_scenarios` and
   the `scenarios` arrays in both test runners.
 - `Decides D8`: A `Whole-system rebuild` change must commit a clean
   `ise-trial-result/v1` under `evidence/ise/trial-result.json`; `givn check

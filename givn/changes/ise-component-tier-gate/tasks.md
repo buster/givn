@@ -91,7 +91,7 @@ unreachable revision fails review and archive.
   - Evidence: the delta guidance scenario passes; `givn instructions ise` names `givn ise verify-trial`, `Trial result: unverified`, exact counts, coverage, and the not-run rule.
 
 - [x] Adversarial result-path checks.
-  - Evidence: `tests/ise_component_tier_gate.rs` — 9 passed: missing runner, exact counts, mismatch, not-run, read-only compare, reserved contract path, `../copy/trial.json` escape, a broken symlink result path, and a foreign-product End-to-end result.
+  - Evidence: `tests/ise_component_tier_gate.rs` — 12 passed: missing runner, exact counts, mismatch, not-run, read-only compare, reserved contract path, `../copy/trial.json` escape, a broken symlink result path, a foreign-product End-to-end result, a product path outside the copy, a product parent symlink outside the copy, and a contract change during the scripts.
   - COMMIT: `bdc01ecb64c74682b62c06e0020b7d2052522a51` -- Batch: component-tier-gate
 
 ## Closeout
@@ -101,13 +101,13 @@ unreachable revision fails review and archive.
   - Evidence: `tests/steps/trial_input_verification_steps.rs` binds the contract, preparation, trial-gate, count, not-run, and unverified steps; `tests/steps/prose_consolidation_steps.rs` binds the guidance steps; `tests/steps/ise_clean_room_support.rs` carries the fixture. No delta step copy exists.
 - [x] The acceptance test is real and runnable.
   - [x] COMMIT: `bdc01ecb64c74682b62c06e0020b7d2052522a51` -- Batch: closeout
-  - Evidence: `cargo test --test ise_component_tier_gate -- --test-threads=1` — 9 passed.
+  - Evidence: `cargo test --test ise_component_tier_gate -- --test-threads=1` — 12 passed.
 
 ## Verification evidence
 
 ```text
 $ cargo test --test ise_component_tier_gate -- --test-threads=1
-running 9 tests ... test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
+running 12 tests ... test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out
 
 $ GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e
 Summary [ 1.504s] 9 tests run: 9 passed, 0 skipped

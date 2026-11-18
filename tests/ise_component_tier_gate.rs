@@ -524,3 +524,109 @@ fn an_e2e_result_bound_to_another_product_refuses() {
         serde_json::from_str(&std::fs::read_to_string(result).unwrap()).unwrap();
     assert_eq!(record["clean"], false);
 }
+
+#[test]
+fn a_product_path_outside_the_copy_refuses() {
+    let (root, project) = fixture();
+    write(
+        &project.join("givn/commands.yaml"),
+        "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n  product_path: \"../outside-product\"\n  product_env: \"GIVN_BIN\"\n",
+    );
+    git(&project, &["add", "-A"]);
+    git(
+        &project,
+        &["commit", "-qm", "fixture: escaping product path"],
+    );
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    replace_component_script(&copy, &component_script(10));
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            root.path().join("trial.json").to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("cannot contain '..'"),
+        "stderr={}",
+        stderr(&output)
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn a_product_parent_symlink_outside_the_copy_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let outside = root.path().join("outside");
+    std::fs::create_dir_all(&outside).unwrap();
+    std::os::unix::fs::symlink(&outside, copy.join("target")).unwrap();
+    replace_component_script(&copy, &component_script(10));
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            root.path().join("trial.json").to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("resolves outside the spec copy"),
+        "stderr={}",
+        stderr(&output)
+    );
+}
+
+#[test]
+fn a_contract_change_during_the_scripts_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let mut script = component_script(10);
+    script.push_str("\nprintf 'tampered\\n' >> givn/ise-verification.yaml\n");
+    replace_component_script(&copy, &script);
+    let result = root.path().join("trial.json");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("frozen inputs changed"),
+        "stderr={}",
+        stderr(&output)
+    );
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(result).unwrap()).unwrap();
+    assert_eq!(record["clean"], false);
+}

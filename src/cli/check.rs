@@ -573,13 +573,16 @@ fn run_change_verification(
     if let Some(summary) = e2e_summary {
         println!("  ✓ E2E verification: {summary}");
     }
-    require_whole_system_trial_result(manifest, &change_dir)?;
+    require_whole_system_trial_result(project_root, &backend, manifest, &change_dir)?;
     Ok(())
 }
 
-/// A whole-system rebuild change must bind a clean trial result. The result is
-/// produced only by `givn ise verify-trial`; comparison output is not a result.
+/// A whole-system rebuild change must bind a clean committed trial result. The
+/// result is produced only by `givn ise verify-trial`; comparison output is
+/// not a result.
 fn require_whole_system_trial_result(
+    project_root: &std::path::Path,
+    backend: &crate::scm::Backend,
     manifest: &crate::config::manifest::Manifest,
     change_dir: &std::path::Path,
 ) -> Result<()> {
@@ -594,12 +597,35 @@ fn require_whole_system_trial_result(
         return Ok(());
     }
     let path = change_dir.join("evidence/ise/trial-result.json");
+    let relative = path
+        .strip_prefix(project_root)
+        .unwrap_or(&path)
+        .to_string_lossy()
+        .replace('\\', "/");
+    let tracked = backend
+        .revision_files("HEAD", "")
+        .map_err(|error| anyhow::anyhow!("read the committed tree: {error}"))?;
+    if !tracked.iter().any(|entry| entry.path == relative) {
+        bail!(
+            "a whole-system rebuild requires a committed ise-trial-result/v1 at '{}'; run `givn ise verify-trial`, commit its result, and rerun",
+            path.display()
+        );
+    }
+    let committed = backend
+        .revision_blob("HEAD", &relative)
+        .map_err(|error| anyhow::anyhow!("read the committed trial result: {error}"))?;
     let text = std::fs::read_to_string(&path).map_err(|error| {
         anyhow::anyhow!(
-            "a whole-system rebuild requires a clean ise-trial-result/v1 at '{}': {error}; run `givn ise verify-trial` and commit its result",
+            "a whole-system rebuild requires a committed clean ise-trial-result/v1 at '{}': {error}; run `givn ise verify-trial` and commit its result",
             path.display()
         )
     })?;
+    if committed.as_deref() != Some(text.as_bytes()) {
+        bail!(
+            "the whole-system trial result '{}' differs from the committed file; commit the result before `givn check tasks`",
+            path.display()
+        );
+    }
     let result: serde_json::Value = serde_json::from_str(&text).map_err(|error| {
         anyhow::anyhow!(
             "the whole-system trial result '{}' is not valid JSON: {error}",
@@ -998,5 +1024,76 @@ mod tests {
             "end_to_end": {"declared": 1, "executed": 1, "failed": 0, "skipped": 0, "status": "passed", "scenarios": ["acceptance"]}
         });
         assert!(validate_trial_result(&mismatch).is_err());
+    }
+
+    fn git(root: &std::path::Path, args: &[&str]) {
+        let status = std::process::Command::new("git")
+            .args(args)
+            .current_dir(root)
+            .env("GIT_AUTHOR_NAME", "fixture")
+            .env("GIT_AUTHOR_EMAIL", "fixture@example.com")
+            .env("GIT_COMMITTER_NAME", "fixture")
+            .env("GIT_COMMITTER_EMAIL", "fixture@example.com")
+            .status()
+            .unwrap();
+        assert!(status.success(), "git {args:?} failed");
+    }
+
+    fn whole_system_result() -> serde_json::Value {
+        serde_json::json!({
+            "scope": "ise-trial-result/v1",
+            "clean": true,
+            "product": {"sha256": "a".repeat(64)},
+            "component": {"declared": 10, "executed": 10, "failed": 0, "skipped": 0, "status": "passed", "scenarios": ["one"]},
+            "end_to_end": {"declared": 1, "executed": 1, "failed": 0, "skipped": 0, "status": "passed", "scenarios": ["acceptance"]}
+        })
+    }
+
+    #[test]
+    fn a_whole_system_change_requires_a_committed_clean_trial_result() {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path();
+        git(project, &["init", "-q"]);
+        let change = project.join("givn/changes/rebuild-all");
+        std::fs::create_dir_all(change.join("evidence/ise")).unwrap();
+        std::fs::write(
+            change.join("design.md"),
+            "## Decisions\n\n- `Ise rebuild decision`: `Whole-system rebuild`\n",
+        )
+        .unwrap();
+        let evidence = change.join("evidence/ise/trial-result.json");
+        std::fs::write(
+            &evidence,
+            serde_json::to_string_pretty(&whole_system_result()).unwrap(),
+        )
+        .unwrap();
+        git(project, &["add", "-A"]);
+        git(project, &["commit", "-qm", "fixture"]);
+        let backend = crate::scm::select(project).unwrap();
+        let mut manifest = crate::config::manifest::Manifest::load_embedded().unwrap();
+        manifest.addons.ise = true;
+
+        require_whole_system_trial_result(project, &backend, &manifest, &change)
+            .expect("a committed clean result passes");
+
+        std::fs::write(
+            &evidence,
+            serde_json::to_string(&whole_system_result()).unwrap(),
+        )
+        .unwrap();
+        let error = require_whole_system_trial_result(project, &backend, &manifest, &change)
+            .expect_err("an uncommitted edit refuses");
+        assert!(
+            error.to_string().contains("differs from the committed"),
+            "{error}"
+        );
+
+        std::fs::remove_file(&evidence).unwrap();
+        let error = require_whole_system_trial_result(project, &backend, &manifest, &change)
+            .expect_err("a missing result refuses");
+        assert!(
+            error.to_string().contains("requires a committed"),
+            "{error}"
+        );
     }
 }

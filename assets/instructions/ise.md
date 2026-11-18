@@ -141,8 +141,8 @@ component corpus ran. A whole-system trial result requires
 
 - runs the component command inside the spec copy and the frozen End-to-end
   command in the checkout, each with a fresh runner result;
-- requires each result to name every declared scenario title and to report the
-  executed count exactly equal to the declared count, with zero failed and zero
+- requires each result to name every declared scenario title and no undeclared
+  title, and to report the executed count exactly equal to the declared count, with zero failed and zero
   skipped; a count-only result refuses;
 - requires the declared rebuilt product as a regular file inside the copy,
   hashes its bytes, passes the absolute path in `verify.product_env`,

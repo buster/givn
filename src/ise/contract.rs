@@ -182,6 +182,15 @@ impl Contract {
                 if let Some(coverage) = &contract.coverage {
                     require_relative_path("coverage.non_e2e_path", &coverage.non_e2e_path)?;
                     require_relative_path("coverage.e2e_path", &coverage.e2e_path)?;
+                    require_relative_path("coverage.output_path", &coverage.output_path)?;
+                }
+                if let Some(product) = &contract.product {
+                    require_relative_path("product.path", &product.path)?;
+                    if product.env.trim().is_empty() {
+                        bail!(
+                            "the verification contract's product.env must name an environment variable"
+                        );
+                    }
                 }
                 Ok(contract)
             })
@@ -335,6 +344,23 @@ mod tests {
         std::fs::write(&path, text).unwrap();
         let error = Contract::from_bytes(&std::fs::read(&path).unwrap(), &path).unwrap_err();
         assert!(format!("{error:#}").contains("unknown"), "{error:#}");
+    }
+
+    #[test]
+    fn a_coverage_output_path_cannot_leave_the_copy() {
+        let directory = tempfile::TempDir::new().unwrap();
+        let path = directory.path().join("contract.yaml");
+        std::fs::write(
+            &path,
+            "scope: ise-verification/v1\nrevision: abc\ncomponent:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 1\n  scenarios: [one]\nend_to_end:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 0\n  scenarios: []\ncoverage:\n  measure_command: \"true\"\n  non_e2e_path: coverage/non-e2e.xml\n  e2e_path: coverage/e2e.xml\n  output_path: \"../outside.xml\"\n  e2e_subprocess: false\n",
+        )
+        .unwrap();
+        let error = Contract::from_bytes(&std::fs::read(&path).unwrap(), &path)
+            .expect_err("a parent output path refuses");
+        assert!(
+            format!("{error:#}").contains("cannot contain '..'"),
+            "{error:#}"
+        );
     }
 
     #[test]

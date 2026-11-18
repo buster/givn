@@ -776,8 +776,8 @@ copy with `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and
 bytes, and runs the frozen End-to-end command in the project working tree with
 `GIVN_RESULT_SCOPE=e2e`, `verify.product_env`, `GIVN_TRIAL_PRODUCT`, and
 `GIVN_TRIAL_PRODUCT_SHA256`. Each run must produce a fresh result that names
-every declared scenario title and whose `total` equals the declared count
-exactly, with zero failed, zero skipped, and reconciling
+every declared scenario title and no undeclared title, and whose `total`
+equals the declared count exactly, with zero failed, zero skipped, and reconciling
 `passed + failed + skipped == total`. The End-to-end result must carry the same
 `product` path and `product_sha256`. A missing or stale result, a count-only or
 title-less result, a foreign product, a non-zero failure or skip, or a count
