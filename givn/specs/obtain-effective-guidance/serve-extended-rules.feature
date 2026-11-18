@@ -189,7 +189,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     Given  an ise-enabled project
     When  the user requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction names the five rebuild obligations
+    And  the served instruction names the six rebuild obligations
 
   @serve-extended-rules
   Scenario: An ise instruction request with the addon off is refused by name

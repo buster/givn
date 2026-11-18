@@ -124,11 +124,11 @@ A term may become `confirmed` in the term record (`domain-terms.md` in the
 `givn-ideation` skill) only when all three exist:
 
 1. **Genus + differentia** — "a `<Term>` is a `<kind>` that `<distinguishes
-   it>`". Example: "a Port is the interface contract at which one
-   implementation can be replaced".
+   it>`". Example: "a Component Interface is the callable surface at which one
+   Component's implementation can be replaced".
 2. **Contrast pair** — "`Term`, not `<near neighbour>`" with the distinction.
-   Example: "Port, not Boundary — a boundary is a limit that must not be
-   crossed".
+   Example: "Component Interface, not Boundary — a boundary is a limit that
+   must not be crossed".
 3. **One concrete domain sentence** using the term.
 
 If the genus slot cannot be filled, the term is not ready. Example failure:

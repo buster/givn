@@ -1,6 +1,6 @@
 # Reference
 
-Authoritative operational reference for the current checkout: CLI commands,
+Authoritative operational reference for the project: CLI commands,
 agent skills and targets, addons, configuration authority, the runner and
 receipt contracts, generated project layout, and repository development
 scripts. Workflow orientation is in [workflow.md](workflow.md); step
@@ -30,14 +30,14 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn history settings [--json]` | Report `record.mode` and its source (`config` or `default`) without recording. |
 | `givn timeline [--change <id> \| --topic <id>] [--out <path>]` | Render one change, topic, or the project into one self-contained HTML file; default `givn/history/reports/<scope>.html`. Opens nothing and records nothing. |
 | `givn archive --change <id> [--verbose]` | Publish and verify a completed change forward-only on Git or Fossil. `--verbose` streams gate output with timestamps. Add-on drift from the change lock blocks archive. |
-| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which the whole product is rebuilt: every declared source root is removed from it. Requires `ise` and `architecture_principles`; `--at` defaults to `HEAD`. |
-| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. Requires at least one path. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the manifest and the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. Exit `0` clean, `1` refusal or difference. |
+| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. Requires `ise` and `architecture_principles`; `--at` defaults to `HEAD`. |
+| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. Requires at least one path. |
+| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. Exit `0` clean, `1` refusal or difference. |
 | `givn eject <target> [--force]` | Materialize an embedded facet for editing, for example `design:template`, `review:instruction`, `skill:givn-propose`, `manifest`, `readme:template`. |
 | `givn addons list` / `enable <name>` / `disable <name>` | Show effective state and toggle one addon. `enable` checks the registered prerequisite relation first, scaffolds addon-owned files, and resyncs; `disable` refuses while a dependent addon is on, removes the workflow effect, and leaves existing project files. While a locked change is active, mutation is refused; the operator path is `--operator --reason "<reason>"` on an interactive terminal, recorded in the change lock. |
 | `givn skills sync` | Regenerate skills, reporters, managed `AGENTS.md` blocks, and ignore state for the persisted target selection. Recognizable old generated command files are removed; custom files are preserved with a manual notice. |
 | `givn skills targets add <agent[,agent...]>` | Add targets to `skills.targets`, touching only that line, then sync. |
-| `givn upgrade` | Refresh the managed config scaffold and generated guidance in a clean checkout, preserving user-owned values. Refuses retired keys and executable settings misplaced in `config.yaml`. |
+| `givn upgrade` | Refresh the managed config scaffold and generated guidance in a clean project working tree, preserving user-owned values. Refuses retired keys and executable settings misplaced in `config.yaml`. |
 | `givn outline report [--json] [--out <path>] [--path <dir>...]` | Advisory structure report for Rust, Python, Java, TypeScript, and JavaScript. Defaults to `src/`; explicit `--path` roots are required when `src/` is absent. Schema version 5; metrics never change the exit code. |
 | `givn run [--port <n>] [--print]` | Start the declared product. `--print` emits one sh-eval-able start line. Exit codes: `0` clean/library, `1` preflight finding, `2` readiness timeout, `130` SIGINT, `143` SIGTERM, otherwise the child's exit code. |
 | `givn commit -m <message> <path...>` | Create one attributed revision through the selected backend. Explicit paths are required; unsafe, absolute, or escaping selections are refused. |
@@ -124,29 +124,29 @@ replacement (`communication_policy` or `challenge`); no alias is accepted.
 
 ### `givn/specification.yaml`
 
-The declaration of the Specification holds exactly six top-level keys: the five
-roles `behavior`, `structure`, `contracts`, `limits`, and `e2e` as lists of
-project-relative path globs, plus one `source:` list of replaceable roots. An
-empty list is valid and retains nothing. The loader refuses an unknown key, an
-unknown or repeated role, an omitted role, an absent `source:` list, a non-list
-value, an unreadable file, and a path that leaves the project; the refusal names
-the element and the file and never rewrites it. A project with `ise` off never
-reads the file.
+The Specification Manifest `givn/specification.yaml` holds exactly six
+top-level keys: the five Specification categories `behavior`, `structure`,
+`contracts`, `limits`, and `e2e` as lists of project-relative path globs, plus
+one `source:` list of replaceable roots. An empty list is valid and matches
+nothing. The loader refuses an unknown key, an unknown or repeated category, an
+omitted category, an absent `source:` list, a non-list value, an unreadable
+file, and a path that leaves the project; the refusal names the element and the
+file and never rewrites it. A project with `ise` off never reads the file.
 
 `givn lint` in the default project scope reports four advisory findings and
-never changes the exit code: a declared path missing from the tree, one path
-declared in two roles, a `.feature` file outside the `behavior` globs, and an
-`e2e` role that resolves no package or a package that carries a dependency edge
-into `source`. The `e2e` role's absent package is reported by the boundary
-finding only. The dependency edge reads Cargo manifests only: a declared path
-that resolves no package manifest receives the boundary finding naming the role
-entry, and a malformed manifest skips the edge comparison for that package.
-A malformed or absent declaration is a blocking declaration error, not one of
-the four findings.
+never changes the exit code: a declared entry missing from the tree, one entry
+declared in two categories, a `.feature` file outside the `behavior` globs, and
+an `e2e` category that resolves no package or a package that carries a
+dependency edge into `source`. The `e2e` category's absent package is reported
+by the boundary finding only. The dependency edge reads `Cargo.toml` files only:
+a manifest entry that resolves no package receives the boundary finding naming
+the category entry, and a malformed `Cargo.toml` skips the edge comparison for
+that package. A malformed or absent Specification Manifest is a blocking
+manifest error, not one of the four findings.
 
 With the change's `config-lock.yaml` having `ise` effective, `givn check tasks`
-turns the same declared `e2e` role into a blocking acceptance boundary. The role
-resolves to its packages: each matched path's nearest `Cargo.toml` at or above it,
+turns the same declared `e2e` category into a blocking acceptance boundary. The
+category resolves to its packages: each matched path's nearest `Cargo.toml` at or above it,
 or the path itself when it resolves none. Every distinct package directory is
 one resolved package and is checked on its own manifest, including direct, transitive, and
 workspace-inherited edges. The manifest read covers the top-level, dev, build, and
@@ -154,10 +154,11 @@ every target-specific dependency table; an edge is refused when its package
 directory is a `source:` root, lies inside one, or contains a path that root
 names, so a glob such as `src/**/*.rs` reaches the package at `src`. The check
 resolves the boundary before the no-behavior-change result, so an `ise`-effective
-change always needs a readable declaration and a non-empty resolved set; `givn
-check review` makes the same check for a change that writes no receipt. The check
-refuses, names the condition, and writes no receipt when the role matches no
-path, when a resolved package's manifest cannot be read, when a resolved `e2e`
+change always needs a readable Specification Manifest and a non-empty resolved
+set; `givn check review` makes the same check for a change that writes no
+receipt. The check refuses, names the condition, and writes no receipt when the
+category matches no path, when a resolved package's `Cargo.toml` cannot be read,
+when a resolved `e2e`
 path sits under a `source:` root, when a resolved
 package's tree contains a `source:` root, when a package has a dependency edge into
 `source`, when a path that resolves no package contains a reference resolving into
@@ -173,7 +174,7 @@ check cannot see a published product edge; a project's E2E runner is expected to
 assert its committed lockfile for that case. The import fallback reads path-resolving
 references only: an external package name, or a language whose import syntax
 the reader does not recognize, is admitted. A change with `ise` off reads no
-declaration and gains no boundary refusal.
+Specification Manifest and gains no boundary refusal.
 
 ## Configuration authority
 
@@ -245,9 +246,9 @@ optional, but when present it must match the expected scope. Givn's own E2E
 package also reads `GIVN_BIN` (the built product binary, required) and
 `GIVN_READY_FIXTURE` (the built ready fixture, required by run-execution
 scenarios); `./run-tests.sh --e2e --package e2e` exports both. The harness reads
-the package's parent directory as the product checkout for the read-only
-repository files a scenario asserts; `GIVN_ROOT` overrides it when the package
-is not inside the checkout it tests. A missing,
+the package's parent directory as the project root for the read-only repository
+files a scenario asserts; `GIVN_ROOT` overrides it when the package is not
+inside the project it tests. A missing,
 unreadable, malformed, non-reconciling (`passed + failed + skipped != total`),
 zero-scenario, failed, or skipped result blocks. The previous result file is
 removed before launch.
@@ -278,11 +279,11 @@ exits 2 before any scenario runs.
 `cargo llvm-cov run --no-report --locked --bin givn -- --version`, sets
 `LLVM_PROFILE_FILE`, and calls the same runner; the runner does not rebuild.
 
-`scripts/qualify-givn-e2e.sh` copies the checkout to a scratch directory,
+`scripts/qualify-givn-e2e.sh` copies the project working tree to a scratch directory,
 requires `cargo tree --manifest-path e2e/Cargo.toml` to name no product crate,
 runs the suite green, applies one seeded product defect, requires the suite to
-fail, reverts the defect, and requires the suite to pass again. The checkout
-under test is never modified.
+fail, reverts the defect, and requires the suite to pass again. The project
+working tree under test is never modified.
 
 ### Bootstrap the project runner
 
@@ -330,7 +331,7 @@ scope. After the run it recaptures and requires equality; then it writes the
 receipt. Any launch, result, or stability failure leaves no green receipt.
 
 When the change lock has `ise` effective, the check first resolves the declared
-`e2e` role to its packages, then — when the delta contains `@e2e` scenarios — runs
+`e2e` category to its packages, then — when the delta contains `@e2e` scenarios — runs
 `verify.e2e_command` with `GIVN_RESULT_SCOPE=e2e` and
 `verification/e2e-result.json`, reads the same fail-closed counts, and requires
 the E2E identity to be unchanged. The receipt then adds `e2e_identity`
@@ -363,46 +364,47 @@ requires strict revision equality or is refused; no reuse is assumed. An
 failure reports every independent stale reason and routes to `givn check
 tasks`.
 
-### Clean-room spec copy
+### Spec copy preparation
 
-`givn ise rebuild-all` and `givn ise rebuild-component` write one recorded
+`givn ise rebuild-all` and `givn ise rebuild-component` write one selected
 revision's Specification into a plain directory, the spec copy, so the agent can
-rebuild the product from it. `givn ise compare` reports every difference between
-that copy, the checkout, and the manifest the rebuild command wrote. All three
-commands require the `ise` add-on and its `architecture_principles`
-prerequisite; with either off they refuse by name before the declaration or the
-manifest is read.
+rebuild the System from it. `givn ise compare` reports every difference between
+that copy, the project working tree, and the spec-copy manifest the command
+wrote. All three commands require the `ise` add-on and its
+`architecture_principles` prerequisite; with either off they refuse by name
+before the Specification Manifest or the spec-copy manifest is read.
 
 | Command | Effect |
 | --- | --- |
-| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which the whole product is rebuilt: every declared source root is removed from it. |
-| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the manifest and the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. |
+| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. |
+| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. |
+| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. |
 
 **Rebuild form.** `--at` defaults to `HEAD`. `rebuild-all` takes no path.
 `rebuild-component` requires at least one path; none is a usage error with exit
 `2` that names the missing path list. A path is a tracked file or a directory: a
 file contributes itself, a directory contributes every tracked file beneath it
 at the revision, a value that resolves to no tracked file removes nothing, and
-a glob is never expanded. The declaration and then a Specification role are
-tested first, so a Specification file under a source root stays in the copy
-under both commands. A path outside every source root is refused with a sentence naming
-`rebuild-all`, the command that writes the copy removing every declared source
-root.
+a glob is never expanded. The Specification Manifest and then a Specification
+category are tested first, so a matched file under a `source:` entry stays in
+the copy under both commands. A path outside every `source:` entry is refused
+with a sentence naming `rebuild-all`, the command that writes the copy removing
+every declared `source:` entry.
 
-**Declaration.** `givn/specification.yaml` is an implicit Specification entry,
-not a sixth role. Every spec copy holds the copy recorded at the selected
-revision, the partition reads that same copy, and the Specification set is a
-union, so a role that also matches the declaration counts it once. Naming the
-declaration with a component path, or naming a directory whose tracked files
-include it, refuses; a selected revision that does not record the declaration
-refuses before any write, naming the path, the revision, and `does not record`.
+**Specification Manifest.** `givn/specification.yaml` is an implicit
+Specification entry, not a sixth category. Every spec copy holds the copy
+recorded at the selected revision, the partition reads that same copy, and the
+Specification set is a union, so a category that also matches the Specification
+Manifest counts it once. Naming the Specification Manifest with a Component
+path, or naming a directory whose tracked files include it, refuses; a selected
+revision that does not record it refuses before any write, naming the path, the
+revision, and `does not record`.
 
-**Placement.** The spec copy is a plain directory outside the checkout with no
-version-control metadata, no ignored file, and no untracked file. Every path is
-project-relative and every entry kind is preserved, and no End-to-end (E2E) test
-enters it. `--manifest` writes the manifest; without it no manifest is written
-and none is printed.
+**Placement.** The spec copy is a plain directory outside the project working
+tree with no version-control metadata, no ignored file, and no untracked file.
+Every path is project-relative and every entry kind is preserved, and no
+End-to-end (E2E) test enters it. `--manifest` writes the spec-copy manifest;
+without it none is written and none is printed.
 
 **Report.** The command prints these lines:
 
@@ -428,16 +430,17 @@ write):` and, only when a manifest path was given, `Manifest (not written):`
 instead of the two write lines.
 
 The five counts are placement counts, one definition each. `Specification files`
-is the number of tracked files the copy was written with: the declaration and
-every Specification-role match the End-to-end (E2E) tests do not cover. `Source
-code kept` is the number of tracked files under a declared source root that the
-command did not remove and that are not Specification files and not End-to-end
-(E2E) matches; a Specification-role match under a source root is a Specification
-file, so a whole-product rebuild with one such file reports `Source code kept:
-0`. `Source code removed` is the number of tracked files the component paths, or
+is the number of tracked files the copy was written with: the Specification
+Manifest and every matched file of the four content categories that the
+End-to-end (E2E) tests do not cover. `Source code kept` is the number of tracked
+files under a declared `source:` entry that the command did not remove and that
+are not Specification files in the spec copy and not End-to-end (E2E) matches; a
+matched file of a content category under a `source:` entry is a Specification
+file in the spec copy, so a Whole-system rebuild with one such file reports
+`Source code kept: 0`. `Source code removed` is the number of tracked files the component paths, or
 every declared source root under `rebuild-all`, removed. `Outside the spec copy`
-is the number of tracked files outside every declared role and source root,
-which the copy neither holds nor removes. `Files beside removed paths` is a
+is the number of tracked files outside every declared category and `source:`
+entry, which the copy neither holds nor removes. `Files beside removed paths` is a
 containment count: the direct tracked files in the removed files' parent
 directories that the command did not name and that are not themselves removed.
 A file it counts is also counted in `Specification files`, `Source code kept`,
@@ -452,64 +455,65 @@ root covers the whole tracked tree, and an End-to-end (E2E) match under a
 
 **Refusals.** Every refusal exits `1`, prints `ise rebuild-all:`,
 `ise rebuild-component:`, or `ise compare:` to match the command, and leaves the
-checkout and the target unchanged.
+project working tree and the target unchanged.
 
 | # | Condition | Named output |
 | --- | --- | --- |
-| 1 | The revision records the declaration but the backend returns no blob | `givn/specification.yaml`, the revision, and `returned no blob` |
-| 2 | The declaration bytes at the revision are not UTF-8 | `givn/specification.yaml` and the decoding error |
-| 3 | The declaration at the revision is malformed | `givn/specification.yaml` and the loader's reason |
-| 4 | The revision does not record the declaration, or a declared Specification entry matches nothing | `givn/specification.yaml`, the revision, and `does not record`, or the entry and the revision |
+| 1 | The revision records the Specification Manifest but the backend returns no blob | `givn/specification.yaml`, the revision, and `returned no blob` |
+| 2 | The Specification Manifest bytes at the revision are not UTF-8 | `givn/specification.yaml` and the decoding error |
+| 3 | The Specification Manifest at the revision is malformed | `givn/specification.yaml` and the loader's reason |
+| 4 | The revision does not record the Specification Manifest, or a declared manifest entry matches nothing | `givn/specification.yaml`, the revision, and `does not record`, or the entry and the revision |
 | 5 | `ise` off, or `architecture_principles` off | the add-on and its enable command |
-| 6 | Dirty checkout | every dirty path |
+| 6 | Dirty project working tree | every dirty path |
 | 7 | Missing, mixed, or nested backend | the selector's message |
 | 8 | A component path outside every source root | the path and `rebuild-all` |
-| 9 | A component path or tracked file under a named directory is the declaration or is matched by a Specification role | the path and the declaration, or the path and the role |
-| 10 | A target inside the checkout, existing, inside the copy, an ancestor of the copy, or an existing manifest | the target or manifest path |
+| 9 | A Component path or tracked file under a named directory is the Specification Manifest or is matched by a Specification category | the path and the Specification Manifest, or the path and the category |
+| 10 | A target inside the project working tree, existing, inside the copy, an ancestor of the copy, or an existing spec-copy manifest | the target or manifest path |
 | 11 | A repository link or nested marker in the copy set | the file |
 | 12 | A symlink with an absolute target, even one that resolves inside the copy, or with a relative target that resolves outside the copy | the link path and the target |
 
-R-150 covers the archive guard reading a declared Specification path that is a
+R-150 covers the archive guard reading a declared manifest entry that is a
 symlink into the change tree; row 12 covers a symlink entry written into the
 copy, including an absolute target that resolves inside it. The two checks read
 different surfaces.
 
-**The rule the copy carries.** The spec copy is written with the project's
-Specification files. During a rebuild the agent adds files, and those are the
+**The rule the copy carries.** The spec copy is written with its Specification
+files in the spec copy. During a rebuild the agent adds files, and those are the
 rebuilt Source code. The agent may edit Source code kept because it is the
-product, but it does not delete any file the copy was written with. The agent
-does not modify any Specification file the copy was written with; adding a file
-under a declared Specification path is a Specification change, not the product,
-and is refused.
+System's Source code, but it does not delete any file the copy was written with.
+The agent does not modify any Specification file in the spec copy; adding a file
+under a declared manifest entry is a Specification change, not the System, and
+is refused.
 
 **Rebuild rules.** The `ise` instruction carries these rules; the reference
 states what each requires.
 
 | Rule | Requirement |
 | --- | --- |
-| Build inputs | A file the build reads that is not Source code and whose content the build cannot resolve from the Specification text is declared under the role that owns its content class: a build manifest and a lockfile under `contracts`, because they fix the dependency and build-target schema; a toolchain pin under `limits`; a structural template such as `assets/templates/domain-model.md` or `assets/templates/glossary.md` under `structure`; a schema or migration asset under `contracts`; and served instruction or skill text under `behavior`. The frozen End-to-end (E2E) tests fix the bytes they assert; a structural template or a schema asset fixes its content through the contract that names its shape. The `e2e` package's own manifest and lockfile are the test build's inputs, not the product build's. A build input the declaration leaves outside the Specification roles is a `specification defect`, and a neighbor when it lies outside the replaced unit, each with its consequence. |
+| Files the rebuild needs | A file the build reads that is not Source code and whose content the build cannot resolve from the Specification text is declared under the category that owns its content class: a build configuration file (`Cargo.toml`) and a lockfile under `contracts`, because they fix the dependency and build-target schema; a toolchain pin under `limits`; a structural template such as `assets/templates/domain-model.md` or `assets/templates/glossary.md` under `structure`; a schema or migration asset under `contracts`; and served instruction or skill text under `behavior`. The frozen End-to-end (E2E) tests fix the bytes they assert; a structural template or a schema asset fixes its content through the contract that names its shape. The `e2e` package's own `Cargo.toml` and lockfile are the test build's inputs, not the System build's. A file the rebuild needs that the Specification Manifest leaves undeclared is a `specification defect`, with its consequence. |
 | Fixed values | A contract the frozen End-to-end (E2E) tests rely on enumerates every value it fixes: literal text, headings, labels, error prefixes, exit codes, file formats, and test seams. |
-| Acceptance corpus | The `@e2e` scenarios stay in the Specification under the `behavior` role with their exact titles. The declared `e2e` package holds the runner and every `@e2e` step definition. |
-| Clean-room boundary | The builder reads no product source outside the spec copy and the declared inputs. Before the rebuild, scan the local package registry's source, cache, and git stores for a published copy of the product, quarantine every hit outside the builder's reach, and record the scan result in the neighbor record; a store that does not exist has no hit. |
-| Neighbor record | Every file changed outside the declared Specification or the replaced unit, and every consolidation, with its reason. The trial review records the neighbor record; it is a review question, never a gate. |
-| Dry-Run Ise | A `Dry-Run Ise` trial promotes nothing: the rebuilt work stays in the copy, and the trial review records that no rebuilt file was promoted. |
+| Acceptance corpus | The `@e2e` scenarios stay in the Specification under the `behavior` category with their exact titles. The declared `e2e` package holds the runner and every `@e2e` step definition. |
+| Clean-room boundary | The builder reads no Source code outside the spec copy and the declared inputs. Before a copy-based rebuild, scan the local package registry's source, cache, and git stores for a published copy of the System, quarantine every hit outside the builder's reach, and record the scan on its own `Clean-room scan` line in the trial review; a store that does not exist has no hit. |
+| Rebuild impact record | Every file added, modified, deleted, moved, or renamed outside the declared Specification and outside the replaced unit, and every consolidation, with its reason. The trial review records it; it is a review question, never a gate. |
+| Rebuilt code: discard | A discard rebuild adopts nothing: the rebuilt work stays in the copy, and the trial review records that no rebuilt file was promoted. |
 
-An environment input is never declared: the lockfile declares the resolved
-dependencies, the toolchain pin declares the toolchain, and the trial records
-how the dependency cache and the installed toolchain were supplied. A locked
+The installed toolchain and dependency cache are never declared files: the
+lockfile declares the resolved dependencies, the toolchain pin declares the
+toolchain, and the trial records how the dependency cache and the installed
+toolchain were supplied. A locked
 dependency the cache cannot resolve blocks the rebuild; the blocked rebuild is a
 setup failure, not a `Spec gap`, and it is not a `specification defect`.
 
-**Manifest.** `ise-manifest/v1` is strict: an unreadable file, a scope other
-than `ise-manifest/v1`, an unknown field, or a missing field refuses with the
-manifest path and the reason. The earlier `ise-trial/v1` record shape is refused
+**Spec-copy manifest.** `ise-manifest/v1` is strict: an unreadable file, a
+scope other than `ise-manifest/v1`, an unknown field, or a missing field refuses
+with the manifest path and the reason. The earlier `ise-trial/v1` record shape is refused
 by name and is not migrated: a spec copy is ephemeral, and one rebuild command
 re-prepares it. This scope has no optional field: the reader requires every
 field it lists. A field added later is optional only when the scope states its
 default, and a field with no derivable default opens a new scope; a reader
 refuses a mismatched scope naming the manifest and the expected value. The
 manifest records no `backend`: the prepare-time backend is not evidence, and
-`compare` re-selects the backend from the checkout.
+`compare` re-selects the backend from the project working tree.
 
 | Field | Content |
 | --- | --- |
@@ -525,10 +529,10 @@ manifest records no `backend`: the prepare-time backend is not evidence, and
 `specification_files` always includes `givn/specification.yaml` and never an
 End-to-end (E2E) path, and its length equals `counts.specification_files`.
 `source_kept_files` is the sorted set of copy paths that are not Specification
-files; it records paths without checksums, so a kept edit is not a difference
+files in the spec copy; it records paths without checksums, so a kept edit is not a difference
 while a deleted kept path is refused. The manifest is ephemeral: it lives
-outside the copy and the checkout, is not archived or committed, and only
-`compare` requires it.
+outside the copy and the project working tree, is not archived or committed,
+and only `compare` requires it.
 
 **Checksums.** Per path:
 `sha256(path NUL kind NUL executable-marker NUL content)` with kind `f`
@@ -544,15 +548,15 @@ checksum winning when one path is in both maps. The report prints the first 12
 lowercase hex characters; the manifest keeps the full value.
 
 **End-to-end enumeration.** The End-to-end (E2E) set is read from the selected
-revision's tracked paths, never the working tree. Each declared `e2e` entry
+revision's tracked paths, never the project working tree. Each declared `e2e` entry
 matches tracked files and tracked directory prefixes. A matched file resolves
 through its parent directory, and each match takes as its root the nearest
 directory at or above it that holds a tracked `Cargo.toml`, or the matched path
 itself when no such directory exists. The set is every tracked file at or below
-a root, minus the declaration, ordered by path. An entry that matches the
-project root covers the whole tracked tree. Ignored and untracked files cannot
-enter. The scenarios themselves stay in the `behavior` role; the `e2e` role
-holds the runner and every `@e2e` step definition.
+a root, minus the Specification Manifest, ordered by path. An entry that
+matches the project root covers the whole tracked tree. Ignored and untracked
+files cannot enter. The scenarios themselves stay in the `behavior` category;
+the `e2e` category holds the runner and every `@e2e` step definition.
 
 **Scenario checksum.** The per-feature checksum is `sha256(feature path NUL
 (title NUL executable-content NUL)*)` over the selected scenarios in file
@@ -583,9 +587,9 @@ check-in manifest's `F` lines (hash, `x`, `l`) read by `fossil artifact`, with
 `\s` in a path decoded to a space; Fossil records a symlink only when the
 repository has `allow-symlinks on`.
 
-**Compare.** `givn ise compare` reads the manifest, confirms the canonicalized
-`copy_directory` equals `--copy`, and requires the manifest path to lie outside
-the copy. It then prints two subject lines:
+**Compare.** `givn ise compare` reads the spec-copy manifest, confirms the
+canonicalized `copy_directory` equals `--copy`, and requires the manifest path
+to lie outside the copy. It then prints two subject lines:
 
 ```text
 Specification files: match
@@ -595,77 +599,80 @@ End-to-end tests: match
 `Specification files` and `End-to-end tests` are the two subjects. Each prints
 `match` alone, or its non-zero counts in the fixed order `changed`, `missing`,
 `added`, comma-separated; a kind with no difference is omitted. For example,
-one changed and one added Specification path prints
+one changed and one added matched file prints
 `Specification files: 1 changed, 1 added`. A changed or missing path prints one
 `- <path>` line and an added path prints one `+ <path>` line, one line per path
-per run; a path that drifts in both the copy and the checkout prints one line.
+per run; a path that drifts in both the copy and the project working tree prints
+one line.
 When a path differs on both sides, that line and its count belong to the
-subject that owns the path: `End-to-end tests` when the checkout side owns it,
-`Specification files` otherwise. The copy-side and checkout-side observations
-are one difference, not two.
+subject that owns the path: `End-to-end tests` when the project working tree
+side owns it, `Specification files` otherwise. The copy-side and project-side
+observations are one difference, not two.
 The exit is `0` only when both lines say `match`; any difference exits `1`.
 
-The `Specification files` line compares the manifest's per-path Specification
+The `Specification files` line compares the spec-copy manifest's per-path
 checksums with the copy: a differing file is `changed` and an absent file is
-`missing`. It compares the manifest's recorded Specification paths with the
-checkout's content paths. A recorded path carrying a selected `@e2e` scenario
-is owned on the checkout side by `End-to-end tests` and contributes no
+`missing`. It compares the spec-copy manifest's recorded paths with the project
+working tree's content paths. A recorded path carrying a selected `@e2e` scenario
+is owned on the project working tree side by `End-to-end tests` and contributes no
 `Specification files` difference there. For every other recorded path, an
 absent file is `missing` and a differing file prints
 `Specification changed after the copy was written` and `changed`. A content
-path matched by a declared Specification role that the manifest does not record
-prints `added`, except a content path in the checkout's declared End-to-end
-(E2E) set or a feature path carrying a selected `@e2e` scenario, which
-`End-to-end tests` owns. Membership in the checkout's declared End-to-end (E2E)
-set, or a selected `@e2e` scenario in a feature path, decides the subject for
-an added path, even when another Specification role also matches it.
+path matched by a declared manifest entry that the spec-copy manifest does not
+record prints `added`, except a content path in the project working tree's
+declared End-to-end (E2E) set or a feature path carrying a selected `@e2e`
+scenario, which `End-to-end tests` owns. Membership in the project working
+tree's declared End-to-end (E2E) set, or a selected `@e2e` scenario in a feature
+path, decides the subject for an added path, even when another Specification
+category also matches it.
 
-The `End-to-end tests` line compares the manifest's End-to-end (E2E) paths with
-the checkout's content paths: a recorded path that is absent is `missing`; one
+The `End-to-end tests` line compares the spec-copy manifest's End-to-end (E2E)
+paths with the project working tree's content paths: a recorded path that is absent is `missing`; one
 whose `checksums.end_to_end` content checksum differs, or whose selected-scenario
 checksum in `checksums.scenarios` differs, is `changed`; and a content path in
-the checkout's declared End-to-end (E2E) set, or a feature path carrying a
-selected `@e2e` scenario, that the manifest does not record is `added`. For a
+the project working tree's declared End-to-end (E2E) set, or a feature path
+carrying a selected `@e2e` scenario, that the spec-copy manifest does not record
+is `added`. For a
 feature path carrying a selected `@e2e` scenario, `checksums.end_to_end` holds
 the file's content checksum and `checksums.scenarios` its selected-scenario
 checksum; either difference is `changed`, so an edit outside the selected
 scenario is named by `End-to-end tests`.
 
-A content path in the checkout's declared End-to-end (E2E) set is owned on the
-checkout side by `End-to-end tests`, even when another Specification role also
-matches it. Its content, or its selected-scenario checksum when it is a feature
+A content path in the project working tree's declared End-to-end (E2E) set is
+owned on that side by `End-to-end tests`, even when another Specification
+category also matches it. Its content, or its selected-scenario checksum when it is a feature
 path, decides `changed`, and no `Specification changed after the copy was
 written` sentence is printed for it. The copy side still compares the same
 file's bytes under `Specification files`, because the copy was written with the
-file as a Specification file.
+file as a Specification file in the spec copy.
 
-The checkout's added paths are read with the checkout's declaration; the copy's
-added-file refusal and the copy's Specification paths are read with the copy's
-declaration. A checkout declaration the loader refuses is already a `changed` or
-`missing` difference and contributes no roles.
+The project working tree's added paths are read with its Specification Manifest;
+the copy's added-file refusal and its recorded paths are read with the copy's
+Specification Manifest. A Specification Manifest the loader refuses is already a
+`changed` or `missing` difference and contributes no categories.
 
 The comparison refuses before printing any count when the copy holds a file
-under a declared Specification path that the manifest does not list, naming at
-most twenty sorted paths and the remainder count. A declared Specification path
-is a match of any of the five roles, so a file added under an `e2e` match
-refuses even though the copy never carries one:
+under a declared manifest entry that the spec-copy manifest does not list,
+naming at most twenty sorted paths and the remainder count. A declared manifest
+entry is a match of any of the five categories, so a file added under an `e2e`
+entry refuses even though the copy never carries one:
 
 ```text
 ise compare: the spec copy adds a file under a declared Specification path; Specification files are not the product: givn/specs/extra.feature
 ```
 
-It refuses on the same terms when the copy lost a path the manifest lists among
-the Source code kept, naming the deleted path: the agent may edit kept Source
-code because it is the product, but it does not delete a file the copy was
-written with. Kept content is not verified, so an edit is not a difference
+It refuses on the same terms when the copy lost a path the spec-copy manifest
+lists among the Source code kept, naming the deleted path: the agent may edit
+kept Source code because it is the System's Source code, but it does not delete
+a file the copy was written with. Kept content is not verified, so an edit is not a difference
 (R-162).
 
-**Checkout enumeration.** The current `e2e` package, the `behavior` feature
-set, and the file bytes are read from the selected backend's content paths:
+**Project working tree enumeration.** The current `e2e` package, the `behavior`
+feature set, and the file bytes are read from the selected backend's content paths:
 tracked files plus untracked non-ignored files, sorted and deduplicated, with
 bytes read from disk. An uncommitted edit is seen, an added non-ignored file is
-seen, and an ignored file is not. A recorded End-to-end (E2E) path the checkout
-no longer lists is `missing`; one whose content differs, or whose
+seen, and an ignored file is not. A recorded End-to-end (E2E) path the project
+working tree no longer lists is `missing`; one whose content differs, or whose
 selected-scenario checksum differs, is `changed` under `End-to-end tests`.
 
 A clean comparison prints:
@@ -683,7 +690,7 @@ Specification files: 1 changed
 End-to-end tests: match
 ```
 
-A checkout whose End-to-end (E2E) tests drifted prints:
+A project working tree whose End-to-end (E2E) tests drifted prints:
 
 ```text
 Specification files: match
@@ -691,7 +698,7 @@ End-to-end tests: 1 changed
 - tests/e2e/steps/keys.rs
 ```
 
-A checkout that gained an End-to-end (E2E) file prints:
+A project working tree that gained an End-to-end (E2E) file prints:
 
 ```text
 Specification files: match
@@ -701,32 +708,33 @@ End-to-end tests: 1 added
 
 | Difference | Meaning |
 | --- | --- |
-| `Specification files: <n> changed` | A recorded Specification file differs in the copy, or in the checkout when the `End-to-end tests` line does not own it. |
-| `Specification files: <n> missing` | A recorded Specification file is absent from the copy, or from the checkout when the `End-to-end tests` line does not own it. |
-| `Specification files: <n> added` | The checkout holds a content path matched by a declared Specification role that the manifest does not record, that lies outside the checkout's declared End-to-end (E2E) set, and that is not a feature path carrying a selected `@e2e` scenario; such a path is owned by the `End-to-end tests` line even when another Specification role also matches it. |
-| `End-to-end tests: <n> changed` | A recorded End-to-end (E2E) path differs in the checkout, or its selected scenarios changed. |
-| `End-to-end tests: <n> missing` | A recorded End-to-end (E2E) path is absent from the checkout. |
-| `End-to-end tests: <n> added` | The checkout's declared End-to-end (E2E) set, or a feature carrying a selected `@e2e` scenario, holds a path the manifest does not record. |
-| `Specification changed after the copy was written` | A checkout Specification file the `End-to-end tests` line does not own differs from the manifest. |
+| `Specification files: <n> changed` | A recorded Specification file in the spec copy differs, or a matching file in the project working tree differs when the `End-to-end tests` line does not own it. |
+| `Specification files: <n> missing` | A recorded Specification file in the spec copy is absent, or its matching file is absent from the project working tree when the `End-to-end tests` line does not own it. |
+| `Specification files: <n> added` | The project working tree holds a content path matched by a declared manifest entry that the spec-copy manifest does not record, that lies outside the project working tree's declared End-to-end (E2E) set, and that is not a feature path carrying a selected `@e2e` scenario; such a path is owned by the `End-to-end tests` line even when another Specification category also matches it. |
+| `End-to-end tests: <n> changed` | A recorded End-to-end (E2E) path differs in the project working tree, or its selected scenarios changed. |
+| `End-to-end tests: <n> missing` | A recorded End-to-end (E2E) path is absent from the project working tree. |
+| `End-to-end tests: <n> added` | The project working tree's declared End-to-end (E2E) set, or a feature carrying a selected `@e2e` scenario, holds a path the spec-copy manifest does not record. |
+| `Specification changed after the copy was written` | A Specification file in the project working tree that the `End-to-end tests` line does not own differs from the spec-copy manifest. |
 
-**Declaration in comparison.** The copy's declaration is compared like every
-other Specification file, so an edited or deleted declaration is a difference
-naming the path. The copy's declaration derives the Specification paths the
-added-file refusal tests, so the five roles including `e2e` bound the refusal.
-A copy whose declaration is absent or unreadable contributes no roles: the
-added-file refusal is skipped, and the recorded declaration path is `missing`
-or `changed` like any other Specification file.
-The checkout's declaration derives the checkout's added paths, including an
-added `e2e` root and the files it brings. An edit that moves the checkout
-declaration's `structure:` or `limits:` entries changes the declaration's
-content like any other edit; a content path the moved entry newly matches is an
-added Specification path. A checkout without a declaration still
-compares the manifest's recorded paths; a recorded declaration path absent from
-the checkout is a `missing` difference, and the added-path scan contributes no
-roles.
+**Specification Manifest in comparison.** The copy's Specification Manifest is
+compared like every other Specification file in the spec copy, so an edited or
+deleted one is a difference naming the path. The copy's Specification Manifest
+derives the entries the added-file refusal tests, so the five categories
+including `e2e` bound the refusal. A copy whose Specification Manifest is absent
+or unreadable contributes no categories: the added-file refusal is skipped, and
+the recorded path is `missing` or `changed` like any other Specification file in the spec copy.
+The project working tree's Specification Manifest derives its added paths,
+including an added `e2e` root and the files it brings. An edit that moves its
+`structure:` or `limits:` entries changes the Specification Manifest's content like any
+other edit; a content path the moved entry newly matches is an added path. A
+project working tree without a Specification Manifest still compares the
+spec-copy manifest's recorded paths; a recorded path absent from the project
+working tree is a `missing` difference, and the added-path scan contributes no
+categories.
 
-Only the frozen inputs are compared with the checkout: a file the rebuild adds
-under a source root is Source code, and the comparison never edits the copy.
+Only the frozen inputs are compared with the project working tree: a file the
+rebuild adds under a `source:` entry is Source code, and the comparison never
+edits the copy.
 Every check runs before the report, so one run names every differing path.
 Exit codes: `0` clean or success, `1` refusal, difference, or read failure, `2`
 a clap usage error.
@@ -746,14 +754,14 @@ result-file digest/status, and tested revision. On resume:
 - Formatting-only settings changes preserve canonical equality.
 
 With `ise` effective, the fresh move also refuses before any mutation when a
-Specification-role entry in `givn/specification.yaml` matches a content path under
+manifest entry in `givn/specification.yaml` matches a content path under
 `givn/changes/<id>/` and survives neither through a content path outside the
 move nor through the `givn/archive/<id>/` form of the content path it matches.
-The refusal names the role, the entry, the moved path, and the archived path to
+The refusal names the category, the entry, the moved path, and the archived path to
 declare instead; a literal entry is answered with its archived literal path and
 a wildcard entry with the same pattern under `givn/archive`. An entry such as
 `givn/**` that still resolves after the move is unaffected, and a project with
-`ise` off reads no declaration.
+`ise` off reads no Specification Manifest.
 
 A failed or incomplete candidate remains in `givn/archive/<id>/` with a pending
 receipt. Repair the committed state and rerun archive; the merge is idempotent
@@ -764,7 +772,7 @@ evidence-only finalization revision. An already proven archive is refused.
 
 ### Upgrade recovery
 
-`givn upgrade` requires a clean checkout of the selected backend and captures a
+`givn upgrade` requires a clean project working tree in the selected backend and captures a
 checkpoint revision before writing. It stages only the calculated managed
 allowlist. On failure it reports the checkpoint, completed writes, revisions
 actually published, best-effort restoration, remaining partial state, and

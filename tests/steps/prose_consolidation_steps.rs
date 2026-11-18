@@ -658,7 +658,7 @@ fn guidance_e2e_scenarios_stay_in_specification(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
     assert!(
         content.contains(
-            "stay in the Specification under the `behavior` role with their exact titles"
+            "stay in the Specification under the `behavior` category with their exact titles"
         ),
         "the served ise guidance does not keep the @e2e scenarios in the Specification: {content}"
     );
@@ -699,7 +699,7 @@ fn guidance_only_step_definitions_and_fakes_are_implementation(world: &mut GivnW
 fn guidance_keeps_two_layer_test_boundary(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
     assert!(
-        content.contains("two-layer test boundary"),
+        content.contains("Two-layer test boundary"),
         "the served ise guidance drops the two-layer test boundary: {content}"
     );
 }
@@ -1008,20 +1008,20 @@ fn guidance_states_the_implicit_retained_entry(world: &mut GivnWorld) {
     );
 }
 
-#[then("the guidance states that the spec copy always carries the declaration itself")]
+#[then("the guidance states that the spec copy always carries the Specification Manifest itself")]
 fn guidance_states_the_spec_copy_carries_the_declaration(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
     assert!(
-        content.contains("The spec copy always carries the declaration itself"),
-        "the served ise guidance does not state that the spec copy always carries the declaration: {content}"
+        content.contains("The spec copy always carries the Specification Manifest itself"),
+        "the served ise guidance does not state that the spec copy always carries the Specification Manifest: {content}"
     );
 }
 
-#[then("the guidance states that it is an implicit Specification entry, not a sixth role")]
+#[then("the guidance states that it is an implicit Specification entry, not a sixth category")]
 fn guidance_states_the_implicit_specification_entry(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
     assert!(
-        content.contains("implicit Specification entry, not a sixth role"),
+        content.contains("implicit Specification entry, not a sixth category"),
         "the served ise guidance does not state that the declaration is an implicit Specification entry: {content}"
     );
 }

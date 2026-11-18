@@ -172,8 +172,8 @@ Feature: prose-consolidation
     And  the policy does not require artificial services containers or browser infrastructure
 
   @prose-consolidation
-  Scenario: Served ise guidance states that the trial always carries the declaration
+  Scenario: Served ise guidance states that every spec copy carries the Specification Manifest
     Given  a Givn project with ise effective
     When  the author reads the served ise guidance
-    Then  the guidance states that the spec copy always carries the declaration itself
-    And  the guidance states that it is an implicit Specification entry, not a sixth role
+    Then  the guidance states that the spec copy always carries the Specification Manifest itself
+    And  the guidance states that it is an implicit Specification entry, not a sixth category

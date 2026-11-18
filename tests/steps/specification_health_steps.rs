@@ -76,7 +76,7 @@ fn write_manifest(world: &GivnWorld, relative: &str, content: &str) {
 
 // --- Given -----------------------------------------------------------------
 
-#[given("an ise-enabled project selecting opencode with no declaration file")]
+#[given("an ise-enabled project selecting opencode with no Specification Manifest file")]
 fn project_without_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
     let path = env(world).path(DECLARATION_PATH);
@@ -85,7 +85,7 @@ fn project_without_declaration(world: &mut GivnWorld) {
 }
 
 #[given(
-    regex = r#"^an ise-enabled project selecting opencode whose limits role declares "([^"]+)"$"#
+    regex = r#"^an ise-enabled project selecting opencode whose limits category declares "([^"]+)"$"#
 )]
 fn project_with_limits_entry(world: &mut GivnWorld, path: String) {
     ise_enabled_project(world);
@@ -96,7 +96,7 @@ fn project_with_limits_entry(world: &mut GivnWorld, path: String) {
 }
 
 #[given(
-    regex = r#"^an ise-enabled project selecting opencode whose structure and behavior roles both declare "([^"]+)"$"#
+    regex = r#"^an ise-enabled project selecting opencode whose structure and behavior categories both declare "([^"]+)"$"#
 )]
 fn project_with_duplicate_role_entry(world: &mut GivnWorld, path: String) {
     ise_enabled_project(world);
@@ -107,7 +107,7 @@ fn project_with_duplicate_role_entry(world: &mut GivnWorld, path: String) {
 }
 
 #[given(
-    regex = r#"^an ise-enabled project selecting opencode whose behavior role declares only "([^"]+)"$"#
+    regex = r#"^an ise-enabled project selecting opencode whose behavior category declares only "([^"]+)"$"#
 )]
 fn project_with_behavior_entry(world: &mut GivnWorld, path: String) {
     ise_enabled_project(world);
@@ -117,7 +117,9 @@ fn project_with_behavior_entry(world: &mut GivnWorld, path: String) {
     );
 }
 
-#[given(regex = r#"^an ise-enabled project selecting opencode whose e2e role declares "([^"]+)"$"#)]
+#[given(
+    regex = r#"^an ise-enabled project selecting opencode whose e2e category declares "([^"]+)"$"#
+)]
 fn project_with_e2e_entry(world: &mut GivnWorld, path: String) {
     ise_enabled_project(world);
     write_declaration(
@@ -177,7 +179,7 @@ fn project_with_transitive_source_dependency(world: &mut GivnWorld) {
 }
 
 #[given(
-    "an ise-enabled project selecting opencode whose e2e role declares a package with no Cargo manifest"
+    "an ise-enabled project selecting opencode whose e2e category declares a package with no Cargo manifest"
 )]
 fn project_with_package_without_manifest(world: &mut GivnWorld) {
     ise_enabled_project(world);
@@ -197,7 +199,7 @@ fn project_with_malformed_manifest(world: &mut GivnWorld) {
     write_declaration(world, &declaration(&[], &[], &[], &[], &["tests/e2e"], &[]));
 }
 
-#[given("an ise-enabled project selecting opencode with a malformed declaration")]
+#[given("an ise-enabled project selecting opencode with a malformed Specification Manifest")]
 fn project_with_malformed_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
     write_declaration(world, "behavior: [\"givn/specs/**\"\n");
@@ -213,7 +215,7 @@ fn active_change_with_clean_delta_feature(world: &mut GivnWorld) {
     );
 }
 
-#[given("an ise-enabled project selecting opencode with the scaffolded declaration")]
+#[given("an ise-enabled project selecting opencode with the scaffolded Specification Manifest")]
 fn project_with_scaffolded_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
     assert!(
@@ -259,7 +261,7 @@ fn feature_file_at(world: &mut GivnWorld, path: String) {
 
 // --- Then ------------------------------------------------------------------
 
-#[then("stderr reports the duplicate declaration once")]
+#[then("stderr reports the duplicate manifest entry once")]
 fn duplicate_declaration_reported_once(world: &mut GivnWorld) {
     let observed = stderr(world);
     let count = observed

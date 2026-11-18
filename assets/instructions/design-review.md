@@ -83,7 +83,7 @@ Required branches — cover every one (or explicitly record "no issue found"):
   implementation tests are the only exceptions. A component with a named
   responsibility and a consumer outside itself but no contract is a finding; an
   internal helper with no contract is correct. When the change has an external
-  service or more than one external boundary, the design names each port and
+  service or more than one external boundary, the design names each Component Interface and
   adapter. A single-file implementation is accepted only for one external
   dependency and simple business rules; a complex change implemented as one
   unit is a finding.
@@ -96,10 +96,11 @@ Required branches — cover every one (or explicitly record "no issue found"):
   treated as an open question is a finding.
 {{/if}}
 {{#if addons.ise}}
-- **change strategy** — with `ise` effective, verify that the change records
-  exactly one `change strategy` as a `Decides D<n>` entry. An unresolved or
-  unrecorded change strategy is a finding. A rebuilding change with no recorded
-  `Ise Test` mode (`Dry-Run Ise` or `Full replacement`) is a finding.
+- **Ise rebuild decision** — with `ise` effective, verify that the change
+  records exactly one `Ise rebuild decision` as a `Decides D<n>` entry. An
+  unresolved or unrecorded decision is a finding. A rebuilding change with no
+  recorded `Rebuilt code` line (`discard` or `ship`) is a finding, and a
+  `No rebuild` change that records one is a finding.
 {{/if}}
 - **Visual design contract** — for a change that introduces or visibly changes
   a screen, `design.md` must contain the `## Visual Design Contract` section

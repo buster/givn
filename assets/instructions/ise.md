@@ -1,6 +1,6 @@
 # Instruction: ise
 
-The `ise` addon governs a product that can be rebuilt: its `Specification`
+The `ise` addon governs a System that can be rebuilt: its `Specification`
 stays declared while the `Source code` behind it is replaceable. This
 instruction names the obligations every ise change carries.
 
@@ -8,87 +8,176 @@ instruction names the obligations every ise change carries.
 `givn/config.yaml`. `givn instructions ise` refuses by name while the addon is
 off.
 
-**Vocabulary.** This instruction uses `Component`, `Port`, contract,
-`Specification`, and `Source code` because `ise` requires
-`architecture_principles`; that instruction defines them. `spec copy`,
-`manifest`, and `checksum` are defined by `docs/reference.md` and the
-project glossary. `Build input`, `Neighbor record`, and `Replaced unit` are
-defined by the project glossary.
+**Vocabulary.** This instruction uses `Component`, `Component Interface`,
+contract, `Specification`, `Source code`, and `System` because `ise` requires
+`architecture_principles`; that instruction defines them. `Spec copy`,
+`spec-copy manifest`, and `checksum` are defined by `docs/reference.md` and the
+project glossary. `Rebuild impact record` and `Replaced unit` are defined by
+the project glossary.
+
+## The Ise rebuild decision
+
+An `ise`-enabled change records exactly one **Ise rebuild decision** as a
+`Decides D<n>` entry in the design's `## Decisions` ledger. The decision is one
+of:
+
+| Decision | Meaning |
+|---|---|
+| `No rebuild` | The change keeps working with the existing Source code. No `Rebuilt code` line is recorded. |
+| `Single-Component Rebuild` | One Component's Specification is updated as the active change's delta, its Source code and coupled unit tests are replaced, and its Component Interface keeps its consumers. |
+| `Whole-system rebuild` | Every declared `source:` entry's Source code is replaced behind the System's external interfaces; persisted data and external contracts stay. |
+
+A rebuilding change adds a plain **`Rebuilt code`** line with one value:
+`discard` or `ship`. `ship` adopts the verified replacement into the change;
+`discard` does not adopt it. A `No rebuild` change records no `Rebuilt code`
+line.
+
+The entry names the affected consumers, the persisted state the rebuild must
+carry, and the rebuild boundary. It is the existing `Decides D<n>` entry; it
+adds no mandatory design field.
+
+Prose writes `Ise rebuild decision` in full. A bare `decision` names no domain
+choice.
+
+## Two rebuild practices
+
+| Practice | Where the rebuild happens | What happens to the result | When to use it |
+|---|---|---|---|
+| Working-tree ship | The current project working tree | The replacement is committed as part of the change | `Single-Component Rebuild` with `Rebuilt code: ship` |
+| Spec copy | A plain directory outside the project, written from a selected revision | The result stays outside the project; nothing is promoted | `Rebuilt code: discard`, or a copy-based Ise Test |
+
+### Single-Component Rebuild with Rebuilt code: ship
+
+The working-tree ship is the straightforward practice. It does not require a
+spec copy, a candidate revision, an early archive merge, a generated spec-copy
+manifest, a repository view that hides history, or a sandbox.
+
+1. **Write the active Specification.** The updated use-case text and scenarios
+   live in `givn/changes/<id>/specs/**`. Unchanged permanent rules stay in
+   `givn/specs/**`; the active delta is what change-scoped verification runs.
+2. **Keep the previous implementation in history.** Record the Specification
+   delta while the previous Component's Source code is still available in
+   revision history. A feature-only revision is not completed implementation
+   evidence.
+3. **Remove the old implementation in the working tree.** Delete that
+   Component's Source code and coupled unit tests from the current project
+   working tree. Keep its Component Interface, every other Component, and the
+   acceptance suite. Do not remove unrelated Source code.
+4. **Rebuild in place.** The coding agent rebuilds the Component in the working
+   tree. It is instructed not to consult the previous implementation in
+   accessible history.
+5. **Verify, commit, archive.** Verify against the active delta and the
+   applicable End-to-end (E2E) scenarios without changing the acceptance
+   target. Commit the replacement as part of the change. `givn check tasks`
+   verifies the change delta; `givn check review` checks the projected merge;
+   archive merges the delta once, after the rebuilt code passes, and runs its
+   normal merged-suite verification.
+
+**Limitation.** A passing verification proves the replacement's tested
+behaviour. It does not prove that the Specification alone was sufficient,
+because the previous implementation stays accessible in history. Never report
+the working-tree path as a clean-room result.
+
+If the Specification or the E2E suite changes after the rebuild starts, record
+a new frozen revision and rerun the relevant verification. Never move the
+acceptance target to make the rebuilt code pass.
+
+### Rebuilt code: discard
+
+A discard rebuild does not adopt the rebuilt Source code into the project. Use
+`givn ise rebuild-component` or `givn ise rebuild-all` to prepare a spec copy
+from a selected revision, rebuild inside it, and record what the trial found.
+The rebuilt work stays in the copy, and the trial review records that no
+rebuilt file was promoted. The spec copy is never a branch or a worktree.
 
 ## Commands
 
-Three commands serve the clean room. Each one writes or reads the spec copy; the
-rebuild happens in that copy, by the agent, and never in the command.
+The commands serve the spec-copy practice. Each one writes or reads the spec
+copy; the rebuild happens in that copy, by the agent, and never in the command.
+The spec-copy commands prepare an external copy; they never edit the project
+working tree.
 
 | Command | What it does |
 |---|---|
-| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which the whole product is rebuilt: every declared source root is removed from it. |
-| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Reports every difference between the manifest and the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. |
+| `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which every declared `source:` entry is removed. |
+| `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which one Component's Source code is removed; neighbouring Components and their Component Interfaces stay. |
+| `givn ise compare --manifest <file> --copy <dir>` | Reports every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. |
 
 A refusal prints `ise rebuild-all:`, `ise rebuild-component:`, or
 `ise compare:` to match the command that refused.
 
 ## The spec copy rule
 
-The spec copy is written with the project's Specification files. During a
+The spec copy is written with its Specification files in the spec copy: the
+matched files of the four content categories and the Specification Manifest. During a
 rebuild the agent adds files, and those are the rebuilt Source code. The agent
-may edit Source code kept because it is the product, but it does not delete any
-file the copy was written with. The agent does not modify any Specification file
-the copy was written with; adding a file under a declared Specification path is
-a Specification change, not the product, and is refused.
+may edit Source code kept because it is the System's Source code, but it does
+not delete any file the copy was written with. The agent does not modify any
+Specification file in the spec copy; adding a file under a declared manifest
+entry is a Specification change, not the Source code, and is refused.
 
-A `Dry-Run Ise` trial promotes nothing: the rebuilt work stays in the copy, and
-the trial review records that no rebuilt file was promoted.
+An `e2e` match is part of the Specification but never enters the spec copy.
+
+The `Specification Manifest` is `givn/specification.yaml`, not the generated
+spec-copy manifest. Its five categories are `behavior`, `structure`,
+`contracts`, `limits`, and `e2e`. Each category holds manifest entries (a
+literal path or glob); an entry matches files. An `e2e` entry's matched files
+are read from the project working tree and never copied.
 
 ## The clean-room boundary
 
-The builder reads no product source outside the spec copy and the declared
-inputs. Before the rebuild, scan the local package registry's source, cache,
-and git stores for a published copy of the product, and quarantine every hit
-outside the builder's reach; a store that does not exist has no hit. Record the
-scan result in the neighbor record. A published copy the builder can read is not
-a clean-room rebuild.
+The builder reads no Source code outside the spec copy and the declared
+inputs. Before a copy-based rebuild, scan the local package registry's source,
+cache, and git stores for a published copy of the System, and quarantine every
+hit outside the builder's reach; a store that does not exist has no hit. Record
+the scan on its own `Clean-room scan` line in the trial review. A published
+copy the builder can read is not a clean-room rebuild. A working-tree ship
+makes no clean-room claim.
 
 ## Obligations
 
-- **Specification completeness** — every behavior, contract, limit, acceptance
-  test, and build input the rebuild relies on is declared in
-  `givn/specification.yaml` and reachable from the Specification paths. A build
-  input is declared under the role that owns its content class: a build manifest
-  and a lockfile under `contracts`, a toolchain pin under `limits`, a structural
-  template under `structure`, a schema or migration asset under `contracts`, and
-  served instruction or skill text under `behavior`. The frozen End-to-end (E2E)
-  tests fix the bytes they assert; a structural template or a schema asset fixes
-  its content through the contract that names its shape. A build input the
-  declaration leaves outside the Specification roles is a `specification defect`,
-  and a neighbor when it lies outside the replaced unit; the trial records it
-  with its consequence. An asset the rebuild generates inside the replaced unit
-  whose bytes no frozen test fixes is an `acceptable undocumented change`, not a
-  neighbor. The dependency cache and the installed toolchain are environment
-  inputs, never declared files: the lockfile declares the resolved dependencies,
-  the toolchain pin declares the toolchain, the trial records how both were
-  supplied, and a locked dependency the cache cannot resolve blocks the rebuild;
-  the blocked rebuild is a setup failure, not a `Spec gap`, and it is not a
-  `specification defect`. A contract the frozen tests rely on enumerates every
-  value it fixes. A declared Specification path must survive `givn archive`: a
-  change's artifacts move from `givn/changes/<id>/` to `givn/archive/<id>/`, so a
-  Specification role names the archived path or another durable path, never an
-  active change's artifact. `givn archive` refuses such a declaration before
-  moving the change. The spec copy always carries the declaration itself:
-  `givn/specification.yaml` is an implicit Specification entry, not a sixth role,
-  so a project need not list it and the agent reads the declared roles from the
-  copy the selected revision records.
-- **two-layer test boundary** — the `@e2e` scenarios stay in the Specification
-  under the `behavior` role with their exact titles, and run from the declared
-  `e2e` package, which holds the runner and every `@e2e` step definition and
-  survives a rebuild. Component scenarios stay in the Specification unchanged;
-  only their step definitions and fakes are implementation and may be rewritten
-  inside the component boundary.
-- **persisted-state continuity** — a replacement preserves persisted state and
+- **Specification completeness** — every behaviour, contract, limit,
+  acceptance test, and file the rebuild needs is declared in
+  `givn/specification.yaml` and reachable from the matched files. A file the
+  rebuild needs that is not Source code belongs under the category that owns
+  its content class: a build configuration file and a lockfile under
+  `contracts`, a toolchain pin under `limits`, a structural template under
+  `structure`, a schema or migration asset under `contracts`, and served
+  instruction or skill text under `behavior`. The frozen End-to-end (E2E)
+  tests fix the bytes they assert; a structural template or a schema asset
+  fixes its content through the contract that names its shape. A file the
+  rebuild needs that the Specification Manifest leaves undeclared is a
+  `specification defect`. An asset the rebuild generates inside the replaced
+  unit whose bytes no frozen test fixes is an `acceptable undocumented change`,
+  not a rebuild impact row. The installed toolchain and dependency cache are
+  supplied, never declared files: the lockfile declares the resolved
+  dependencies, the toolchain pin declares the toolchain, the trial records how
+  both were supplied, and a locked dependency the cache cannot resolve blocks
+  the rebuild; the blocked rebuild is a setup failure, not a `Spec gap`, and it
+  is not a `specification defect`. A contract the frozen tests rely on
+  enumerates every value it fixes. A declared manifest entry must survive
+  `givn archive`: a change's artifacts move from `givn/changes/<id>/` to
+  `givn/archive/<id>/`, so a category names the archived path or another
+  durable path, never an active change's artifact. `givn archive` refuses such
+  an entry before moving the change. The spec copy always carries the
+  Specification Manifest itself: `givn/specification.yaml` is an implicit
+  Specification entry, not a sixth category, so a project need not list it and
+  the agent reads the declared categories from the copy the selected revision
+  records.
+- **Two-layer test boundary** — the `@e2e` scenarios stay in the Specification
+  under the `behavior` category with their exact titles, and run from the
+  declared `e2e` package, which holds the runner and every `@e2e` step
+  definition and survives a rebuild. Component scenarios stay in the
+  Specification unchanged; only their step definitions and fakes are
+  implementation and may be rewritten inside the Component boundary.
+- **Persisted-state continuity** — a replacement preserves persisted state and
   public contracts; a required manual migration is a blocked rebuild.
-- **change strategy** — the change records one `change strategy` as a
-  `Decides D<n>` entry, with the `Ise Test` mode when it rebuilds.
+- **Ise rebuild decision** — the change records one decision as a
+  `Decides D<n>` entry, with the `Rebuilt code` line when it rebuilds.
+- **Implementation freedom** — Source code layout may change while declared
+  behaviour, Component Interfaces, persisted-state obligations, and technical
+  limits stay satisfied. This is a rule, not another record; do not reproduce
+  undocumented internal design merely because it existed previously.
 - **Spec gap classification** — a corrective change records exactly one
   `Spec gap` outcome before any fix: `E2E test defect`, `implementation defect`,
   `specification defect`, or `acceptable undocumented change`.
@@ -103,13 +192,12 @@ An ise change carries three records:
 
 | Record | Home | Content |
 |---|---|---|
-| `change strategy` | the design's `## Decisions` ledger | one `Decides D<n>` entry naming `incremental modification`, `Constant Ise`, or `whole-product rebuild`, the `Ise Test` mode for a rebuild, the affected consumers, the persisted state, and the rebuild boundary |
+| `Ise rebuild decision` | the design's `## Decisions` ledger | one `Decides D<n>` entry naming `No rebuild`, `Single-Component Rebuild`, or `Whole-system rebuild`; a rebuilding entry adds the plain `Rebuilt code` line (`discard` or `ship`), the affected consumers, the persisted state, and the rebuild boundary |
 | `Spec gap` | the corrective change's proposal | exactly one outcome and the artifact that is wrong, not who found it |
-| `Neighbor record` | the trial review's evidence directory | every file changed outside the declared Specification or the replaced unit, and every consolidation, each with its reason; the trial review records the neighbor record |
+| `Rebuild impact record` | the trial review's evidence directory | every file added, modified, deleted, moved, or renamed outside the declared Specification and outside the replaced unit, and every consolidation (a merge, split, move, or rename of rebuilt paths), each with its reason; the trial review records it, and the clean-room scan is a separate line |
 
-A consolidation merges or splits rebuilt paths; it is recorded with its reason
-even when no file lies outside the Specification. A rebuild with no neighbor
-records an empty table.
+A rebuild with no outside effect records an empty table. The rebuild impact
+record is one review question, never a gate, and it is not a behaviour diff.
 
 Only `specification defect` is a gap in the Specification; an
 `E2E test defect` is a gap in the test, an `implementation defect` is a gap in

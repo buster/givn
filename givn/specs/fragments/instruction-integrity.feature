@@ -346,21 +346,22 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the startup guidance says the reported step does not authorize unrelated work
 
   @instruction-integrity
-  Scenario: The ise instruction carries the five rebuild obligations
+  Scenario: The ise instruction carries the six rebuild obligations
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction names Specification completeness, the two-layer test boundary, persisted-state continuity, the change strategy, and the spec gap classification
-    And  the served instruction uses the established Component, Port, contract, Specification, and Source code vocabulary
+    And  the served instruction names Specification completeness, the two-layer test boundary, persisted-state continuity, the Ise rebuild decision, implementation freedom, and the spec gap classification
+    And  the served instruction uses the established Component, Component Interface, contract, Specification, Source code, and System vocabulary
 
   @instruction-integrity
-  Scenario: The review guidance asks the neighboring-components question without a gate
+  Scenario: The review guidance asks the rebuild-impact question without a gate
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the review guidance
     Then  the command exits 0
     And  the served review guidance asks for the files changed outside the declared Specification or the replaced unit
     And  the served review guidance asks for every consolidation the rebuild made
     And  the served review guidance asks for the reason for each
+    And  the served review guidance records the clean-room scan as its own line
     And  the served review guidance states that the answer is a review question, never a gate
 
   @instruction-integrity
@@ -395,7 +396,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the maintainer requests the ise instruction and runs the reference check over it
     Then  the served text names "steps" as the mapping for the change's stack mechanics
     And  the served text names "steps-rust" as one stack instruction example
-    And  the served text names the artifact instruction that owns the change-strategy record and the one that owns the spec-gap record
+    And  the served text names the artifact instruction that owns the Ise rebuild decision record and the one that owns the spec-gap record
     And  every named instruction id resolves
 
   @instruction-integrity
@@ -413,20 +414,20 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the served text carries "no fourth bucket"
 
   @instruction-integrity
-  Scenario: The ise instruction says declared retained paths survive archiving
+  Scenario: The ise instruction says declared manifest entries survive archiving
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
-    Then  the served instruction says a declared Specification path must survive `givn archive`
+    Then  the served instruction says a declared manifest entry must survive `givn archive`
     And  the served instruction names the archive location a change's artifacts move to
 
   @instruction-integrity
-  Scenario: The ise instruction makes the declaration cover every build input
+  Scenario: The ise instruction makes the Specification Manifest cover every file the rebuild needs
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction names the build manifest, the lockfile, the toolchain pin, a structural template, a schema or migration asset, and served instruction text as build inputs
-    And  the served instruction places the build manifest and the lockfile under contracts, the toolchain pin under limits, a structural template under structure, a schema or migration asset under contracts, and served instruction text under behavior
-    And  the served instruction states that a build input the declaration leaves outside the Specification roles is a specification defect, and a neighbor when it lies outside the replaced unit
+    And  the served instruction names the build configuration file, the lockfile, the toolchain pin, a structural template, a schema or migration asset, and served instruction text as files the rebuild needs
+    And  the served instruction places the build configuration file and the lockfile under contracts, the toolchain pin under limits, a structural template under structure, a schema or migration asset under contracts, and served instruction text under behavior
+    And  the served instruction states that a file the rebuild needs that the Specification Manifest leaves undeclared is a specification defect
 
   @instruction-integrity
   Scenario: The ise instruction accepts an asset the rebuild generates inside the replaced unit
@@ -434,14 +435,14 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the consumer requests the `ise` instruction
     Then  the command exits 0
     And  the served instruction treats an asset the rebuild generates inside the replaced unit whose bytes no frozen test fixes as an acceptable undocumented change
-    And  the served instruction states that a generated asset is not a neighbor
+    And  the served instruction states that a generated asset is not a rebuild impact row
 
   @instruction-integrity
-  Scenario: The ise instruction keeps the dependency cache in the environment
+  Scenario: The ise instruction keeps the installed toolchain and dependency cache supplied
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction names the dependency cache and the installed toolchain as environment inputs, never declared files
+    And  the served instruction names the installed toolchain and dependency cache as supplied, never declared files
     And  the served instruction states that a locked dependency the cache cannot resolve blocks the rebuild
     And  the served instruction states that the blocked rebuild is a setup failure, not a Spec gap
     And  the served instruction states that the blocked rebuild is not a specification defect
@@ -458,25 +459,25 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction requires the builder to read no product source outside the spec copy and the declared inputs
+    And  the served instruction requires the builder to read no Source code outside the spec copy and the declared inputs
     And  the served instruction requires a scan of the local package registry's source, cache, and git stores
     And  the served instruction requires every registry hit to be quarantined outside the builder's reach
     And  the served instruction states that a store that does not exist has no hit
-    And  the served instruction records the registry scan result in the neighbor record
+    And  the served instruction records the registry scan on its own clean-room scan line
 
   @instruction-integrity
-  Scenario: The ise instruction records a rebuild's neighbors and consolidations
+  Scenario: The ise instruction records a rebuild's impact and consolidations
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction records every file changed outside the declared Specification or the replaced unit
+    And  the served instruction records every file added, modified, deleted, moved, or renamed outside the declared Specification and outside the replaced unit
     And  the served instruction records every consolidation with its reason
-    And  the served instruction states that the trial review records the neighbor record
+    And  the served instruction states that the trial review records the rebuild impact record
 
   @instruction-integrity
-  Scenario: The ise instruction keeps a dry run out of the product
+  Scenario: The ise instruction keeps discarded rebuilt code out of the project
     Given  a Givn project with the ise addon enabled and the skills synchronized
     When  the consumer requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction states that a Dry-Run Ise trial promotes nothing
+    And  the served instruction states that a discard rebuild does not adopt the rebuilt Source code
     And  the served instruction states that the rebuilt work stays in the copy

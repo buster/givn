@@ -14,6 +14,14 @@ the record becomes the `ise-manifest/v1` manifest, and its canonical checksum
 bytes and additive-field compatibility rule are stated below. The original
 decision's ownership and placement stand.
 
+Amended 2026-11-18 by `ise-rebuild-decision-and-working-tree-ship`: the
+clean-room trial record is scoped to a **copy-based Ise Test**. A working-tree
+Ise Test builds in the project working tree, relies on an instruction not to
+consult accessible history, makes no clean-room claim, and produces no trial
+record; its evidence is the change verification receipt and the review record.
+The command contract, `ise-manifest/v1` scope, and per-path checksums below are
+unchanged.
+
 ## Qualification
 
 ADR-QUALIFICATION: PASS

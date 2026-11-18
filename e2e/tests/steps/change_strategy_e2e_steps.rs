@@ -1,4 +1,4 @@
-//! E2E step definitions for the `change-strategy` capability.
+//! E2E step definitions for the `ise-rebuild-decision` capability.
 //!
 //! The scenario requests the served design guidance on an `ise`-enabled
 //! project with one active change and asserts the change-strategy block; it
@@ -25,30 +25,41 @@ fn consumer_requests_design_guidance(world: &mut GivnWorld) {
     world.last_command = Some("instructions".to_string());
 }
 
-#[then("the served design guidance requires exactly one change strategy as a `Decides D` entry")]
+#[then(
+    "the served design guidance requires exactly one Ise rebuild decision as a `Decides D` entry"
+)]
 fn served_design_requires_one_change_strategy(world: &mut GivnWorld) {
     let content = served_guidance(world);
     assert!(
-        content.contains("Record exactly one `change strategy`")
+        content.contains("Record exactly one `Ise rebuild decision`")
             && content.contains("as a `Decides D<n>` entry"),
-        "the served design guidance does not require one change strategy in the Decisions ledger: {content}"
+        "the served design guidance does not require one Ise rebuild decision in the Decisions ledger: {content}"
     );
 }
 
 #[then(
-    regex = r#"^the served design guidance names "([^"]+)", "([^"]+)", and a whole-product rebuild$"#
+    "the served design guidance names No rebuild, Single-Component Rebuild, and Whole-system rebuild"
 )]
-fn served_design_names_the_three_strategies(
-    world: &mut GivnWorld,
-    incremental: String,
-    constant_ise: String,
-) {
+fn served_design_names_the_three_decisions(world: &mut GivnWorld) {
     let content = served_guidance(world);
     assert!(
-        content.contains(&format!("`{incremental}`"))
-            && content.contains(&format!("`{constant_ise}`"))
-            && content.contains("whole-product rebuild"),
-        "the served design guidance does not name the three change strategies: {content}"
+        content.contains("`No rebuild`")
+            && content.contains("`Single-Component Rebuild`")
+            && content.contains("`Whole-system rebuild`"),
+        "the served design guidance does not name the three Ise rebuild decisions: {content}"
+    );
+}
+
+#[then(
+    "the served design guidance records a plain Rebuilt code line with discard or ship for a rebuilding change"
+)]
+fn served_design_records_rebuilt_code(world: &mut GivnWorld) {
+    let content = served_guidance(world);
+    assert!(
+        content.contains("records a plain `Rebuilt code` line")
+            && content.contains("`discard`")
+            && content.contains("`ship`"),
+        "the served design guidance does not record what happens to rebuilt code: {content}"
     );
 }
 

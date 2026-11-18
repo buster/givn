@@ -50,17 +50,17 @@ holds:
    merge each definition into its permanent per-capability step file and rerun
    the archive.
 {{#if addons.ise}}
-6. When `ise` is effective, every declared Specification-role entry in
+6. When `ise` is effective, every declared manifest entry in
    `givn/specification.yaml` still resolves after the move. An entry that
    matches a content path under `givn/changes/<id>/` survives only when it also
    matches a content path outside that move or the `givn/archive/<id>/` form of
    a content path it matches; otherwise it refuses before any mutation and
-   names the role, the entry, the moved path, and the archived path to declare
-   instead. A literal entry is answered with its archived literal path, a
-   wildcard entry with the same pattern under `givn/archive`. An entry that also
-   resolves after the move (for example `givn/**`) is unaffected, and a project
-   with `ise` off reads no declaration. A declaration the loader refuses blocks
-   the gate by name.
+   names the category, the entry, the moved path, and the archived path to
+   declare instead. A literal entry is answered with its archived literal path,
+   a wildcard entry with the same pattern under `givn/archive`. An entry that
+   also resolves after the move (for example `givn/**`) is unaffected, and a
+   project with `ise` off reads no Specification Manifest. A Specification
+   Manifest the loader refuses blocks the gate by name.
 {{/if}}
 
 A gate failure exits non-zero with a clear error; nothing is archived. A

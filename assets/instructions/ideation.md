@@ -71,7 +71,7 @@ conjunctive:
 - **evaluation capability** — what it can judge;
 - **own vocabulary** — terms it uses or refuses.
 
-The three adapter-implementer-shaped files collapse to one persona with three stance blocks: they share the authority (ship an adapter against a port) and the evaluation (the conformance suite), so they are one persona segment, not three. Topic-specific demands go into a dated `## Topic stances` appendix,
+The three adapter-implementer-shaped files collapse to one persona with three stance blocks: they share the authority (ship an adapter against a Component Interface) and the evaluation (the conformance suite), so they are one persona segment, not three. Topic-specific demands go into a dated `## Topic stances` appendix,
 never into Role, Interests, or Goals.
 
 Persona files use this schema — a stable core, an append-only running

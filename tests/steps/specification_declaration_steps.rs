@@ -1,7 +1,7 @@
-//! Step definitions for the `specification-declaration` capability.
+//! Step definitions for the `specification-manifest` capability.
 //!
 //! Every step drives the built binary (`common::run_givn`) and reads the
-//! fixture tree; none imports `config::declaration`. The declaration fixture is
+//! fixture tree; none imports `config::declaration`. The Specification Manifest fixture is
 //! one valid six-key file that each scenario breaks in exactly one way, so a
 //! refusal is attributable to the mutation the scenario names.
 
@@ -71,12 +71,12 @@ fn declaration_for(mutation: &str) -> String {
     let mut entries: Vec<(&'static str, &'static str)> = DECLARATION_ENTRIES.to_vec();
     match mutation {
         r#"adds the key "components""# => entries.push(("components", "[]")),
-        r#"misspells the role "behavior" as "behaviour""# => {
+        r#"misspells the category "behavior" as "behaviour""# => {
             let (declared, _) = entry_mut(&mut entries, "behavior");
             *declared = "behaviour";
         }
-        r#"repeats the role "e2e""# => entries.push(("e2e", r#"["tests/e2e"]"#)),
-        r#"omits the role "limits""# => entries.retain(|(key, _)| *key != "limits"),
+        r#"repeats the category "e2e""# => entries.push(("e2e", r#"["tests/e2e"]"#)),
+        r#"omits the category "limits""# => entries.retain(|(key, _)| *key != "limits"),
         "omits the source list" => entries.retain(|(key, _)| *key != "source"),
         r#"declares the source root "../other/crates/**""# => {
             let (_, value) = entry_mut(&mut entries, "source");
@@ -94,7 +94,7 @@ fn declaration_for(mutation: &str) -> String {
             let (_, value) = entry_mut(&mut entries, "behavior");
             *value = r#""givn/specs/**""#;
         }
-        other => panic!("unhandled declaration mutation '{other}'"),
+        other => panic!("unhandled Specification Manifest mutation '{other}'"),
     }
     let mut declaration = entries
         .iter()
@@ -108,7 +108,7 @@ fn declaration_for(mutation: &str) -> String {
 // --- Given -----------------------------------------------------------------
 
 #[given(
-    regex = r"^an ise-enabled project selecting opencode whose declaration (.+) and whose bytes are recorded$"
+    regex = r"^an ise-enabled project selecting opencode whose Specification Manifest (.+) and whose bytes are recorded$"
 )]
 fn ise_project_with_recorded_declaration(world: &mut GivnWorld, mutation: String) {
     let declaration = declaration_for(&mutation);
@@ -118,7 +118,7 @@ fn ise_project_with_recorded_declaration(world: &mut GivnWorld, mutation: String
 }
 
 #[given(
-    "an ise-enabled project selecting opencode whose declaration places build inputs under the four content roles"
+    "an ise-enabled project selecting opencode whose Specification Manifest places rebuild files under the four content categories"
 )]
 fn ise_project_with_build_input_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
@@ -134,14 +134,14 @@ fn ise_project_with_build_input_declaration(world: &mut GivnWorld) {
         .expect("write the End-to-end package manifest");
 }
 
-#[given("an ise-enabled project selecting opencode whose declaration is not valid YAML")]
+#[given("an ise-enabled project selecting opencode whose Specification Manifest is not valid YAML")]
 fn ise_project_with_unparsable_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
     write_declaration(world, &declaration_for("is not valid YAML"));
 }
 
 #[given(
-    "an ise-enabled project selecting opencode whose declaration holds a scalar for the role \"behavior\""
+    "an ise-enabled project selecting opencode whose Specification Manifest holds a scalar for the category \"behavior\""
 )]
 fn ise_project_with_scalar_role(world: &mut GivnWorld) {
     ise_enabled_project(world);
@@ -151,7 +151,9 @@ fn ise_project_with_scalar_role(world: &mut GivnWorld) {
     );
 }
 
-#[given("an ise-enabled project selecting opencode whose declaration path is a directory")]
+#[given(
+    "an ise-enabled project selecting opencode whose Specification Manifest path is a directory"
+)]
 fn ise_project_with_directory_declaration(world: &mut GivnWorld) {
     ise_enabled_project(world);
     // Enabling `ise` scaffolds the declaration, so the path is occupied by a
@@ -164,17 +166,19 @@ fn ise_project_with_directory_declaration(world: &mut GivnWorld) {
 }
 
 #[given(
-    "an ise-enabled project selecting opencode whose declaration misspells the role \"behavior\" as \"behaviour\""
+    "an ise-enabled project selecting opencode whose Specification Manifest misspells the category \"behavior\" as \"behaviour\""
 )]
 fn ise_project_with_misspelled_role(world: &mut GivnWorld) {
     ise_enabled_project(world);
     write_declaration(
         world,
-        &declaration_for(r#"misspells the role "behavior" as "behaviour""#),
+        &declaration_for(r#"misspells the category "behavior" as "behaviour""#),
     );
 }
 
-#[given("an initialized project selecting opencode with ise disabled and a malformed declaration")]
+#[given(
+    "an initialized project selecting opencode with ise disabled and a malformed Specification Manifest"
+)]
 fn ise_disabled_project_with_malformed_declaration(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
     let output = common::run_givn(env(world), &["addons", "disable", "ise"]);
@@ -188,7 +192,7 @@ fn ise_disabled_project_with_malformed_declaration(world: &mut GivnWorld) {
 
 // --- Then ------------------------------------------------------------------
 
-#[then("the declaration bytes equal the recorded bytes")]
+#[then("the Specification Manifest bytes equal the recorded bytes")]
 fn declaration_bytes_equal_recorded(world: &mut GivnWorld) {
     let recorded = world
         .specification_declaration
@@ -203,7 +207,7 @@ fn declaration_bytes_equal_recorded(world: &mut GivnWorld) {
     );
 }
 
-#[then(regex = r#"^stderr does not report the omitted role "(.*)"$"#)]
+#[then(regex = r#"^stderr does not report the omitted category "(.*)"$"#)]
 fn stderr_does_not_report_the_omitted_role(world: &mut GivnWorld, role: String) {
     let observed = stderr(world);
     let missing_role = format!("missing role '{role}'");
@@ -226,7 +230,7 @@ fn exits_one_and_names(world: &mut GivnWorld, name: String) {
 
 /// A declaration schema refusal is the blocking `[DECL ]` finding: the
 /// declaration is absent, unreadable, or not valid YAML.
-#[then("stderr contains no declaration-schema error")]
+#[then("stderr contains no manifest-schema error")]
 fn stderr_contains_no_declaration_schema_error(world: &mut GivnWorld) {
     let observed = stderr(world);
     assert!(
@@ -238,7 +242,7 @@ fn stderr_contains_no_declaration_schema_error(world: &mut GivnWorld) {
 /// The fixture declares every build input the whole-product rebuild reads, so
 /// no advisory may report a declared path as missing, duplicated, or inside
 /// the End-to-end boundary.
-#[then("stderr contains no declared-path advisory for the build inputs")]
+#[then("stderr contains no declared-path advisory for the rebuild files")]
 fn stderr_contains_no_declared_path_advisory_for_the_build_inputs(world: &mut GivnWorld) {
     const BUILD_INPUT_SUBJECTS: [&str; 5] = [
         "Cargo.toml",
@@ -261,7 +265,7 @@ fn stderr_contains_no_declared_path_advisory_for_the_build_inputs(world: &mut Gi
     }
 }
 
-#[then("stderr contains no declaration finding")]
+#[then("stderr contains no manifest finding")]
 fn stderr_contains_no_declaration_finding(world: &mut GivnWorld) {
     let observed = stderr(world);
     assert!(
