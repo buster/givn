@@ -384,7 +384,7 @@ project-owned commands live in `givn/commands.yaml`:
 ```yaml
 verify:
   command: "./run-tests.sh"
-  e2e_command: "./run-tests.sh --e2e"
+  e2e_command: "./run-tests.sh --e2e --package e2e"
 coverage:
   measure_command: "./measure-coverage.sh"
   merge_command: "./merge-coverages.sh"

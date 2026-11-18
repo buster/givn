@@ -90,4 +90,4 @@ jobs:
         run: |
           set -euo pipefail
           ./run-tests.sh --non-e2e
-          ./run-tests.sh --e2e
+          ./run-tests.sh --e2e --package e2e
