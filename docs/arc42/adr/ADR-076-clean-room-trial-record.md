@@ -20,7 +20,11 @@ Ise Test builds in the project working tree, relies on an instruction not to
 consult accessible history, makes no clean-room claim, and produces no trial
 record; its evidence is the change verification receipt and the review record.
 The command contract, `ise-manifest/v1` scope, and per-path checksums below are
-unchanged.
+unchanged. **Rejected alternative:** reserving `Ise Test` for the copy-based
+path. The working-tree practice is also a rebuild execution with the
+Specification and acceptance suite held fixed, so reserving the term would
+leave it without an execution noun; the term covers both practices, and the
+served instruction states the history-access limitation.
 
 ## Qualification
 

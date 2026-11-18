@@ -67,7 +67,8 @@ of three values:
 
 A change that rebuilds records a plain `Rebuilt code` line beside the decision:
 `discard` (the rebuilt result is not adopted) or `ship` (the verified
-replacement is adopted into the change).
+replacement is adopted into the change). A `No rebuild` change records no
+`Rebuilt code` line.
 
 A `Single-Component Rebuild` with `Rebuilt code: ship` follows the working-tree
 sequence in `givn instructions ise`: the Specification delta is written first,

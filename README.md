@@ -105,7 +105,7 @@ fail if the project configuration drifts from the record. An operator can use
 | `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. |
 | `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. |
 
-The `ise` addon applies [The Ise Principle](https://iseprinciple.org) to a Givn project. The site is framework-agnostic and does not depend on Givn.
+The `ise` addon applies [The Ise Principle](https://iseprinciple.org) to a Givn project. The site is framework-agnostic and names no Givn command, flag, or record.
 
 ## Documentation
 

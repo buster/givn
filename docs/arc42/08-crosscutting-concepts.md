@@ -468,7 +468,7 @@ enabling a new addon remains an explicit `givn addons enable` operation.
 Ejected facets are not automatically replaced.
 
 For every managed upgrade, it refuses a project without a usable backend or a
-dirty checkout before any write, records the checkpoint, stages only a
+dirty project working tree before any write, records the checkpoint, stages only a
 calculated list of Givn-owned paths, and creates one commit if the managed
 files changed. A declared future migration route adds an aggregate maintenance
 change under `givn/changes/` and a second commit containing its ordered bundle
@@ -1126,7 +1126,7 @@ rules policies, because the record is development data rather than a generated
 rule, and the Git destinations are their own fenced block rather than the
 `# givn:begin:rules` block. The never-dirty rule is the point: the recorder runs
 at command start, so a versioned write on every command would dirty the working
-tree before the command did anything and `givn upgrade`'s clean-checkout
+tree before the command did anything and `givn upgrade`'s clean-project-working-tree
 precondition would refuse a project that did nothing wrong — and no ignore
 destination can suppress a tracked file's modification anyway. The owning
 commands write the tracked block once, and `givn upgrade` stages `.gitignore`
@@ -1447,7 +1447,7 @@ has no optional field. A field added later is optional only when the scope
 states its default, and a field with no derivable default opens a new scope. An
 unknown field, a missing field, a malformed checksum, or a mismatched scope is
 refused naming the manifest and the expected value, so a reader never guesses.
-The manifest carries no backend: `compare` re-selects it from the checkout. The earlier `ise-trial/v1` record
+The manifest carries no backend: `compare` re-selects it from the project working tree. The earlier `ise-trial/v1` record
 shape is refused by name and is not migrated: a spec copy is ephemeral, and one
 command re-prepares it.
 
@@ -1527,7 +1527,7 @@ missing path or either difference is `changed`, so an edit outside the selected
 scenario is named. It counts an added content
 path in the project working tree's declared End-to-end (E2E) set or an added feature path
 carrying a selected `@e2e` scenario, and owns every content path in that set on
-the checkout side, so such a path prints one line even when
+the project side, so such a path prints one line even when
 another Specification category also matches it. The comparison refuses a copy that lost a path the manifest
 lists among the Source code kept, naming it; kept content is not verified, so an
 edit is not a difference. The manifest carries no runner command; the

@@ -1,6 +1,6 @@
 # 6. Runtime View
 
-This chapter records the runtime order implemented by the current checkout. It
+This chapter records the runtime order implemented by the project working tree. It
 distinguishes manifest-driven hooks from binary mandatory checks.
 
 ## 6.1 `givn init`
@@ -15,7 +15,7 @@ The sequence is:
    error naming the requirement — until a target is marked. Recognized
    selections are `.opencode`, `.agents`, `.claude`, `.omp`, and `.maki`. A
    non-terminal empty or unknown-only selection refuses with a non-zero exit
-   and leaves the checkout unchanged.
+   and leaves the project working tree unchanged.
 3. Create `givn/specs`, `givn/changes`, and `givn/archive`.
 4. Write `givn/config.yaml` from the embedded, versioned scaffold unless the
    file already exists and `--force` is absent; append the resolved selection
@@ -1127,19 +1127,20 @@ checksums.
    `checksums.end_to_end` content checksum and, for a feature path carrying a
    selected `@e2e` scenario, its `checksums.scenarios` checksum; a missing path
    or either difference is a difference, so an edit outside the selected
-   scenario is named. A checkout content path in the declared End-to-end (E2E)
-   set, or a feature carrying a selected `@e2e` scenario, that the manifest
+   scenario is named. A content path in the project working tree's declared
+   End-to-end (E2E) set, or a feature carrying a selected `@e2e` scenario, that
+   the manifest
    does not record is an added End-to-end test. Every content path in that set
-   is owned by this step on the checkout side, even when another Specification
+   is owned by this step on the project side, even when another Specification
    role also matches it.
 9. Print the two subject lines, one `- <path>` line per changed or missing path,
    one `+ <path>` line per added path, and exit 1; or print both as `match` and
    exit 0. A path that differs on both sides prints one line, counted and owned
-   by `End-to-end tests` when the checkout side owns it and by `Specification
+   by `End-to-end tests` when the project side owns it and by `Specification
    files` otherwise.
 
 The End-to-end (E2E) package and the selected `@e2e` scenarios are the frozen
-inputs the `End-to-end tests` line compares with the checkout. A file the
+inputs the `End-to-end tests` line compares with the project working tree. A file the
 builder adds under a source root
 is the rebuilt Source code; it is not a difference, and the comparison never
 edits the copy.
