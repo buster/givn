@@ -1460,20 +1460,29 @@ re-prepares it.
 `givn/ise-verification.yaml` into the copy and records its path and checksum in
 `verification`. The contract is strict (`ise-verification/v1`): it names the
 component command and feature path, the frozen End-to-end command and feature
-path, each tier's declared execution-unit count, and the coverage command and
-paths when the addon is effective. An execution unit is one plain scenario or
-one Scenario Outline example row.
+path, each tier's declared execution-unit count and scenario titles, the
+rebuilt `product.path` and `product.env`, and the coverage commands and paths
+when the addon is effective. An execution unit is one plain scenario or one
+Scenario Outline example row.
 
 `givn ise compare` remains read-only and prints `Trial result: unverified`; its
 exit 0 proves frozen-input equality only. `givn ise verify-trial` is the only
 command that executes the contract. It removes each raw result path first,
 runs the component command inside the copy and the frozen End-to-end command in
-the project working tree, and requires each fresh result to equal its declared
-count exactly with zero failed and zero skipped. With coverage, it requires a
-non-zero component line measurement, distinct instrumented tier reports, and a
-declared `coverage.e2e_subprocess` for a 0-line End-to-end report. It writes
-`ise-trial-result/v1` with both executed/declared pairs, per-tier coverage, and
-`clean`; only `clean: true` prints the pass line and exits 0.
+the project working tree, and requires each fresh result to name every declared
+scenario title and to equal its declared count exactly with zero failed and
+zero skipped. It requires the declared rebuilt product as a regular non-symlink
+file in the copy, hashes its bytes, passes the path in `product.env`,
+`GIVN_TRIAL_PRODUCT`, and the digest in `GIVN_TRIAL_PRODUCT_SHA256`, and
+requires the End-to-end result to carry the same product path and digest. With
+coverage, it requires a non-zero component line measurement, distinct
+instrumented tier reports, and a declared `coverage.e2e_subprocess` for a
+0-line End-to-end report, passing all three `GIVN_COVERAGE_*` paths. It
+re-checks the frozen inputs after the scripts and writes `ise-trial-result/v1`
+with both tiers' titles/counts, the product identity, per-tier coverage, and
+`clean`; only `clean: true` prints the pass line and exits 0. A change whose
+design records `Whole-system rebuild` must commit the clean record under
+`evidence/ise/trial-result.json`; `givn check tasks` refuses otherwise.
 
 **Checksums.** One path checksum is
 `sha256(path, NUL, kind, NUL, executable, NUL, content)`, where `kind` is `f`

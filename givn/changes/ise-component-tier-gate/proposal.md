@@ -2,7 +2,7 @@
 
 ## Release note
 
-A whole-system Ise trial now carries a runnable verification contract and cannot be reported green without executing exactly its declared component scenarios, while `givn ise compare` reports frozen-input equality only.
+A whole-system Ise trial now carries a runnable verification contract and cannot be reported green without result evidence for every declared scenario and the rebuilt product it drove, while `givn ise compare` reports frozen-input equality only.
 
 ## Use-Case Context
 
@@ -36,7 +36,7 @@ A whole-system rebuild writes a verification contract into the spec copy. The co
 
 `givn ise compare` remains read-only. It verifies the frozen Specification files, the End-to-end tests, and the verification contract, and prints `Trial result: unverified (frozen inputs only; run givn ise verify-trial ...)`. Its exit 0 means input equality only.
 
-`givn ise verify-trial --manifest <file> --copy <dir> --result <file>` is the only command that can report a whole-system trial result. It runs the verification contract: the component command inside the spec copy, the frozen End-to-end command in the checkout, and the coverage measurement when the addon is effective. It requires fresh runner results, exact declared execution-unit counts, zero failed and zero skipped, non-zero component line coverage, and distinct instrumented tier reports. It writes an `ise-trial-result/v1` record with `component.declared` and `component.executed`, `end_to_end.declared` and `end_to_end.executed`, and per-tier line and branch coverage.
+`givn ise verify-trial --manifest <file> --copy <dir> --result <file>` is the only command that can report a whole-system trial result. It runs the verification contract: the component command inside the spec copy, the frozen End-to-end command in the checkout, and the coverage measurement when the addon is effective. It binds the End-to-end run to the rebuilt product by hashing a declared product path, passing it through a declared environment variable, and requiring the End-to-end result to name the same product digest. It requires fresh runner results that name every declared scenario title as well as exact declared execution-unit counts, zero failed and zero skipped, non-zero component line coverage, and distinct instrumented tier reports. A count-only or title-less result refuses. It writes an `ise-trial-result/v1` record with both tiers' declared, executed, and scenario-title evidence, the product path and digest, and per-tier line and branch coverage. A whole-system rebuild change must commit a clean record before `givn check tasks` passes.
 
 A trial whose component corpus is not executed refuses by name. It never prints a pass line and never writes `clean: true`. An explicit component not-run decision is accepted only when the declared component corpus is empty; otherwise the command refuses.
 
@@ -99,3 +99,27 @@ A trial whose component corpus is not executed refuses by name. It never prints 
   1. **Explicit `coverage.e2e_subprocess: true`** — gain: the limitation is declared once and recorded; cost: one new commands key; in practice: the contract carries the declaration and the gate records `subprocess-uninstrumented`.
   2. **Accept any 0-line report** — gain: no new key; cost: a measurement failure or copied empty report passes; in practice: a 0-line report is indistinguishable from an uninstrumented run.
 - Disposition: answered — operator direction 2026-11-18: require the explicit declaration.
+
+### D6 — How is the frozen End-to-end run bound to the rebuilt product?
+
+- Question: Should the gate trust the project's End-to-end command to build the product, or bind and record the product it drove?
+- Options:
+  1. **Declared product path and digest** — `verify.product_path` names the product in the copy, `verify.product_env` names the variable the End-to-end command reads, and the result must carry the product path and SHA-256; gain: a script that rebuilds the checkout cannot pass; cost: the End-to-end command must honor one variable and record one digest; in practice: the gate refuses an E2E result whose `product_sha256` differs.
+  2. **Trust the command** — gain: no new contract field; cost: the passuff false clean remains possible; in practice: an E2E script builds the checkout's binary while the copy holds a different one.
+- Disposition: answered — operator direction 2026-11-19: bind the product path and digest.
+
+### D7 — Is a count-only runner result sufficient?
+
+- Question: May the gate accept a result with total/passed/failed/skipped only?
+- Options:
+  1. **Require scenario titles** — the result names every declared scenario; gain: a printf count cannot pass; cost: every runner must emit titles; in practice: a 10/10 count with no titles refuses.
+  2. **Counts only** — gain: the smallest result contract; cost: the release note's execution claim is unsupported; in practice: a script that prints 10 passes.
+- Disposition: answered — operator direction 2026-11-19: require titles.
+
+### D8 — Is `verify-trial` optional for a whole-system change?
+
+- Question: Can a whole-system rebuild change pass `givn check tasks` without a trial result?
+- Options:
+  1. **Mandatory workflow gate** — `check tasks` requires a clean `ise-trial-result/v1` under the change's evidence when the design records `Whole-system rebuild`; gain: the workflow cannot call the change green without the trial; cost: a whole-system change must commit the result before the tasks gate; in practice: a missing result refuses.
+  2. **Optional tooling** — gain: no extra task; cost: the old unverified route remains; in practice: a change archives without a trial.
+- Disposition: answered — operator direction 2026-11-19: make it mandatory for whole-system rebuild changes.

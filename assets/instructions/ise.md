@@ -125,8 +125,11 @@ A refusal prints `ise rebuild-all:`, `ise rebuild-component:`, `ise compare:`, o
 Every rebuild writes a generated verification contract into the spec copy and
 records its path and checksum in the spec-copy manifest. The contract names the
 component command and feature path, the frozen End-to-end command and feature
-path, the declared execution-unit count for each tier, and the coverage command
-and report paths when the coverage addon is effective.
+path, the declared execution-unit count and scenario titles for each tier, the
+rebuilt product path and the environment variable the End-to-end command reads,
+and the coverage commands and paths when the coverage addon is effective.
+`verify.product_path`, `verify.product_env`, `coverage.non_e2e_path`,
+`coverage.e2e_path`, and `coverage.output_path` configure those entries.
 
 An execution unit is one plain scenario, or one example row of a Scenario
 Outline. The declared count matches what the runner expands and executes.
@@ -138,22 +141,36 @@ component corpus ran. A whole-system trial result requires
 
 - runs the component command inside the spec copy and the frozen End-to-end
   command in the checkout, each with a fresh runner result;
-- requires the executed count to equal the declared count exactly, with zero
-  failed and zero skipped;
-- runs the coverage measurement when the contract carries one, requires a
-  non-zero component line measurement, requires independent tier reports, and
-  accepts a 0-line End-to-end report only when the project declares
-  `coverage.e2e_subprocess: true`;
-- writes an `ise-trial-result/v1` record with `component.declared` and
-  `component.executed`, `end_to_end.declared` and `end_to_end.executed`, and
-  per-tier line and branch coverage.
+- requires each result to name every declared scenario title and to report the
+  executed count exactly equal to the declared count, with zero failed and zero
+  skipped; a count-only result refuses;
+- requires the declared rebuilt product as a regular file inside the copy,
+  hashes its bytes, passes the absolute path in `verify.product_env`,
+  `GIVN_TRIAL_PRODUCT`, and its digest in `GIVN_TRIAL_PRODUCT_SHA256`, and
+  requires the End-to-end result to name the same product path and digest;
+- runs the coverage measurement when the contract carries one with
+  `GIVN_COVERAGE_NON_E2E_PATH`, `GIVN_COVERAGE_E2E_PATH`, and
+  `GIVN_COVERAGE_OUTPUT_PATH`, requires a non-zero component line measurement,
+  requires independent tier reports, and accepts a 0-line End-to-end report
+  only when the project declares `coverage.e2e_subprocess: true`;
+- re-checks the frozen inputs after the scripts ran, so an edited checkout,
+  manifest, or contract makes the trial not clean;
+- writes an `ise-trial-result/v1` record with both tiers' `declared`,
+  `executed`, and `scenarios`, the `product` path and `sha256`, and per-tier
+  line and branch coverage.
 
-A missing runner result, a stale result, a count mismatch, a failed or skipped
-scenario, or a zero-line component report refuses and records `clean: false`.
-The command prints no pass line. An explicit `--component-not-run <reason>`
-decision is accepted only when the Specification declares no component
-execution units; with units declared it refuses and records the decision
-without a pass.
+A missing runner result, a stale result, a count-only result, a title-less
+result, a foreign product, a count mismatch, a failed or skipped scenario, a
+zero-line component report, or a post-run input change refuses and records
+`clean: false`. The command prints no pass line. An explicit
+`--component-not-run <reason>` decision is accepted only when the Specification
+declares no component execution units; with units declared it refuses and
+records the decision without a pass.
+
+A change whose design records `Whole-system rebuild` must commit a clean
+`ise-trial-result/v1` under `evidence/ise/trial-result.json`; `givn check
+tasks` refuses the change otherwise. The workflow therefore has no green
+whole-system route that skips `givn ise verify-trial`.
 
 Do not present `givn ise compare`'s two `match` lines as a whole-system
 rebuild result. Do not present a green frozen End-to-end suite as coverage of

@@ -254,17 +254,24 @@ This amendment adds one generated `givn/ise-verification.yaml` contract and one
 copy and records its path and checksum in the manifest's optional
 `verification: {path, checksum}` field. The contract names the component and
 frozen End-to-end commands and feature paths, each tier's declared
-execution-unit count, and the coverage command and paths when the coverage
-addon is effective. An execution unit is one plain scenario or one Scenario
-Outline example row, matching the runner's expanded count.
+execution-unit count and scenario titles, the rebuilt `product.path` and
+`product.env`, and the coverage command and paths when the coverage addon is
+effective. An execution unit is one plain scenario or one Scenario Outline
+example row, matching the runner's expanded count.
 
 `givn ise compare` remains read-only. It verifies a recorded contract's
 checksum, excludes the reserved path from its added-Specification-file refusal,
 and prints `Trial result: unverified`; its exit 0 proves frozen-input equality
 only. `givn ise verify-trial` is the only command that executes the contract:
-it requires fresh results, exact declared counts, zero failed and zero skipped,
-and declared coverage, then writes `ise-trial-result/v1`. A
-`--component-not-run` decision is refused when component units are declared.
+it requires fresh results that name every declared scenario title, exact
+declared counts, zero failed and zero skipped, the rebuilt product bound by
+path and SHA-256, and declared coverage, re-checks the frozen inputs after the
+scripts, then writes `ise-trial-result/v1`. A count-only result or a foreign
+product refuses. A `--component-not-run` decision is refused when component
+units are declared. A change whose design records `Whole-system rebuild` must
+commit the clean record under `evidence/ise/trial-result.json`; `givn check
+tasks` refuses otherwise, so the workflow cannot call a whole-system change
+green without the trial gate.
 
 The optional `verification` field's default is absence, so an older manifest
 still compares; `verify-trial` refuses an older manifest by name because it

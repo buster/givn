@@ -1162,22 +1162,35 @@ checksums.
    Remove the two raw runner-result paths so a stale result cannot pass.
 5. Run the component command inside the copy with `GIVN_FEATURES`,
    `GIVN_RESULT_FILE`, and `GIVN_RESULT_SCOPE=component`. Require a fresh
-   result whose `total` equals the declared count exactly, with failed and
-   skipped zero and reconciling counts. A missing or malformed result, a
-   non-zero exit, a failed or skipped scenario, or a count mismatch writes an
+   result that names every declared scenario title and whose `total` equals the
+   declared count exactly, with failed and skipped zero and reconciling counts.
+   A missing or malformed result, a count-only or title-less result, a non-zero
+   exit, a failed or skipped scenario, or a count mismatch writes an
    `ise-trial-result/v1` record with `clean: false` and returns exit 1.
-6. Run the frozen End-to-end command in the project working tree with
-   `GIVN_RESULT_SCOPE=e2e` and apply the same exact-count and green checks.
-7. When the contract carries coverage, run `coverage.measure_command` inside
-   the copy with the three `GIVN_COVERAGE_*` paths and `GIVN_FEATURES`. Require
-   a component report with non-zero measured and executed lines, distinct
-   instrumented tier reports, and the declared `coverage.e2e_subprocess` for a
-   0-line End-to-end report.
-8. Write `ise-trial-result/v1` with both executed/declared pairs, per-tier
-   coverage, and `clean`. Print the tier lines and `Trial result: passed` and
-   exit 0 only when every condition held. `--component-not-run` is accepted
-   only when the declared component count is zero; it records `not_run` and
-   never produces a pass over a declared corpus.
+6. Require `product.path` as a regular non-symlink file inside the copy, read
+   its bytes once, and compute their SHA-256. A missing or non-regular product
+   refuses.
+7. Run the frozen End-to-end command in the project working tree with
+   `GIVN_RESULT_SCOPE=e2e`, the declared `product.env`, `GIVN_TRIAL_PRODUCT`,
+   and `GIVN_TRIAL_PRODUCT_SHA256`. Require every declared title, the exact
+   count and green checks, and a result `product`/`product_sha256` matching the
+   bound product.
+8. When the contract carries coverage, run `coverage.measure_command` inside
+   the copy with `GIVN_COVERAGE_NON_E2E_PATH`, `GIVN_COVERAGE_E2E_PATH`,
+   `GIVN_COVERAGE_OUTPUT_PATH`, and `GIVN_FEATURES`. Require a component report
+   with non-zero measured and executed lines, distinct instrumented tier
+   reports, and the declared `coverage.e2e_subprocess` for a 0-line End-to-end
+   report.
+9. Re-run the frozen-input comparison. A checkout, manifest, or contract change
+   during the scripts writes `clean: false` and returns exit 1.
+10. Write `ise-trial-result/v1` with both tiers' titles/counts, the product
+    identity, per-tier coverage, and `clean`. Print the tier lines and
+    `Trial result: passed` and exit 0 only when every condition held.
+    `--component-not-run` is accepted only when the declared component count is
+    zero; it records `not_run` and never produces a pass over a declared corpus.
+    A change whose design records `Whole-system rebuild` must commit the clean
+    record under `evidence/ise/trial-result.json`; `givn check tasks` refuses
+    otherwise.
 
 The End-to-end (E2E) package and the selected `@e2e` scenarios are the frozen
 inputs the `End-to-end tests` line compares with the project working tree. A file the

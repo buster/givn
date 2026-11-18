@@ -35,6 +35,14 @@ verify:
   # archive gate will reject any change whose specs include @e2e scenarios.
   e2e_command: "givn missing-e2e-runner"  # unconfigured sentinel
 
+  # --- Rebuilt product binding (whole-system Ise trial) ----------------------
+  # The product path relative to the spec copy. `givn ise verify-trial`
+  # requires this file after the component command, hashes it, passes its
+  # absolute path in `product_env`, and requires the End-to-end result to name
+  # the same bytes and every declared scenario title.
+  # product_path: "target/debug/my-product"
+  # product_env: "GIVN_BIN"
+
 # --- Coverage gate (requires addons.coverage: true) ---------------------------
 # Commands that produce Cobertura XML coverage data. The measurement script
 # writes both source reports; the merge script writes the report used by the

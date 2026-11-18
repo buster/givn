@@ -224,6 +224,8 @@ mod verify_e2e_hook_tests {
                 command: "true".to_string(),
                 e2e_command: e2e_command.to_string(),
                 features_path: "givn/specs".to_string(),
+                product_path: None,
+                product_env: "GIVN_BIN".to_string(),
             },
             run: Run::default(),
             addons: Addons::default(),

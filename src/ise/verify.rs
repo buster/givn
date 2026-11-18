@@ -9,10 +9,10 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::config::overlay::load_effective_at;
-use crate::proof::RunnerResult;
 use crate::scm::EntryKind;
 
 use super::compare::{CompareRequest, require_recorded_copy};
@@ -46,6 +46,8 @@ pub struct TierReport {
     pub passed: u64,
     pub failed: u64,
     pub skipped: u64,
+    /// The scenario titles the runner reported.
+    pub scenarios: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -73,8 +75,36 @@ pub struct TrialReport {
     pub end_to_end: TierReport,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub coverage: Option<TrialCoverage>,
+    /// The rebuilt product the End-to-end tier drove.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub product: Option<ProductReport>,
     /// True only when both tiers ran their declared units and coverage passed.
     pub clean: bool,
+}
+
+/// The rebuilt product's identity in the trial result.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ProductReport {
+    pub path: String,
+    pub sha256: String,
+}
+
+/// The runner result's required evidence: counts, scenario titles, and the
+/// product the End-to-end runner drove.
+#[derive(Debug, Clone, Default, Deserialize)]
+struct TrialRunnerResult {
+    #[serde(default)]
+    scope: Option<String>,
+    total: u64,
+    passed: u64,
+    failed: u64,
+    skipped: u64,
+    #[serde(default)]
+    scenarios: Vec<String>,
+    #[serde(default)]
+    product: Option<String>,
+    #[serde(default)]
+    product_sha256: Option<String>,
 }
 
 /// The two tier reports' coverage.
@@ -149,6 +179,7 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
                 component: *failure.report,
                 end_to_end: not_reached(&contract.end_to_end),
                 coverage: None,
+                product: None,
                 clean: false,
             };
             write_result(&result, &report)?;
@@ -156,7 +187,25 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         }
     };
 
-    let end_to_end = match run_end_to_end(&contract, project_root, &e2e_result) {
+    let product = match bind_product(&contract, &copy) {
+        Ok(product) => product,
+        Err(error) => {
+            let report = TrialReport {
+                scope: "ise-trial-result/v1",
+                revision: recorded.revision.clone(),
+                copy_directory: recorded.copy_directory.clone(),
+                component: component.clone(),
+                end_to_end: not_reached(&contract.end_to_end),
+                coverage: None,
+                product: None,
+                clean: false,
+            };
+            write_result(&result, &report)?;
+            return Err(error);
+        }
+    };
+
+    let end_to_end = match run_end_to_end(&contract, project_root, &e2e_result, product.as_ref()) {
         Ok(end_to_end) => end_to_end,
         Err(failure) => {
             let report = TrialReport {
@@ -166,6 +215,7 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
                 component: component.clone(),
                 end_to_end: *failure.report,
                 coverage: None,
+                product: product.as_ref().map(ProductBinding::report),
                 clean: false,
             };
             write_result(&result, &report)?;
@@ -184,6 +234,7 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
                     component: component.clone(),
                     end_to_end: end_to_end.clone(),
                     coverage: None,
+                    product: product.as_ref().map(ProductBinding::report),
                     clean: false,
                 };
                 write_result(&result, &report)?;
@@ -193,6 +244,31 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         None => None,
     };
 
+    // Re-check frozen inputs after the scripts ran. This closes the window
+    // where a script edits the checkout, the manifest, or the contract and
+    // then the gate reports the earlier comparison as clean.
+    let after = super::compare(
+        project_root,
+        &CompareRequest {
+            manifest: request.manifest.clone(),
+            copy: request.copy.clone(),
+        },
+    )?;
+    if !after.is_clean() {
+        let report = TrialReport {
+            scope: "ise-trial-result/v1",
+            revision: recorded.revision.clone(),
+            copy_directory: recorded.copy_directory.clone(),
+            component: component.clone(),
+            end_to_end: end_to_end.clone(),
+            coverage: coverage.clone(),
+            product: product.as_ref().map(ProductBinding::report),
+            clean: false,
+        };
+        write_result(&result, &report)?;
+        bail!("the frozen inputs changed while the trial executed; the trial result is not clean");
+    }
+
     let report = TrialReport {
         scope: "ise-trial-result/v1",
         revision: recorded.revision.clone(),
@@ -200,6 +276,7 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         component,
         end_to_end,
         coverage,
+        product: product.as_ref().map(ProductBinding::report),
         clean: true,
     };
     write_result(&result, &report)?;
@@ -249,7 +326,7 @@ fn read_contract(recorded: &Manifest, copy: &Path) -> Result<(Contract, String)>
             verification.path
         );
     }
-    Ok((Contract::read(&path)?, checksum))
+    Ok((Contract::from_bytes(&bytes, &path)?, checksum))
 }
 
 /// Run the component tier inside the spec copy.
@@ -314,6 +391,12 @@ fn run_component(
         Ok(counts) => counts,
         Err(error) => return Err(TierFailure::new(error, failed(tier))),
     };
+    if let Err(error) = require_scenarios(tier, &counts) {
+        return Err(TierFailure::new(
+            error,
+            with_counts(tier, &counts, "failed"),
+        ));
+    }
     if !status.success() {
         return Err(TierFailure::new(
             anyhow::anyhow!(
@@ -337,11 +420,62 @@ fn run_component(
     Ok(measured(tier, &counts))
 }
 
-/// Run the frozen End-to-end tier in the checkout.
+/// The rebuilt product's absolute path and content digest.
+struct ProductBinding {
+    path: PathBuf,
+    sha256: String,
+}
+
+impl ProductBinding {
+    fn report(&self) -> ProductReport {
+        ProductReport {
+            path: self.path.to_string_lossy().into_owned(),
+            sha256: self.sha256.clone(),
+        }
+    }
+
+    fn text(&self) -> std::borrow::Cow<'_, str> {
+        self.path.to_string_lossy()
+    }
+}
+
+/// Bind the contract's declared product path to bytes inside the copy.
+fn bind_product(contract: &Contract, copy: &Path) -> Result<Option<ProductBinding>> {
+    if contract.component.execution_units == 0 && contract.end_to_end.execution_units == 0 {
+        return Ok(None);
+    }
+    let Some(product) = &contract.product else {
+        bail!(
+            "the verification contract names no rebuilt product; set verify.product_path in givn/commands.yaml"
+        );
+    };
+    let target = copy.join(&product.path);
+    let metadata = std::fs::symlink_metadata(&target)
+        .with_context(|| format!("read the rebuilt product '{}'", target.display()))?;
+    if metadata.file_type().is_symlink() || !metadata.file_type().is_file() {
+        bail!(
+            "the rebuilt product '{}' must be a regular file inside the spec copy",
+            product.path
+        );
+    }
+    let bytes = std::fs::read(&target)
+        .with_context(|| format!("read the rebuilt product '{}'", target.display()))?;
+    let sha256 = Sha256::digest(&bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect();
+    Ok(Some(ProductBinding {
+        path: target,
+        sha256,
+    }))
+}
+
+/// Run the frozen End-to-end tier in the checkout, bound to the rebuilt product.
 fn run_end_to_end(
     contract: &Contract,
     project_root: &Path,
     result_file: &Path,
+    product: Option<&ProductBinding>,
 ) -> std::result::Result<TierReport, TierFailure> {
     let tier = &contract.end_to_end;
     let declared = tier.execution_units;
@@ -356,13 +490,31 @@ fn run_end_to_end(
             failed(tier),
         ));
     }
+    let Some(product) = product else {
+        return Err(TierFailure::new(
+            anyhow::anyhow!(
+                "the End-to-end tier is declared but no rebuilt product is bound; set verify.product_path and run the component command"
+            ),
+            failed(tier),
+        ));
+    };
+    let product_text = product.text();
+    let result_text = absolute_text(result_file);
+    let product_env = contract
+        .product
+        .as_ref()
+        .map(|product| product.env.as_str())
+        .unwrap_or("GIVN_BIN");
     remove_previous(result_file);
     let status = match crate::subprocess::sh_streamed(
         &tier.command,
         &[
             ("GIVN_FEATURES", &tier.features),
-            ("GIVN_RESULT_FILE", &absolute_text(result_file)),
+            ("GIVN_RESULT_FILE", result_text.as_ref()),
             ("GIVN_RESULT_SCOPE", "e2e"),
+            ("GIVN_TRIAL_PRODUCT", product_text.as_ref()),
+            ("GIVN_TRIAL_PRODUCT_SHA256", product.sha256.as_str()),
+            (product_env, product_text.as_ref()),
         ],
         Some(project_root),
         "End-to-end verification",
@@ -388,6 +540,18 @@ fn run_end_to_end(
         Ok(counts) => counts,
         Err(error) => return Err(TierFailure::new(error, failed(tier))),
     };
+    if let Err(error) = require_scenarios(tier, &counts) {
+        return Err(TierFailure::new(
+            error,
+            with_counts(tier, &counts, "failed"),
+        ));
+    }
+    if let Err(error) = require_product(&counts, product) {
+        return Err(TierFailure::new(
+            error,
+            with_counts(tier, &counts, "failed"),
+        ));
+    }
     if !status.success() {
         return Err(TierFailure::new(
             anyhow::anyhow!(
@@ -430,6 +594,7 @@ fn run_coverage(
             ("GIVN_FEATURES", &contract.component.features),
             ("GIVN_COVERAGE_NON_E2E_PATH", &coverage.non_e2e_path),
             ("GIVN_COVERAGE_E2E_PATH", &coverage.e2e_path),
+            ("GIVN_COVERAGE_OUTPUT_PATH", &coverage.output_path),
         ],
         Some(copy),
         "trial coverage measurement",
@@ -497,10 +662,10 @@ fn coverage_numbers(
 }
 
 /// Read and validate one fresh runner result.
-fn read_counts(path: &Path, label: &str, expected_scope: &str) -> Result<RunnerResult> {
+fn read_counts(path: &Path, label: &str, expected_scope: &str) -> Result<TrialRunnerResult> {
     let text = std::fs::read_to_string(path)
         .with_context(|| format!("read the {label} runner result '{}'", path.display()))?;
-    let result: RunnerResult = serde_json::from_str(&text).map_err(|error| {
+    let result: TrialRunnerResult = serde_json::from_str(&text).map_err(|error| {
         anyhow::anyhow!(
             "the {label} runner result '{}' is malformed: {error}",
             path.display()
@@ -541,15 +706,74 @@ fn read_counts(path: &Path, label: &str, expected_scope: &str) -> Result<RunnerR
     Ok(result)
 }
 
+/// Require the runner result to name every declared scenario title.
+fn require_scenarios(tier: &super::contract::Tier, counts: &TrialRunnerResult) -> Result<()> {
+    if tier.scenarios.is_empty() {
+        return Ok(());
+    }
+    let executed: std::collections::BTreeSet<&str> =
+        counts.scenarios.iter().map(String::as_str).collect();
+    let missing: Vec<&str> = tier
+        .scenarios
+        .iter()
+        .map(String::as_str)
+        .filter(|title| !executed.contains(title))
+        .collect();
+    if missing.is_empty() {
+        return Ok(());
+    }
+    let shown: Vec<&str> = missing.iter().take(10).copied().collect();
+    let remainder = missing.len() - shown.len();
+    let more = if remainder == 0 {
+        String::new()
+    } else {
+        format!(" (and {remainder} more)")
+    };
+    bail!(
+        "the runner result does not name {} declared scenario(s): {}{more}",
+        missing.len(),
+        shown.join(", ")
+    )
+}
+
+/// Require the End-to-end result to name the rebuilt product it drove.
+fn require_product(counts: &TrialRunnerResult, product: &ProductBinding) -> Result<()> {
+    let recorded = counts.product_sha256.as_deref().ok_or_else(|| {
+        anyhow::anyhow!(
+            "the End-to-end runner result must carry product_sha256 for the rebuilt product"
+        )
+    })?;
+    if recorded != product.sha256 {
+        bail!(
+            "the End-to-end runner result reports product_sha256 '{recorded}' but the rebuilt product is '{}'",
+            product.sha256
+        );
+    }
+    let recorded_path = counts.product.as_deref().ok_or_else(|| {
+        anyhow::anyhow!("the End-to-end runner result must carry the product path it drove")
+    })?;
+    let expected = std::fs::canonicalize(&product.path).unwrap_or_else(|_| product.path.clone());
+    let observed =
+        std::fs::canonicalize(recorded_path).unwrap_or_else(|_| PathBuf::from(recorded_path));
+    if observed != expected {
+        bail!(
+            "the End-to-end runner result drove '{}' but the rebuilt product is '{}'",
+            observed.display(),
+            expected.display()
+        );
+    }
+    Ok(())
+}
+
 /// A passing tier report from its counts.
-fn measured(tier: &super::contract::Tier, counts: &RunnerResult) -> TierReport {
+fn measured(tier: &super::contract::Tier, counts: &TrialRunnerResult) -> TierReport {
     with_counts(tier, counts, "passed")
 }
 
 /// A tier report with its measured counts and an explicit status.
 fn with_counts(
     tier: &super::contract::Tier,
-    counts: &RunnerResult,
+    counts: &TrialRunnerResult,
     status: &'static str,
 ) -> TierReport {
     TierReport {
@@ -561,6 +785,7 @@ fn with_counts(
         passed: counts.passed,
         failed: counts.failed,
         skipped: counts.skipped,
+        scenarios: counts.scenarios.clone(),
         reason: None,
         coverage: None,
     }
@@ -577,6 +802,7 @@ fn failed(tier: &super::contract::Tier) -> TierReport {
         passed: 0,
         failed: 0,
         skipped: 0,
+        scenarios: Vec::new(),
         reason: None,
         coverage: None,
     }
@@ -593,6 +819,7 @@ fn not_reached(tier: &super::contract::Tier) -> TierReport {
         passed: 0,
         failed: 0,
         skipped: 0,
+        scenarios: Vec::new(),
         reason: None,
         coverage: None,
     }
@@ -609,6 +836,7 @@ fn not_applicable(tier: &super::contract::Tier) -> TierReport {
         passed: 0,
         failed: 0,
         skipped: 0,
+        scenarios: Vec::new(),
         reason: Some("the specification declares no execution units for this tier".to_string()),
         coverage: None,
     }
@@ -625,6 +853,7 @@ fn not_run(tier: &super::contract::Tier, reason: &str) -> TierReport {
         passed: 0,
         failed: 0,
         skipped: 0,
+        scenarios: Vec::new(),
         reason: Some(reason.to_string()),
         coverage: None,
     }
@@ -688,6 +917,7 @@ mod tests {
             command: "true".to_string(),
             features: "givn/specs".to_string(),
             execution_units: 10,
+            scenarios: vec![],
         };
         let failure = run_component(
             &Contract {
@@ -698,8 +928,10 @@ mod tests {
                     command: "true".to_string(),
                     features: "givn/specs".to_string(),
                     execution_units: 1,
+                    scenarios: vec![],
                 },
                 coverage: None,
+                product: None,
             },
             directory.path(),
             &path,
@@ -713,6 +945,48 @@ mod tests {
                 .contains("component_executed=0/10")
         );
         assert_eq!(failure.report.status, "failed");
+    }
+
+    #[test]
+    fn a_count_only_result_refuses_when_titles_are_declared() {
+        let directory = tempfile::TempDir::new().unwrap();
+        let path = directory.path().join("result.json");
+        let script = directory.path().join("verify.sh");
+        std::fs::write(
+            &script,
+            "#!/bin/sh\nprintf '{\"scope\":\"component\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\n' > \"$GIVN_RESULT_FILE\"\n",
+        )
+        .unwrap();
+        let tier = super::super::contract::Tier {
+            command: format!("sh {}", script.display()),
+            features: "givn/specs".to_string(),
+            execution_units: 1,
+            scenarios: vec!["declared scenario".to_string()],
+        };
+        let failure = run_component(
+            &Contract {
+                scope: "ise-verification/v1".to_string(),
+                revision: "abc".to_string(),
+                component: tier,
+                end_to_end: super::super::contract::Tier {
+                    command: "true".to_string(),
+                    features: "givn/specs".to_string(),
+                    execution_units: 0,
+                    scenarios: vec![],
+                },
+                coverage: None,
+                product: None,
+            },
+            directory.path(),
+            &path,
+            None,
+        )
+        .expect_err("a count-only result refuses");
+        assert!(
+            failure.error.to_string().contains("does not name"),
+            "{:?}",
+            failure.error
+        );
     }
 
     #[test]
@@ -734,6 +1008,7 @@ mod tests {
             command: format!("sh {}", script.display()),
             features: "givn/specs".to_string(),
             execution_units: 10,
+            scenarios: vec![],
         };
         let failure = run_component(
             &Contract {
@@ -744,8 +1019,10 @@ mod tests {
                     command: "true".to_string(),
                     features: "givn/specs".to_string(),
                     execution_units: 1,
+                    scenarios: vec![],
                 },
                 coverage: None,
+                product: None,
             },
             directory.path(),
             &path,
@@ -770,13 +1047,16 @@ mod tests {
                 command: "true".to_string(),
                 features: "givn/specs".to_string(),
                 execution_units: 10,
+                scenarios: vec![],
             },
             end_to_end: super::super::contract::Tier {
                 command: "true".to_string(),
                 features: "givn/specs".to_string(),
                 execution_units: 1,
+                scenarios: vec![],
             },
             coverage: None,
+            product: None,
         };
         let failure = run_component(
             &contract,
@@ -793,6 +1073,7 @@ mod tests {
             measure_command: format!("sh {}", path.display()),
             non_e2e_path: "coverage/non-e2e.xml".to_string(),
             e2e_path: "coverage/e2e.xml".to_string(),
+            output_path: "coverage/output.xml".to_string(),
             e2e_subprocess,
         }
     }
@@ -805,13 +1086,16 @@ mod tests {
                 command: "true".to_string(),
                 features: "givn/specs".to_string(),
                 execution_units: 10,
+                scenarios: vec![],
             },
             end_to_end: super::super::contract::Tier {
                 command: "true".to_string(),
                 features: "givn/specs".to_string(),
                 execution_units: 1,
+                scenarios: vec![],
             },
             coverage: Some(coverage),
+            product: None,
         }
     }
 
@@ -819,7 +1103,7 @@ mod tests {
         std::fs::write(
             path,
             format!(
-                "#!/bin/sh\nmkdir -p coverage\nprintf '%s' '{component}' > \"$GIVN_COVERAGE_NON_E2E_PATH\"\nprintf '%s' '{end_to_end}' > \"$GIVN_COVERAGE_E2E_PATH\"\n"
+                "#!/bin/sh\nset -eu\n: \"${{GIVN_COVERAGE_OUTPUT_PATH:?missing output path}}\"\nmkdir -p coverage\nprintf '%s' '{component}' > \"$GIVN_COVERAGE_NON_E2E_PATH\"\nprintf '%s' '{end_to_end}' > \"$GIVN_COVERAGE_E2E_PATH\"\n"
             ),
         )
         .unwrap();

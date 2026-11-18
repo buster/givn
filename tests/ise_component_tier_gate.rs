@@ -36,6 +36,45 @@ fn write(path: &Path, content: &str) {
     std::fs::write(path, content).expect("write fixture file");
 }
 
+const E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/demo.feature)
+product=${GIVN_TRIAL_PRODUCT:-${GIVN_BIN:-}}
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+"#;
+
+/// A corpus-reading component runner. It builds the declared product and
+/// names every non-`@e2e` title; a count-only script cannot satisfy the gate.
+fn component_script(total: usize) -> String {
+    format!(
+        r#"#!/bin/sh
+set -eu
+mkdir -p target/debug
+printf 'rebuilt gate product\n' > target/debug/gate-product
+names=$(awk '
+  /^  @e2e/ {{ e2e=1; next }}
+  /^  Scenario: / {{
+    if (e2e) {{ e2e=0; next }}
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }}
+' givn/specs/demo.feature)
+printf '{{"scope":"component","total":{total},"passed":{total},"failed":0,"skipped":0,"scenarios":[%s]}}\n' "$names" > "$GIVN_RESULT_FILE"
+"#
+    )
+}
+
 /// A committed project with ten component scenarios, one `@e2e` scenario, and
 /// verify/e2e commands that the builder can replace inside the copy.
 fn fixture() -> (TempDir, PathBuf) {
@@ -50,7 +89,7 @@ fn fixture() -> (TempDir, PathBuf) {
     );
     write(
         &project.join("givn/commands.yaml"),
-        "verify:\n  command: \"./scripts/verify.sh\"\n  e2e_command: \"./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n",
+        "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n  product_path: \"target/debug/gate-product\"\n  product_env: \"GIVN_BIN\"\n",
     );
     write(
         &project.join("givn/specification.yaml"),
@@ -72,14 +111,8 @@ fn fixture() -> (TempDir, PathBuf) {
     );
     write(&project.join("tests/e2e/steps/demo.rs"), "// e2e steps\n");
     write(&project.join("src/one.rs"), "pub fn one() {}\n");
-    write(
-        &project.join("scripts/e2e.sh"),
-        "#!/bin/sh\nprintf '{\"scope\":\"e2e\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
-    );
-    write(
-        &project.join("scripts/verify.sh"),
-        "#!/bin/sh\nprintf '{\"scope\":\"component\",\"total\":10,\"passed\":10,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
-    );
+    write(&project.join("scripts/e2e.sh"), E2E_SCRIPT);
+    write(&project.join("scripts/verify.sh"), &component_script(10));
     for script in ["scripts/e2e.sh", "scripts/verify.sh"] {
         let path = project.join(script);
         let mut permissions = std::fs::metadata(&path).unwrap().permissions();
@@ -199,10 +232,7 @@ fn a_passing_component_and_e2e_result_records_the_counts() {
     let (root, project) = fixture();
     let manifest = rebuild(&project, root.path());
     let copy = root.path().join("copy");
-    replace_component_script(
-        &copy,
-        "#!/bin/sh\nprintf '{\"scope\":\"component\",\"total\":10,\"passed\":10,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
-    );
+    replace_component_script(&copy, &component_script(10));
     let result = root.path().join("trial.json");
 
     let output = run(
@@ -235,6 +265,19 @@ fn a_passing_component_and_e2e_result_records_the_counts() {
         serde_json::from_str(&std::fs::read_to_string(result).unwrap()).unwrap();
     assert_eq!(record["clean"], true);
     assert_eq!(record["scope"], "ise-trial-result/v1");
+    assert_eq!(record["component"]["executed"], 10);
+    assert_eq!(
+        record["component"]["scenarios"].as_array().unwrap().len(),
+        10
+    );
+    assert_eq!(record["end_to_end"]["scenarios"][0], "acceptance");
+    assert!(
+        record["product"]["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("target/debug/gate-product")
+    );
+    assert!(record["product"]["sha256"].as_str().unwrap().len() == 64);
 }
 
 #[test]
@@ -272,10 +315,7 @@ fn an_exact_count_mismatch_refuses() {
     let (root, project) = fixture();
     let manifest = rebuild(&project, root.path());
     let copy = root.path().join("copy");
-    replace_component_script(
-        &copy,
-        "#!/bin/sh\nprintf '{\"scope\":\"component\",\"total\":9,\"passed\":9,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
-    );
+    replace_component_script(&copy, &component_script(9));
     let result = root.path().join("trial.json");
 
     let output = run(
@@ -432,4 +472,55 @@ fn a_symlink_result_path_refuses() {
         !target.exists(),
         "the result must not be written inside the copy"
     );
+}
+
+const BAD_PRODUCT_E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/demo.feature)
+product=/bin/true
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+"#;
+
+#[test]
+fn an_e2e_result_bound_to_another_product_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    replace_component_script(&copy, &component_script(10));
+    write(&project.join("scripts/e2e.sh"), BAD_PRODUCT_E2E_SCRIPT);
+    let result = root.path().join("trial.json");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("product_sha256"),
+        "stderr={}",
+        stderr(&output)
+    );
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(result).unwrap()).unwrap();
+    assert_eq!(record["clean"], false);
 }

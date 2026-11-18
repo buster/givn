@@ -1331,3 +1331,32 @@ fn comparison_prints_unverified(world: &mut GivnWorld) {
         stdout(world)
     );
 }
+
+#[when("the agent writes a count-only component verification script")]
+fn agent_writes_a_count_only_component_script(world: &mut GivnWorld) {
+    ise_clean_room_support::write_trial_gate_count_only_component_script(&trial(world));
+}
+
+#[then("the trial result names ten component scenarios and the rebuilt product digest")]
+fn trial_result_names_scenarios_and_product(world: &mut GivnWorld) {
+    let record = trial_record(world);
+    let component = record["component"]["scenarios"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the component scenarios are not an array: {record}"));
+    assert_eq!(component.len(), 10, "component scenarios: {record}");
+    let end_to_end = record["end_to_end"]["scenarios"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the End-to-end scenarios are not an array: {record}"));
+    assert_eq!(end_to_end.len(), 1, "End-to-end scenarios: {record}");
+    assert_eq!(end_to_end[0], "acceptance");
+    assert_eq!(
+        record["product"]["sha256"].as_str().map(str::len),
+        Some(64),
+        "product digest: {record}"
+    );
+}
+
+#[when("the agent writes an End-to-end verification script that reports another product")]
+fn agent_writes_a_foreign_product_e2e_script(world: &mut GivnWorld) {
+    ise_clean_room_support::write_trial_gate_foreign_product_script(project_env(world));
+}

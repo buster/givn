@@ -65,14 +65,20 @@ component:
   command: <verify.command>
   features: <verify.features_path>
   execution_units: <plain scenarios + outline example rows>
+  scenarios: [<every declared component title>]
 end_to_end:
   command: <verify.e2e_command>
   features: <verify.features_path>
   execution_units: <selected @e2e units>
+  scenarios: [<every declared @e2e title>]
+product:                        # required when either tier declares units
+  path: <verify.product_path, relative to the copy>
+  env: <verify.product_env, default GIVN_BIN>
 coverage:                       # present only when addons.coverage is true
   measure_command: <coverage.measure_command>
   non_e2e_path: <coverage.non_e2e_path>
   e2e_path: <coverage.e2e_path>
+  output_path: <coverage.output_path>
   e2e_subprocess: <bool>
 ```
 
@@ -98,9 +104,10 @@ record whose copy file is missing or whose bytes differ refuses the comparison.
   "scope": "ise-trial-result/v1",
   "revision": "<revision>",
   "copy_directory": "<absolute copy>",
-  "component": {"status": "passed", "command": "...", "features": "...", "declared": 10, "executed": 10, "passed": 10, "failed": 0, "skipped": 0},
-  "end_to_end": {"status": "passed", "command": "...", "features": "...", "declared": 1, "executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+  "component": {"status": "passed", "command": "...", "features": "...", "declared": 10, "executed": 10, "passed": 10, "failed": 0, "skipped": 0, "scenarios": ["<ten declared titles>"]},
+  "end_to_end": {"status": "passed", "command": "...", "features": "...", "declared": 1, "executed": 1, "passed": 1, "failed": 0, "skipped": 0, "scenarios": ["acceptance"]},
   "coverage": {"component": {"status": "measured", "lines_covered": 80, "lines_valid": 100, "branches_covered": 4, "branches_valid": 8}, "end_to_end": {"status": "subprocess-uninstrumented", "lines_covered": 0, "lines_valid": 0, "branches_covered": 0, "branches_valid": 0}},
+  "product": {"path": "<copy>/target/debug/product", "sha256": "<64 lowercase hex>"},
   "clean": true
 }
 ```
@@ -152,6 +159,10 @@ record whose copy file is missing or whose bytes differ refuses the comparison.
 
 - **Missing result** — the raw file is removed before the run, so a stale result
   cannot satisfy the gate; the refusal names `component_executed=0/<declared>`.
+- **Count-only result** — a result whose counts match but whose `scenarios` do
+  not name every declared title refuses and names the missing titles.
+- **Foreign product** — a result whose `product` path or `product_sha256`
+  differs from the rebuilt product refuses.
 - **Mismatch** — the refusal names `component_executed=<executed>/<declared>`;
   extra units fail because the comparison is exact.
 - **Failed or skipped** — the shared `RunnerResult` validation refuses and the
@@ -165,6 +176,8 @@ record whose copy file is missing or whose bytes differ refuses the comparison.
 - **Not-run bypass** — `--component-not-run` is accepted only when the declared
   component count is zero; with a declared corpus it records `not_run` and
   returns exit 1.
+- **Post-run drift** — the final comparison refuses if the checkout, manifest,
+  or contract changed while the scripts ran.
 
 ## Step Definitions
 
@@ -177,7 +190,10 @@ record whose copy file is missing or whose bytes differ refuses the comparison.
 The trial-gate fixture lives in `ise_clean_room_support.rs`: a Git project with
 `ise` on, coverage off, ten component scenarios, one `@e2e` scenario, the
 declared `tests/e2e` package, and `sh ./scripts/verify.sh` /
-`sh ./scripts/e2e.sh`. The delta bindings live in
+`sh ./scripts/e2e.sh`. Both fixture runners parse the feature corpus and emit
+scenario titles; the component runner writes `target/debug/gate-product`, and
+the End-to-end runner records that product's path and SHA-256. The count-only
+and foreign-product variants are refusal fixtures. The delta bindings live in
 `trial_input_verification_steps.rs`; the guidance assertion lives in
 `prose_consolidation_steps.rs`. A separate integration test
 `tests/ise_component_tier_gate.rs` drives the real binary for the acceptance
@@ -234,6 +250,17 @@ fixture.
 - `Decides D5`: A 0-line e2e report requires `coverage.e2e_subprocess: true`.
   Realized in `config::manifest::Coverage::e2e_subprocess` and
   `ise::verify::run_coverage`.
+- `Decides D6`: The End-to-end run is bound to a declared `verify.product_path`
+  and `verify.product_env`; the result must carry the product path and
+  SHA-256. Realized in `ise::verify::bind_product`,
+  `ise::verify::require_product`, and the fixture scripts.
+- `Decides D7`: A runner result must name every declared scenario title; a
+  count-only result refuses. Realized in `ise::verify::require_scenarios` and
+  the `scenarios` arrays in both test runners.
+- `Decides D8`: A `Whole-system rebuild` change must commit a clean
+  `ise-trial-result/v1` under `evidence/ise/trial-result.json`; `givn check
+  tasks` refuses otherwise. Realized in
+  `cli::check::require_whole_system_trial_result`.
 - `Ise rebuild decision`: `No rebuild`. This change edits the existing Source
   code in place; no Component's Source code is replaced and no `Rebuilt code`
   line is recorded.
@@ -262,6 +289,9 @@ It carries both states and the fixed line order.
   so the runner can be corrected rather than the gate weakened.
 - A trial without a configured coverage command refuses when the coverage addon
   is effective. This matches the archive gate's existing contract.
+- A project that does not declare `verify.product_path` refuses a trial with
+  declared units; the End-to-end command must honor the declared variable and
+  record the product digest. A runner that omits the digest refuses.
 - `compare` accepts older manifests without a verification record for input
   comparison; `verify-trial` refuses them by name, so an old copy cannot claim
   a whole-system result.

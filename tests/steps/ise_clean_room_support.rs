@@ -1025,7 +1025,7 @@ pub(crate) fn trial_gate_project() -> common::TestEnv {
     .expect("write the fixture config");
     std::fs::write(
         env.path("givn/commands.yaml"),
-        "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n",
+        "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n  product_path: \"target/debug/gate-product\"\n  product_env: \"GIVN_BIN\"\n",
     )
     .expect("write the fixture commands");
     std::fs::write(
@@ -1055,7 +1055,7 @@ pub(crate) fn commit_trial_gate_revision(env: &common::TestEnv) -> String {
             ),
             (
                 "givn/commands.yaml",
-                "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n",
+                "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n  product_path: \"target/debug/gate-product\"\n  product_env: \"GIVN_BIN\"\n",
             ),
             (
                 "givn/specification.yaml",
@@ -1065,30 +1065,59 @@ pub(crate) fn commit_trial_gate_revision(env: &common::TestEnv) -> String {
             ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
             ("tests/e2e/steps/demo.rs", "// e2e steps\n"),
             ("src/one.rs", "pub fn one() {}\n"),
-            (
-                "scripts/e2e.sh",
-                "#!/bin/sh\nprintf '{\"scope\":\"e2e\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
-            ),
+            ("scripts/e2e.sh", TRIAL_GATE_E2E_SCRIPT),
         ],
         "fixture: trial gate revision",
     )
 }
 
-/// Write the component script the builder authors inside the copy.
+/// The fixture's corpus-reading End-to-end runner: it selects `@e2e` by tag,
+/// names every selected title, and records the product bytes it was given.
+pub(crate) const TRIAL_GATE_E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/gate.feature)
+product=${GIVN_TRIAL_PRODUCT:-${GIVN_BIN:-}}
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+"#;
+
+/// Write the component script the builder authors inside the copy. It builds
+/// a product file and reads the component titles from the corpus; a count-only
+/// script would not satisfy the scenario-identity check.
 pub(crate) fn write_trial_gate_component_script(copy: &Path, total: usize) {
     let path = copy.join("scripts/verify.sh");
     std::fs::create_dir_all(path.parent().expect("script parent")).expect("create script parent");
-    std::fs::write(
-        &path,
-        if total == 0 {
-            "#!/bin/sh\ntrue\n".to_string()
-        } else {
-            format!(
-                "#!/bin/sh\nprintf '{{\"scope\":\"component\",\"total\":{total},\"passed\":{total},\"failed\":0,\"skipped\":0}}\\n' > \"$GIVN_RESULT_FILE\"\n"
-            )
-        },
-    )
-    .expect("write the component script");
+    let script = if total == 0 {
+        "#!/bin/sh\ntrue\n".to_string()
+    } else {
+        format!(
+            r#"#!/bin/sh
+set -eu
+mkdir -p target/debug
+printf 'rebuilt gate product\n' > target/debug/gate-product
+names=$(awk '
+  /^  @e2e/ {{ e2e=1; next }}
+  /^  Scenario: / {{
+    if (e2e) {{ e2e=0; next }}
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }}
+' givn/specs/gate.feature)
+printf '{{"scope":"component","total":{total},"passed":{total},"failed":0,"skipped":0,"scenarios":[%s]}}\n' "$names" > "$GIVN_RESULT_FILE"
+"#
+        )
+    };
+    std::fs::write(&path, script).expect("write the component script");
 }
 
 /// Commit the files the verify fixtures freeze: the `@e2e` feature, the
@@ -1535,4 +1564,44 @@ fn git_in(directory: &Path, args: &[&str]) -> std::process::Output {
         String::from_utf8_lossy(&output.stderr)
     );
     output
+}
+
+/// Write the count-only script the review rejected: counts but no scenario
+/// titles. It must not satisfy the gate.
+pub(crate) fn write_trial_gate_count_only_component_script(copy: &Path) {
+    let path = copy.join("scripts/verify.sh");
+    std::fs::create_dir_all(path.parent().expect("script parent")).expect("create script parent");
+    std::fs::write(
+        &path,
+        "#!/bin/sh\nprintf '{\"scope\":\"component\",\"total\":10,\"passed\":10,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
+    )
+    .expect("write the count-only component script");
+}
+
+/// The fixture's End-to-end runner that reports another product while still
+/// naming the selected scenarios.
+pub(crate) const TRIAL_GATE_FOREIGN_PRODUCT_E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/gate.feature)
+product=/bin/true
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+"#;
+
+/// Replace the checkout's End-to-end script with the foreign-product variant.
+pub(crate) fn write_trial_gate_foreign_product_script(env: &common::TestEnv) {
+    std::fs::write(
+        env.path("scripts/e2e.sh"),
+        TRIAL_GATE_FOREIGN_PRODUCT_E2E_SCRIPT,
+    )
+    .expect("write the foreign-product e2e script");
 }

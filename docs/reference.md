@@ -208,6 +208,9 @@ rather than rewritten unsafely.
   `coverage.e2e_path`, `coverage.output_path`, and `coverage.e2e_subprocess`
   (default false; true only when the End-to-end suite runs the product as an
   uninstrumented subprocess) — archive coverage gate and trial coverage.
+- `verify.product_path` (relative to the spec copy) and `verify.product_env`
+  (default `GIVN_BIN`) — the rebuilt product the trial End-to-end run must
+  drive; the result must carry its path and SHA-256.
 - `run.command`, `run.product_type` (`server`/`cli`/`library`), exactly one of
   `run.port` or `run.port_env` for servers, `run.ready_path`, and
   `run.ready_timeout_s` (default 60). The block replaces whole, like `verify`.
@@ -760,34 +763,49 @@ contract's path and checksum in the `ise-manifest/v1` manifest; a missing,
 changed, or unlisted contract refuses before any command runs.
 
 The contract names a component command and feature path, a frozen End-to-end
-command and feature path, an execution-unit count for each tier, and the
-coverage command and report paths when the coverage addon is effective. An
-execution unit is one plain scenario or one example row of a Scenario Outline.
+command and feature path, an execution-unit count and every scenario title for
+each tier, the rebuilt product path and the environment variable the End-to-end
+command reads, and the coverage commands and paths when the coverage addon is
+effective. An execution unit is one plain scenario or one example row of a
+Scenario Outline.
 
 The command removes each raw result file, runs the component command inside the
 copy with `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and
-`GIVN_RESULT_SCOPE=component`, then runs the frozen End-to-end command in the
-project working tree with `GIVN_RESULT_SCOPE=e2e`. Each run must produce a fresh
-result whose `total` equals the declared count exactly, with zero failed,
-zero skipped, and reconciling `passed + failed + skipped == total`. A missing
-result, a stale result, a non-zero failure or skip, or a count mismatch refuses
-and records `clean: false`; no pass line prints.
+`GIVN_RESULT_SCOPE=component`. It then requires the declared
+`verify.product_path` as a regular non-symlink file inside the copy, hashes its
+bytes, and runs the frozen End-to-end command in the project working tree with
+`GIVN_RESULT_SCOPE=e2e`, `verify.product_env`, `GIVN_TRIAL_PRODUCT`, and
+`GIVN_TRIAL_PRODUCT_SHA256`. Each run must produce a fresh result that names
+every declared scenario title and whose `total` equals the declared count
+exactly, with zero failed, zero skipped, and reconciling
+`passed + failed + skipped == total`. The End-to-end result must carry the same
+`product` path and `product_sha256`. A missing or stale result, a count-only or
+title-less result, a foreign product, a non-zero failure or skip, or a count
+mismatch refuses and records `clean: false`; no pass line prints.
 
 When the contract carries coverage, the command removes both reports, runs
 `coverage.measure_command` inside the copy with `GIVN_COVERAGE_NON_E2E_PATH`,
-`GIVN_COVERAGE_E2E_PATH`, and `GIVN_FEATURES`, requires a component report with
-non-zero measured lines and executed lines, requires independent tier reports,
-and accepts a 0-line End-to-end report only when `coverage.e2e_subprocess: true`
-is declared.
+`GIVN_COVERAGE_E2E_PATH`, `GIVN_COVERAGE_OUTPUT_PATH`, and `GIVN_FEATURES`,
+requires a component report with non-zero measured lines and executed lines,
+requires independent tier reports, and accepts a 0-line End-to-end report only
+when `coverage.e2e_subprocess: true` is declared.
+
+After the scripts ran, the command re-runs the frozen-input comparison. A
+checkout, manifest, or contract change during the trial refuses and records
+`clean: false`.
 
 The result file is an `ise-trial-result/v1` JSON record with the revision, the
-copy directory, `component.declared` and `component.executed`,
-`end_to_end.declared` and `end_to_end.executed`, per-tier line and branch
-coverage, and `clean`. The command exits `0` only when `clean` is true.
+copy directory, each tier's `declared`, `executed`, and `scenarios`, the
+`product` path and `sha256`, per-tier line and branch coverage, and `clean`. The
+command exits `0` only when `clean` is true.
 
 `--component-not-run <reason>` records an explicit not-run decision. It is
 refused when the Specification declares component execution units; it never
 turns a declared corpus into a pass.
+
+A change whose design records `Whole-system rebuild` must commit a clean
+`ise-trial-result/v1` under `evidence/ise/trial-result.json`; `givn check tasks`
+refuses the change otherwise.
 
 ### Archive verification and recovery
 

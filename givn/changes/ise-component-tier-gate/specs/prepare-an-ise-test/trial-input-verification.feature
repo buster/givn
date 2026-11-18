@@ -23,6 +23,25 @@ Feature: Trial input verification
     And  the command prints no "Trial result: passed" line
 
   @givn.added
+  Scenario: Verification refuses a count-only component result
+    Given  a committed verification fixture with ten component scenarios and one End-to-end scenario
+    When  the verifier prepares a trial with ten component scenarios and one End-to-end scenario
+    And  the agent writes a count-only component verification script
+    And  the verifier runs the trial verification
+    Then  the trial verification fails and exits 1, naming "does not name"
+    And  the trial result records "clean": false
+
+  @givn.added
+  Scenario: Verification refuses an End-to-end result bound to another product
+    Given  a committed verification fixture with ten component scenarios and one End-to-end scenario
+    When  the verifier prepares a trial with ten component scenarios and one End-to-end scenario
+    And  the agent writes a component verification script reporting 10 executed scenarios
+    And  the agent writes an End-to-end verification script that reports another product
+    And  the verifier runs the trial verification
+    Then  the trial verification fails and exits 1, naming "product_sha256"
+    And  the trial result records "clean": false
+
+  @givn.added
   Scenario: Verification records the exact declared counts
     Given  a committed verification fixture with ten component scenarios and one End-to-end scenario
     When  the verifier prepares a trial with ten component scenarios and one End-to-end scenario
@@ -31,6 +50,7 @@ Feature: Trial input verification
     Then  the trial verification succeeds and prints "Component scenarios: 10/10 executed, 0 failed, 0 skipped"
     And  the trial verification succeeds and prints "End-to-end tests: 1/1 executed, 0 failed, 0 skipped"
     And  the trial result records "clean": true
+    And  the trial result names ten component scenarios and the rebuilt product digest
 
   @givn.added
   Scenario: Verification refuses an exact count mismatch

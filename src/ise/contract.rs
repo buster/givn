@@ -35,6 +35,9 @@ pub(super) struct Contract {
     pub end_to_end: Tier,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub coverage: Option<CoverageContract>,
+    /// The rebuilt product the frozen End-to-end command must drive.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product: Option<ProductContract>,
 }
 
 /// One tier's command, feature path, and declared execution-unit count.
@@ -46,6 +49,18 @@ pub(super) struct Tier {
     /// Plain scenarios count once; a Scenario Outline counts once per example
     /// row, matching the runner's expanded count.
     pub execution_units: usize,
+    /// The declared scenario titles in file order. The runner result must name
+    /// every one, so a count-only result cannot satisfy the gate.
+    pub scenarios: Vec<String>,
+}
+
+/// The rebuilt product and the environment variable the End-to-end command
+/// reads its path from.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct ProductContract {
+    pub path: String,
+    pub env: String,
 }
 
 /// The coverage command and report paths when the addon is effective.
@@ -55,6 +70,7 @@ pub(super) struct CoverageContract {
     pub measure_command: String,
     pub non_e2e_path: String,
     pub e2e_path: String,
+    pub output_path: String,
     /// The End-to-end suite runs the product as a subprocess and cannot
     /// instrument it; a 0-line e2e report is accepted only when this is true.
     pub e2e_subprocess: bool,
@@ -72,27 +88,39 @@ impl Contract {
     ) -> Result<Self> {
         let paths: Vec<&str> = entries.iter().map(|entry| entry.path.as_str()).collect();
         let features = manifest.verify.features_path.clone();
-        let (component_units, end_to_end_units) = execution_units(declaration, &paths, blobs)?;
+        let counts = execution_units(declaration, &paths, blobs)?;
         let coverage = manifest.addons.coverage.then(|| CoverageContract {
             measure_command: manifest.coverage.measure_command.clone(),
             non_e2e_path: manifest.coverage.non_e2e_path.clone(),
             e2e_path: manifest.coverage.e2e_path.clone(),
+            output_path: manifest.coverage.output_path.clone(),
             e2e_subprocess: manifest.coverage.e2e_subprocess,
         });
+        let product = manifest
+            .verify
+            .product_path
+            .as_ref()
+            .map(|path| ProductContract {
+                path: path.clone(),
+                env: manifest.verify.product_env.clone(),
+            });
         Ok(Self {
             scope: CONTENT_SCOPE.to_string(),
             revision: revision.to_string(),
             component: Tier {
                 command: manifest.verify.command.clone(),
                 features: features.clone(),
-                execution_units: component_units,
+                execution_units: counts.component.units,
+                scenarios: counts.component.scenarios,
             },
             end_to_end: Tier {
                 command: manifest.verify.e2e_command.clone(),
                 features,
-                execution_units: end_to_end_units,
+                execution_units: counts.end_to_end.units,
+                scenarios: counts.end_to_end.scenarios,
             },
             coverage,
+            product,
         })
     }
 
@@ -114,12 +142,19 @@ impl Contract {
         ))
     }
 
-    /// Read one strict contract. A wrong scope or unknown field refuses by
-    /// name; the reader never migrates an older shape.
-    pub(super) fn read(path: &Path) -> Result<Self> {
-        let text = std::fs::read_to_string(path)
-            .with_context(|| format!("read the verification contract '{}'", path.display()))?;
-        let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text).with_context(|| {
+    /// Parse the exact bytes the manifest checksum covers.
+    pub(super) fn from_bytes(bytes: &[u8], path: &Path) -> Result<Self> {
+        let text = std::str::from_utf8(bytes).with_context(|| {
+            format!(
+                "read the verification contract '{}' as UTF-8",
+                path.display()
+            )
+        })?;
+        Self::parse(text, path)
+    }
+
+    fn parse(text: &str, path: &Path) -> Result<Self> {
+        let document: serde_yaml_ng::Value = serde_yaml_ng::from_str(text).with_context(|| {
             format!(
                 "the verification contract '{}' is not readable YAML",
                 path.display()
@@ -145,8 +180,8 @@ impl Contract {
             })
             .and_then(|contract: Self| {
                 if let Some(coverage) = &contract.coverage {
-                    require_relative_report("non_e2e_path", &coverage.non_e2e_path)?;
-                    require_relative_report("e2e_path", &coverage.e2e_path)?;
+                    require_relative_path("coverage.non_e2e_path", &coverage.non_e2e_path)?;
+                    require_relative_path("coverage.e2e_path", &coverage.e2e_path)?;
                 }
                 Ok(contract)
             })
@@ -155,7 +190,7 @@ impl Contract {
 
 /// A coverage report path must stay under the copy: relative and free of
 /// parent-directory components.
-fn require_relative_report(name: &str, path: &str) -> Result<()> {
+fn require_relative_path(name: &str, path: &str) -> Result<()> {
     let parsed = Path::new(path);
     if parsed.is_absolute()
         || parsed
@@ -163,24 +198,38 @@ fn require_relative_report(name: &str, path: &str) -> Result<()> {
             .any(|component| component == std::path::Component::ParentDir)
     {
         bail!(
-            "the verification contract's coverage.{name} '{path}' must be relative to the spec copy and cannot contain '..'"
+            "the verification contract's {name} '{path}' must be relative to the spec copy and cannot contain '..'"
         );
     }
     Ok(())
+}
+
+/// One tier's declared execution units and scenario titles.
+#[derive(Debug, Default, Clone)]
+struct TierCounts {
+    units: usize,
+    scenarios: Vec<String>,
+}
+
+/// Both tiers' declared counts and titles.
+#[derive(Debug, Default, Clone)]
+struct Counts {
+    component: TierCounts,
+    end_to_end: TierCounts,
 }
 
 /// The declared execution-unit counts for the component and End-to-end tiers.
 ///
 /// A feature-level `@e2e` tag selects every scenario in that file. A Scenario
 /// Outline expands to one unit per example row, so the declared count matches
-/// the runner's scenario events rather than the file's outline headings.
+/// the runner's scenario events rather than the file's outline headings. The
+/// titles are the corpus identity the runner result must name.
 fn execution_units(
     declaration: &SpecificationDeclaration,
     paths: &[&str],
     blobs: &BTreeMap<String, Vec<u8>>,
-) -> Result<(usize, usize)> {
-    let mut component = 0usize;
-    let mut end_to_end = 0usize;
+) -> Result<Counts> {
+    let mut counts = Counts::default();
     for path in partition::behavior_features(declaration, paths) {
         let content = blobs
             .get(&path)
@@ -192,14 +241,16 @@ fn execution_units(
         let feature_e2e = feature.tags.iter().any(|tag| tag == "e2e");
         for scenario in &feature.scenarios {
             let units = scenario_execution_units(scenario);
-            if feature_e2e || scenario.tags.iter().any(|tag| tag == "e2e") {
-                end_to_end += units;
+            let tier = if feature_e2e || scenario.tags.iter().any(|tag| tag == "e2e") {
+                &mut counts.end_to_end
             } else {
-                component += units;
-            }
+                &mut counts.component
+            };
+            tier.units += units;
+            tier.scenarios.push(scenario.name.clone());
         }
     }
-    Ok((component, end_to_end))
+    Ok(counts)
 }
 
 /// One scenario's expanded execution units. A plain scenario is one unit; an
@@ -260,23 +311,29 @@ mod tests {
                 command: "./verify.sh".to_string(),
                 features: "givn/specs".to_string(),
                 execution_units: 10,
+                scenarios: vec!["one".to_string()],
             },
             end_to_end: Tier {
                 command: "./e2e.sh".to_string(),
                 features: "givn/specs".to_string(),
                 execution_units: 1,
+                scenarios: vec!["acceptance".to_string()],
             },
             coverage: None,
+            product: None,
         };
         let directory = tempfile::TempDir::new().unwrap();
         let path = directory.path().join("contract.yaml");
         contract.write(&path).unwrap();
-        assert_eq!(Contract::read(&path).unwrap(), contract);
+        assert_eq!(
+            Contract::from_bytes(&std::fs::read(&path).unwrap(), &path).unwrap(),
+            contract
+        );
 
         let mut text = std::fs::read_to_string(&path).unwrap();
         text.push_str("unknown: true\n");
         std::fs::write(&path, text).unwrap();
-        let error = Contract::read(&path).unwrap_err();
+        let error = Contract::from_bytes(&std::fs::read(&path).unwrap(), &path).unwrap_err();
         assert!(format!("{error:#}").contains("unknown"), "{error:#}");
     }
 
@@ -286,10 +343,11 @@ mod tests {
         let path = directory.path().join("contract.yaml");
         std::fs::write(
             &path,
-            "scope: ise-verification/v1\nrevision: abc\ncomponent:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 1\nend_to_end:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 0\ncoverage:\n  measure_command: \"true\"\n  non_e2e_path: \"../outside.xml\"\n  e2e_path: coverage/e2e.xml\n  e2e_subprocess: false\n",
+            "scope: ise-verification/v1\nrevision: abc\ncomponent:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 1\n  scenarios: [one]\nend_to_end:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 0\n  scenarios: []\ncoverage:\n  measure_command: \"true\"\n  non_e2e_path: \"../outside.xml\"\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/out.xml\n  e2e_subprocess: false\n",
         )
         .unwrap();
-        let error = Contract::read(&path).expect_err("a parent path refuses");
+        let error = Contract::from_bytes(&std::fs::read(&path).unwrap(), &path)
+            .expect_err("a parent path refuses");
         assert!(
             format!("{error:#}").contains("cannot contain '..'"),
             "{error:#}"
