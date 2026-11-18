@@ -21,6 +21,8 @@ No uncovered region remains. The seven delta scenarios are covered by `0e5c905` 
 
 No open implementation-evidence findings remain; the previously reported IE-1 (COMMIT-line format), IE-2 (Step Definitions column order), IE-3 (`8a7efce` direct-work accounting), IE-4 (setup task commit labels), and IE-5 (coverage disposition) are resolved.
 
-PERSONAS: developer--primary-user, agent--technical-role, givn-maintainer--owner
+PERSONAS: developer--primary-user
+
+README-IMPACT: updated - ise command table and the iseprinciple.org citation
 
 REVIEW: PASS

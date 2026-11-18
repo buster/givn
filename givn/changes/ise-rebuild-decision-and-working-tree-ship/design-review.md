@@ -2,7 +2,9 @@
 
 Review kind: independent
 Author: Main (omp session)
-Reviewer context: `agent://DesignReviewIseVocab` (fresh context, did not author the change; reused for the final review)
+Reviewer context: agent://DesignReviewIseVocab
+
+The reviewer did not author the change; the same context performed the final review.
 
 ## Operator decisions recorded during grilling
 
