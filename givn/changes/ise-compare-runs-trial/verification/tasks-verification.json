@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "change": "ise-compare-runs-trial",
+  "status": "passed",
+  "head": "08c9ef4ebd6e7419f9bbb21fa264c8639507de7c",
+  "features_path": "givn/changes/ise-compare-runs-trial/specs",
+  "features_digest": "4d5e1699a6541d6a56d63c8ca71d36c1279b295b6c869f65e2dbc0c12fbc9e9b",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "e050f9c3f78367928082f23153bc620a470c3ac5852c7850cfc8a077cf78390c",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "skipped": 0
+  },
+  "e2e_identity": {
+    "package_digests": {
+      "e2e": "1ee8fdecba45820adb45fc9f2879643da800f56907ca51ec60e2251c3c33f52d"
+    },
+    "runner_command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+    "givn_version": "0.9.21"
+  },
+  "e2e_scope": {
+    "status": "passed",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 3.206085484
+  },
+  "finished_at_unix": 1795082053
+}

@@ -1,0 +1,1 @@
+{"failed":0,"passed":5,"scenarios":["Served ise guidance distinguishes the trial gate from input equality","Served ise guidance requires the ordinary component workflow","Comparison labels frozen-input equality as unverified","Comparison refuses a missing component runner","Comparison refuses a trial result inside the spec copy"],"scope":"change","skipped":0,"total":5}
