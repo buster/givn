@@ -2,7 +2,7 @@
 
 Review kind: self-review
 Author: givn-maintainer--owner
-Reviewer context: self
+Reviewer context: givn-maintainer--owner
 
 ## Grilling
 
