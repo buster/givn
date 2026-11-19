@@ -50,5 +50,6 @@ Reviewer context: givn-maintainer--owner
 | `--result` was not validated on mismatched inputs. | The CLI preflight runs before the comparison for every non-inputs-only call. | `a_result_path_inside_the_checkout_refuses`, `a_result_path_equal_to_the_manifest...` |
 | The E2E transcript argv omitted `--inputs-only`; the new executed title had no transcript. | The transcript selector covers both titles and appends `--inputs-only` only for the read-only scenario. | `verifier-compares-the-spec-copy-with-the-manifest-and-runs-the-trial/transcript.txt` |
 | The component success fixture printed titles with `awk` without executing a step. | The fixtures now use a minimal step-binding runner that parses the frozen feature, executes `Given nothing`, and refuses an unbound step; the missing-runner regression remains. | `compare_runs_the_trial_and_records_a_clean_result`, `a_passuff_shaped_copy_runs_the_trial_through_compare_by_default`, `compare_refuses_a_missing_component_runner` |
+| The `## Step Definitions` table put the file in column 1; the integrity hook reads column 2. | Reordered the table to `| Capability | Step definition file | Permanent merge target |`; no decision changed. | `givn check review` promised-file check |
 
 DESIGN-REVIEW: PASS

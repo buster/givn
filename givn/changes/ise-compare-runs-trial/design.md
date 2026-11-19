@@ -55,13 +55,13 @@ only when it parses as a regular Givn trial or runner result.
 
 ## Step Definitions
 
-| Step definition file | Capability | Permanent merge target |
+| Capability | Step definition file | Permanent merge target |
 |---|---|---|
-| `tests/steps/trial_input_verification_steps.rs` | `trial-input-verification` | same file |
-| `e2e/tests/steps/trial_input_verification_e2e_steps.rs` | `trial-input-verification` (E2E) | same file |
-| `tests/steps/prose_consolidation_steps.rs` | `serve-extended-rules` | same file |
-| `tests/steps/ise_clean_room_support.rs` | fixture builders | same file |
-| `e2e/tests/steps/ise_clean_room_support.rs` | E2E fixture builders | same file |
+| `trial-input-verification` | `tests/steps/trial_input_verification_steps.rs` | same file |
+| `trial-input-verification` (E2E) | `e2e/tests/steps/trial_input_verification_e2e_steps.rs` | same file |
+| `serve-extended-rules` | `tests/steps/prose_consolidation_steps.rs` | same file |
+| fixture builders | `tests/steps/ise_clean_room_support.rs` | same file |
+| E2E fixture builders | `e2e/tests/steps/ise_clean_room_support.rs` | same file |
 
 ## Test Runner
 
