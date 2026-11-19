@@ -23,6 +23,8 @@ mod manifest;
 mod partition;
 mod verify;
 
+pub(crate) mod ship;
+
 pub use compare::{CompareReport, CompareRequest, Difference, DifferenceKind, compare};
 pub(crate) use manifest::abbreviate;
 pub use verify::{

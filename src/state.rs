@@ -57,7 +57,14 @@ pub struct ChangeState {
 }
 
 pub(crate) fn inspect_verification(change_dir: &Path, manifest: &Manifest) -> String {
-    if crate::proof::change_verification_not_applicable(change_dir).is_ok_and(|value| value) {
+    let project_root = change_dir
+        .parent()
+        .and_then(Path::parent)
+        .and_then(Path::parent);
+    let applicable = project_root.is_some_and(|root| {
+        crate::proof::change_verification_required(root, change_dir).is_ok_and(|required| required)
+    });
+    if !applicable {
         return "not applicable".to_owned();
     }
     let path = change_dir.join(crate::proof::CHANGE_RECEIPT_FILE);

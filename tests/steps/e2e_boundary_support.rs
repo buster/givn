@@ -314,6 +314,109 @@ pub(crate) fn ise_change_without_behavior_change(world: &mut GivnWorld) {
     commit(world);
 }
 
+/// An `ise`-effective ship change: no behavior change, a specs skip,
+/// `Rebuilt code: ship`, and two retained component scenarios under
+/// `givn/specs`. `runner` selects what the fixture runner reports:
+/// `every` (2), `one` (1), or `none` (exit 0 without a result file).
+pub(crate) fn ise_ship_change(world: &mut GivnWorld, runner: &str) {
+    ise_change(world);
+    let change = change_path(world);
+    std::fs::write(
+        change.join("proposal.md"),
+        "# Proposal: ise-boundary\n\n## Behavior Change\n\nBehavior change: none\n",
+    )
+    .expect("write the ship proposal");
+    std::fs::write(change.join(".givn-skip"), "specs\n").expect("write the specs skip");
+    std::fs::remove_file(change.join("specs/verify-change/givn-workflow-enforcement.feature"))
+        .expect("remove the delta feature");
+    std::fs::write(
+        change.join("design.md"),
+        "# Design\n\n**Decides D1: the Ise rebuild decision is `Whole-system rebuild` \
+         with `Rebuilt\ncode: ship`.**\n",
+    )
+    .expect("write the ship design");
+    write_file(
+        world,
+        "givn/specification.yaml",
+        "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: []\nlimits: []\n\
+         e2e: [\"tests/e2e\"]\nsource: []\n",
+    );
+    write_package(world, "tests/e2e");
+    write_file(
+        world,
+        "givn/specs/demo-cap/demo-cap.feature",
+        "Feature: Retained corpus\n\n  Scenario: The first retained scenario\n    \
+         Given a fixture precondition\n    Then a fixture result\n\n  \
+         Scenario: The second retained scenario\n    Given a fixture precondition\n    \
+         Then a fixture result\n",
+    );
+    let total = match runner {
+        "every" => 2,
+        "one" => 1,
+        "none" => 0,
+        other => panic!("unknown ship runner '{other}'"),
+    };
+    let script = format!(
+        "#!/bin/sh\n\
+         if [ \"${{GIVN_RESULT_SCOPE:-regular}}\" = \"change\" ] && [ {total} -gt 0 ]; then\n\
+         \x20 printf '{{\"scope\":\"change\",\"total\":{total},\"passed\":{total},\
+         \"failed\":0,\"skipped\":0}}\\n' > \"$GIVN_RESULT_FILE\"\n\
+         fi\n\
+         exit 0\n"
+    );
+    write_executable(world, "emit-component.sh", &script);
+    write_verify_commands(
+        world,
+        "./emit-component.sh",
+        "./emit-component.sh tests/e2e",
+    );
+    commit(world);
+}
+
+/// An `ise`-effective ship change that keeps one delta scenario plus two
+/// retained component scenarios. The runner reports one scenario for the delta
+/// and two for `givn/specs`, so the two change-scope subjects are distinct.
+pub(crate) fn ise_ship_change_with_delta(world: &mut GivnWorld) {
+    ise_change(world);
+    std::fs::write(
+        change_path(world).join("design.md"),
+        "# Design\n\nRebuilt code: ship\n",
+    )
+    .expect("write the delta ship design");
+    write_file(
+        world,
+        "givn/specification.yaml",
+        "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: []\nlimits: []\n\
+         e2e: [\"tests/e2e\"]\nsource: []\n",
+    );
+    write_package(world, "tests/e2e");
+    write_file(
+        world,
+        "givn/specs/demo-cap/demo-cap.feature",
+        "Feature: Retained corpus\n\n  Scenario: The first retained scenario\n    \
+         Given a fixture precondition\n    Then a fixture result\n\n  \
+         Scenario: The second retained scenario\n    Given a fixture precondition\n    \
+         Then a fixture result\n",
+    );
+    write_executable(
+        world,
+        "emit-two-subjects.sh",
+        "#!/bin/sh\n\
+         case \"${GIVN_FEATURES:-}\" in\n\
+         \x20 *givn/specs*) total=2 ;;\n\
+         \x20 *) total=1 ;;\n\
+         esac\n\
+         printf '{\"scope\":\"change\",\"total\":%s,\"passed\":%s,\"failed\":0,\"skipped\":0}\\n' \
+         \"$total\" \"$total\" > \"$GIVN_RESULT_FILE\"\n",
+    );
+    write_verify_commands(
+        world,
+        "./emit-two-subjects.sh",
+        "./emit-two-subjects.sh tests/e2e",
+    );
+    commit(world);
+}
+
 /// The same ready change with the lock recording `ise: false`, so no
 /// declaration is read and no boundary preflight runs.
 pub(crate) fn change_ready_for_verification_without_ise(world: &mut GivnWorld) {

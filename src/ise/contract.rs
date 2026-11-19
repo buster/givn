@@ -284,23 +284,54 @@ fn count_feature_paths<'a>(
             .ok_or_else(|| anyhow::anyhow!("the revision returned no content for '{path}'"))?;
         let source = std::str::from_utf8(content)
             .with_context(|| format!("read the feature at '{path}' as UTF-8"))?;
-        let feature = gherkin::Feature::parse(source, gherkin::GherkinEnv::default())
-            .with_context(|| format!("parse the feature at '{path}'"))?;
-        let feature_e2e = feature.tags.iter().any(|tag| tag == "e2e");
-        for scenario in &feature.scenarios {
-            let units = scenario_execution_units(scenario);
-            let tier = if feature_e2e || scenario.tags.iter().any(|tag| tag == "e2e") {
-                &mut counts.end_to_end
-            } else {
-                &mut counts.component
-            };
-            tier.units += units;
-            for _ in 0..units {
-                tier.scenarios.push(scenario.name.clone());
-            }
-        }
+        add_feature_source(&mut counts, path, source)?;
     }
     Ok(counts)
+}
+
+/// Add one parsed feature's execution units to the counts. A feature-level
+/// `@e2e` tag selects every scenario in the file; a Scenario Outline expands
+/// to one unit per example row. Both the frozen-contract count and the
+/// working-tree ship gate call this, so the two tiers count by one rule.
+fn add_feature_source(counts: &mut Counts, path: &str, source: &str) -> Result<()> {
+    let feature = gherkin::Feature::parse(source, gherkin::GherkinEnv::default())
+        .with_context(|| format!("parse the feature at '{path}'"))?;
+    let feature_e2e = feature.tags.iter().any(|tag| tag == "e2e");
+    for scenario in &feature.scenarios {
+        let units = scenario_execution_units(scenario);
+        let tier = if feature_e2e || scenario.tags.iter().any(|tag| tag == "e2e") {
+            &mut counts.end_to_end
+        } else {
+            &mut counts.component
+        };
+        tier.units += units;
+        for _ in 0..units {
+            tier.scenarios.push(scenario.name.clone());
+        }
+    }
+    Ok(())
+}
+
+/// The retained component execution units in the project working tree.
+///
+/// This is the subject an Ise ship's change-scope verification must execute:
+/// every non-`@e2e` plain scenario and Scenario Outline example row under
+/// `givn/specs/**`. A project with no retained component scenario declares
+/// zero units, and the ship gate then has no tier to execute.
+pub(crate) fn retained_component_units(project_root: &Path) -> Result<usize> {
+    let mut counts = Counts::default();
+    let specs = project_root.join("givn/specs");
+    for path in crate::gherkin::parse::collect_feature_files(&specs) {
+        let source = std::fs::read_to_string(&path)
+            .with_context(|| format!("read the retained feature '{}'", path.display()))?;
+        let relative = path
+            .strip_prefix(project_root)
+            .unwrap_or(&path)
+            .to_string_lossy()
+            .replace('\\', "/");
+        add_feature_source(&mut counts, &relative, &source)?;
+    }
+    Ok(counts.component.units)
 }
 
 /// One scenario's expanded execution units. A plain scenario is one unit; an

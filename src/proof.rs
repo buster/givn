@@ -460,7 +460,7 @@ impl CoverageOutcome {
 }
 
 /// The machine-readable result a verification scope's runner writes.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RunnerResult {
     /// Optional: a runner that writes only counts is compatible. When
     /// present, archive validates it against the expected scope.
@@ -548,10 +548,26 @@ pub struct E2eIdentity {
     pub givn_version: String,
 }
 
+/// The retained component corpus evidence a change-scope receipt binds.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChangeComponentEvidence {
+    /// The corpus the run executed, relative to the project root.
+    pub features_path: String,
+    pub features_digest: String,
+    pub result: RunnerResult,
+}
+
 /// The verification outcome a change-scoped run records in its receipt.
 #[derive(Debug, Clone)]
 pub struct ChangeVerification {
     pub result: RunnerResult,
+    /// The feature directory `result` executed, relative to the project root.
+    /// Empty means the change's delta specs.
+    pub features_path: String,
+    /// The digest of that directory's features. Empty means recompute.
+    pub features_digest: String,
+    /// The retained component corpus result when an Ise ship ran a delta too.
+    pub component: Option<ChangeComponentEvidence>,
     /// Absent when the change lock has `ise` off.
     pub e2e_identity: Option<E2eIdentity>,
     /// The E2E scope outcome; absent when the change lock has `ise` off.
@@ -576,6 +592,9 @@ pub struct ChangeReceipt {
     pub content_scope: Option<String>,
     pub runner_exit: i32,
     pub result: RunnerResult,
+    /// The retained component corpus when an Ise ship also ran a delta.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub component: Option<ChangeComponentEvidence>,
     /// The E2E identity; absent on a receipt written with `ise` off.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub e2e_identity: Option<E2eIdentity>,
@@ -643,6 +662,16 @@ pub enum StaleReason {
     },
     E2eScopeMissing,
     E2eScopeUnexpected,
+    ComponentTierMissing,
+    ComponentTierNotGreen,
+    ComponentTierCountMismatch {
+        executed: usize,
+        declared: usize,
+    },
+    ComponentCorpusChanged {
+        receipt: String,
+        current: String,
+    },
 }
 
 impl StaleReason {
@@ -698,6 +727,16 @@ impl StaleReason {
                  receipt records a passed E2E scope but the delta has no @e2e scenario; run \
                  `givn check tasks` once"
                 .to_string(),
+            Self::ComponentTierMissing => "the receipt records no component corpus result for an \
+                 Ise ship; run `givn check tasks` once"
+                .to_string(),
+            Self::ComponentTierNotGreen => "the component corpus result is not green".to_string(),
+            Self::ComponentTierCountMismatch { executed, declared } => format!(
+                "the component corpus executed {executed} of {declared} declared execution units"
+            ),
+            Self::ComponentCorpusChanged { receipt, current } => format!(
+                "the retained component corpus changed: receipt {receipt}, current {current}"
+            ),
         }
     }
 }
@@ -721,6 +760,11 @@ pub fn read_change_e2e_result(change_id: &str, path: &Path) -> Result<RunnerResu
 pub const CHANGE_RECEIPT_FILE: &str = "verification/tasks-verification.json";
 /// Path of the raw change-scoped runner result.
 pub const CHANGE_RESULT_FILE: &str = "verification/tasks-result.json";
+/// Path of the retained component corpus result an Ise ship writes beside a
+/// delta result.
+pub const CHANGE_COMPONENT_RESULT_FILE: &str = "verification/component-result.json";
+/// The retained component corpus, relative to the project root.
+pub const COMPONENT_FEATURES_PATH: &str = "givn/specs";
 
 pub fn remove_previous_output(path: &Path) -> Result<()> {
     match std::fs::remove_file(path) {
@@ -760,6 +804,20 @@ pub fn change_verification_not_applicable(change_dir: &Path) -> Result<bool> {
         bail!("missing delta specs or explicit Behavior change: none declaration and specs skip");
     }
     Ok(false)
+}
+
+/// Whether the change must carry a green verification receipt.
+///
+/// A change with delta scenarios always does. A `Behavior change: none` change
+/// normally does not, except when it is an Ise ship whose retained component
+/// corpus would otherwise be skipped: `ship` adopts the rebuilt code, so the
+/// retained scenarios must execute. `check tasks`, `check review`, `archive`,
+/// and the lifecycle status all read this one predicate.
+pub fn change_verification_required(project_root: &Path, change_dir: &Path) -> Result<bool> {
+    if !change_verification_not_applicable(change_dir)? {
+        return Ok(true);
+    }
+    Ok(crate::ise::ship::component_tier_required(project_root, change_dir)?.is_some())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -901,12 +959,23 @@ impl ChangeReceipt {
             reasons.push(StaleReason::NotGreen);
         }
 
-        let current_features = digest_features(&change_dir.join("specs"))?;
-        if self.features_digest != current_features {
-            reasons.push(StaleReason::FeaturesChanged {
-                receipt: self.features_digest.clone(),
-                current: current_features,
-            });
+        if self.features_path.is_empty() {
+            let current_features = digest_features(&change_dir.join("specs"))?;
+            if self.features_digest != current_features {
+                reasons.push(StaleReason::FeaturesChanged {
+                    receipt: self.features_digest.clone(),
+                    current: current_features,
+                });
+            }
+        } else {
+            let recorded = project_root.join(&self.features_path);
+            let current_features = digest_features(&recorded)?;
+            if self.features_digest != current_features {
+                reasons.push(StaleReason::FeaturesChanged {
+                    receipt: self.features_digest.clone(),
+                    current: current_features,
+                });
+            }
         }
         let current_command = digest_text(&manifest.verify.command);
         if self.command_digest != current_command {
@@ -971,6 +1040,10 @@ impl ChangeReceipt {
 
         if crate::config::lock::ise_effective_for_change(change_dir)? {
             reasons.extend(self.e2e_stale_reasons(change_dir, project_root, manifest)?);
+        }
+        if let Some(declared) = crate::ise::ship::component_tier_required(project_root, change_dir)?
+        {
+            reasons.extend(self.component_stale_reasons(project_root, declared)?);
         }
 
         if !reasons.is_empty() {
@@ -1074,6 +1147,50 @@ impl ChangeReceipt {
             }
         }
 
+        Ok(reasons)
+    }
+
+    /// The retained component corpus reasons an Ise ship adds to the shared
+    /// freshness rule. The primary result counts when it executed the corpus
+    /// itself; otherwise the separate component record must be present, green,
+    /// count the declared units, and bind the current corpus digest.
+    fn component_stale_reasons(
+        &self,
+        project_root: &Path,
+        declared: usize,
+    ) -> Result<Vec<StaleReason>> {
+        let mut reasons = Vec::new();
+        let evidence = if self.features_path == COMPONENT_FEATURES_PATH {
+            Some((&self.result, self.features_digest.as_str()))
+        } else {
+            self.component
+                .as_ref()
+                .map(|component| (&component.result, component.features_digest.as_str()))
+        };
+        let Some((result, recorded_digest)) = evidence else {
+            return Ok(vec![StaleReason::ComponentTierMissing]);
+        };
+        let green = result.failed == 0
+            && result.skipped == 0
+            && result.total > 0
+            && result.passed == result.total
+            && result.passed + result.failed + result.skipped == result.total;
+        if !green {
+            reasons.push(StaleReason::ComponentTierNotGreen);
+        }
+        if result.total != declared as u64 {
+            reasons.push(StaleReason::ComponentTierCountMismatch {
+                executed: usize::try_from(result.total).unwrap_or(usize::MAX),
+                declared,
+            });
+        }
+        let current = digest_features(&project_root.join(COMPONENT_FEATURES_PATH))?;
+        if recorded_digest != current {
+            reasons.push(StaleReason::ComponentCorpusChanged {
+                receipt: recorded_digest.to_string(),
+                current,
+            });
+        }
         Ok(reasons)
     }
 
@@ -1210,25 +1327,35 @@ pub fn write_change_receipt(
     verification: ChangeVerification,
     finished_at_unix: u64,
 ) -> Result<()> {
-    let features = change_dir.join("specs");
-    let features_path = features
-        .strip_prefix(project_root)
-        .unwrap_or(&features)
-        .to_string_lossy()
-        .replace('\\', "/");
+    let delta = change_dir.join("specs");
+    let features_path = if verification.features_path.is_empty() {
+        delta
+            .strip_prefix(project_root)
+            .unwrap_or(&delta)
+            .to_string_lossy()
+            .replace('\\', "/")
+    } else {
+        verification.features_path.clone()
+    };
+    let features_digest = if verification.features_digest.is_empty() {
+        digest_features(&delta)?
+    } else {
+        verification.features_digest.clone()
+    };
     let receipt = ChangeReceipt {
         schema: 2,
         change: change.to_string(),
         status: "passed".to_string(),
         head: head.to_string(),
         features_path,
-        features_digest: digest_features(&features)?,
+        features_digest,
         command_digest: digest_text(command),
         command: Some(command.to_string()),
         tested_content_digest: Some(tested_content_digest.to_string()),
         content_scope: Some(CONTENT_SCOPE.to_string()),
         runner_exit: 0,
         result: verification.result,
+        component: verification.component,
         e2e_identity: verification.e2e_identity,
         e2e_scope: verification.e2e_scope,
         finished_at_unix,
@@ -1677,6 +1804,9 @@ mod tests {
                     failed: 0,
                     skipped: 0,
                 },
+                features_path: String::new(),
+                features_digest: String::new(),
+                component: None,
                 e2e_identity: None,
                 e2e_scope: None,
             },
@@ -1720,6 +1850,9 @@ mod tests {
                     failed: 0,
                     skipped: 0,
                 },
+                features_path: String::new(),
+                features_digest: String::new(),
+                component: None,
                 e2e_identity: None,
                 e2e_scope: None,
             },
@@ -1827,6 +1960,9 @@ mod tests {
                     failed: 0,
                     skipped: 0,
                 },
+                features_path: String::new(),
+                features_digest: String::new(),
+                component: None,
                 e2e_identity: None,
                 e2e_scope: None,
             },
@@ -2034,5 +2170,74 @@ mod tests {
             &manifest,
             Path::new("src/lib.rs")
         ));
+    }
+
+    fn ship_project(design: &str, corpus: Option<&str>) -> tempfile::TempDir {
+        let dir = tempfile::TempDir::new().unwrap();
+        let root = dir.path();
+        let change = root.join("givn/changes/ship");
+        std::fs::create_dir_all(&change).unwrap();
+        std::fs::write(
+            change.join("proposal.md"),
+            "# Proposal: ship\n\nBehavior change: none\n",
+        )
+        .unwrap();
+        std::fs::write(change.join(".givn-skip"), "specs\n").unwrap();
+        std::fs::write(
+            change.join("config-lock.yaml"),
+            "version: 1\naddons:\n  ise: true\noverrides: []\n",
+        )
+        .unwrap();
+        std::fs::write(change.join("design.md"), design).unwrap();
+        if let Some(corpus) = corpus {
+            let specs = root.join("givn/specs/demo");
+            std::fs::create_dir_all(&specs).unwrap();
+            std::fs::write(specs.join("demo.feature"), corpus).unwrap();
+        }
+        dir
+    }
+
+    #[test]
+    fn an_ise_ship_requires_change_verification() {
+        let dir = ship_project(
+            "**Decides D1: `Whole-system rebuild` with `Rebuilt\ncode: ship`.**\n",
+            Some(
+                "Feature: Demo\n\n  Scenario: One\n    Given a step\n\n  Scenario: Two\n    Given a step\n",
+            ),
+        );
+        let root = dir.path();
+        let change = root.join("givn/changes/ship");
+        assert!(change_verification_required(root, &change).unwrap());
+        assert_eq!(
+            crate::ise::ship::component_tier_required(root, &change).unwrap(),
+            Some(2)
+        );
+    }
+
+    #[test]
+    fn a_change_without_a_ship_declaration_needs_no_component_tier() {
+        let dir = ship_project(
+            "**Decides D1: no rebuild.**\n",
+            Some("Feature: Demo\n\n  Scenario: One\n    Given a step\n"),
+        );
+        let root = dir.path();
+        let change = root.join("givn/changes/ship");
+        assert!(!change_verification_required(root, &change).unwrap());
+        assert_eq!(
+            crate::ise::ship::component_tier_required(root, &change).unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn a_ship_with_no_component_units_needs_no_component_tier() {
+        let dir = ship_project("Rebuilt code: ship\n", None);
+        let root = dir.path();
+        let change = root.join("givn/changes/ship");
+        assert!(!change_verification_required(root, &change).unwrap());
+        assert_eq!(
+            crate::ise::ship::component_tier_required(root, &change).unwrap(),
+            None
+        );
     }
 }
