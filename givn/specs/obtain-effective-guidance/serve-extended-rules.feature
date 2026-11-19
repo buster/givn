@@ -298,3 +298,10 @@ Feature: The served instruction carries the built-in rules and the project's ext
     Then  the command exits non-zero
     And  stderr names "steps-rustt"
     And  stderr lists the known instruction ids including "steps-rust"
+
+  @serve-extended-rules
+  Scenario: Served ise guidance distinguishes the trial gate from input equality
+    Given  a Givn project with ise effective
+    When  the author reads the served ise guidance
+    Then  the guidance names "givn ise verify-trial" as the whole-system result gate
+    And  the guidance states that "givn ise compare" proves frozen-input equality only

@@ -565,3 +565,11 @@ Feature: Clean-room preparation
     And  the spec copy holds "rust-toolchain.toml" and "assets/templates/glossary.md"
     And  the spec copy holds "assets/instructions/ise.md" and "givn/specs/demo.feature"
     And  the spec copy omits "src/main.rs" and "e2e/Cargo.toml"
+
+  @clean-room-preparation
+  Scenario: Preparation writes a runnable verification contract
+    Given  a committed verification fixture with ten component scenarios and one End-to-end scenario
+    When  the verifier prepares a trial with ten component scenarios and one End-to-end scenario
+    Then  the command succeeds
+    And  the spec copy holds "givn/ise-verification.yaml"
+    And  the verification contract declares 10 component execution units and 1 End-to-end execution unit
