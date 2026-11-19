@@ -22,20 +22,32 @@ chmod +x target/debug/passuff
 printf '#!/bin/sh\necho passuff-tui\n' > target/debug/passuff-tui
 chmod +x target/debug/passuff-tui
 names=""
-for feature in givn/specs/*.feature; do
-  part=$(awk '
-    /^@e2e/ { e2e=1; next }
-    /^  Scenario: / {
-      if (e2e) next
-      sub(/^  Scenario: /, "")
-      printf "%s\"%s\"", sep, $0
+sep=""
+scenario=""
+step_nothing() {
+  :
+}
+while IFS= read -r line; do
+  case "$line" in
+    "  @e2e")
+      scenario=""
+      ;;
+    "  Scenario: "*)
+      title=${line#  Scenario: }
+      scenario=$title
+      names="$names$sep\"$title\""
       sep=","
-    }
-  ' "$feature")
-  if [ -n "$part" ]; then
-    if [ -n "$names" ]; then names="$names,$part"; else names="$part"; fi
-  fi
-done
+      ;;
+    "    Given nothing")
+      [ -n "$scenario" ] || { echo "step outside a scenario" >&2; exit 1; }
+      step_nothing
+      ;;
+    "    "*)
+      echo "unbound step: $line" >&2
+      exit 1
+      ;;
+  esac
+done < givn/specs/component.feature
 printf '{"scope":"component","total":2,"passed":2,"failed":0,"skipped":0,"scenarios":[%s]}\n' "$names" > "$GIVN_RESULT_FILE"
 "#;
 
@@ -220,6 +232,74 @@ fn a_passuff_shaped_copy_binds_two_binaries_and_accepts_a_missing_e2e_report() {
         Some(copy.join("target/debug").to_string_lossy().as_ref())
     );
     assert_eq!(record["product"]["sha256"].as_str().map(str::len), Some(64));
+}
+
+#[test]
+fn a_passuff_shaped_copy_runs_the_trial_through_compare_by_default() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    prepare(&copy);
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+        ],
+    );
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    let text = String::from_utf8_lossy(&output.stdout);
+    assert!(text.contains("Component scenarios: 2/2 executed"), "{text}");
+    assert!(text.contains("End-to-end tests: 1/1 executed"), "{text}");
+    assert!(text.contains("Trial result: passed"), "{text}");
+    let result = root.path().join("manifest.yaml.trial-result.json");
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&result).unwrap()).unwrap();
+    assert_eq!(record["clean"], true);
+    assert_eq!(
+        record["product"]["path"].as_str(),
+        Some(copy.join("target/debug").to_string_lossy().as_ref())
+    );
+}
+
+#[test]
+fn a_passuff_shaped_copy_without_a_component_runner_refuses_through_compare() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    write(&copy.join("scripts/verify.sh"), "#!/bin/sh\ntrue\n");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("component_executed=0/2"),
+        "stderr={}",
+        stderr(&output)
+    );
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("Trial result: passed"));
+    let result = root.path().join("manifest.yaml.trial-result.json");
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&result).unwrap()).unwrap();
+    assert_eq!(record["clean"], false);
+    assert_eq!(record["component"]["executed"], 0);
+    assert_eq!(record["component"]["declared"], 2);
 }
 
 #[test]

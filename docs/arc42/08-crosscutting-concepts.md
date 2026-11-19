@@ -1466,11 +1466,16 @@ coverage commands and paths
 when the addon is effective. An execution unit is one plain scenario or one
 Scenario Outline example row.
 
-`givn ise compare` remains read-only and prints `Trial result: unverified`; its
-exit 0 proves frozen-input equality only. `givn ise verify-trial` is the only
-command that executes the contract. It removes each raw result path first,
-runs the component command inside the copy and the frozen End-to-end command in
-the project working tree, and requires each fresh result to name every declared
+`givn ise compare` prints the two subject lines, executes the contract when
+they match, writes `ise-trial-result/v1` beside the manifest, and exits 0 only
+for `clean: true`; `--inputs-only` stops at frozen-input equality, executes
+nothing, writes no result, and prints `Trial result: unverified`. `givn ise
+verify-trial` is the explicit executor with a named result path. The result
+path refuses the manifest, the checkout, the copy, and a symlink; only a
+regular Givn trial result and regular Givn runner siblings are removed, and an
+unrelated or malformed file refuses. The executed trial runs the component
+command inside the copy and the frozen End-to-end command in the project
+working tree, and requires each fresh result to name every declared
 scenario title and to equal its declared count exactly with zero failed and
 zero skipped; it re-derives the multiset from the frozen `.feature` files and
 refuses a contract whose revision, counts, or titles differ. It requires the declared rebuilt product as a regular non-symlink
@@ -1568,6 +1573,9 @@ another Specification category also matches it. The comparison refuses a copy th
 lists among the Source code kept, naming it; kept content is not verified, so an
 edit is not a difference. The manifest carries no runner command; the
 independent verifier chooses and records the runner outside the manifest.
+`--inputs-only` makes the comparison's exit 0 mean both subject lines match;
+without the flag, a match continues into the trial and only a clean trial exits
+0. A difference prints `Trial result: not verified` and executes nothing.
 
 The End-to-end (E2E) checksums are revision-resolved: each path matched by the
 declared `e2e` role resolves to its nearest `Cargo.toml` directory at the

@@ -32,8 +32,8 @@ obligations are owned by the served instructions (`givn instructions <id>`).
 | `givn archive --change <id> [--verbose]` | Publish and verify a completed change forward-only on Git or Fossil. `--verbose` streams gate output with timestamps. Add-on drift from the change lock blocks archive. |
 | `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. Requires `ise` and `architecture_principles`; `--at` defaults to `HEAD`. |
 | `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. Requires at least one path. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report frozen-input equality between the spec-copy manifest, the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. It executes no trial command and prints `Trial result: unverified`. Exit `0` clean, `1` refusal or difference. |
-| `givn ise verify-trial --manifest <file> --copy <dir> --result <file> [--component-not-run <reason>]` | Execute the generated `givn/ise-verification.yaml` contract: run the component command inside the copy and the frozen End-to-end command in the checkout, require exact declared execution-unit counts with zero failed or skipped, run coverage when declared, and write an `ise-trial-result/v1` record. Exit `0` only for `clean: true`. |
+| `givn ise compare --manifest <file> --copy <dir> [--result <file>] [--inputs-only]` | Report frozen-input equality between the spec-copy manifest, the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. When both subjects match, execute the generated `givn/ise-verification.yaml` contract (the copy's declared commands), require exact declared execution-unit counts with zero failed or skipped, run coverage when declared, and write an `ise-trial-result/v1` record beside the manifest unless `--result` names a file. `--inputs-only` stops at input equality, executes nothing, writes no result, and prints `Trial result: unverified`. Exit `0` for a clean trial, or for matching inputs under `--inputs-only`; `1` refusal or difference. |
+| `givn ise verify-trial --manifest <file> --copy <dir> --result <file> [--component-not-run <reason>]` | Execute the generated contract with an explicit result path; the same gate as `compare`. Exit `0` only for `clean: true`. |
 | `givn eject <target> [--force]` | Materialize an embedded facet for editing, for example `design:template`, `review:instruction`, `skill:givn-propose`, `manifest`, `readme:template`. |
 | `givn addons list` / `enable <name>` / `disable <name>` | Show effective state and toggle one addon. `enable` checks the registered prerequisite relation first, scaffolds addon-owned files, and resyncs; `disable` refuses while a dependent addon is on, removes the workflow effect, and leaves existing project files. While a locked change is active, mutation is refused; the operator path is `--operator --reason "<reason>"` on an interactive terminal, recorded in the change lock. |
 | `givn skills sync` | Regenerate skills, reporters, managed `AGENTS.md` blocks, and ignore state for the persisted target selection. Recognizable old generated command files are removed; custom files are preserved with a manual notice. |
@@ -252,9 +252,10 @@ The runner receives:
 
 The result is `{"total": n, "passed": n, "failed": n, "skipped": n}`; `scope` is
 optional, but when present it must match the expected scope. An
-`ise verify-trial` result also carries `scenarios` (one title per execution
-unit, duplicates and outline rows preserved); its End-to-end result also
-carries `product` and `product_sha256`. Givn's own E2E
+executed ise trial result (`compare` or `verify-trial`) also carries
+`scenarios` (one title per execution unit, duplicates and outline rows
+preserved); its End-to-end result also carries `product` and
+`product_sha256`. Givn's own E2E
 package also reads `GIVN_BIN` (the built product binary, required) and
 `GIVN_READY_FIXTURE` (the built ready fixture, required by run-execution
 scenarios); `./run-tests.sh --e2e --package e2e` exports both. The harness reads
@@ -382,7 +383,8 @@ tasks`.
 revision's Specification into a plain directory, the spec copy, so the agent can
 rebuild the System from it. `givn ise compare` reports every difference between
 that copy, the project working tree, and the spec-copy manifest the command
-wrote. All three commands require the `ise` add-on and its
+wrote. `givn ise verify-trial` applies the same trial gate with an explicit
+result path. All four commands require the `ise` add-on and its
 `architecture_principles` prerequisite; with either off they refuse by name
 before the Specification Manifest or the spec-copy manifest is read.
 
@@ -390,7 +392,8 @@ before the Specification Manifest or the spec-copy manifest is read.
 | --- | --- |
 | `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. |
 | `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. |
+| `givn ise compare --manifest <file> --copy <dir> [--result <file>] [--inputs-only]` | Report every difference between the spec-copy manifest and the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests; then execute the trial when the inputs match, unless `--inputs-only` stops at input equality. |
+| `givn ise verify-trial --manifest <file> --copy <dir> --result <file> [--component-not-run <reason>]` | Execute the trial with an explicit result path; the same gate as `compare`. |
 
 **Rebuild form.** `--at` defaults to `HEAD`. `rebuild-all` takes no path.
 `rebuild-component` requires at least one path; none is a usage error with exit
@@ -748,22 +751,40 @@ Only the frozen inputs are compared with the project working tree: a file the
 rebuild adds under a `source:` entry is Source code, and the comparison never
 edits the copy.
 Every check runs before the report, so one run names every differing path.
-Exit codes: `0` clean or success, `1` refusal, difference, or read failure, `2`
-a clap usage error.
+Exit codes: `0` clean trial or, under `--inputs-only`, matching inputs; `1`
+refusal, difference, or read failure; `2` a clap usage error.
 
-`givn ise compare` is read-only and reports input equality only. After the two
-subject lines it prints:
+When a subject differs, `givn ise compare` prints the subject lines and:
 
 ```text
-Trial result: unverified (frozen inputs only; run `givn ise verify-trial ...`)
+Trial result: not verified (the frozen inputs differ; no trial command was executed)
 ```
 
-Exit `0` means the frozen inputs match; it does not mean the component corpus
-ran.
+When both match, it executes the generated contract with the gate below, writes
+the result beside the manifest unless `--result` names a file, and prints
+`Trial result: passed` only for `clean: true`. The result path is validated
+before the comparison: it must not equal the manifest, lie inside the checkout,
+lie inside the copy, or be a symlink. A previous file at the path is removed
+only when it is a regular Givn trial result, and each raw sibling only when it
+is a regular Givn runner result; a directory, symlink, malformed file, or
+unrelated file refuses. This revocation also runs when the inputs differ, so a
+stale clean record cannot certify a new attempt. `compare` executes the copy's
+declared component and End-to-end commands; run it only on a copy whose
+commands you accept.
+
+`--inputs-only` stops after the two subject lines and prints:
+
+```text
+Trial result: unverified (inputs only; no trial command was executed)
+```
+
+It executes no contract command and writes no result. Exit `0` means the frozen
+inputs match; it does not mean the component corpus ran.
 
 **Verify trial.** `givn ise verify-trial --manifest <file> --copy <dir>
---result <file>` is the only command that reports a whole-system trial result.
-It first requires `givn ise compare`'s frozen inputs to match, then reads the
+--result <file>` is the explicit executor; it applies the same gate as
+`givn ise compare` and is used when a caller names the result path or records a
+not-run decision. It first requires the frozen inputs to match, then reads the
 generated `givn/ise-verification.yaml` from the copy. The rebuild records that
 contract's path and checksum in the `ise-manifest/v1` manifest; a missing,
 changed, or unlisted contract refuses before any command runs.
@@ -777,8 +798,12 @@ Scenario Outline.
 
 It re-derives each tier's execution-unit multiset from the frozen `.feature`
 files in the copy and refuses a contract whose revision, counts, or titles
-differ. It removes each raw result file, runs the component command inside the
-copy with `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and
+differ. A rebuild is ordinary development: the builder writes the component
+runner, step definitions, fakes, and fixture builders the frozen scenarios
+need, points `verify.command` at that runner, and executes the component
+feature files in the copy. It does not delete, skip, or replace a component
+scenario. It removes each raw result file, runs the component command inside
+the copy with `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and
 `GIVN_RESULT_SCOPE=component`. It then requires the declared
 `verify.product_path` as a regular non-symlink file or directory inside the
 copy, hashes a file's bytes or a directory tree's regular files, and runs the frozen End-to-end command in the project working tree with
@@ -812,8 +837,9 @@ refused when the Specification declares component execution units; it never
 turns a declared corpus into a pass.
 
 Givn does not inspect external or manual trial reports such as
-`givn/trials/**/report.md`; they are outside Givn enforcement. Only
-`givn ise verify-trial` writes an `ise-trial-result/v1` with `clean: true`.
+`givn/trials/**/report.md`; they are outside Givn enforcement. Only an executed
+trial, through `givn ise compare` or `givn ise verify-trial`, writes an
+`ise-trial-result/v1` with `clean: true`; `--inputs-only` writes none.
 
 ### Archive verification and recovery
 

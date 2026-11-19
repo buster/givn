@@ -70,6 +70,8 @@ fn write_transcript(world: &GivnWorld) {
 // --- Batch 9: compare-report ----------------------------------------------
 
 const COMPARE_SCENARIO_TITLE: &str = "Verifier compares the spec copy with the manifest";
+const RUNS_TRIAL_SCENARIO_TITLE: &str =
+    "Verifier compares the spec copy with the manifest and runs the trial";
 
 fn compare_copy(world: &GivnWorld) -> PathBuf {
     world.ise_clean_room.trial_path().to_path_buf()
@@ -103,11 +105,31 @@ fn prepared_spec_copy(world: &mut GivnWorld) {
         "preparing the spec copy failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
+    ise_clean_room_support::write_trial_scripts(project_env(world), &compare_copy(world));
     world.last_output = Some(out);
 }
 
 #[when(regex = r#"^the verifier compares the spec copy with the manifest$"#)]
 fn verifier_compares(world: &mut GivnWorld) {
+    let copy = compare_copy(world).to_string_lossy().into_owned();
+    let manifest = compare_manifest(world).to_string_lossy().into_owned();
+    let out = common::run_givn(
+        project_env(world),
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.as_str(),
+            "--copy",
+            copy.as_str(),
+            "--inputs-only",
+        ],
+    );
+    world.last_output = Some(out);
+}
+
+#[when(regex = r#"^the verifier compares the spec copy with the manifest and runs the trial$"#)]
+fn verifier_compares_and_runs_the_trial(world: &mut GivnWorld) {
     let copy = compare_copy(world).to_string_lossy().into_owned();
     let manifest = compare_manifest(world).to_string_lossy().into_owned();
     let out = common::run_givn(
@@ -135,6 +157,15 @@ fn comparison_prints_two_lines(world: &mut GivnWorld, first: String, second: Str
     }
 }
 
+#[then(regex = r#"^comparison prints "([^"]+)"$"#)]
+fn comparison_prints_one_line(world: &mut GivnWorld, expected: String) {
+    let text = stdout(world);
+    assert!(
+        text.lines().any(|printed| printed == expected),
+        "stdout {text:?} does not print the line {expected:?}"
+    );
+}
+
 #[then(regex = r#"^comparison exits zero$"#)]
 fn comparison_exits_zero(world: &mut GivnWorld) {
     assert_eq!(
@@ -156,19 +187,25 @@ fn comparison_prints_no_removed_line(world: &mut GivnWorld) {
 }
 
 fn write_compare_transcript(world: &GivnWorld) {
-    if world.scenario_title.as_deref() != Some(COMPARE_SCENARIO_TITLE) {
+    let Some(title) = world.scenario_title.as_deref() else {
         return;
-    }
+    };
+    let inputs_only = match title {
+        COMPARE_SCENARIO_TITLE => true,
+        RUNS_TRIAL_SCENARIO_TITLE => false,
+        _ => return,
+    };
     let out = output(world);
-    let dir = crate::harness::terminal_evidence::transcript_dir(COMPARE_SCENARIO_TITLE);
+    let dir = crate::harness::terminal_evidence::transcript_dir(title);
     std::fs::create_dir_all(&dir).expect("create the transcript directory");
+    let flag = if inputs_only { " --inputs-only" } else { "" };
     let argv = format!(
-        "givn ise compare --manifest {} --copy {}",
+        "givn ise compare --manifest {} --copy {}{flag}",
         compare_manifest(world).display(),
         compare_copy(world).display()
     );
     let text = format!(
-        "Scenario: {COMPARE_SCENARIO_TITLE}\n\
+        "Scenario: {title}\n\
          argv: {argv}\n\
          cwd (fixture project root): {}\n\
          binary: the compiled `givn` the scenario spawns (GIVN_BIN)\n\

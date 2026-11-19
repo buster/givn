@@ -287,3 +287,47 @@ frozen-input equality as unverified`, `Verification refuses a missing component
 runner`, `Verification records the exact declared counts`, `Verification
 refuses an exact count mismatch`, and `A not-run decision cannot replace
 declared component units` drive the real commands through the binary.
+
+## Amendment 2026-11-19: compare executes the trial by default
+
+The 2026-11-18 amendment made `givn ise compare` read-only and
+`givn ise verify-trial` the only executor. A whole-system Passuff rebuild then
+exited 0 from `compare` with `Trial result: unverified`, and the harness treated
+that as success without running the 215 component scenarios.
+
+This amendment supersedes the earlier rejected alternative. `givn ise compare`
+is the normal trial command: after frozen-input equality it executes the
+contract with the same gate as `verify-trial`, writes the
+`ise-trial-result/v1` record beside the manifest unless `--result` names a
+file, prints `Trial result: passed` only for `clean: true`, and exits 0 only
+then. A stale Givn-owned result at the selected path is revoked before the
+comparison, even when the inputs differ. The path must not be the manifest, lie
+inside the checkout or the copy, or be a symlink; only a regular Givn trial
+result and regular Givn runner siblings are removed, and an unrelated or
+malformed file refuses. `--inputs-only` keeps the 2026-11-18 read-only
+semantics: it executes nothing,
+writes no result, prints
+`Trial result: unverified (inputs only; no trial command was executed)`, and
+exits 0 only for matching inputs. `givn ise verify-trial` remains the explicit
+executor for a named result path and a `--component-not-run` decision.
+
+The earlier security objection is not dismissed: `compare` now runs the copy's
+declared component and End-to-end commands, so it is unsafe on an untrusted
+copy. The command's help, the reference, and the served ise guidance state
+that; `--inputs-only` is the safe inspection path. Default execution is the fix
+because a command that returned green on input equality alone was the observed
+failure mode.
+
+The component tier remains an execution gate, not a coverage ratio: a rebuild
+writes the component runner, step definitions, fakes, and fixture builders the
+frozen scenarios need, executes the component feature files in the copy, and
+records per-tier coverage when declared. A subprocess End-to-end report stays
+uninstrumented; a coverage number never substitutes for the declared scenario
+execution.
+
+### Amendment Confirmation
+
+`Verifier compares the spec copy with the manifest and runs the trial`,
+`Comparison labels frozen-input equality as unverified`, `Comparison refuses a
+missing component runner`, and `Comparison refuses a trial result inside the
+spec copy` drive the real commands through the binary.

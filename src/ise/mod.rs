@@ -26,7 +26,8 @@ mod verify;
 pub use compare::{CompareReport, CompareRequest, Difference, DifferenceKind, compare};
 pub(crate) use manifest::abbreviate;
 pub use verify::{
-    CoverageNumbers, TierReport, TrialCoverage, TrialReport, VerifyRequest, verify_trial,
+    CoverageNumbers, TierReport, TrialCoverage, TrialReport, VerifyRequest, prepare_trial_result,
+    verify_trial,
 };
 
 /// What one rebuild command replaces.

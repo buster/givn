@@ -103,8 +103,8 @@ fail if the project configuration drifts from the record. An operator can use
 | `givn commit -m "<msg>" <paths...>` | Commit explicit paths for a behavior batch without sweeping in unrelated working-tree edits. |
 | `givn ise rebuild-all --into <dir> [--manifest <file>]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. |
 | `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report frozen-input equality: the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. It executes no trial command and prints `Trial result: unverified`. |
-| `givn ise verify-trial --manifest <file> --copy <dir> --result <file>` | Execute the generated verification contract and record the only whole-system trial result: exact declared component and End-to-end counts, zero failed or skipped, and per-tier coverage. |
+| `givn ise compare --manifest <file> --copy <dir> [--result <file>] [--inputs-only]` | Report frozen-input equality: the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. When both match, execute the generated verification contract and write the whole-system trial result beside the manifest; `--inputs-only` stops at input equality and prints `Trial result: unverified`. |
+| `givn ise verify-trial --manifest <file> --copy <dir> --result <file>` | Execute the generated verification contract with an explicit result path: exact declared component and End-to-end counts, zero failed or skipped, and per-tier coverage. |
 
 The `ise` addon applies [The Ise Principle](https://iseprinciple.org) to a Givn project. The site is framework-agnostic and names no Givn command, flag, or record.
 

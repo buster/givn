@@ -295,7 +295,7 @@ enum IseCommands {
         #[arg(long)]
         dry_run: bool,
     },
-    /// Compare a prepared spec copy with the manifest that recorded it.
+    /// Compare a prepared spec copy and run the trial when the inputs match.
     Compare {
         /// The manifest the preparation wrote.
         #[arg(long)]
@@ -303,6 +303,15 @@ enum IseCommands {
         /// The spec copy the manifest describes.
         #[arg(long)]
         copy: PathBuf,
+        /// Write the ise-trial-result/v1 record here; defaults beside the
+        /// manifest. The command executes the copy's declared commands when
+        /// the frozen inputs match.
+        #[arg(long, conflicts_with = "inputs_only")]
+        result: Option<PathBuf>,
+        /// Compare the frozen inputs only; execute no trial command and claim
+        /// no trial result.
+        #[arg(long)]
+        inputs_only: bool,
     },
     /// Execute a trial's verification contract and require its declared tiers.
     VerifyTrial {
@@ -692,9 +701,20 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         dry_run,
                     },
                 ),
-                IseCommands::Compare { manifest, copy } => {
-                    cli::ise::compare(&project_root, &ise::CompareRequest { manifest, copy })
-                }
+                IseCommands::Compare {
+                    manifest,
+                    copy,
+                    result,
+                    inputs_only,
+                } => cli::ise::compare(
+                    &project_root,
+                    &cli::ise::CompareCommand {
+                        manifest,
+                        copy,
+                        result,
+                        inputs_only,
+                    },
+                ),
                 IseCommands::VerifyTrial {
                     manifest,
                     copy,

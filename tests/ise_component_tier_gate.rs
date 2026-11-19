@@ -1,8 +1,9 @@
 //! The component-tier gate's acceptance fixture.
 //!
 //! A rebuilt project declares ten component scenarios and one `@e2e`
-//! scenario. The frozen-input comparison is read-only; only `verify-trial`
-//! can report a whole-system pass, and it requires the exact declared counts.
+//! scenario. `compare` runs the trial after the frozen inputs match; its
+//! `--inputs-only` form is read-only. Both paths require the exact declared
+//! counts, and only the executed trial prints a pass.
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
@@ -54,24 +55,62 @@ sha=$(sha256sum "$product" | cut -d' ' -f1)
 printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
 "#;
 
-/// A corpus-reading component runner. It builds the declared product and
-/// names every non-`@e2e` title; a count-only script cannot satisfy the gate.
-fn component_script(total: usize) -> String {
+/// A component runner with a real `Given nothing` step binding. It parses the
+/// frozen feature, executes the step for every non-`@e2e` scenario, and names
+/// the executed titles. The reported count is the script's argument so the
+/// count-mismatch fixtures can under-report a real execution.
+fn component_script(reported: usize) -> String {
     format!(
         r#"#!/bin/sh
 set -eu
 mkdir -p target/debug
 printf 'rebuilt gate product\n' > target/debug/gate-product
-names=$(awk '
-  /^  @e2e/ {{ e2e=1; next }}
-  /^  Scenario: / {{
-    if (e2e) {{ e2e=0; next }}
-    sub(/^  Scenario: /, "")
-    printf "%s\"%s\"", sep, $0
-    sep=","
-  }}
-' givn/specs/demo.feature)
-printf '{{"scope":"component","total":{total},"passed":{total},"failed":0,"skipped":0,"scenarios":[%s]}}\n' "$names" > "$GIVN_RESULT_FILE"
+
+step_nothing() {{
+  :
+}}
+
+names=""
+sep=""
+scenario=""
+e2e=0
+skip=0
+while IFS= read -r line; do
+  case "$line" in
+    "  @e2e")
+      e2e=1
+      ;;
+    "  Scenario: "*)
+      if [ "$e2e" -eq 1 ]; then
+        e2e=0
+        skip=1
+        scenario=""
+        continue
+      fi
+      skip=0
+      title=${{line#  Scenario: }}
+      scenario=$title
+      names="$names$sep\"$title\""
+      sep=","
+      ;;
+    "    Given nothing")
+      if [ "$skip" -eq 1 ]; then
+        continue
+      fi
+      if [ -z "$scenario" ]; then
+        echo "step outside a scenario" >&2
+        exit 1
+      fi
+      step_nothing
+      ;;
+    "    "*)
+      echo "unbound step: $line" >&2
+      exit 1
+      ;;
+  esac
+done < givn/specs/demo.feature
+
+printf '{{"scope":"component","total":{reported},"passed":{reported},"failed":0,"skipped":0,"scenarios":[%s]}}\n' "$names" > "$GIVN_RESULT_FILE"
 "#
     )
 }
@@ -369,8 +408,14 @@ fn a_passing_component_and_e2e_result_records_the_counts() {
     assert!(record["product"]["sha256"].as_str().unwrap().len() == 64);
 }
 
+/// The default result path `compare` derives from the manifest.
+fn default_result(manifest: &Path) -> PathBuf {
+    let name = manifest.file_name().expect("manifest file name");
+    manifest.with_file_name(format!("{}.trial-result.json", name.to_string_lossy()))
+}
+
 #[test]
-fn compare_is_read_only_and_prints_unverified() {
+fn compare_inputs_only_is_read_only_and_prints_unverified() {
     let (root, project) = fixture();
     let manifest = rebuild(&project, root.path());
     let copy = root.path().join("copy");
@@ -385,18 +430,85 @@ fn compare_is_read_only_and_prints_unverified() {
             manifest.to_str().unwrap(),
             "--copy",
             copy.to_str().unwrap(),
+            "--inputs-only",
         ],
     );
 
     assert!(
         output.status.success(),
-        "compare must stay read-only: {}",
+        "--inputs-only must stay read-only: {}",
         stderr(&output)
     );
     assert!(stdout(&output).contains("Specification files: match"));
     assert!(stdout(&output).contains("End-to-end tests: match"));
     assert!(stdout(&output).contains("Trial result: unverified"));
     assert!(!stdout(&output).contains("Trial result: passed"));
+    assert!(
+        !default_result(&manifest).exists(),
+        "--inputs-only must write no trial result"
+    );
+}
+
+#[test]
+fn compare_runs_the_trial_and_records_a_clean_result() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    replace_component_script(&copy, &component_script(10));
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+        ],
+    );
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert!(stdout(&output).contains("Component scenarios: 10/10 executed"));
+    assert!(stdout(&output).contains("End-to-end tests: 1/1 executed"));
+    assert!(stdout(&output).contains("Trial result: passed"));
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(default_result(&manifest)).unwrap()).unwrap();
+    assert_eq!(record["clean"], true);
+    assert_eq!(record["component"]["executed"], 10);
+}
+
+#[test]
+fn compare_refuses_a_missing_component_runner() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    replace_component_script(&copy, "#!/bin/sh\ntrue\n");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("component_executed=0/10"),
+        "stderr={}",
+        stderr(&output)
+    );
+    assert!(!stdout(&output).contains("Trial result: passed"));
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(default_result(&manifest)).unwrap()).unwrap();
+    assert_eq!(record["clean"], false);
+    assert_eq!(record["component"]["executed"], 0);
+    assert_eq!(record["component"]["declared"], 10);
 }
 
 #[test]
@@ -560,6 +672,260 @@ fn a_symlink_result_path_refuses() {
     assert!(
         !target.exists(),
         "the result must not be written inside the copy"
+    );
+}
+
+#[test]
+fn a_result_path_equal_to_the_manifest_refuses_without_deleting_it() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let before = std::fs::read(&manifest).expect("read the manifest");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            manifest.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("is the manifest"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(std::fs::read(&manifest).expect("manifest survives"), before);
+}
+
+#[test]
+fn verify_trial_refuses_a_result_equal_to_the_manifest_without_deleting_it() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let before = std::fs::read(&manifest).expect("read the manifest");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            manifest.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("is the manifest"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(std::fs::read(&manifest).expect("manifest survives"), before);
+}
+
+#[test]
+fn a_result_path_inside_the_checkout_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            "trial.json",
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("inside the checkout"),
+        "{}",
+        stderr(&output)
+    );
+    assert!(!project.join("trial.json").exists());
+}
+
+#[test]
+fn an_existing_non_givn_result_is_never_deleted() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let result = root.path().join("trial.json");
+    write(&result, "keep me\n");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("not a Givn trial result"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(std::fs::read_to_string(&result).unwrap(), "keep me\n");
+}
+
+#[test]
+fn a_non_givn_raw_sibling_is_never_deleted() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let raw = default_result(&manifest).with_file_name(format!(
+        "{}.component",
+        default_result(&manifest)
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+    ));
+    write(&raw, "keep me\n");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("component runner result"),
+        "{}",
+        stderr(&output)
+    );
+    assert_eq!(std::fs::read_to_string(&raw).unwrap(), "keep me\n");
+}
+
+#[test]
+fn a_previous_givn_result_is_revoked_on_an_input_difference() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let result = default_result(&manifest);
+    write(
+        &result,
+        "{\"scope\":\"ise-trial-result/v1\",\"clean\":true}\n",
+    );
+    write(
+        &copy.join("givn/specs/demo.feature"),
+        "Feature: drifted\n\n  Scenario: drifted\n    Given nothing\n",
+    );
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stdout(&output).contains("Trial result: not verified"),
+        "{}",
+        stdout(&output)
+    );
+    assert!(
+        !result.exists(),
+        "a stale clean result must not survive an input difference"
+    );
+}
+
+#[test]
+fn a_default_result_inside_the_checkout_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let inside = project.join("manifest.yaml");
+    std::fs::copy(&manifest, &inside).expect("copy the manifest into the checkout");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            inside.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("inside the checkout"),
+        "{}",
+        stderr(&output)
+    );
+    assert!(!project.join("manifest.yaml.trial-result.json").exists());
+}
+
+#[test]
+fn inputs_only_leaves_a_previous_givn_result_untouched() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    let result = default_result(&manifest);
+    write(
+        &result,
+        "{\"scope\":\"ise-trial-result/v1\",\"clean\":true}\n",
+    );
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--inputs-only",
+        ],
+    );
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    assert_eq!(
+        std::fs::read_to_string(&result).unwrap(),
+        "{\"scope\":\"ise-trial-result/v1\",\"clean\":true}\n"
     );
 }
 

@@ -1110,3 +1110,73 @@ fn guidance_compare_is_input_equality_only(world: &mut GivnWorld) {
         "the served ise guidance does not separate input equality from a trial result: {content}"
     );
 }
+
+#[then("the guidance names \"givn ise compare\" as the normal executed trial path")]
+fn guidance_compare_is_the_normal_trial_path(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("`givn ise compare` is the normal trial command"),
+        "the served ise guidance does not name compare as the normal executed trial path: {content}"
+    );
+}
+
+#[then("the guidance states that \"givn ise verify-trial\" remains the explicit executor")]
+fn guidance_verify_trial_is_the_explicit_executor(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("`givn ise verify-trial` remains the explicit executor"),
+        "the served ise guidance does not keep verify-trial as the explicit executor: {content}"
+    );
+}
+
+#[then("the guidance states that \"--inputs-only\" prints \"Trial result: unverified\"")]
+fn guidance_inputs_only_is_unverified(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("--inputs-only") && content.contains("Trial result: unverified"),
+        "the served ise guidance does not label --inputs-only as unverified: {content}"
+    );
+}
+
+#[then(
+    "the guidance requires the builder to write the component runner step definitions and fakes"
+)]
+fn guidance_requires_component_runner_steps_and_fakes(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("builder writes the component runner, step definitions, fakes"),
+        "the served ise guidance does not require the component runner, steps, and fakes: {content}"
+    );
+}
+
+#[then(
+    "the guidance requires the component feature files to execute even though they stay in the Specification"
+)]
+fn guidance_requires_component_feature_execution(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("executes the component feature files in the copy"),
+        "the served ise guidance does not require the component feature files to execute: {content}"
+    );
+}
+
+#[then("the guidance requires per-tier coverage and an uninstrumented End-to-end report")]
+fn guidance_requires_per_tier_coverage(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("Record each tier's line and branch coverage")
+            && content.contains("subprocess End-to-end report is declared uninstrumented"),
+        "the served ise guidance does not require per-tier coverage and an uninstrumented End-to-end report: {content}"
+    );
+}
+
+#[then(
+    "the guidance refuses a coverage number as a substitute for the declared scenario execution"
+)]
+fn guidance_coverage_never_substitutes(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("a coverage number never substitutes for the executed component corpus"),
+        "the served ise guidance lets coverage substitute for scenario execution: {content}"
+    );
+}

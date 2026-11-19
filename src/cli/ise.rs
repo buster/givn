@@ -2,16 +2,29 @@
 //!
 //! The library entry points return the process exit code; only the binary
 //! wrapper in `main.rs` converts it with `std::process::exit`. All domain
-//! decisions live in `crate::ise`; this module owns the `ise rebuild-all:`
-//! and `ise rebuild-component:` prefixes, the report lines, and the exit
-//! mapping.
+//! decisions live in `crate::ise`; this module owns the command flow, the
+//! `ise rebuild-all:` and `ise rebuild-component:` prefixes, the report lines,
+//! and the exit mapping.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::ise::{
     CompareReport, CompareRequest, Difference, DifferenceKind, RebuildRequest, Report, TierReport,
     TrialReport, VerifyRequest, abbreviate,
 };
+
+/// `givn ise compare`'s parsed command: the frozen inputs, then the trial.
+#[derive(Debug, Clone)]
+pub struct CompareCommand {
+    /// The manifest the preparation wrote.
+    pub manifest: PathBuf,
+    /// The spec copy the manifest describes.
+    pub copy: PathBuf,
+    /// Where the trial result is written; defaults beside the manifest.
+    pub result: Option<PathBuf>,
+    /// Compare the frozen inputs only; execute no trial command.
+    pub inputs_only: bool,
+}
 
 /// Run `ise rebuild-all` and return its process exit code.
 pub fn rebuild_all(project_root: &Path, request: &RebuildRequest) -> i32 {
@@ -37,23 +50,83 @@ fn rebuild(project_root: &Path, request: &RebuildRequest, verb: &str) -> i32 {
     }
 }
 
-/// Run `ise compare` and return its process exit code.
-pub fn compare(project_root: &Path, request: &CompareRequest) -> i32 {
-    match crate::ise::compare(project_root, request) {
+/// Run `ise compare`: compare the frozen inputs, then run the trial when they
+/// match. Return the process exit code.
+pub fn compare(project_root: &Path, command: &CompareCommand) -> i32 {
+    let request = CompareRequest {
+        manifest: command.manifest.clone(),
+        copy: command.copy.clone(),
+    };
+    let result = command
+        .result
+        .clone()
+        .unwrap_or_else(|| default_result_path(&command.manifest));
+
+    // Validate the result path and revoke a previous Givn-owned record before
+    // the comparison, including when the inputs differ. `--inputs-only` writes
+    // no result and must not touch one.
+    if !command.inputs_only
+        && let Err(error) = crate::ise::prepare_trial_result(
+            project_root,
+            &command.manifest,
+            &command.copy,
+            &result,
+        )
+    {
+        eprintln!("ise compare: {error:#}");
+        return 1;
+    }
+
+    let report = match crate::ise::compare(project_root, &request) {
+        Ok(report) => report,
+        Err(error) => {
+            eprintln!("ise compare: {error:#}");
+            return 1;
+        }
+    };
+    print!("{}", render_comparison(&report));
+
+    if command.inputs_only {
+        println!("Trial result: unverified (inputs only; no trial command was executed)");
+        return if report.is_clean() { 0 } else { 1 };
+    }
+
+    if !report.is_clean() {
+        println!(
+            "Trial result: not verified (the frozen inputs differ; no trial command was executed)"
+        );
+        return 1;
+    }
+
+    match crate::ise::verify_trial(
+        project_root,
+        &VerifyRequest {
+            manifest: command.manifest.clone(),
+            copy: command.copy.clone(),
+            result,
+            component_not_run: None,
+        },
+    ) {
         Ok(report) => {
-            print!("{}", render_comparison(&report));
-            println!(
-                "Trial result: unverified (frozen inputs only; run `givn ise verify-trial --manifest {} --copy {} --result <file>`)",
-                request.manifest.display(),
-                request.copy.display()
-            );
-            if report.is_clean() { 0 } else { 1 }
+            print!("{}", render_trial(&report));
+            0
         }
         Err(error) => {
             eprintln!("ise compare: {error:#}");
             1
         }
     }
+}
+
+/// The default trial result: beside the manifest, outside the spec copy.
+fn default_result_path(manifest: &Path) -> PathBuf {
+    let name = manifest
+        .file_name()
+        .map(|name| name.to_os_string())
+        .unwrap_or_else(|| "ise-manifest.yaml".into());
+    let mut result = name;
+    result.push(".trial-result.json");
+    manifest.with_file_name(result)
 }
 
 /// Run `ise verify-trial` and return its process exit code.

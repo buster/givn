@@ -114,8 +114,8 @@ working tree.
 |---|---|
 | `givn ise rebuild-all --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which every declared `source:` entry is removed. |
 | `givn ise rebuild-component <path>... --into <dir> [--at <revision>] [--manifest <file>] [--dry-run]` | Writes the spec copy in which one Component's Source code is removed; neighbouring Components and their Component Interfaces stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Reports frozen-input equality: the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests against the manifest. It executes no trial command and claims no trial result. |
-| `givn ise verify-trial --manifest <file> --copy <dir> --result <file> [--component-not-run <reason>]` | Executes the generated verification contract and records the only whole-system trial result. |
+| `givn ise compare --manifest <file> --copy <dir> [--result <file>] [--inputs-only]` | Reports frozen-input equality: the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests against the manifest. When both subjects match, it executes the generated verification contract, writes the `ise-trial-result/v1` record (beside the manifest unless `--result` names a file), and exits 0 only for a clean trial. `--inputs-only` stops after input equality, executes no trial command, writes no result, and prints `Trial result: unverified`. It runs the copy's declared commands, so use it only on a copy whose commands you accept. |
+| `givn ise verify-trial --manifest <file> --copy <dir> --result <file> [--component-not-run <reason>]` | Executes the generated verification contract with an explicit result path. It is the explicit form for a caller that names the result or records a not-run decision; the gate is the same one `compare` uses. |
 
 A refusal prints `ise rebuild-all:`, `ise rebuild-component:`, `ise compare:`, or
 `ise verify-trial:` to match the command that refused.
@@ -135,10 +135,23 @@ the coverage addon is effective.
 An execution unit is one plain scenario, or one example row of a Scenario
 Outline. The declared count matches what the runner expands and executes.
 
-`givn ise compare` is read-only. Its two `match` lines prove frozen-input
-equality. It prints `Trial result: unverified` and never claims that the
-component corpus ran. A whole-system trial result requires
-`givn ise verify-trial`, which:
+`givn ise compare` is the normal trial command. Its two `match` lines prove
+frozen-input equality, and then it executes the contract and prints the tier
+lines and `Trial result: passed` only for a clean trial. The result path must
+not be the manifest, lie inside the checkout or the copy, or be a symlink; a
+previous file is removed only when it is a regular Givn result, and the
+revocation runs before the comparison even when the inputs differ.
+`--inputs-only` stops after the two `match` lines, executes no contract
+command, writes no result, and prints
+`Trial result: unverified (inputs only; no trial command was executed)`.
+`givn ise verify-trial` remains the explicit executor when a caller names the
+result path or records a not-run decision.
+
+A whole-system trial result requires the executed contract. `givn ise compare`
+is read-only only with `--inputs-only`, which proves frozen-input equality and
+prints `Trial result: unverified`.
+
+The executed trial:
 
 - re-derives each tier's execution-unit multiset from the frozen `.feature`
   files in the copy and refuses a contract whose revision, counts, or titles
@@ -176,13 +189,15 @@ records the decision without a pass.
 
 Givn does not inspect an external trial report or a project's trial-record
 directory: those reports are outside Givn enforcement. The honest claim is that
-`givn ise verify-trial` is the only command that writes an
-`ise-trial-result/v1` with `clean: true`; a report written by another tool,
-including a manual trial report, is not a Givn trial result.
+only an executed trial, through `givn ise compare` or `givn ise verify-trial`,
+writes an `ise-trial-result/v1` with `clean: true`; `--inputs-only` writes no
+result, and a report written by another tool, including a manual trial report,
+is not a Givn trial result.
 
-Do not present `givn ise compare`'s two `match` lines as a whole-system
-rebuild result. Do not present a green frozen End-to-end suite as coverage of
-the component corpus.
+Do not present `givn ise compare`'s two `match` lines alone as a whole-system
+rebuild result; the command's default path continues into the trial, while
+`--inputs-only` prints `Trial result: unverified`. Do not present a green
+frozen End-to-end suite as coverage of the component corpus.
 
 ## The spec copy rule
 
@@ -248,6 +263,18 @@ makes no clean-room claim.
   definition and survives a rebuild. Component scenarios stay in the
   Specification unchanged; only their step definitions and fakes are
   implementation and may be rewritten inside the Component boundary.
+- **Component workflow** — a rebuild is ordinary development. The frozen
+  component `Scenario:` blocks stay in the spec copy as Specification; the
+  builder writes the component runner, step definitions, fakes, and fixture
+  builders they need, points the declared component command at that runner,
+  and executes the component feature files in the copy. Do not delete, skip,
+  or replace a component scenario: that is a Specification edit, not a
+  rebuild. A missing runner, an empty runner, or a command that executed fewer
+  than the declared units refuses with `component_executed=<executed>/<declared>`;
+  a green End-to-end suite or a coverage number never substitutes for the
+  executed component corpus. Record each tier's line and branch coverage when
+  the contract declares it; a subprocess End-to-end report is declared
+  uninstrumented, not converted into a percentage gate.
 - **Persisted-state continuity** — a replacement preserves persisted state and
   public contracts; a required manual migration is a blocked rebuild.
 - **Ise rebuild decision** — the change records one decision as a

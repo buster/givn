@@ -1143,27 +1143,35 @@ checksums.
    is owned by this step on the project side, even when another Specification
    role also matches it.
 9. Print the two subject lines, one `- <path>` line per changed or missing path,
-   one `+ <path>` line per added path, and exit 1; or print both as `match` and
-   exit 0. A path that differs on both sides prints one line, counted and owned
-   by `End-to-end tests` when the project side owns it and by `Specification
-   files` otherwise. In both cases print `Trial result: unverified`; the
-   comparison executes no contract command and its exit 0 proves frozen-input
-   equality only.
+   one `+ <path>` line per added path. A path that differs on both sides prints
+   one line, counted and owned by `End-to-end tests` when the project side owns
+   it and by `Specification files` otherwise. A difference prints
+   `Trial result: not verified (the frozen inputs differ; no trial command was
+   executed)` and exits 1. Both `match` prints either the `--inputs-only`
+   `Trial result: unverified (inputs only; no trial command was executed)` with
+   no result written, or the Verify trial flow below (result beside the
+   manifest unless `--result` names a file); only that flow prints
+   `Trial result: passed` and exits 0.
 
 ### Verify trial
 
 1. Load the effective configuration and require `ise` plus its prerequisite.
-2. Run the read-only comparison. A non-clean comparison refuses before any
-   trial command runs.
-3. Read the manifest and the generated contract. A manifest without a
+2. Resolve the result path under the project root. Refuse a path equal to the
+   manifest, inside the checkout, inside the copy, or a symlink. Remove a
+   previous result and both raw runner-result paths only when each is a regular
+   Givn result; a directory, symlink, malformed file, or unrelated file
+   refuses.
+3. Run the read-only comparison. A non-clean comparison refuses before any
+   trial command runs; the previous result is already revoked.
+4. Read the manifest and the generated contract. A manifest without a
    verification record, a missing contract, or a checksum mismatch refuses by
    name.
-4. Resolve `--result` under the project root and refuse a path inside the copy.
-   Remove the two raw runner-result paths so a stale result cannot pass.
 5. Re-derive each tier's execution-unit multiset from the frozen `.feature`
    files in the copy and refuse a contract whose revision, counts, or titles
-   differ. Run the component command inside the copy with `GIVN_FEATURES`,
-   `GIVN_RESULT_FILE`, and `GIVN_RESULT_SCOPE=component`. Require a fresh
+   differ. The builder's ordinary development writes the component runner,
+   step definitions, fakes, and fixture builders; the frozen component
+   scenarios stay in the copy. Run the component command inside the copy with
+   `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and `GIVN_RESULT_SCOPE=component`. Require a fresh
    result that carries that multiset and whose `total` equals the declared
    count exactly, with failed and skipped zero and reconciling counts.
    A missing or malformed result, a count-only or title-less result, a non-zero

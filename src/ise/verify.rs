@@ -115,6 +115,162 @@ pub struct TrialCoverage {
     pub end_to_end: CoverageNumbers,
 }
 
+/// Resolve the trial result path, refuse a path that could destroy the
+/// manifest, the checkout, or the copy, and remove a previous Givn-owned
+/// result. A file that is not a Givn result is never removed.
+pub fn prepare_trial_result(
+    project_root: &Path,
+    manifest: &Path,
+    copy: &Path,
+    result: &Path,
+) -> Result<PathBuf> {
+    let checkout = project_root.canonicalize().with_context(|| {
+        format!(
+            "resolve the project root '{}' for the trial result",
+            project_root.display()
+        )
+    })?;
+    let copy = copy
+        .canonicalize()
+        .with_context(|| format!("resolve the spec copy '{}'", copy.display()))?;
+    let manifest = super::resolved_target(manifest, project_root)?;
+    let raw_result = if result.is_absolute() {
+        result.to_path_buf()
+    } else {
+        project_root.join(result)
+    };
+    if std::fs::symlink_metadata(&raw_result)
+        .is_ok_and(|metadata| metadata.file_type().is_symlink())
+    {
+        bail!(
+            "the trial result '{}' is a symlink; the result is evidence written to a regular path",
+            raw_result.display()
+        );
+    }
+    let result = super::resolved_target(result, project_root)?;
+
+    if result == manifest {
+        bail!(
+            "the trial result '{}' is the manifest; choose another result path",
+            result.display()
+        );
+    }
+    if result.starts_with(&copy) {
+        bail!(
+            "the trial result '{}' is inside the spec copy '{}'; the result is evidence outside the copy",
+            result.display(),
+            copy.display()
+        );
+    }
+    if result.starts_with(&checkout) {
+        bail!(
+            "the trial result '{}' is inside the checkout '{}'; the result is evidence outside the checkout",
+            result.display(),
+            checkout.display()
+        );
+    }
+    if std::fs::symlink_metadata(&result).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
+        bail!(
+            "the trial result '{}' is a symlink; the result is evidence written to a regular path",
+            result.display()
+        );
+    }
+
+    revoke_previous_result(&result, PreviousResult::Trial)?;
+    revoke_previous_result(&sibling(&result, "component"), PreviousResult::Component)?;
+    revoke_previous_result(&sibling(&result, "e2e"), PreviousResult::EndToEnd)?;
+    Ok(result)
+}
+
+/// The prior result a rerun may replace.
+#[derive(Debug, Clone, Copy)]
+enum PreviousResult {
+    Trial,
+    Component,
+    EndToEnd,
+}
+
+impl PreviousResult {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Trial => "trial result",
+            Self::Component => "component runner result",
+            Self::EndToEnd => "End-to-end runner result",
+        }
+    }
+
+    fn owned(self, bytes: &[u8]) -> bool {
+        let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
+            return false;
+        };
+        let Some(object) = value.as_object() else {
+            return false;
+        };
+        match self {
+            Self::Trial => {
+                object.get("scope").and_then(|value| value.as_str()) == Some("ise-trial-result/v1")
+                    && object
+                        .get("clean")
+                        .and_then(|value| value.as_bool())
+                        .is_some()
+            }
+            Self::Component | Self::EndToEnd => {
+                if let Some(scope) = object.get("scope") {
+                    let expected = match self {
+                        Self::Component => "component",
+                        Self::EndToEnd => "e2e",
+                        Self::Trial => unreachable!(),
+                    };
+                    if scope.as_str() != Some(expected) {
+                        return false;
+                    }
+                }
+                ["total", "passed", "failed", "skipped"]
+                    .iter()
+                    .all(|key| object.get(*key).and_then(|value| value.as_u64()).is_some())
+            }
+        }
+    }
+}
+
+/// Remove one previous result only when it is a regular Givn result. A
+/// directory, symlink, malformed file, or unrelated file refuses.
+fn revoke_previous_result(path: &Path, kind: PreviousResult) -> Result<()> {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.file_type().is_symlink() => {
+            bail!(
+                "refusing to remove '{}': it is a symlink, not a Givn {}",
+                path.display(),
+                kind.label()
+            );
+        }
+        Ok(metadata) if !metadata.is_file() => {
+            bail!(
+                "refusing to remove '{}': it is not a regular Givn {}",
+                path.display(),
+                kind.label()
+            );
+        }
+        Ok(_) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(error) => {
+            return Err(error)
+                .with_context(|| format!("inspect the previous result '{}'", path.display()));
+        }
+    }
+    let bytes = std::fs::read(path)
+        .with_context(|| format!("read the previous result '{}'", path.display()))?;
+    if !kind.owned(&bytes) {
+        bail!(
+            "refusing to remove '{}': it is not a Givn {}; choose a new result path",
+            path.display(),
+            kind.label()
+        );
+    }
+    std::fs::remove_file(path)
+        .with_context(|| format!("remove the previous result '{}'", path.display()))
+}
+
 /// Verify one trial through its generated contract.
 pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<TrialReport> {
     let effective = load_effective_at(project_root).with_context(|| {
@@ -124,6 +280,17 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         )
     })?;
     require_addons(&effective)?;
+
+    let result = prepare_trial_result(
+        project_root,
+        &request.manifest,
+        &request.copy,
+        &request.result,
+    )?;
+    let copy = request
+        .copy
+        .canonicalize()
+        .with_context(|| format!("resolve the spec copy '{}'", request.copy.display()))?;
 
     // Input equality is a precondition, never the trial result.
     let comparison = super::compare(
@@ -142,10 +309,6 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
     let manifest_before = std::fs::read(&request.manifest)
         .with_context(|| format!("read the manifest '{}'", request.manifest.display()))?;
     let recorded = Manifest::read(&request.manifest)?;
-    let copy = request
-        .copy
-        .canonicalize()
-        .with_context(|| format!("resolve the spec copy '{}'", request.copy.display()))?;
     require_recorded_copy(&request.manifest, &recorded, &copy)?;
     let (contract, contract_before) = read_contract(&recorded, &copy)?;
     if contract.revision != recorded.revision {
@@ -187,21 +350,6 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
             "the verification contract declares {} End-to-end scenario unit(s), but the frozen features declare {}; the contract does not describe the frozen corpus",
             contract.end_to_end.execution_units,
             declared.end_to_end.units
-        );
-    }
-
-    let result = super::resolved_target(&request.result, project_root)?;
-    if std::fs::symlink_metadata(&result).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
-        bail!(
-            "the trial result '{}' is a symlink; the result is evidence written to a regular path",
-            result.display()
-        );
-    }
-    if result.starts_with(&copy) {
-        bail!(
-            "the trial result '{}' is inside the spec copy '{}'; the result is evidence outside the copy",
-            result.display(),
-            copy.display()
         );
     }
 
@@ -1155,8 +1303,9 @@ fn absolute_text(path: &Path) -> std::borrow::Cow<'_, str> {
     path.to_string_lossy()
 }
 
-/// Remove a previous raw result so a stale file cannot satisfy the gate. A
-/// removal failure is itself a refusal; a warning is not fail-closed.
+/// Remove a previous trial or raw result file so a stale file cannot satisfy
+/// the gate. A removal failure is itself a refusal; a warning is not
+/// fail-closed.
 fn remove_previous(path: &Path) -> Result<()> {
     match std::fs::remove_file(path) {
         Ok(()) => Ok(()),

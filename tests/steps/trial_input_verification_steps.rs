@@ -704,9 +704,67 @@ fn verifier_compares(world: &mut GivnWorld) {
             manifest.as_str(),
             "--copy",
             copy.as_str(),
+            "--inputs-only",
         ],
     );
     world.last_output = Some(out);
+}
+
+#[when("the verifier compares the spec copy with the manifest and runs the trial")]
+fn verifier_compares_and_runs_the_trial(world: &mut GivnWorld) {
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let result = trial_result_path(world).to_string_lossy().into_owned();
+    let out = common::run_givn(
+        project_env(world),
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.as_str(),
+            "--copy",
+            copy.as_str(),
+            "--result",
+            result.as_str(),
+        ],
+    );
+    world.last_output = Some(out);
+}
+
+#[when(
+    "the verifier compares the spec copy with the manifest and writes the trial result into the copy"
+)]
+fn verifier_compares_and_writes_the_result_into_the_copy(world: &mut GivnWorld) {
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let result = trial(world).join("trial-result.json");
+    let result = result.to_string_lossy().into_owned();
+    let out = common::run_givn(
+        project_env(world),
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.as_str(),
+            "--copy",
+            copy.as_str(),
+            "--result",
+            result.as_str(),
+        ],
+    );
+    world.last_output = Some(out);
+}
+
+#[then("the comparison writes no trial result")]
+fn comparison_writes_no_trial_result(world: &mut GivnWorld) {
+    let manifest = record(world);
+    let name = manifest.file_name().expect("manifest file name");
+    let path = manifest.with_file_name(format!("{}.trial-result.json", name.to_string_lossy()));
+    assert!(
+        !path.exists(),
+        "the comparison wrote a trial result at {}",
+        path.display()
+    );
 }
 
 #[when(

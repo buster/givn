@@ -1091,8 +1091,9 @@ printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[
 "#;
 
 /// Write the component script the builder authors inside the copy. It builds
-/// a product file and reads the component titles from the corpus; a count-only
-/// script would not satisfy the scenario-identity check.
+/// a product file, parses the frozen feature, and executes the `Given nothing`
+/// step for every non-`@e2e` scenario. The reported count is the argument so
+/// the count-mismatch fixtures can under-report a real execution.
 pub(crate) fn write_trial_gate_component_script(copy: &Path, total: usize) {
     let path = copy.join("scripts/verify.sh");
     std::fs::create_dir_all(path.parent().expect("script parent")).expect("create script parent");
@@ -1104,15 +1105,51 @@ pub(crate) fn write_trial_gate_component_script(copy: &Path, total: usize) {
 set -eu
 mkdir -p target/debug
 printf 'rebuilt gate product\n' > target/debug/gate-product
-names=$(awk '
-  /^  @e2e/ {{ e2e=1; next }}
-  /^  Scenario: / {{
-    if (e2e) {{ e2e=0; next }}
-    sub(/^  Scenario: /, "")
-    printf "%s\"%s\"", sep, $0
-    sep=","
-  }}
-' givn/specs/gate.feature)
+
+step_nothing() {{
+  :
+}}
+
+names=""
+sep=""
+scenario=""
+e2e=0
+skip=0
+while IFS= read -r line; do
+  case "$line" in
+    "  @e2e")
+      e2e=1
+      ;;
+    "  Scenario: "*)
+      if [ "$e2e" -eq 1 ]; then
+        e2e=0
+        skip=1
+        scenario=""
+        continue
+      fi
+      skip=0
+      title=${{line#  Scenario: }}
+      scenario=$title
+      names="$names$sep\"$title\""
+      sep=","
+      ;;
+    "    Given nothing")
+      if [ "$skip" -eq 1 ]; then
+        continue
+      fi
+      if [ -z "$scenario" ]; then
+        echo "step outside a scenario" >&2
+        exit 1
+      fi
+      step_nothing
+      ;;
+    "    "*)
+      echo "unbound step: $line" >&2
+      exit 1
+      ;;
+  esac
+done < givn/specs/gate.feature
+
 printf '{{"scope":"component","total":{total},"passed":{total},"failed":0,"skipped":0,"scenarios":[%s]}}\n' "$names" > "$GIVN_RESULT_FILE"
 "#
         )
