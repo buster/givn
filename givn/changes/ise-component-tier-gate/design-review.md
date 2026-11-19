@@ -152,3 +152,52 @@ temporary probes remain outside the repository.
 FAIL. F1-F7 and F9 are closed by the implementation and the rerun probes. F8 remains a review-evidence gap in `review.md` and the design test plan. F10 is a new P2 correctness defect: the re-derivation counts every specification `.feature` file as a component or End-to-end unit, while the contract is generated from the behavior role. An honest trial with a non-behavior `.feature` under `contracts` or `structure` refuses. The gate must select the same behavior feature set for the re-derivation as `Contract::build`.
 
 DESIGN-REVIEW: FAIL
+
+## Final independent re-review closure (F10 and F8)
+
+This section supersedes the remaining F10 and F8 rows in the previous closure
+section. The code was re-checked at `7008911c`, the mixed-role probe was rerun
+against the final `target/debug/givn`, and the targeted suites were rerun.
+
+### Closure evidence
+
+- **F10 closed.** `verify_trial` now loads the copy's
+  `givn/specification.yaml` through `SpecificationDeclaration::load`, selects
+  `partition::behavior_features`, and passes only that set to
+  `counts_for_feature_files` (`src/ise/verify.rs:155-172`). The new test
+  `a_non_behavior_feature_does_not_enter_the_component_corpus` passes. The
+  mixed-role probe at `/tmp/ise-review-mixed.KtdPZk` — `behavior:
+  ["givn/specs/**"]`, `contracts: ["docs/**"]`, and a `docs/example.feature`
+  holding one Scenario — now exits 0, reports `Component scenarios: 10/10
+  executed`, and records `clean: true` instead of the previous 10-vs-11
+  refusal.
+- **F8 closed for the review, tasks, and receipt evidence.** `tasks.md` records
+  17 acceptance tests and 25 ISE unit tests; `review.md` records 17 acceptance
+  tests and batch `7008911c`; the task receipt is committed at `610037` with
+  head `3bd79d0c`; `givn check review` was green at that revision before this
+  closure edit. The design's test-runner section still names only
+  `tests/ise_component_tier_gate.rs` as the acceptance command; the Passuff
+  test is recorded in `review.md` and `tasks.md`. This is a non-blocking
+  documentation omission, not a correctness defect.
+
+### Verification performed
+
+- `cargo test --test ise_component_tier_gate -- --test-threads=1` — 17 passed,
+  including `a_non_behavior_feature_does_not_enter_the_component_corpus`.
+- `cargo test --test ise_passuff_trial -- --test-threads=1` — 2 passed.
+- `cargo test --lib ise::` — 25 passed.
+- `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e` — 9 passed.
+- Mixed-role probe at `/tmp/ise-review-mixed.KtdPZk` — exit 0, 10/10
+  component units, 1/1 End-to-end, `clean: true`.
+- The hidden-corpus, empty-title, and cross-revision probes at
+  `/tmp/ise-review-probe.iseKPI` were closed by the previous revision and
+  remain covered by the 17 acceptance tests; the zero-scenario probe names
+  `component_executed=0/10`.
+- The full suites at `7008911` were reported separately as non-e2e 1126 passed
+  and e2e 120 passed, 785 steps; they were not rerun here.
+
+This closure edit changes the change-tree content, so the committed receipt at
+`610037` must be refreshed (`givn check tasks`) after the edit is committed;
+the review gate was green at `610037` before this section was added.
+
+DESIGN-REVIEW: PASS

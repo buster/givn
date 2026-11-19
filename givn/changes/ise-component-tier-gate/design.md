@@ -210,7 +210,7 @@ fixture.
 - Single scenario: `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs cargo test --locked --test features_runner -- --exact "<usecase>/<capability>.feature::<title>"`
 - Strict mode: `tests/features_runner.rs` keeps `.fail_on_skipped()`; an
   unbound or skipped step fails the run.
-- Acceptance test: `cargo test --test ise_component_tier_gate -- --test-threads=1`
+- Acceptance tests: `cargo test --test ise_component_tier_gate -- --test-threads=1` and `cargo test --test ise_passuff_trial -- --test-threads=1`
 - Full E2E preflight: after `./setup-e2e-browser.sh` installed the pinned
   Playwright package and Chromium, `./run-tests.sh --e2e --package e2e` passed
   120 of 120 scenarios (785 steps). The earlier 14 development-report failures
