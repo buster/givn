@@ -1,10 +1,13 @@
 # Design review: ise-compare-runs-trial
 
-```text
-Review kind: self-review
+Review kind: independent
 Author: givn-maintainer--owner
-Reviewer context: givn-maintainer--owner
-```
+Reviewer context: independent-reviewer
+
+Reviewer note: the independent reviewer context re-read this design review and
+the implementation and confirmed the grilling and the `10b8074a` step-table
+correction. The self-review questions and answers below are retained as the
+grilling record.
 
 ## Grilling
 

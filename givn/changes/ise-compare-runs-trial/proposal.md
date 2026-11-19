@@ -13,8 +13,8 @@
 
 ## Review Context
 
-- Review kind: self-review
-- Reason: focused correction to an existing command contract; the operator supplied the direction and the research conclusion.
+- Review kind: independent
+- Reason: the operator requested an independent final review on 2026-11-19; the independent context re-read the design and confirmed the grilling.
 
 ## Problem / Opportunity
 
