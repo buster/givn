@@ -196,6 +196,48 @@ printf '{"scope":"component","total":4,"passed":4,"failed":0,"skipped":0,"scenar
 "#;
 
 #[test]
+fn a_non_behavior_feature_does_not_enter_the_component_corpus() {
+    let (root, project) = fixture();
+    write(
+        &project.join("givn/specification.yaml"),
+        "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: [\"docs/**\"]\nlimits: []\ne2e: [\"tests/e2e\"]\nsource: [\"src/**\", \"scripts/**\"]\n",
+    );
+    write(
+        &project.join("docs/example.feature"),
+        "Feature: contract example\n\n  Scenario: not behavior\n    Given nothing\n",
+    );
+    git(&project, &["add", "-A"]);
+    git(
+        &project,
+        &["commit", "-qm", "fixture: non-behavior feature"],
+    );
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    replace_component_script(&copy, &component_script(10));
+    let result = root.path().join("trial.json");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&result).unwrap()).unwrap();
+    assert_eq!(record["component"]["executed"], 10);
+    assert_eq!(record["clean"], true);
+}
+
+#[test]
 fn duplicate_titles_and_outline_rows_survive_the_running_gate() {
     let (root, project) = fixture();
     write(

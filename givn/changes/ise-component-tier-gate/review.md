@@ -14,9 +14,10 @@ README-IMPACT: updated - Configuration
 
 One independent review context performed both the design review and this final
 review. It did not author the change and received no author conversation. It
-reviewed the committed batch `ed411f57`, the tasks record `41271e57`, the
+reviewed the committed batch `451aa128`, the tasks revision `cdcb7fb0`, the
 transcript commit `a9c846e6`, and the current worktree's documentation
-corrections.
+corrections. The final independent re-review after the corpus-binding fix is in
+`design-review.md`.
 
 Artifacts read: `proposal.md`, `design.md`, `design-review.md`, `arc42.md`,
 `tasks.md`, the three delta feature files, the delta use case, the permanent
@@ -48,7 +49,7 @@ persistent result record, and touches three capabilities.
 - **Strict mode.** `tests/features_runner.rs` keeps `.fail_on_skipped()`.
   The change adds no runner and no skip path.
 - **Acceptance test.** `cargo test --test ise_component_tier_gate --
-  --test-threads=1` — 12 passed and `cargo test --test ise_passuff_trial -- --test-threads=1` — 2 passed, including the missing runner, count-only result, foreign product,
+  --test-threads=1` — 17 passed and `cargo test --test ise_passuff_trial -- --test-threads=1` — 2 passed, including the missing runner, count-only result, foreign product,
   exact counts, mismatch, not-run, read-only compare, reserved path, traversal,
   symlink, product-path escape, product parent symlink, and post-run contract
   drift cases.

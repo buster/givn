@@ -12,6 +12,7 @@ use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+use crate::config::declaration::SpecificationDeclaration;
 use crate::config::overlay::load_effective_at;
 use crate::scm::EntryKind;
 
@@ -154,7 +155,22 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
             recorded.revision
         );
     }
-    let declared = super::contract::counts_for_feature_files(&recorded.specification_files, &copy)?;
+    let declaration = SpecificationDeclaration::load(&copy)
+        .map_err(|error| anyhow::anyhow!("{error}"))?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "the spec copy '{}' has no {}; the frozen corpus cannot be re-derived",
+                copy.display(),
+                crate::config::declaration::DECLARATION_PATH
+            )
+        })?;
+    let specification_paths: Vec<&str> = recorded
+        .specification_files
+        .iter()
+        .map(String::as_str)
+        .collect();
+    let behavior = super::partition::behavior_features(&declaration, &specification_paths);
+    let declared = super::contract::counts_for_feature_files(&behavior, &copy)?;
     if declared.component.units != contract.component.execution_units
         || declared.component.scenarios != contract.component.scenarios
     {

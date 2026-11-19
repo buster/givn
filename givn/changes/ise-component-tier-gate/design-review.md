@@ -63,8 +63,9 @@ DESIGN-REVIEW: PASS
 
 ## Final independent re-review
 
-Reviewer context: independent re-review of the final state, not a continuation of
-the earlier pass. The re-review read `proposal.md`, `design.md`, `arc42.md`,
+Reviewer context: DesignReviewGate (independent reviewer subagent)
+
+This section is an independent re-review of the fixed final state, not a continuation of the earlier pass. The re-review read `proposal.md`, `design.md`, `arc42.md`,
 `tasks.md`, the three delta features, the delta use case, `src/ise/contract.rs`,
 `src/ise/verify.rs`, `src/ise/mod.rs`, `src/ise/compare.rs`, `src/ise/manifest.rs`,
 `src/config/manifest.rs`, `src/cli/check.rs`, `src/cli/ise.rs`, `src/main.rs`,
@@ -103,5 +104,51 @@ The probe demonstrates that the gate does not bind the declared corpus to the fr
 ### Verdict
 
 FAIL. The targeted implementation and the Passuff-shaped fixture are real and green, and the removal of the phrase-triggered `check tasks` gate is correctly reflected in the served guidance. However, the central claim is not met: a manifest/contract pair prepared or edited by the builder can declare zero component units (or declare units with no titles) while the frozen behavior corpus remains in the copy, and `givn ise verify-trial` prints `Trial result: passed`. The gate must re-derive the declared counts and titles from the frozen behavior corpus or the manifest revision and refuse a mismatch (or require the verifier to prepare the manifest itself and state the manifest/contract as a trusted input), and the contract reader must reject `execution_units != scenarios.len()` and a contract/manifest revision mismatch. The prior `DESIGN-REVIEW: PASS` is not accepted; `review.md` is left unchanged because the blocking findings are design/code findings, not changes to the prior review record, and it must be rerun after the fixes.
+
+DESIGN-REVIEW: FAIL
+
+## Final independent re-review closure (fixed state)
+
+Reviewer context: DesignReviewGate (independent reviewer subagent)
+
+This closure re-checks the fixes in `451aa128` and `cdcb7fb0`, against the
+remaining findings from the previous final re-review. The targeted suites and
+the original probes were rerun against the final `target/debug/givn`; the
+temporary probes remain outside the repository.
+
+### Closure evidence for F1-F9
+
+| ID | Previous finding | Closure evidence | Status |
+|---|---|---|---|
+| F1 | A contract edited to hide the frozen corpus passed | Original probe `/tmp/ise-review-probe.iseKPI` with `component.execution_units: 0` and a repaired manifest checksum now exits 1: `the verification contract declares 0 component scenario unit(s), but the frozen features declare 10; the contract does not describe the frozen corpus`. New test `a_contract_that_hides_the_frozen_corpus_refuses` passes. | Closed. |
+| F2 | `execution_units` did not have to match the title list; a count-only result passed | Original probe with `component.execution_units: 10` and `component.scenarios: []` now exits 1: `the verification contract's component declares 10 execution unit(s) but 0 scenario title(s); the counts must match the corpus`. `Contract::parse` enforces the invariant; test `a_contract_count_must_match_its_scenario_titles` passes. | Closed. |
+| F3 | The contract revision was ignored | Original probe with contract revision `deadbeef...` and manifest revision `599215...` now exits 1: `the verification contract records revision 'deadbeef...' but the manifest records '599215...'; the contract must describe the frozen revision`. Test `a_contract_from_another_revision_refuses` passes. | Closed. |
+| F4 | The canonical runner contract omitted `scenarios`/`product`/`product_sha256` | `docs/reference.md` and `assets/commands.yaml.tmpl` now document the additional result fields; the served `ise` instruction repeats the trial evidence. | Closed. |
+| F5 | The delta use case and docs described the product as a file only | The delta use case, glossary, `docs/reference.md`, arc42 06/08/11, and the served instruction now state a regular file or directory with the tree digest. | Closed. |
+| F6 | No end-to-end test changed the product after binding | `a_product_changed_after_binding_refuses` passes: the E2E script mutates the product after writing its result, and the gate refuses with `clean: false`. The post-coverage re-hash uses the same guard; it is not separately mutated by a test. | Closed for the binding claim; the post-coverage mutation path remains unexercised. |
+| F7 | No end-to-end test exercised duplicate titles or outline rows | `duplicate_titles_and_outline_rows_survive_the_running_gate` passes with four units (`dup`, `dup`, `outline`, `outline`) and records the exact multiset; the collapsed-result refusal remains a unit test. | Closed. |
+| F8 | Tasks and review counts were stale | `tasks.md` now records 25 ISE unit tests and 16 acceptance tests. `review.md` still records 12 acceptance tests and batch `ed411f57`; `design.md:213` still names only the component acceptance test. The new `ise_passuff_trial` test is not in the design's test-runner list. | **Partially closed:** `tasks.md` is current; `review.md` and the design test plan remain stale. |
+| F9 | A zero-scenario result did not name `component_executed` | Probe with a component runner writing `total: 0` now exits 1 with `the component runner result ... declares zero scenarios (component_executed=0/10)` and writes `clean: false`. | Closed. |
+
+### Remaining findings
+
+| ID | Severity | Kind | Finding and evidence | Closed? |
+|---|---|---|---|---|
+| F10 | P2 | Code defect and test gap | `contract::counts_for_feature_files` re-derives the corpus from every `.feature` path in the manifest's `specification_files`, not from the behavior role. `Contract::build` still counts `partition::behavior_features` (`src/ise/contract.rs:243-248`), while `counts_for_feature_files` (`src/ise/contract.rs:252-268`) reads all specification `.feature` files and `verify_trial` (`src/ise/verify.rs:156-167`) compares the two. Probe `/tmp/ise-review-mixed.KtdPZk`: a project with `behavior: ["givn/specs/**"]` and `contracts: ["docs/**"]`, plus `docs/example.feature` holding one Scenario, builds a contract with 10 component units; `givn ise verify-trial` exits 1 with `the verification contract declares 10 component scenario unit(s), but the frozen features declare 11; the contract does not describe the frozen corpus`. This is an honest trial refused because a non-behavior Specification file is counted as a component unit. The delta use case says the declared counts are read from the behavior feature files (`.../specs/prepare-an-ise-test/usecase.md:107`). | Open. Fix: pass the copy's `givn/specification.yaml` declaration to `counts_for_feature_files` and count only `partition::behavior_features`; add a test with a `.feature` file under `contracts`/`structure`. |
+| F8 | P3 | Review/design evidence | `review.md` still records 12 acceptance tests and batch `ed411f57`; `design.md:213` still names only the component acceptance test and omits `tests/ise_passuff_trial.rs`; the receipt is stale for the final content (`givn check review` reports tested content changed from `0aa2e2...` to `8645e2...`). `tasks.md` is current at 25 unit tests and 16 acceptance tests. | Open. |
+
+### Verification performed
+
+- `cargo test --test ise_component_tier_gate -- --test-threads=1` — 16 passed.
+- `cargo test --test ise_passuff_trial -- --test-threads=1` — 2 passed.
+- `cargo test --lib ise::` — 25 passed.
+- `GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-e2e` — 9 passed.
+- Original probes at `/tmp/ise-review-probe.iseKPI`: hidden-corpus contract, empty-title contract, and cross-revision contract all refuse; the zero-scenario probe names `component_executed=0/10`.
+- Probe at `/tmp/ise-review-mixed.KtdPZk`: the non-behavior `.feature` false refusal described in F10.
+- `givn check review --change ise-component-tier-gate` currently reports the receipt stale for the final content and a review-context mismatch introduced by the previous fail section; the closure section reuses `DesignReviewGate (independent reviewer subagent)` so the context is consistent. The receipt must be refreshed after the final edit; `review.md` still needs its counts and scope updated.
+
+### Verdict
+
+FAIL. F1-F7 and F9 are closed by the implementation and the rerun probes. F8 remains a review-evidence gap in `review.md` and the design test plan. F10 is a new P2 correctness defect: the re-derivation counts every specification `.feature` file as a component or End-to-end unit, while the contract is generated from the behavior role. An honest trial with a non-behavior `.feature` under `contracts` or `structure` refuses. The gate must select the same behavior feature set for the re-derivation as `Contract::build`.
 
 DESIGN-REVIEW: FAIL
