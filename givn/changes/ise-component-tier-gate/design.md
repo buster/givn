@@ -265,6 +265,12 @@ fixture.
   manual reports, including `givn/trials/**`, are outside Givn enforcement.
   Realized by the absence of a workflow check and by the honest wording in the
   served `ise` instruction and reference.
+- `Decides D9`: The contract is not the authority for the corpus. `verify-trial`
+  re-derives each tier's execution-unit multiset from the frozen `.feature`
+  files in the copy and refuses a contract whose counts, titles, or revision
+  differ; the contract reader also requires `execution_units` to equal the
+  number of `scenarios`. Realized in `contract::counts_for_feature_files`,
+  `Contract::parse`, and `verify_trial`.
 - `Ise rebuild decision`: `No rebuild`. This change edits the existing Source
   code in place; no Component's Source code is replaced and no `Rebuilt code`
   line is recorded.

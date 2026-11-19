@@ -7,6 +7,7 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+use sha2::{Digest, Sha256};
 use tempfile::TempDir;
 
 const GIVN: &str = env!("CARGO_BIN_EXE_givn");
@@ -185,6 +186,52 @@ fn replace_component_script(copy: &Path, body: &str) {
         let _ = &mut permissions;
     }
     std::fs::set_permissions(path, permissions).unwrap();
+}
+
+const MULTISET_COMPONENT_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+mkdir -p target/debug
+printf 'rebuilt gate product\n' > target/debug/gate-product
+printf '{"scope":"component","total":4,"passed":4,"failed":0,"skipped":0,"scenarios":["dup","dup","outline","outline"]}\n' > "$GIVN_RESULT_FILE"
+"#;
+
+#[test]
+fn duplicate_titles_and_outline_rows_survive_the_running_gate() {
+    let (root, project) = fixture();
+    write(
+        &project.join("givn/specs/demo.feature"),
+        "Feature: multiset\n\n  Scenario: dup\n    Given nothing\n\n  Scenario: dup\n    Given nothing\n\n  Scenario Outline: outline\n    Given <value>\n\n    Examples:\n      | value |\n      | one   |\n      | two   |\n",
+    );
+    git(&project, &["add", "-A"]);
+    git(&project, &["commit", "-qm", "fixture: multiset"]);
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    replace_component_script(&copy, MULTISET_COMPONENT_SCRIPT);
+    let result = root.path().join("trial.json");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert!(output.status.success(), "{}", stderr(&output));
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&result).unwrap()).unwrap();
+    assert_eq!(record["component"]["executed"], 4);
+    assert_eq!(
+        record["component"]["scenarios"],
+        serde_json::json!(["dup", "dup", "outline", "outline"])
+    );
+    assert_eq!(record["clean"], true);
 }
 
 #[test]
@@ -474,6 +521,24 @@ fn a_symlink_result_path_refuses() {
     );
 }
 
+const MUTATING_E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/demo.feature)
+product=${GIVN_TRIAL_PRODUCT:-${GIVN_BIN:-}}
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+printf 'mutation\n' >> "$product"
+"#;
+
 const BAD_PRODUCT_E2E_SCRIPT: &str = r#"#!/bin/sh
 set -eu
 names=$(awk '
@@ -517,6 +582,40 @@ fn an_e2e_result_bound_to_another_product_refuses() {
     assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
     assert!(
         stderr(&output).contains("product_sha256"),
+        "stderr={}",
+        stderr(&output)
+    );
+    let record: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(result).unwrap()).unwrap();
+    assert_eq!(record["clean"], false);
+}
+
+#[test]
+fn a_product_changed_after_binding_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    replace_component_script(&copy, &component_script(10));
+    write(&project.join("scripts/e2e.sh"), MUTATING_E2E_SCRIPT);
+    let result = root.path().join("trial.json");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("changed after"),
         "stderr={}",
         stderr(&output)
     );
@@ -591,6 +690,99 @@ fn a_product_parent_symlink_outside_the_copy_refuses() {
     assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
     assert!(
         stderr(&output).contains("resolves outside the spec copy"),
+        "stderr={}",
+        stderr(&output)
+    );
+}
+
+fn rewrite_contract(manifest: &Path, copy: &Path, mutate: impl FnOnce(&mut serde_yaml_ng::Value)) {
+    let path = copy.join("givn/ise-verification.yaml");
+    let mut document: serde_yaml_ng::Value =
+        serde_yaml_ng::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    mutate(&mut document);
+    let text = serde_yaml_ng::to_string(&document).unwrap();
+    write(&path, &text);
+
+    let mut digest = Sha256::new();
+    digest.update(b"givn/ise-verification.yaml\0f\0");
+    digest.update(b"0\0");
+    digest.update(text.as_bytes());
+    let checksum = digest
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+
+    let mut manifest_document: serde_yaml_ng::Value =
+        serde_yaml_ng::from_str(&std::fs::read_to_string(manifest).unwrap()).unwrap();
+    manifest_document["verification"]["checksum"] = serde_yaml_ng::Value::String(checksum);
+    write(
+        manifest,
+        &serde_yaml_ng::to_string(&manifest_document).unwrap(),
+    );
+}
+
+#[test]
+fn a_contract_that_hides_the_frozen_corpus_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    rewrite_contract(&manifest, &copy, |document| {
+        document["component"]["execution_units"] = serde_yaml_ng::Value::from(0u64);
+        document["component"]["scenarios"] = serde_yaml_ng::Value::Sequence(Vec::new());
+    });
+    let result = root.path().join("trial.json");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("does not describe the frozen corpus"),
+        "stderr={}",
+        stderr(&output)
+    );
+    assert!(!result.exists(), "the corpus refusal writes no result");
+}
+
+#[test]
+fn a_contract_from_another_revision_refuses() {
+    let (root, project) = fixture();
+    let manifest = rebuild(&project, root.path());
+    let copy = root.path().join("copy");
+    rewrite_contract(&manifest, &copy, |document| {
+        document["revision"] = serde_yaml_ng::Value::String("deadbeef".to_string());
+    });
+    let result = root.path().join("trial.json");
+
+    let output = run(
+        &project,
+        &[
+            "ise",
+            "verify-trial",
+            "--manifest",
+            manifest.to_str().unwrap(),
+            "--copy",
+            copy.to_str().unwrap(),
+            "--result",
+            result.to_str().unwrap(),
+        ],
+    );
+
+    assert_eq!(output.status.code(), Some(1), "{}", stderr(&output));
+    assert!(
+        stderr(&output).contains("must describe the frozen revision"),
         "stderr={}",
         stderr(&output)
     );

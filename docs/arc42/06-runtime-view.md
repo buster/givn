@@ -1160,10 +1160,12 @@ checksums.
    name.
 4. Resolve `--result` under the project root and refuse a path inside the copy.
    Remove the two raw runner-result paths so a stale result cannot pass.
-5. Run the component command inside the copy with `GIVN_FEATURES`,
+5. Re-derive each tier's execution-unit multiset from the frozen `.feature`
+   files in the copy and refuse a contract whose revision, counts, or titles
+   differ. Run the component command inside the copy with `GIVN_FEATURES`,
    `GIVN_RESULT_FILE`, and `GIVN_RESULT_SCOPE=component`. Require a fresh
-   result that names every declared scenario title and whose `total` equals the
-   declared count exactly, with failed and skipped zero and reconciling counts.
+   result that carries that multiset and whose `total` equals the declared
+   count exactly, with failed and skipped zero and reconciling counts.
    A missing or malformed result, a count-only or title-less result, a non-zero
    exit, a failed or skipped scenario, or a count mismatch writes an
    `ise-trial-result/v1` record with `clean: false` and returns exit 1.

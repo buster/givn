@@ -180,6 +180,18 @@ impl Contract {
                 )
             })
             .and_then(|contract: Self| {
+                for (label, tier) in [
+                    ("component", &contract.component),
+                    ("end_to_end", &contract.end_to_end),
+                ] {
+                    if tier.execution_units != tier.scenarios.len() {
+                        bail!(
+                            "the verification contract's {label} declares {} execution unit(s) but {} scenario title(s); the counts must match the corpus",
+                            tier.execution_units,
+                            tier.scenarios.len()
+                        );
+                    }
+                }
                 if let Some(coverage) = &contract.coverage {
                     require_relative_path("coverage.non_e2e_path", &coverage.non_e2e_path)?;
                     require_relative_path("coverage.e2e_path", &coverage.e2e_path)?;
@@ -215,17 +227,17 @@ fn require_relative_path(name: &str, path: &str) -> Result<()> {
 }
 
 /// One tier's declared execution units and scenario titles.
-#[derive(Debug, Default, Clone)]
-struct TierCounts {
-    units: usize,
-    scenarios: Vec<String>,
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(super) struct TierCounts {
+    pub(super) units: usize,
+    pub(super) scenarios: Vec<String>,
 }
 
 /// Both tiers' declared counts and titles.
-#[derive(Debug, Default, Clone)]
-struct Counts {
-    component: TierCounts,
-    end_to_end: TierCounts,
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub(super) struct Counts {
+    pub(super) component: TierCounts,
+    pub(super) end_to_end: TierCounts,
 }
 
 /// The declared execution-unit counts for the component and End-to-end tiers.
@@ -239,10 +251,36 @@ fn execution_units(
     paths: &[&str],
     blobs: &BTreeMap<String, Vec<u8>>,
 ) -> Result<Counts> {
+    let paths = partition::behavior_features(declaration, paths);
+    count_feature_paths(paths.iter().map(String::as_str), blobs)
+}
+
+/// Count the declared execution units in feature files read from the spec
+/// copy. `verify-trial` uses this to re-derive the corpus from the frozen
+/// files instead of trusting the contract's counts.
+pub(super) fn counts_for_feature_files(files: &[String], copy: &Path) -> Result<Counts> {
+    let mut blobs = BTreeMap::new();
+    let mut paths = Vec::new();
+    for path in files {
+        if !path.ends_with(".feature") {
+            continue;
+        }
+        let bytes = std::fs::read(copy.join(path))
+            .with_context(|| format!("read the frozen feature '{path}' from the spec copy"))?;
+        blobs.insert(path.clone(), bytes);
+        paths.push(path.clone());
+    }
+    count_feature_paths(paths.iter().map(String::as_str), &blobs)
+}
+
+fn count_feature_paths<'a>(
+    paths: impl IntoIterator<Item = &'a str>,
+    blobs: &BTreeMap<String, Vec<u8>>,
+) -> Result<Counts> {
     let mut counts = Counts::default();
-    for path in partition::behavior_features(declaration, paths) {
+    for path in paths {
         let content = blobs
-            .get(&path)
+            .get(path)
             .ok_or_else(|| anyhow::anyhow!("the revision returned no content for '{path}'"))?;
         let source = std::str::from_utf8(content)
             .with_context(|| format!("read the feature at '{path}' as UTF-8"))?;
@@ -346,7 +384,7 @@ mod tests {
             component: Tier {
                 command: "./verify.sh".to_string(),
                 features: "givn/specs".to_string(),
-                execution_units: 10,
+                execution_units: 1,
                 scenarios: vec!["one".to_string()],
             },
             end_to_end: Tier {
@@ -371,6 +409,23 @@ mod tests {
         std::fs::write(&path, text).unwrap();
         let error = Contract::from_bytes(&std::fs::read(&path).unwrap(), &path).unwrap_err();
         assert!(format!("{error:#}").contains("unknown"), "{error:#}");
+    }
+
+    #[test]
+    fn a_contract_count_must_match_its_scenario_titles() {
+        let directory = tempfile::TempDir::new().unwrap();
+        let path = directory.path().join("contract.yaml");
+        std::fs::write(
+            &path,
+            "scope: ise-verification/v1\nrevision: abc\ncomponent:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 10\n  scenarios: [one]\nend_to_end:\n  command: \"true\"\n  features: givn/specs\n  execution_units: 0\n  scenarios: []\n",
+        )
+        .unwrap();
+        let error = Contract::from_bytes(&std::fs::read(&path).unwrap(), &path)
+            .expect_err("a count that does not match its titles refuses");
+        assert!(
+            format!("{error:#}").contains("counts must match the corpus"),
+            "{error:#}"
+        );
     }
 
     #[test]

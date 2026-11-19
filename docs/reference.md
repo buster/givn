@@ -251,7 +251,10 @@ The runner receives:
 | `GIVN_RESULT_SCOPE` | `change`, `regular`, or `e2e`. |
 
 The result is `{"total": n, "passed": n, "failed": n, "skipped": n}`; `scope` is
-optional, but when present it must match the expected scope. Givn's own E2E
+optional, but when present it must match the expected scope. An
+`ise verify-trial` result also carries `scenarios` (one title per execution
+unit, duplicates and outline rows preserved); its End-to-end result also
+carries `product` and `product_sha256`. Givn's own E2E
 package also reads `GIVN_BIN` (the built product binary, required) and
 `GIVN_READY_FIXTURE` (the built ready fixture, required by run-execution
 scenarios); `./run-tests.sh --e2e --package e2e` exports both. The harness reads
@@ -772,11 +775,13 @@ command reads, and the coverage commands and paths when the coverage addon is
 effective. An execution unit is one plain scenario or one example row of a
 Scenario Outline.
 
-The command removes each raw result file, runs the component command inside the
+It re-derives each tier's execution-unit multiset from the frozen `.feature`
+files in the copy and refuses a contract whose revision, counts, or titles
+differ. It removes each raw result file, runs the component command inside the
 copy with `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and
 `GIVN_RESULT_SCOPE=component`. It then requires the declared
-`verify.product_path` as a regular non-symlink file inside the copy, hashes its
-bytes, and runs the frozen End-to-end command in the project working tree with
+`verify.product_path` as a regular non-symlink file or directory inside the
+copy, hashes a file's bytes or a directory tree's regular files, and runs the frozen End-to-end command in the project working tree with
 `GIVN_RESULT_SCOPE=e2e`, `verify.product_env`, `GIVN_TRIAL_PRODUCT`, and
 `GIVN_TRIAL_PRODUCT_SHA256`. Each run must produce a fresh result that names
 every declared scenario title and no undeclared title, and whose `total`

@@ -18,7 +18,9 @@
 # During the first product change, adapt or create the project's Gherkin runner.
 # The adapter must execute GIVN_FEATURES, handle GIVN_RESULT_SCOPE, remove/write
 # a fresh GIVN_RESULT_FILE, and report actual total, passed, failed, and skipped
-# counts. `change` executes every delta scenario, including @e2e; regular
+# counts. An ise verify-trial result also carries one scenario title per
+# execution unit (duplicates and outline rows preserved); its e2e result also
+# carries the rebuilt product path and product_sha256. `change` executes every delta scenario, including @e2e; regular
 # excludes @e2e from permanent specs; e2e selects only @e2e from permanent specs.
 # A failed, undefined, pending, ambiguous, or skipped scenario must fail the
 # command. Run the default sentinel for runner/tooling choices and see

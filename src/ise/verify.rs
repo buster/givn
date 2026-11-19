@@ -147,6 +147,32 @@ pub fn verify_trial(project_root: &Path, request: &VerifyRequest) -> Result<Tria
         .with_context(|| format!("resolve the spec copy '{}'", request.copy.display()))?;
     require_recorded_copy(&request.manifest, &recorded, &copy)?;
     let (contract, contract_before) = read_contract(&recorded, &copy)?;
+    if contract.revision != recorded.revision {
+        bail!(
+            "the verification contract records revision '{}' but the manifest records '{}'; the contract must describe the frozen revision",
+            contract.revision,
+            recorded.revision
+        );
+    }
+    let declared = super::contract::counts_for_feature_files(&recorded.specification_files, &copy)?;
+    if declared.component.units != contract.component.execution_units
+        || declared.component.scenarios != contract.component.scenarios
+    {
+        bail!(
+            "the verification contract declares {} component scenario unit(s), but the frozen features declare {}; the contract does not describe the frozen corpus",
+            contract.component.execution_units,
+            declared.component.units
+        );
+    }
+    if declared.end_to_end.units != contract.end_to_end.execution_units
+        || declared.end_to_end.scenarios != contract.end_to_end.scenarios
+    {
+        bail!(
+            "the verification contract declares {} End-to-end scenario unit(s), but the frozen features declare {}; the contract does not describe the frozen corpus",
+            contract.end_to_end.execution_units,
+            declared.end_to_end.units
+        );
+    }
 
     let result = super::resolved_target(&request.result, project_root)?;
     if std::fs::symlink_metadata(&result).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
@@ -424,7 +450,7 @@ fn run_component(
             failed(tier),
         ));
     }
-    let counts = match read_counts(result_file, "component", "component") {
+    let counts = match read_counts(result_file, "component", "component", tier.execution_units) {
         Ok(counts) => counts,
         Err(error) => return Err(TierFailure::new(error, failed(tier))),
     };
@@ -692,7 +718,7 @@ fn run_end_to_end(
             failed(tier),
         ));
     }
-    let counts = match read_counts(result_file, "End-to-end", "e2e") {
+    let counts = match read_counts(result_file, "End-to-end", "e2e", tier.execution_units) {
         Ok(counts) => counts,
         Err(error) => return Err(TierFailure::new(error, failed(tier))),
     };
@@ -847,7 +873,12 @@ fn coverage_numbers(
 }
 
 /// Read and validate one fresh runner result.
-fn read_counts(path: &Path, label: &str, expected_scope: &str) -> Result<TrialRunnerResult> {
+fn read_counts(
+    path: &Path,
+    label: &str,
+    expected_scope: &str,
+    declared: usize,
+) -> Result<TrialRunnerResult> {
     let text = std::fs::read_to_string(path)
         .with_context(|| format!("read the {label} runner result '{}'", path.display()))?;
     let result: TrialRunnerResult = serde_json::from_str(&text).map_err(|error| {
@@ -866,7 +897,7 @@ fn read_counts(path: &Path, label: &str, expected_scope: &str) -> Result<TrialRu
     }
     if result.total == 0 {
         bail!(
-            "the {label} runner result '{}' declares zero scenarios",
+            "the {label} runner result '{}' declares zero scenarios ({label}_executed=0/{declared})",
             path.display()
         );
     }
@@ -894,9 +925,6 @@ fn read_counts(path: &Path, label: &str, expected_scope: &str) -> Result<TrialRu
 /// Require the runner result to carry the declared scenario multiset exactly:
 /// one identity per execution unit, duplicate titles preserved.
 fn require_scenarios(tier: &super::contract::Tier, counts: &TrialRunnerResult) -> Result<()> {
-    if tier.scenarios.is_empty() {
-        return Ok(());
-    }
     let mut declared_count: std::collections::BTreeMap<&str, usize> =
         std::collections::BTreeMap::new();
     for title in &tier.scenarios {

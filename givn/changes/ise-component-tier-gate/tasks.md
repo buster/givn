@@ -102,6 +102,9 @@ unreachable revision fails review and archive.
 - [x] The acceptance test is real and runnable.
   - [x] COMMIT: `bdc01ecb64c74682b62c06e0020b7d2052522a51` -- Batch: closeout
   - Evidence: `cargo test --test ise_component_tier_gate -- --test-threads=1` — 12 passed.
+- [x] `verify-trial` re-derives the frozen corpus from the copy and refuses a contract that hides it.
+  - [x] COMMIT: `PENDING-FINAL` -- Batch: component-tier-gate-final
+  - Evidence: `cargo test --test ise_component_tier_gate -- --test-threads=1` — 16 passed, including a repaired-checksum contract with `component.execution_units: 0` refusing with "does not describe the frozen corpus", a contract from another revision refusing, product mutation after binding refusing, and duplicate/outline titles surviving the running gate; `cargo test --lib ise::contract::tests` — 8 passed and `cargo test --lib ise::` — 25 passed, including `execution_units == scenarios.len()`.
 - [x] A Passuff-shaped trial binds two rebuilt binaries and accepts a missing E2E coverage report.
   - [x] COMMIT: `94b1bb323ed9a599dded45cab218d8204a57dc58` -- Batch: component-tier-gate-hardening
   - Evidence: `cargo test --test ise_passuff_trial -- --test-threads=1` — 2 passed: the copy has no `crates/passuff-e2e`, `PASSUFF_BIN_DIR` holds `passuff` and `passuff-tui`, the E2E script executes both, the coverage script writes only the component report, and an E2E script using checkout binaries records a different digest and refuses.
@@ -119,7 +122,7 @@ $ GIVN_FEATURES=givn/changes/ise-component-tier-gate/specs ./run-tests.sh --non-
 Summary [ 1.504s] 9 tests run: 9 passed, 0 skipped
 
 $ cargo test --lib ise::
-test result: ok. 19 passed; 0 failed; 0 ignored
+test result: ok. 25 passed; 0 failed; 0 ignored
 
 $ ./run-tests.sh --non-e2e
 Summary [ 214.612s] 1126 tests run: 1126 passed, 115 skipped

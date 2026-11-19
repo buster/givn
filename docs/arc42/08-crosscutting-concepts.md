@@ -1472,8 +1472,10 @@ command that executes the contract. It removes each raw result path first,
 runs the component command inside the copy and the frozen End-to-end command in
 the project working tree, and requires each fresh result to name every declared
 scenario title and to equal its declared count exactly with zero failed and
-zero skipped. It requires the declared rebuilt product as a regular non-symlink
-file in the copy, hashes its bytes, passes the path in `product.env`,
+zero skipped; it re-derives the multiset from the frozen `.feature` files and
+refuses a contract whose revision, counts, or titles differ. It requires the declared rebuilt product as a regular non-symlink
+file or directory in the copy, hashes a file's bytes or a directory tree's
+regular files, passes the path in `product.env`,
 `GIVN_TRIAL_PRODUCT`, and the digest in `GIVN_TRIAL_PRODUCT_SHA256`, and
 requires the End-to-end result to carry the same product path and digest. With
 coverage, it requires a non-zero component line measurement, distinct

@@ -140,6 +140,9 @@ equality. It prints `Trial result: unverified` and never claims that the
 component corpus ran. A whole-system trial result requires
 `givn ise verify-trial`, which:
 
+- re-derives each tier's execution-unit multiset from the frozen `.feature`
+  files in the copy and refuses a contract whose revision, counts, or titles
+  differ;
 - runs the component command inside the spec copy and the frozen End-to-end
   command in the checkout, each with a fresh runner result;
 - requires each result to carry the declared scenario multiset exactly
