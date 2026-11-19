@@ -37,29 +37,26 @@ pub(crate) fn component_tier_required(
     Ok((declared > 0).then_some(declared))
 }
 
-/// The first value after a `Rebuilt code:` marker.
+/// The value of a plain `Rebuilt code:` declaration line.
 ///
-/// `state::actual_markdown` removes fenced examples and HTML comments. The
-/// remaining text is collapsed to one line so a bold, wrapped `Decides` entry
-/// (`Rebuilt\ncode: ship`) matches the plain line the guidance asks for, and
-/// markdown emphasis around the value is skipped.
+/// The guidance asks for a plain line, so prose mentions do not declare a
+/// rebuild. `state::actual_markdown` removes fenced examples and HTML comments
+/// first; a list marker is accepted, and markdown emphasis around the line or
+/// the value is ignored. A wrapped inline mention inside a `Decides` paragraph
+/// is prose, not a declaration.
 fn rebuilt_code(design: &str) -> Option<String> {
     let actual = crate::state::actual_markdown(design);
-    let collapsed = actual.split_whitespace().collect::<Vec<_>>().join(" ");
-    let mut rest = collapsed.as_str();
-    while let Some(found) = rest.find("Rebuilt code:") {
-        let after = &rest[found + "Rebuilt code:".len()..];
-        let value: String = after
-            .chars()
-            .skip_while(|character| !character.is_ascii_alphanumeric())
-            .take_while(|character| character.is_ascii_alphanumeric() || *character == '-')
-            .collect();
-        if !value.is_empty() {
-            return Some(value.to_ascii_lowercase());
-        }
-        rest = after;
-    }
-    None
+    actual.lines().find_map(|line| {
+        let line = line.trim();
+        let line = line
+            .strip_prefix("- ")
+            .or_else(|| line.strip_prefix("* "))
+            .unwrap_or(line);
+        let line = line.trim_matches(['*', '_', '`']).trim();
+        let value = line.strip_prefix("Rebuilt code:")?;
+        let value = value.trim_matches(['`', '*', '_', '.', ' ']);
+        (!value.is_empty()).then(|| value.to_ascii_lowercase())
+    })
 }
 
 #[cfg(test)]
@@ -75,9 +72,23 @@ mod tests {
     }
 
     #[test]
-    fn a_wrapped_bold_ship_value_is_read() {
+    fn a_list_item_declaration_is_read() {
+        assert_eq!(
+            rebuilt_code("- **Rebuilt code:** `ship`\n"),
+            Some("ship".to_string())
+        );
+    }
+
+    #[test]
+    fn a_prose_mention_is_not_the_declaration() {
         let design = "**Decides D1: the Ise rebuild decision is `Whole-system rebuild` with `Rebuilt\ncode: ship`.**\n";
-        assert_eq!(rebuilt_code(design), Some("ship".to_string()));
+        assert_eq!(rebuilt_code(design), None);
+    }
+
+    #[test]
+    fn a_design_that_quotes_the_rule_does_not_declare_a_ship() {
+        let design = "# Design\n\nThe component tier applies to every `Rebuilt code: ship` change.\n\n## Decisions\n\n- **Decides D7**: Ise rebuild decision: `No rebuild`.\n";
+        assert_eq!(rebuilt_code(design), None);
     }
 
     #[test]

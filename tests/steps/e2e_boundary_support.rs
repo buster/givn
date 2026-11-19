@@ -329,12 +329,8 @@ pub(crate) fn ise_ship_change(world: &mut GivnWorld, runner: &str) {
     std::fs::write(change.join(".givn-skip"), "specs\n").expect("write the specs skip");
     std::fs::remove_file(change.join("specs/verify-change/givn-workflow-enforcement.feature"))
         .expect("remove the delta feature");
-    std::fs::write(
-        change.join("design.md"),
-        "# Design\n\n**Decides D1: the Ise rebuild decision is `Whole-system rebuild` \
-         with `Rebuilt\ncode: ship`.**\n",
-    )
-    .expect("write the ship design");
+    std::fs::write(change.join("design.md"), "# Design\n\nRebuilt code: ship\n")
+        .expect("write the ship design");
     write_file(
         world,
         "givn/specification.yaml",

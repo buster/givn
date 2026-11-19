@@ -49,6 +49,9 @@ A `Rebuilt code: ship` change is not complete while a declared component
 execution unit exists and no component result carries the executed count. The
 change stays open; a `discard` trial records its result outside the project.
 
+The declaration line begins with `Rebuilt code:`. A prose mention, a wrapped
+inline sentence, or a fenced example does not declare a rebuild.
+
 The entry names the affected consumers, the persisted state the rebuild must
 carry, and the rebuild boundary. It is the existing `Decides D<n>` entry; it
 adds no mandatory design field.

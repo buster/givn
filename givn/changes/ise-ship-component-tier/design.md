@@ -136,11 +136,12 @@ no empty step body is added.
   hook writes or validates a runner result; an exit-0 command without one
   fails. Realized in `hooks::run_verify_hook`, with the failure naming the
   missing result.
-- **Decides D6**: the `Rebuilt code` reader normalizes markdown before
-  matching: fenced blocks and HTML comments are stripped (the shared
-  `state::actual_markdown`), whitespace runs collapse, and the value is the
-  first alphanumeric word after `Rebuilt code:`. This accepts a plain line and
-  the bold, wrapped form used in real designs. Realized in `ise::ship`.
+- **Decides D6**: the `Rebuilt code` reader accepts only a plain declaration
+  line. `state::actual_markdown` strips fenced blocks and HTML comments, a list
+  marker and markdown emphasis are ignored, and the line must then begin with
+  `Rebuilt code:`. A prose mention, including a wrapped inline sentence in a
+  `Decides` entry or a design that quotes this rule, declares nothing. Realized
+  in `ise::ship` and its unit tests; the ship fixture records a plain line.
 - **Decides D7**: Ise rebuild decision: `No rebuild`. This change edits the
   existing verifier, receipt, and guidance in place; no declared `source:` root
   is replaced and no `Rebuilt code` line is recorded.

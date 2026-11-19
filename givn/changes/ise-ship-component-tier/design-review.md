@@ -9,7 +9,7 @@ Reviewer context: self
 | Branch | Question and answer | Finding |
 |---|---|---|
 | Scope | Does the delta contain exactly the proposal? The proposal asks for a component tier on every Ise ship, review and archive refusal without it, and the five served-guidance corrections. The delta has five `givn-workflow-enforcement` scenarios (retained-corpus pass, delta plus retained corpus, missing result, short result, review refusal) and five `serve-extended-rules` scenarios. The archive refusal is the same predicate as review and is covered by the predicate's unit tests; no separate archive fixture is written because every archive precondition outside the receipt is unrelated to this rule. | None after the review scenario was added; see Hardening. |
-| Tech choices | Is parsing `design.md` the right trigger? Yes. The design decision is the only durable record of `Rebuilt code: ship`; the change lock supplies `ise` effectiveness. The reader normalizes markdown before matching because real designs wrap the line inside a bold `Decides` entry. A structured design field would be a larger schema change for one value. | None. |
+| Tech choices | Is parsing `design.md` the right trigger? Yes. The design decision is the only durable record of `Rebuilt code: ship`; the change lock supplies `ise` effectiveness. The reader accepts only a plain declaration line (fenced examples, comments, and prose mentions excluded), because a design that discusses this very rule would otherwise declare a ship. A structured design field would be a larger schema change for one value. | Finding: the first reader matched a prose mention and classified this `No rebuild` change as a ship. Hardened by requiring a plain line; see Hardening. |
 | Missing scenarios | Are error paths present? Yes: no result file, a short result, review without a receipt, and the delta-plus-corpus composition. The zero-unit corpus keeps today's branch by D4; a scenario would assert an unchanged rule. | None. |
 | Testability | Can each scenario fail in RED? Yes. Before the implementation, `check tasks` prints the not-applicable line and writes no receipt, so the pass scenario fails on the missing `component_executed=2/2` line and the receipt field; the refusal scenarios fail on exit 0. The fixture runner is a real script that reads `GIVN_RESULT_FILE` and `GIVN_RESULT_SCOPE`, and the receipt assertion reads the real receipt JSON. | None. |
 | E2E fidelity | The scenarios drive the compiled binary with `--change`; no library call replaces the CLI. The fixture supplies the e2e package and runner command that `preflight_e2e_boundary` resolves, so the scenario exercises the real preflight rather than bypassing it. | None. |
@@ -43,6 +43,12 @@ Reviewer context: self
   digest it actually executed instead of assuming the change delta; a
   whole-system ship records `givn/specs`. `freshness` resolves the recorded
   path, so a corpus edit makes the receipt stale.
+- **The ship trigger is a plain declaration.** `givn check tasks` on this
+  change first printed `component_executed=1317/1317` because the reader matched
+  a prose mention of `Rebuilt code: ship` in `design.md`. The reader now
+  requires the line to begin with the marker; a design that documents the rule
+  no longer declares a ship, and the fixture records the plain line the
+  guidance asks for.
 - **Component result validation is one function.** `read_component_result`
   maps a missing result to `component_executed=0/<declared>` and a short result
   to `component_executed=<executed>/<declared>`; the same message shape the
