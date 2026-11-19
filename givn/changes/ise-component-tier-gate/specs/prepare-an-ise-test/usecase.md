@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:675649da108bd456eb682bbe4494ce3f6273698e950e9887314b36056f296612 -->
+<!-- givn:base-sha256:9c204b8d0f3e446f204140b9aaee0beeb840ace46043e7a837c56cc2777b3674 -->
 # Use case: prepare-an-ise-test
 
 ## Level
