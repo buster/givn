@@ -48,6 +48,12 @@ Required branches — cover every one (or explicitly record "no issue found"):
   Does the design name a concrete strict-mode mechanism, a not-implemented stub
   pattern, and a single-scenario run command? Missing or vague on any of the
   three is a finding — it is the root cause of fabricated changes.
+- **Two-tier runner coverage** — read the design's runner command and confirm
+  it executes the retained `givn/specs/**` component corpus, not only unit
+  tests or the frozen `@e2e` package. When a `source:` root is replaced, its
+  coupled step definitions, fakes, and fixture builders are rebuild work. A
+  design that leaves the component corpus without a runner is a finding, even
+  when the change records `Behavior change: none` and skips delta specs.
 - **E2E fidelity** — read the spec instruction served by
   `givn instructions specs --change <id>` and verify its normalized action
   scope, interface type, real driver, and primary-assertion rules are applied

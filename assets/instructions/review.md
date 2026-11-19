@@ -62,8 +62,11 @@ specs, design, tasks, ADRs, glossary, coverage, or README.
 The implementing agent runs the mechanical checks and fixes every failure before
 starting the review:
 
-- full `verify.command`;
-- full `verify.e2e_command`;
+- full `verify.command` with a fresh `GIVN_RESULT_FILE`: `total > 0`, zero
+  failed, zero skipped, and the executed count equal to the declared component
+  units when the change is an Ise ship;
+- full `verify.e2e_command` with a fresh `GIVN_RESULT_FILE`: the declared
+  `@e2e` units, zero failed, zero skipped;
 - the project's coverage command with branch instrumentation;
 - `givn check review --change <id>`;
 - dead code and dead Component Interface or contract members;
@@ -74,6 +77,12 @@ starting the review:
 Do not start the review on a tree that still fails a mechanical check.
 The review is for semantic findings, not for discovering work the implementer
 can verify deterministically.
+
+A declared verification tier with no executed result is a critical finding, not
+a non-critical follow-up and not an acceptable known limit. This covers the
+retained component corpus when a rebuilt source root owns its step definitions
+or fakes, and the `@e2e` tier when its scenarios exist. `REVIEW: PASS` is
+invalid while such a tier is missing.
 
 After review, fix every finding and verify each one. One targeted closure checks
 the recorded findings and material regressions introduced by their fixes; it is
@@ -229,11 +238,14 @@ difference.
 - **One `Ise rebuild decision`.** The design records exactly one, with a plain
   `Rebuilt code` line when it rebuilds. A `No rebuild` change records no such
   line.
-- **Working-tree ship states its limitation.** A `Single-Component Rebuild`
-  with `Rebuilt code: ship` rebuilds in the project working tree and relies on
-  an instruction not to consult accessible history. A green verification proves
+- **Working-tree ship states its limitation.** A rebuild with
+  `Rebuilt code: ship` rebuilds in the project working tree and relies on an
+  instruction not to consult accessible history. A green verification proves
   tested behaviour, not that the Specification alone was sufficient; a review
   that claims otherwise is a finding.
+- **Both tiers are executed.** A ship reviews the component result and the
+  End-to-end result. A review that accepts a frozen-only run, or that records
+  the component corpus as a known limit, is a finding.
 - **One `Spec gap` outcome before any fix.** Record exactly one `Spec gap`
   outcome before any fix: `E2E test defect`, `implementation defect`,
   `specification defect`, or `acceptable undocumented change`. More than one

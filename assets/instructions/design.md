@@ -21,6 +21,9 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
   MUST execute the `.feature` files under `givn/specs/` and the change's
   `specs/` — a bare unit-test runner is not sufficient. If `verify.command`
   is still the `givn missing-testrunner` sentinel, follow its guidance.
+  Skipping the change's `specs` removes only the delta files; it never removes
+  the obligation to execute the retained `givn/specs/**` corpus when the change
+  replaces a source root that owns its step definitions or fakes.
 - **Strict-mode config** (mandatory — see below).
 - **Single-scenario run command**: the exact invocation to run ONE named
   scenario for the change's runner; the stack instruction named by `steps`
@@ -63,7 +66,7 @@ of three values:
 |---|---|
 | `No rebuild` | The change edits the existing Source code in place; no replacement is rebuilt and no `Rebuilt code` line is recorded. |
 | `Single-Component Rebuild` | The active change's delta updates one Component's Specification, and its Source code and coupled unit tests are replaced behind its Component Interface. |
-| `Whole-system rebuild` | Every declared `source:` entry's Source code is replaced behind the System's external interfaces; persisted data and external contracts stay. |
+| `Whole-system rebuild` | Every declared `source:` entry's Source code is replaced behind the System's external interfaces, including the coupled step definitions, fakes, and fixture builders under those roots; persisted data and external contracts stay. |
 
 A change that rebuilds records a plain `Rebuilt code` line beside the decision:
 `discard` (the rebuilt result is not adopted) or `ship` (the verified
@@ -76,6 +79,13 @@ the previous implementation stays in revision history, its Source code and
 coupled unit tests are removed from the project working tree, the replacement
 is rebuilt there without consulting that history, verified against the active
 delta, committed as part of the change, and archived once.
+
+A `Whole-system rebuild` with `Rebuilt code: ship` names one step-definition file per capability,
+the fakes and fixture builders for every external dependency, the component
+runner command, both tier commands, and each tier's declared execution-unit
+count. The frozen End-to-end package is the `@e2e` tier only. A design that
+leaves the retained component corpus without a runner is incomplete, even when
+the change records `Behavior change: none` and skips delta specs.
 
 The entry also names the affected consumers, the persisted state the rebuild
 must carry, and the rebuild boundary. This is the existing `## Decisions`

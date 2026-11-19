@@ -45,6 +45,10 @@ A rebuilding change adds a plain **`Rebuilt code`** line with one value:
 `discard` does not adopt it. A `No rebuild` change records no `Rebuilt code`
 line.
 
+A `Rebuilt code: ship` change is not complete while a declared component
+execution unit exists and no component result carries the executed count. The
+change stays open; a `discard` trial records its result outside the project.
+
 The entry names the affected consumers, the persisted state the rebuild must
 carry, and the rebuild boundary. It is the existing `Decides D<n>` entry; it
 adds no mandatory design field.
@@ -56,7 +60,7 @@ choice.
 
 | Practice | Where the rebuild happens | What happens to the result | When to use it |
 |---|---|---|---|
-| Working-tree ship | The current project working tree | The replacement is committed as part of the change | `Single-Component Rebuild` with `Rebuilt code: ship` |
+| Working-tree ship | The current project working tree | The replacement is committed as part of the change | `Single-Component Rebuild` or `Whole-system rebuild`, with `Rebuilt code: ship` |
 | Spec copy | A plain directory outside the project, written from a selected revision | The result stays outside the project; nothing is promoted | `Rebuilt code: discard`, or a copy-based Ise Test |
 
 ### Single-Component Rebuild with Rebuilt code: ship
@@ -94,6 +98,39 @@ the working-tree path as a clean-room result.
 If the Specification or the E2E suite changes after the rebuild starts, record
 a new frozen revision and rerun the relevant verification. Never move the
 acceptance target to make the rebuilt code pass.
+
+### Whole-system rebuild with Rebuilt code: ship
+
+A whole-system rebuild replaces every declared `source:` root. The component
+step definitions, fakes, and fixture builders under a replaced root are rebuild
+work, not kept Source code: removing the product without removing them leaves
+enforcement code that binds nothing.
+
+1. **Keep the Specification.** The component `Scenario:` blocks stay unchanged
+   under `givn/specs/**`, and the `@e2e` scenarios stay in the declared `e2e`
+   package. A change that records `Behavior change: none` and skips delta specs
+   skips its delta batch, never the retained component corpus.
+2. **Remove every declared `source:` root.** Delete the product, its coupled
+   unit tests, and the step definitions, fakes, and fixture builders under
+   those roots. Keep `givn/specs/**`, the declared content categories, and the
+   declared End-to-end package.
+3. **Rebuild the product and the component runner.** Write one step-definition
+   file per capability, the fakes for every external dependency, the fixture
+   builders, and the runner that honours `GIVN_FEATURES`, `GIVN_RESULT_FILE`,
+   and `GIVN_RESULT_SCOPE`.
+4. **Execute both tiers.** The component result must execute exactly the
+   declared component units under `givn/specs/**` with zero failed and zero
+   skipped, and the frozen End-to-end result must execute exactly the declared
+   `@e2e` units. A frozen-only run is not a ship result: the frozen End-to-end
+   package is the `@e2e` tier only and never replaces the component runner.
+5. **Commit and archive.** Commit the replacement and the component runner as
+   part of the change; archive only after both tiers are green.
+
+A count below the declared units refuses as
+`component_executed=<executed>/<declared>`, and a change-scope verification of
+a `Behavior change: none` ship runs the retained corpus rather than reporting
+the scope not applicable. `givn check review` and `givn archive` read that
+component evidence from the change verification receipt.
 
 ### Rebuilt code: discard
 

@@ -27,6 +27,10 @@ context between artifacts.
 - Install/configure the Gherkin runner from design.md. It MUST execute
   `.feature` files under `givn/specs/` and the change's `specs/` — a bare
   unit-test runner is not sufficient.
+  A change with `Behavior change: none` and a `.givn-skip` entry for `specs`
+  still installs and runs the retained `givn/specs/**` corpus when it replaces
+  a source root that owns its step definitions or fakes.
+  The skip removes the change's delta scenario batch, not the permanent corpus runner.
 - Configure strict mode: undefined/pending steps FAIL the build, never
   silently pass or skip.
 - Set `verify.command` in `givn/commands.yaml` to the exact runner invocation.
