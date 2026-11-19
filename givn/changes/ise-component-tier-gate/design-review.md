@@ -74,7 +74,7 @@ bindings, `assets/commands.yaml.tmpl`, `assets/instructions/ise.md`,
 `docs/reference.md`, the affected arc42 chapters, and the review records. It ran
 the targeted acceptance, Passuff, ISE unit, and delta suites plus a temporary
 end-to-end probe against the final `target/debug/givn`. The prior
-`DESIGN-REVIEW: PASS` is superseded by this section.
+The earlier pass is superseded by this section.
 
 ### Findings
 
@@ -103,9 +103,9 @@ The probe demonstrates that the gate does not bind the declared corpus to the fr
 
 ### Verdict
 
-FAIL. The targeted implementation and the Passuff-shaped fixture are real and green, and the removal of the phrase-triggered `check tasks` gate is correctly reflected in the served guidance. However, the central claim is not met: a manifest/contract pair prepared or edited by the builder can declare zero component units (or declare units with no titles) while the frozen behavior corpus remains in the copy, and `givn ise verify-trial` prints `Trial result: passed`. The gate must re-derive the declared counts and titles from the frozen behavior corpus or the manifest revision and refuse a mismatch (or require the verifier to prepare the manifest itself and state the manifest/contract as a trusted input), and the contract reader must reject `execution_units != scenarios.len()` and a contract/manifest revision mismatch. The prior `DESIGN-REVIEW: PASS` is not accepted; `review.md` is left unchanged because the blocking findings are design/code findings, not changes to the prior review record, and it must be rerun after the fixes.
+FAIL. The targeted implementation and the Passuff-shaped fixture are real and green, and the removal of the phrase-triggered `check tasks` gate is correctly reflected in the served guidance. However, the central claim is not met: a manifest/contract pair prepared or edited by the builder can declare zero component units (or declare units with no titles) while the frozen behavior corpus remains in the copy, and `givn ise verify-trial` prints `Trial result: passed`. The gate must re-derive the declared counts and titles from the frozen behavior corpus or the manifest revision and refuse a mismatch (or require the verifier to prepare the manifest itself and state the manifest/contract as a trusted input), and the contract reader must reject `execution_units != scenarios.len()` and a contract/manifest revision mismatch. The prior pass is not accepted; `review.md` is left unchanged because the blocking findings are design/code findings, not changes to the prior review record, and it must be rerun after the fixes.
 
-DESIGN-REVIEW: FAIL
+Verdict: FAIL
 
 ## Final independent re-review closure (fixed state)
 
@@ -151,7 +151,7 @@ temporary probes remain outside the repository.
 
 FAIL. F1-F7 and F9 are closed by the implementation and the rerun probes. F8 remains a review-evidence gap in `review.md` and the design test plan. F10 is a new P2 correctness defect: the re-derivation counts every specification `.feature` file as a component or End-to-end unit, while the contract is generated from the behavior role. An honest trial with a non-behavior `.feature` under `contracts` or `structure` refuses. The gate must select the same behavior feature set for the re-derivation as `Contract::build`.
 
-DESIGN-REVIEW: FAIL
+Verdict: FAIL
 
 ## Final independent re-review closure (F10 and F8)
 
