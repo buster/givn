@@ -103,7 +103,7 @@ unreachable revision fails review and archive.
   - [x] COMMIT: `bdc01ecb64c74682b62c06e0020b7d2052522a51` -- Batch: closeout
   - Evidence: `cargo test --test ise_component_tier_gate -- --test-threads=1` — 12 passed.
 - [x] `verify-trial` re-derives the frozen corpus from the copy and refuses a contract that hides it.
-  - [x] COMMIT: `451aa128b7330e08164cde0fe8d55fe4d238ad3c` -- Batch: component-tier-gate-final
+  - [x] COMMIT: `7008911cd26f394bd88a47c9febae2aedfc3ff83` -- Batch: component-tier-gate-final
   - Evidence: `cargo test --test ise_component_tier_gate -- --test-threads=1` — 17 passed, including a repaired-checksum contract with `component.execution_units: 0` refusing with "does not describe the frozen corpus", a contract from another revision refusing, product mutation after binding refusing, and duplicate/outline titles surviving the running gate; `cargo test --lib ise::contract::tests` — 8 passed and `cargo test --lib ise::` — 25 passed, including `execution_units == scenarios.len()`.
 - [x] A Passuff-shaped trial binds two rebuilt binaries and accepts a missing E2E coverage report.
   - [x] COMMIT: `94b1bb323ed9a599dded45cab218d8204a57dc58` -- Batch: component-tier-gate-hardening

@@ -14,7 +14,7 @@ README-IMPACT: updated - Configuration
 
 One independent review context performed both the design review and this final
 review. It did not author the change and received no author conversation. It
-reviewed the committed batch `451aa128`, the tasks revision `cdcb7fb0`, the
+reviewed the committed batch `7008911c`, the tasks revision `7008911c`, the
 transcript commit `a9c846e6`, and the current worktree's documentation
 corrections. The final independent re-review after the corpus-binding fix is in
 `design-review.md`.
