@@ -588,7 +588,10 @@ widened.
 An artifact may declare `post` entries. Entries can name `verify`,
 `verify-e2e`, `lint`, or `integrity`, or can be arbitrary shell commands. The
 command is executed through `sh -c` with `GIVN_FEATURES` set. Custom shell hooks
-may use `allow_failure: true`.
+may use `allow_failure: true`. The `verify` built-in also sets
+`GIVN_RESULT_FILE` and `GIVN_RESULT_SCOPE=change` and validates the result, so
+an exit-0 command that writes no green runner result fails the hook instead of
+passing on exit status alone.
 
 ### Mandatory binary checks
 

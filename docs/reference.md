@@ -226,7 +226,10 @@ rather than rewritten unsafely.
   gates; `optional: true` makes an artifact skippable.
 - `post:` — additive hooks per artifact. Built-ins are `verify`,
   `verify-e2e`, `lint`, and `integrity`; arbitrary shell commands are allowed.
-  Built-in names cannot be made `allow_failure`.
+  Built-in names cannot be made `allow_failure`. The `verify` hook sets
+  `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and `GIVN_RESULT_SCOPE=change` and
+  validates the result: an exit-0 command that writes no valid runner result
+  fails the hook.
 - `extensions:` — project rules appended to a served instruction under a
   marked `## Project extension` section. Unknown ids and malformed entries warn
   and are skipped; the built-in rules are served alone.
@@ -336,12 +339,24 @@ review guidance, not a new archive gate, establish the method's E2E expectation.
 
 ### Change verification
 
-`givn check tasks --change <id>` runs `verify.command` once against the change's
+`givn check tasks --change <id>` runs `verify.command` against the change's
 delta specs and writes `givn/changes/<id>/verification/tasks-verification.json`.
 Before launch it captures a `VerificationInputs` witness: current revision,
 selected-feature digest, command digest, relevant content digest, and declared
 scope. After the run it recaptures and requires equality; then it writes the
 receipt. Any launch, result, or stability failure leaves no green receipt.
+
+When the change lock has `ise` effective and the design records
+`Rebuilt code: ship` while `givn/specs/**` declares at least one component
+execution unit, the check also executes the retained component corpus. A change
+with no delta runs `givn/specs` as its change-scope subject; a change with a
+delta runs the delta first and then `givn/specs` into
+`verification/component-result.json`. The component result must execute exactly
+the declared units (plain scenarios plus Scenario Outline example rows,
+excluding `@e2e`) with zero failed and zero skipped; a missing or short result
+refuses as `component_executed=<executed>/<declared>`. The receipt records the
+subject in `features_path`/`features_digest` and, when the delta also ran, a
+`component` record with the corpus result.
 
 When the change lock has `ise` effective, the check first resolves the declared
 `e2e` category to its packages, then — when the delta contains `@e2e` scenarios — runs
@@ -355,9 +370,12 @@ off writes neither key: both are optional and skipped when absent, so its
 receipt bytes match the pre-existing shape.
 
 A change declaring `Behavior change: none` with the specs artifact skipped and
-no delta feature files reports changed-scenario verification as not applicable.
-It still checks identity and scenario commits and stores applicability without a
-fabricated runner result. Contradictory declarations and a missing skip refuse.
+no delta feature files reports changed-scenario verification as not applicable,
+unless it is an Ise ship with a declared component corpus: then the retained
+corpus is the change-scope subject and a green receipt is required. The check
+still verifies identity and scenario commits, and it stores applicability
+without a fabricated runner result only when no component tier is required.
+Contradictory declarations and a missing skip refuse.
 
 `givn check review` runs no tests. It validates the receipt:
 - the counts are green;
@@ -368,7 +386,11 @@ fabricated runner result. Contradictory declarations and a missing skip refuse.
 - when the change lock has `ise` effective, the E2E identity matches: the
   resolved package digests, the E2E runner command digest, the running
   Givn version, and an E2E scope that is green when the delta has an `@e2e`
-  scenario and `not_applicable` when it has none.
+  scenario and `not_applicable` when it has none;
+- when the design records `Rebuilt code: ship` and a component unit is
+  declared, the component corpus result is present, green, counts the declared
+  units, and binds the current `givn/specs/**` digest. `givn archive` applies
+  the same receipt rule before any mutation.
 
 A documentation/evidence-only revision with equal tested content reuses the
 proof. Schema 1, a receipt without a known content scope, or an unknown schema

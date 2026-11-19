@@ -269,7 +269,10 @@ For `givn check tasks`, the binary runs the non-configurable mandatory checks:
    package with a reference into `source`, or an E2E runner command that names no
    resolved root.
 3. Run `verify.command` with `GIVN_FEATURES` set to the active change specs and
-   `GIVN_RESULT_SCOPE=change`.
+   `GIVN_RESULT_SCOPE=change`. An Ise ship with a declared component corpus runs
+   `givn/specs` as the subject when the change has no delta, and runs the delta
+   first then `givn/specs` into `verification/component-result.json` when it
+   does; the retained result must equal the declared component units.
 4. When the delta contains an `@e2e` scenario, run `verify.e2e_command` with the
    same `GIVN_FEATURES`, `GIVN_RESULT_SCOPE=e2e`, and
    `verification/e2e-result.json`; an unbound step, skipped step, nonzero exit,
@@ -501,6 +504,13 @@ tested revision, features digest, verify-command digest, tested-content digest,
 resolved package digests, the E2E runner command digest, the running Givn version,
 and the E2E scope outcome. Both E2E fields are omitted rather than serialized
 as `null`, so a change with `ise` off keeps the previous receipt bytes.
+
+When the design records `Rebuilt code: ship` and `givn/specs/**` declares a
+component unit, the receipt's `features_path`/`features_digest` name the
+executed subject (`givn/specs` for a change with no delta) and the optional
+`component` record carries the retained corpus result when the delta also ran.
+A missing or short retained result refuses as
+`component_executed=<executed>/<declared>`.
 
 `givn check review` runs no tests: it reads that receipt and refuses a missing
 or stale one with `givn check tasks --change <id>`. `givn archive` performs the
