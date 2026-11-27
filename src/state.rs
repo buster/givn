@@ -61,9 +61,12 @@ pub(crate) fn inspect_verification(change_dir: &Path, manifest: &Manifest) -> St
         .parent()
         .and_then(Path::parent)
         .and_then(Path::parent);
-    let applicable = project_root.is_some_and(|root| {
-        crate::proof::change_verification_required(root, change_dir).is_ok_and(|required| required)
-    });
+    let applicable = match crate::proof::change_verification_not_applicable(change_dir) {
+        Ok(true) => project_root.is_some_and(|root| {
+            crate::proof::change_verification_required(root, change_dir).unwrap_or(true)
+        }),
+        _ => true,
+    };
     if !applicable {
         return "not applicable".to_owned();
     }

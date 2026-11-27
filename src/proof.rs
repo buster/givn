@@ -2200,7 +2200,7 @@ mod tests {
     #[test]
     fn an_ise_ship_requires_change_verification() {
         let dir = ship_project(
-            "**Decides D1: `Whole-system rebuild` with `Rebuilt\ncode: ship`.**\n",
+            "**Decides D1: `Whole-system rebuild`.**\n\nRebuilt code: ship\n",
             Some(
                 "Feature: Demo\n\n  Scenario: One\n    Given a step\n\n  Scenario: Two\n    Given a step\n",
             ),
