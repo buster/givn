@@ -1,0 +1,41 @@
+# Post-archive suite scopes
+
+Archive commit: 1908aaa2323e0890057fe2a9260021eb9bc3f916
+Tree: merged permanent corpus under `givn/specs` (nine delta scenarios merged;
+permanent suite count 1115, up from 1108 before the merge).
+
+## Regular suite
+
+```text
+$ GIVN_FEATURES=givn/specs ./run-tests.sh --non-e2e
+...
+        PASS [   1.795s] (1115/1115) givn::features_runner verify-change/visual-review-gate.feature::The review template carries the visual review section
+────────────
+     Summary [ 212.362s] 1115 tests run: 1115 passed, 115 skipped
+
+Wall time: 214.21 seconds
+exit code: 0
+```
+
+The 115 nextest-skipped units are the `@e2e` complement the regular tag
+expression excludes (`tests/features_runner.rs` sets `.fail_on_skipped()`); no
+runner step is skipped. 0 failed. The regular scope also ran `cargo fmt
+--all -- --check`, `cargo clippy --locked --all-targets -- -D warnings` for
+both trees, and the e2e tree's formatter and clippy.
+
+## E2E package
+
+```text
+$ GIVN_FEATURES=givn/specs ./run-tests.sh --e2e --package e2e
+...
+[Summary]
+56 features
+120 scenarios (120 passed)
+784 steps (784 passed)
+
+
+Wall time: 60.73 seconds
+exit code: 0
+```
+
+0 failed, 0 skipped. Both scopes green on the merged corpus.

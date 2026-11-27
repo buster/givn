@@ -1231,7 +1231,7 @@ fn ise_names_one_stack_example(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the served text names the artifact instruction that owns the change-strategy record and the one that owns the spec-gap record"
+    "the served text names the artifact instruction that owns the Ise rebuild decision record and the one that owns the spec-gap record"
 )]
 fn ise_names_record_owners(world: &mut GivnWorld) {
     let content = crate::steps::stdout(world);
@@ -2719,6 +2719,14 @@ fn author_requests_every_printed_instruction(world: &mut GivnWorld) {
         corpus.push_str(&format!("\n### instructions/{id}\n\n"));
         corpus.push_str(&String::from_utf8_lossy(&output.stdout));
     }
+    let startup = crate::common::run_givn(env, &["instructions"]);
+    assert!(
+        startup.status.success(),
+        "givn instructions failed: {}",
+        String::from_utf8_lossy(&startup.stderr)
+    );
+    corpus.push_str("\n### instructions/startup\n\n");
+    corpus.push_str(&String::from_utf8_lossy(&startup.stdout));
     world.additional_output = Some(corpus);
 }
 
@@ -3422,8 +3430,9 @@ fn rendered_parsers_accept(world: &mut GivnWorld) {
         .additional_output
         .as_deref()
         .expect("rendered template missing");
-    if text.contains("## Step Definitions") {
-        let row = text
+    if let Some((_, section)) = text.split_once("## Step Definitions") {
+        let section = section.split("\n## ").next().unwrap_or(section);
+        let row = section
             .lines()
             .find(|line| line.trim_start().starts_with("| Capability |"))
             .expect("Step Definitions table header missing");
@@ -3437,7 +3446,7 @@ fn rendered_parsers_accept(world: &mut GivnWorld) {
             "Step Definitions table is inside a blockquote: {row}"
         );
         assert!(
-            text.contains("Column 2 is the single path"),
+            section.contains("Column 2 is the single path"),
             "Step Definitions guidance names the wrong path column"
         );
     } else if text.contains("name: givn-") {
@@ -3703,7 +3712,7 @@ fn consumer_requests_ise_instruction(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the served instruction names Specification completeness, the two-layer test boundary, persisted-state continuity, the change strategy, and the spec gap classification"
+    "the served instruction names Specification completeness, the two-layer test boundary, persisted-state continuity, the Ise rebuild decision, implementation freedom, and the spec gap classification"
 )]
 fn served_instruction_names_rebuild_obligations(world: &mut GivnWorld) {
     let content = cli_stdout(world).to_lowercase();
@@ -3711,7 +3720,8 @@ fn served_instruction_names_rebuild_obligations(world: &mut GivnWorld) {
         "specification completeness",
         "two-layer test boundary",
         "persisted-state continuity",
-        "change strategy",
+        "ise rebuild decision",
+        "implementation freedom",
         "spec gap classification",
     ] {
         assert!(
@@ -3735,16 +3745,16 @@ fn served_instruction_names_retained_path_survival(world: &mut GivnWorld) {
     );
 }
 
-#[then("the served instruction says a declared Specification path must survive `givn archive`")]
+#[then("the served instruction says a declared manifest entry must survive `givn archive`")]
 fn served_instruction_names_specification_path_survival(world: &mut GivnWorld) {
     let content = cli_stdout(world);
     let normalized = content.split_whitespace().collect::<Vec<_>>().join(" ");
     assert!(
-        normalized.contains("declared Specification path must survive `givn archive`"),
-        "the served ise instruction omits the Specification-path survival rule: {content}"
+        normalized.contains("declared manifest entry must survive `givn archive`"),
+        "the served ise instruction omits the manifest-entry survival rule: {content}"
     );
     assert!(
-        normalized.contains("refuses such a declaration before moving the change"),
+        normalized.contains("refuses such an entry before moving the change"),
         "the served ise instruction omits the archive refusal: {content}"
     );
 }
@@ -3760,16 +3770,17 @@ fn served_instruction_names_archive_location(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the served instruction uses the established Component, Port, contract, Specification, and Source code vocabulary"
+    "the served instruction uses the established Component, Component Interface, contract, Specification, Source code, and System vocabulary"
 )]
 fn served_instruction_uses_established_vocabulary(world: &mut GivnWorld) {
     let content = cli_stdout(world);
     for term in [
         "Component",
-        "Port",
+        "Component Interface",
         "contract",
         "Specification",
         "Source code",
+        "System",
     ] {
         assert!(
             content.contains(term),
@@ -3778,21 +3789,231 @@ fn served_instruction_uses_established_vocabulary(world: &mut GivnWorld) {
     }
 }
 
-#[then(
-    "the served review guidance asks for the neighboring components changed outside the replaced component and the reason"
-)]
-fn review_guidance_asks_neighboring_components(world: &mut GivnWorld) {
-    let content = cli_stdout(world)
+/// The served text with wrapped lines joined, so an assertion can span them.
+fn normalized_stdout(world: &GivnWorld) -> String {
+    cli_stdout(world)
         .split_whitespace()
         .collect::<Vec<_>>()
-        .join(" ");
-    assert!(
-        content.contains("changed outside the replaced component"),
-        "the served review guidance omits the neighboring components: {content}"
+        .join(" ")
+}
+
+fn assert_served_text_contains(world: &GivnWorld, needles: &[&str]) {
+    let content = normalized_stdout(world);
+    for needle in needles {
+        assert!(
+            content.contains(needle),
+            "the served text is missing {needle:?}: {content}"
+        );
+    }
+}
+
+// --- ise rebuild rules -----------------------------------------------------
+
+#[then(
+    "the served instruction names the build configuration file, the lockfile, the toolchain pin, a structural template, a schema or migration asset, and served instruction text as files the rebuild needs"
+)]
+fn served_instruction_names_build_inputs(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &[
+            "file the rebuild needs",
+            "a build configuration file and a lockfile",
+            "a toolchain pin",
+            "a structural template",
+            "a schema or migration asset",
+            "served instruction or skill text",
+        ],
     );
-    assert!(
-        content.contains("the reason"),
-        "the served review guidance omits the reason: {content}"
+}
+
+#[then(
+    "the served instruction places the build configuration file and the lockfile under contracts, the toolchain pin under limits, a structural template under structure, a schema or migration asset under contracts, and served instruction text under behavior"
+)]
+fn served_instruction_places_build_inputs_under_roles(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &[
+            "a build configuration file and a lockfile under `contracts`",
+            "a toolchain pin under `limits`",
+            "a structural template under `structure`",
+            "a schema or migration asset under `contracts`",
+            "served instruction or skill text under `behavior`",
+        ],
+    );
+}
+
+#[then(
+    "the served instruction states that a file the rebuild needs that the Specification Manifest leaves undeclared is a specification defect"
+)]
+fn served_instruction_classifies_undeclared_build_input(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["leaves undeclared is a `specification defect`"]);
+}
+
+#[then(
+    "the served instruction treats an asset the rebuild generates inside the replaced unit whose bytes no frozen test fixes as an acceptable undocumented change"
+)]
+fn served_instruction_accepts_generated_asset(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &[
+            "whose bytes no frozen test fixes",
+            "acceptable undocumented change",
+        ],
+    );
+}
+
+#[then("the served instruction states that a generated asset is not a rebuild impact row")]
+fn served_instruction_generated_asset_is_not_a_neighbor(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["not a rebuild impact row"]);
+}
+
+#[then(
+    "the served instruction names the installed toolchain and dependency cache as supplied, never declared files"
+)]
+fn served_instruction_names_environment_inputs(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["The installed toolchain and dependency cache are supplied, never declared files"],
+    );
+}
+
+#[then(
+    "the served instruction states that a locked dependency the cache cannot resolve blocks the rebuild"
+)]
+fn served_instruction_states_blocked_rebuild(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["a locked dependency the cache cannot resolve blocks the rebuild"],
+    );
+}
+
+#[then("the served instruction states that the blocked rebuild is a setup failure, not a Spec gap")]
+fn served_instruction_classifies_blocked_rebuild(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["the blocked rebuild is a setup failure", "Spec gap"],
+    );
+}
+
+#[then("the served instruction states that the blocked rebuild is not a specification defect")]
+fn served_instruction_blocked_rebuild_is_not_a_specification_defect(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["it is not a `specification defect`"]);
+}
+
+#[then(
+    "the served instruction states that a contract the frozen tests rely on enumerates every value it fixes"
+)]
+fn served_instruction_requires_fixed_values(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["enumerates every value it fixes"]);
+}
+
+#[then(
+    "the served instruction requires the builder to read no Source code outside the spec copy and the declared inputs"
+)]
+fn served_instruction_requires_clean_room(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["reads no Source code outside the spec copy and the declared inputs"],
+    );
+}
+
+#[then(
+    "the served instruction requires a scan of the local package registry's source, cache, and git stores"
+)]
+fn served_instruction_requires_registry_scan(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["scan the local package registry's source, cache, and git stores"],
+    );
+}
+
+#[then(
+    "the served instruction requires every registry hit to be quarantined outside the builder's reach"
+)]
+fn served_instruction_requires_registry_quarantine(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["quarantine every hit outside the builder's reach"]);
+}
+
+#[then("the served instruction states that a store that does not exist has no hit")]
+fn served_instruction_states_absent_store(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["a store that does not exist has no hit"]);
+}
+
+#[then("the served instruction records the registry scan on its own clean-room scan line")]
+fn served_instruction_records_registry_scan(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["Record the scan on its own `Clean-room scan` line in the trial review"],
+    );
+}
+
+#[then(
+    "the served instruction records every file added, modified, deleted, moved, or renamed outside the declared Specification and outside the replaced unit"
+)]
+fn served_instruction_records_neighbors(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &[
+            "every file added, modified, deleted, moved, or renamed outside the declared Specification and outside the replaced unit",
+        ],
+    );
+}
+
+#[then("the served instruction records every consolidation with its reason")]
+fn served_instruction_records_consolidations(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &[
+            "every consolidation (a merge, split, move, or rename of rebuilt paths), each with its reason",
+        ],
+    );
+}
+
+#[then("the served instruction states that the trial review records the rebuild impact record")]
+fn served_instruction_records_neighbor_record_in_review(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["the trial review records it"]);
+}
+
+#[then(
+    "the served instruction states that a discard rebuild does not adopt the rebuilt Source code"
+)]
+fn served_instruction_dry_run_promotes_nothing(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["does not adopt the rebuilt Source code into the project"],
+    );
+}
+
+#[then("the served instruction states that the rebuilt work stays in the copy")]
+fn served_instruction_dry_run_stays_in_copy(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["The rebuilt work stays in the copy"]);
+}
+
+#[then(
+    "the served review guidance asks for the files changed outside the declared Specification or the replaced unit"
+)]
+fn review_guidance_asks_neighboring_components(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["files changed outside the declared Specification or the replaced unit"],
+    );
+}
+
+#[then("the served review guidance asks for every consolidation the rebuild made")]
+fn review_guidance_asks_consolidations(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["every consolidation the rebuild made"]);
+}
+
+#[then("the served review guidance asks for the reason for each")]
+fn review_guidance_asks_reason(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["the reason for each"]);
+}
+
+#[then("the served review guidance records the clean-room scan as its own line")]
+fn review_guidance_records_clean_room_line(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["The clean-room scan is its own `Clean-room scan` line"],
     );
 }
 
@@ -3806,6 +4027,137 @@ fn review_guidance_neighboring_answer_is_not_a_gate(world: &mut GivnWorld) {
         content.contains("review question, never a gate"),
         "the served review guidance does not deny the gate: {content}"
     );
+}
+
+// --- working-tree ship practice --------------------------------------------
+
+#[then("the served instruction teaches the working-tree ship sequence in order")]
+fn served_instruction_teaches_working_tree_sequence(world: &mut GivnWorld) {
+    let content = normalized_stdout(world);
+    let markers = [
+        "Write the active Specification",
+        "Keep the previous implementation in history",
+        "Remove the old implementation in the working tree",
+        "Rebuild in place",
+        "Verify, commit, archive",
+    ];
+    let mut previous = 0;
+    for marker in markers {
+        let Some(position) = content.find(marker) else {
+            panic!("the served ise instruction is missing {marker:?}: {content}");
+        };
+        assert!(
+            position >= previous,
+            "the served ise instruction teaches {marker:?} out of order: {content}"
+        );
+        previous = position;
+    }
+}
+
+#[then(
+    "the served instruction states that no spec copy, candidate revision, early archive merge, generated spec-copy manifest, repository view that hides history, or sandbox is required"
+)]
+fn served_instruction_states_ship_needs_no_copy(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &[
+            "does not require a spec copy, a candidate revision, an early archive merge, a generated spec-copy manifest, a repository view that hides history, or a sandbox",
+        ],
+    );
+}
+
+#[then(
+    "the served instruction states that a passing working-tree verification proves tested behaviour"
+)]
+fn served_instruction_states_working_tree_proves_behaviour(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["A passing verification proves the replacement's tested behaviour"],
+    );
+}
+
+#[then(
+    "the served instruction states that it does not prove the Specification alone was sufficient"
+)]
+fn served_instruction_states_working_tree_limitation(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &["does not prove that the Specification alone was sufficient"],
+    );
+}
+
+#[then(
+    "the served instruction states that the working-tree ship rebuilds in the current project working tree"
+)]
+fn served_instruction_names_working_tree_location(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["current project working tree"]);
+}
+
+#[then(
+    "the served instruction states that the spec-copy commands prepare an external copy and never edit the working tree"
+)]
+fn served_instruction_separates_copy_from_ship(world: &mut GivnWorld) {
+    assert_served_text_contains(
+        world,
+        &[
+            "The spec-copy commands prepare an external copy; they never edit the project working tree",
+        ],
+    );
+}
+
+#[then(
+    "the served instruction states that a changed Specification or E2E suite after the rebuild starts records a new frozen revision"
+)]
+fn served_instruction_requires_new_frozen_revision(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["record a new frozen revision"]);
+}
+
+#[then("the served ise instruction's file references resolve in the consumer project")]
+fn served_ise_file_references_resolve(world: &mut GivnWorld) {
+    let root = env(world).root();
+    let text = cli_stdout(world);
+    let sources = vec![crate::common::reference_check::GuidanceSource {
+        label: "givn instructions ise".to_string(),
+        text,
+    }];
+    let findings = crate::common::reference_check::unresolved_references(&root, &sources);
+    assert!(
+        findings.is_empty(),
+        "unresolved ise guidance references:\n{}",
+        crate::common::reference_check::describe(&findings)
+    );
+}
+
+#[then("the printed guidance carries no ise-only phrases")]
+fn printed_guidance_carries_no_ise_phrases(world: &mut GivnWorld) {
+    let text = world
+        .additional_output
+        .clone()
+        .expect("printed instructions were not collected")
+        .to_lowercase();
+    for phrase in [
+        "ise rebuild decision",
+        "rebuilt code",
+        "spec gap",
+        "rebuild impact record",
+        "specification manifest",
+        "ise test",
+    ] {
+        assert!(
+            !text.contains(phrase),
+            "ise-only phrase {phrase:?} appears in ise-off guidance"
+        );
+    }
+}
+
+#[then("the served instruction states that the relevant verification reruns against it")]
+fn served_instruction_reruns_verification(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["rerun the relevant verification"]);
+}
+
+#[then("the served instruction cites https://iseprinciple.org")]
+fn served_instruction_cites_the_principle(world: &mut GivnWorld) {
+    assert_served_text_contains(world, &["https://iseprinciple.org"]);
 }
 
 fn active_project(world: &GivnWorld) -> &crate::common::TestEnv {

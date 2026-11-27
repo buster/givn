@@ -62,11 +62,14 @@ specs, design, tasks, ADRs, glossary, coverage, or README.
 The implementing agent runs the mechanical checks and fixes every failure before
 starting the review:
 
-- full `verify.command`;
-- full `verify.e2e_command`;
+- full `verify.command` with a fresh `GIVN_RESULT_FILE`: `total > 0`, zero
+  failed, zero skipped, and the executed count equal to the declared component
+  units when the change is an Ise ship;
+- full `verify.e2e_command` with a fresh `GIVN_RESULT_FILE`: the declared
+  `@e2e` units, zero failed, zero skipped;
 - the project's coverage command with branch instrumentation;
 - `givn check review --change <id>`;
-- dead code and dead port/contract members;
+- dead code and dead Component Interface or contract members;
 - receipt freshness;
 - canonical proposal and use-case format;
 - README badges and other generated evidence.
@@ -74,6 +77,12 @@ starting the review:
 Do not start the review on a tree that still fails a mechanical check.
 The review is for semantic findings, not for discovering work the implementer
 can verify deterministically.
+
+A declared verification tier with no executed result is a critical finding, not
+a non-critical follow-up and not an acceptable known limit. This covers the
+retained component corpus when a rebuilt source root owns its step definitions
+or fakes, and the `@e2e` tier when its scenarios exist. `REVIEW: PASS` is
+invalid while such a tier is missing.
 
 After review, fix every finding and verify each one. One targeted closure checks
 the recorded findings and material regressions introduced by their fixes; it is
@@ -221,11 +230,22 @@ Examples:
 Record the result even when clean: "0 empty step bodies found across N files."
 
 {{#if addons.ise}}
-## Change strategy and Spec gap
+## Ise rebuild decision and Spec gap
 
 Read the change's design ledger and its proposal before classifying any
 difference.
 
+- **One `Ise rebuild decision`.** The design records exactly one, with a plain
+  `Rebuilt code` line when it rebuilds. A `No rebuild` change records no such
+  line.
+- **Working-tree ship states its limitation.** A rebuild with
+  `Rebuilt code: ship` rebuilds in the project working tree and relies on an
+  instruction not to consult accessible history. A green verification proves
+  tested behaviour, not that the Specification alone was sufficient; a review
+  that claims otherwise is a finding.
+- **Both tiers are executed.** A ship reviews the component result and the
+  End-to-end result. A review that accepts a frozen-only run, or that records
+  the component corpus as a known limit, is a finding.
 - **One `Spec gap` outcome before any fix.** Record exactly one `Spec gap`
   outcome before any fix: `E2E test defect`, `implementation defect`,
   `specification defect`, or `acceptable undocumented change`. More than one
@@ -234,13 +254,16 @@ difference.
 - **Only `specification defect` is a gap in the Specification.** An
   `E2E test defect` is a gap in the E2E test, an `implementation defect` is a
   gap in the build, and an `acceptable undocumented change` is no gap at all.
-- **An `E2E test defect` stops the Ise Test.** Stop the trial, correct the E2E
-  test, and restart the trial from the corrected suite. The `e2e` package is
-  part of the Specification, so the corrected test is a Specification
-  correction, not an exception to the freeze.
-- **Neighboring components.** Ask which components changed outside the
-  replaced component, and the reason for each change. Record the answer. This
-  is one review question, never a gate.
+- **An `E2E test defect` stops the Ise Test.** Stop the rebuild, correct the E2E
+  test, and restart from the corrected suite. The `e2e` package is part of the
+  Specification, so the corrected test is a Specification correction, not an
+  exception to the freeze.
+- **Rebuild impact record.** Ask which files changed outside the declared
+  Specification or the replaced unit, and every consolidation the rebuild made,
+  with the reason for each. Record the answer. The clean-room scan is its own
+  `Clean-room scan` line, and a file the rebuild read but the Specification did
+  not declare is a `specification defect`, not a record row. This is one review
+  question, never a gate.
 
 {{/if}}
 {{#if addons.arc42}}

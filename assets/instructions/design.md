@@ -21,6 +21,9 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
   MUST execute the `.feature` files under `givn/specs/` and the change's
   `specs/` — a bare unit-test runner is not sufficient. If `verify.command`
   is still the `givn missing-testrunner` sentinel, follow its guidance.
+  Skipping the change's `specs` removes only the delta files; it never removes
+  the obligation to execute the retained `givn/specs/**` corpus when the change
+  replaces a source root that owns its step definitions or fakes.
 - **Strict-mode config** (mandatory — see below).
 - **Single-scenario run command**: the exact invocation to run ONE named
   scenario for the change's runner; the stack instruction named by `steps`
@@ -54,28 +57,42 @@ from the proposal and the design alone. An unresolved, unrecorded `D<n>` is a
 design-review finding.
 
 {{#if addons.ise}}
-### change strategy in the Decisions ledger
+### Ise rebuild decision in the Decisions ledger
 
-Record exactly one `change strategy` as a `Decides D<n>` entry. Name one of
-three values:
+Record exactly one `Ise rebuild decision` as a `Decides D<n>` entry. Name one
+of three values:
 
 | Value | Meaning |
 |---|---|
-| `incremental modification` | The change edits existing components in place; their contracts and responsibilities stay. |
-| `Constant Ise` | The Specification and its `@e2e` package stay frozen; the implementation behind them is replaced. |
-| `whole-product rebuild` | The whole product is rebuilt while its declared Specification and end-to-end tests carry the behavior. |
+| `No rebuild` | The change edits the existing Source code in place; no replacement is rebuilt and no `Rebuilt code` line is recorded. |
+| `Single-Component Rebuild` | The active change's delta updates one Component's Specification, and its Source code and coupled unit tests are replaced behind its Component Interface. |
+| `Whole-system rebuild` | Every declared `source:` entry's Source code is replaced behind the System's external interfaces, including the coupled step definitions, fakes, and fixture builders under those roots; persisted data and external contracts stay. |
 
-A change that rebuilds records its `Ise Test` mode beside the strategy:
-`Dry-Run Ise` (the declared end-to-end tests run against the replacement before
-cutover) or `Full replacement` (the replacement ships and the declared
-end-to-end tests prove it).
+A change that rebuilds records a plain `Rebuilt code` line beside the decision:
+`discard` (the rebuilt result is not adopted) or `ship` (the verified
+replacement is adopted into the change). A `No rebuild` change records no
+`Rebuilt code` line.
+
+A `Single-Component Rebuild` with `Rebuilt code: ship` follows the working-tree
+sequence in `givn instructions ise`: the Specification delta is written first,
+the previous implementation stays in revision history, its Source code and
+coupled unit tests are removed from the project working tree, the replacement
+is rebuilt there without consulting that history, verified against the active
+delta, committed as part of the change, and archived once.
+
+A `Whole-system rebuild` with `Rebuilt code: ship` names one step-definition file per capability,
+the fakes and fixture builders for every external dependency, the component
+runner command, both tier commands, and each tier's declared execution-unit
+count. The frozen End-to-end package is the `@e2e` tier only. A design that
+leaves the retained component corpus without a runner is incomplete, even when
+the change records `Behavior change: none` and skips delta specs.
 
 The entry also names the affected consumers, the persisted state the rebuild
 must carry, and the rebuild boundary. This is the existing `## Decisions`
 entry; it adds no mandatory design field.
 
-Prose writes `change strategy` in full. A bare `strategy` names no domain
-decision.
+Prose writes `Ise rebuild decision` in full. A bare `decision` names no domain
+choice.
 
 {{/if}}
 {{#if addons.architecture_principles}}
@@ -83,7 +100,7 @@ decision.
 
 Apply `givn instructions architecture-principles`. Every consumer use case
 touched by this change has a contract and exactly one implementing component.
-Name each port and adapter when the change has an external service or more than
+Name each Component Interface and adapter when the change has an external service or more than
 one external boundary. Add a `### Contracts and Components` subsection under
 Architecture Impact with this table:
 

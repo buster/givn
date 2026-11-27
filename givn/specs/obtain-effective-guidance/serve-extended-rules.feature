@@ -189,7 +189,7 @@ Feature: The served instruction carries the built-in rules and the project's ext
     Given  an ise-enabled project
     When  the user requests the `ise` instruction
     Then  the command exits 0
-    And  the served instruction names the five rebuild obligations
+    And  the served instruction names the six rebuild obligations
 
   @serve-extended-rules
   Scenario: An ise instruction request with the addon off is refused by name
@@ -298,3 +298,47 @@ Feature: The served instruction carries the built-in rules and the project's ext
     Then  the command exits non-zero
     And  stderr names "steps-rustt"
     And  stderr lists the known instruction ids including "steps-rust"
+
+  @serve-extended-rules
+  Scenario: Served ise guidance distinguishes the trial gate from input equality
+    Given  a Givn project with ise effective
+    When  the author reads the served ise guidance
+    Then  the guidance names "givn ise compare" as the normal executed trial path
+    And  the guidance states that "givn ise verify-trial" remains the explicit executor
+    And  the guidance states that "--inputs-only" prints "Trial result: unverified"
+
+  @serve-extended-rules
+  Scenario: Served ise guidance requires the ordinary component workflow
+    Given  a Givn project with ise effective
+    When  the author reads the served ise guidance
+    Then  the guidance requires the builder to write the component runner step definitions and fakes
+    And  the guidance requires the component feature files to execute even though they stay in the Specification
+    And  the guidance requires per-tier coverage and an uninstrumented End-to-end report
+    And  the guidance refuses a coverage number as a substitute for the declared scenario execution
+
+  @serve-extended-rules
+  Scenario: The ise instruction documents the whole-system working-tree ship
+    Given  a Givn project with ise effective
+    Then  the served ise instruction contains "Whole-system rebuild with Rebuilt code: ship"
+    And  the served ise instruction contains "component_executed=<executed>/<declared>"
+
+  @serve-extended-rules
+  Scenario: The design guidance requires the component runner for a whole-system rebuild
+    Given  a Givn project with ise effective
+    Then  the served design instruction contains "one step-definition file per capability"
+    And  the served design instruction contains "leaves the retained component corpus without a runner is incomplete"
+
+  @serve-extended-rules
+  Scenario: The design-review guidance grills the two-tier runner
+    Given  a Givn project with ise effective
+    Then  the served design-review instruction contains "Two-tier runner coverage"
+
+  @serve-extended-rules
+  Scenario: The tasks guidance keeps the retained corpus when the delta is skipped
+    Given  a Givn project with ise effective
+    Then  the served tasks instruction contains "The skip removes the change's delta scenario batch"
+
+  @serve-extended-rules
+  Scenario: The review guidance treats a missing declared tier as critical
+    Given  a Givn project with ise effective
+    Then  the served review instruction contains "A declared verification tier with no executed result is a critical finding"

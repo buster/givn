@@ -1728,7 +1728,9 @@ fn commit_checkpoint(env: &common::TestEnv) {
     commit_fixture(env, "fixture: declaration checkpoint");
 }
 
-#[given("a clean Git project with a committed checkpoint and ise effective and no declaration")]
+#[given(
+    "a clean Git project with a committed checkpoint and ise effective and no Specification Manifest"
+)]
 fn given_ise_effective_without_declaration(world: &mut GivnWorld) {
     let env = common::make_init_root();
     set_addon_flag(&env, "ise", true);
@@ -1741,7 +1743,7 @@ fn given_ise_effective_without_declaration(world: &mut GivnWorld) {
 }
 
 #[given(
-    "a clean Git project with a committed checkpoint and ise effective and a project-edited declaration whose bytes are recorded"
+    "a clean Git project with a committed checkpoint and ise effective and a project-edited Specification Manifest whose bytes are recorded"
 )]
 fn given_ise_effective_with_edited_declaration(world: &mut GivnWorld) {
     let env = common::make_init_root();
@@ -1753,7 +1755,7 @@ fn given_ise_effective_with_edited_declaration(world: &mut GivnWorld) {
 }
 
 #[given(
-    "a clean Git project with a committed checkpoint and ise disabled and a leftover declaration whose bytes are recorded"
+    "a clean Git project with a committed checkpoint and ise disabled and a leftover Specification Manifest whose bytes are recorded"
 )]
 fn given_ise_disabled_with_leftover_declaration(world: &mut GivnWorld) {
     let env = common::make_init_root();
@@ -1764,7 +1766,7 @@ fn given_ise_disabled_with_leftover_declaration(world: &mut GivnWorld) {
 }
 
 #[given(
-    "a clean Git project with a committed checkpoint and ise effective and an upgrade-written declaration"
+    "a clean Git project with a committed checkpoint and ise effective and an upgrade-written Specification Manifest"
 )]
 fn given_ise_effective_with_upgrade_written_declaration(world: &mut GivnWorld) {
     let env = common::make_init_root();
@@ -1832,7 +1834,7 @@ fn then_revision_carries_no_diff(world: &mut GivnWorld, path: String) {
     );
 }
 
-#[then("the report names the declaration as written")]
+#[then("the report names the Specification Manifest as written")]
 fn then_report_names_declaration_written(world: &mut GivnWorld) {
     let observed = crate::steps::stdout(world);
     assert!(
@@ -1845,7 +1847,7 @@ fn then_report_names_declaration_written(world: &mut GivnWorld) {
     );
 }
 
-#[then("the report names the declaration as project-owned")]
+#[then("the report names the Specification Manifest as project-owned")]
 fn then_report_names_declaration_project_owned(world: &mut GivnWorld) {
     let observed = crate::steps::stdout(world);
     assert!(
@@ -1886,7 +1888,7 @@ fn then_no_second_managed_revision(world: &mut GivnWorld) {
     );
 }
 
-#[then("the declaration bytes are unchanged")]
+#[then("the Specification Manifest bytes are unchanged")]
 fn then_declaration_bytes_unchanged(world: &mut GivnWorld) {
     let recorded = world
         .specification_declaration

@@ -358,14 +358,14 @@ Feature: enable-optional-addons
     And  omitted default-on addons including challenge and communication_policy use the same enabled defaults everywhere
 
   @enable-optional-addons
-  Scenario: Enabling ise writes the setting and scaffolds the declaration
+  Scenario: Enabling ise writes the setting and scaffolds the Specification Manifest
     Given  an initialized project selecting opencode
     When  the user runs `givn addons enable ise`
     Then  the command exits 0
     And  stdout names "givn/specification.yaml"
     And  the active addon settings keep "ise" enabled
     And  the file "givn/specification.yaml" exists
-    And  the declaration names exactly the five roles and one source list
+    And  the Specification Manifest names exactly the five categories and one source list
 
   @enable-optional-addons
   Scenario: Enabling ise without its prerequisite is refused by name
@@ -388,37 +388,37 @@ Feature: enable-optional-addons
     And  the terminal transcript is captured for this scenario
 
   @enable-optional-addons
-  Scenario: Enabling ise preserves an edited declaration
+  Scenario: Enabling ise preserves an edited Specification Manifest
     Given  an initialized project selecting opencode
-    And  a declaration at "givn/specification.yaml" whose bytes are recorded
+    And  a Specification Manifest at "givn/specification.yaml" whose bytes are recorded
     When  the user runs `givn addons enable ise`
     Then  the command exits 0
     And  stdout contains "content preserved"
-    And  the declaration bytes equal the recorded bytes
+    And  the Specification Manifest bytes equal the recorded bytes
 
   @enable-optional-addons
   Scenario: Repeating the enable changes nothing
-    Given  an ise-enabled project selecting opencode whose declaration bytes are recorded
+    Given  an ise-enabled project selecting opencode whose Specification Manifest bytes are recorded
     When  the user runs `givn addons enable ise`
     Then  the command exits 0
-    And  the declaration bytes equal the recorded bytes
+    And  the Specification Manifest bytes equal the recorded bytes
 
   @enable-optional-addons
-  Scenario: A forced re-initialization preserves an effective ise and its declaration
-    Given  an ise-enabled project selecting opencode whose declaration bytes are recorded
+  Scenario: A forced re-initialization preserves an effective ise and its Specification Manifest
+    Given  an ise-enabled project selecting opencode whose Specification Manifest bytes are recorded
     When  the user runs `givn init --force --agents opencode`
     Then  the command exits 0
     And  the active addon settings keep "ise" enabled
-    And  the declaration bytes equal the recorded bytes
+    And  the Specification Manifest bytes equal the recorded bytes
 
   @enable-optional-addons
-  Scenario: Disabling ise preserves the declaration and reports it project-owned
-    Given  an ise-enabled project selecting opencode whose declaration bytes are recorded
+  Scenario: Disabling ise preserves the Specification Manifest and reports it project-owned
+    Given  an ise-enabled project selecting opencode whose Specification Manifest bytes are recorded
     When  the user runs `givn addons disable ise`
     Then  the command exits 0
     And  stdout contains "project-owned"
     And  the active addon settings keep "ise" disabled
-    And  the declaration bytes equal the recorded bytes
+    And  the Specification Manifest bytes equal the recorded bytes
 
   @enable-optional-addons
   Scenario: A change locked before ise existed accepts the enabled addon
@@ -428,7 +428,7 @@ Feature: enable-optional-addons
     Then  stderr does not contain "add-on configuration changed during change"
 
   @enable-optional-addons
-  Scenario: A declaration scaffold failure names the path and the applied setting
+  Scenario: A Specification Manifest scaffold failure names the path and the applied setting
     Given  an initialized project selecting opencode
     And  the path "givn/specification.yaml" is a directory
     When  the user runs `givn addons enable ise`

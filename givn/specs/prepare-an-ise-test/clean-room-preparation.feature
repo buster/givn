@@ -554,3 +554,22 @@ Feature: Clean-room preparation
     When  the developer rebuilds the component path "givn/specification.yaml" into a spec copy
     Then  the command fails and names "givn/specification.yaml" as a Specification file
     And  the spec copy path and the manifest path remain absent
+
+  @clean-room-preparation
+  Scenario: Preparation carries every declared build input into the spec copy
+    Given  a Git project with ise enabled and a declaration whose build inputs sit under the four content roles
+    And  a committed revision with those build inputs, one source file, and an End-to-end manifest
+    When  the developer rebuilds the whole product from "HEAD" into a spec copy
+    Then  the command succeeds and prints "Specification files: 7"
+    And  the spec copy holds "Cargo.toml" and "Cargo.lock"
+    And  the spec copy holds "rust-toolchain.toml" and "assets/templates/glossary.md"
+    And  the spec copy holds "assets/instructions/ise.md" and "givn/specs/demo.feature"
+    And  the spec copy omits "src/main.rs" and "e2e/Cargo.toml"
+
+  @clean-room-preparation
+  Scenario: Preparation writes a runnable verification contract
+    Given  a committed verification fixture with ten component scenarios and one End-to-end scenario
+    When  the verifier prepares a trial with ten component scenarios and one End-to-end scenario
+    Then  the command succeeds
+    And  the spec copy holds "givn/ise-verification.yaml"
+    And  the verification contract declares 10 component execution units and 1 End-to-end execution unit

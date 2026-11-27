@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "change": "ise-rebuild-decision-and-working-tree-ship",
+  "status": "passed",
+  "head": "8a7efce75ad6bbff3f3ea6807b5856268e84191b",
+  "features_path": "givn/changes/ise-rebuild-decision-and-working-tree-ship/specs",
+  "features_digest": "fdced4114e53c4d8822de746a9c850af0e8042f8ddb3d17659af8f1a813dcc4b",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "9a29d25908f4c5a59732bb9aa29e00aa9624acb6949d200025dd4c2c06c20692",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "skipped": 0
+  },
+  "e2e_identity": {
+    "package_digests": {
+      "e2e": "cb9294a1b5bd54488866652f3d968a934d4ac0bddd97f5836a40c11d187ae654"
+    },
+    "runner_command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+    "givn_version": "0.9.20"
+  },
+  "e2e_scope": {
+    "status": "not_applicable",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0
+  },
+  "finished_at_unix": 1795015821
+}

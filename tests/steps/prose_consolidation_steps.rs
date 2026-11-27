@@ -651,6 +651,32 @@ fn policy_feature_files_stay_shared(world: &mut GivnWorld) {
     );
 }
 
+#[then(
+    "the guidance states that the @e2e scenarios stay in the Specification with their exact titles"
+)]
+fn guidance_e2e_scenarios_stay_in_specification(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains(
+            "stay in the Specification under the `behavior` category with their exact titles"
+        ),
+        "the served ise guidance does not keep the @e2e scenarios in the Specification: {content}"
+    );
+}
+
+#[then(
+    "the guidance states that the declared e2e package holds the runner and every @e2e step definition"
+)]
+fn guidance_declared_e2e_package_holds_runner(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains(
+            "the declared `e2e` package, which holds the runner and every `@e2e` step definition"
+        ),
+        "the served ise guidance does not name the declared e2e package as the runner home: {content}"
+    );
+}
+
 #[then("the guidance states that component scenarios stay in the Specification unchanged")]
 fn guidance_component_scenarios_stay_in_specification(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
@@ -673,7 +699,7 @@ fn guidance_only_step_definitions_and_fakes_are_implementation(world: &mut GivnW
 fn guidance_keeps_two_layer_test_boundary(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
     assert!(
-        content.contains("two-layer test boundary"),
+        content.contains("Two-layer test boundary"),
         "the served ise guidance drops the two-layer test boundary: {content}"
     );
 }
@@ -982,20 +1008,20 @@ fn guidance_states_the_implicit_retained_entry(world: &mut GivnWorld) {
     );
 }
 
-#[then("the guidance states that the spec copy always carries the declaration itself")]
+#[then("the guidance states that the spec copy always carries the Specification Manifest itself")]
 fn guidance_states_the_spec_copy_carries_the_declaration(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
     assert!(
-        content.contains("The spec copy always carries the declaration itself"),
-        "the served ise guidance does not state that the spec copy always carries the declaration: {content}"
+        content.contains("The spec copy always carries the Specification Manifest itself"),
+        "the served ise guidance does not state that the spec copy always carries the Specification Manifest: {content}"
     );
 }
 
-#[then("the guidance states that it is an implicit Specification entry, not a sixth role")]
+#[then("the guidance states that it is an implicit Specification entry, not a sixth category")]
 fn guidance_states_the_implicit_specification_entry(world: &mut GivnWorld) {
     let content = loaded_guidance(world);
     assert!(
-        content.contains("implicit Specification entry, not a sixth role"),
+        content.contains("implicit Specification entry, not a sixth category"),
         "the served ise guidance does not state that the declaration is an implicit Specification entry: {content}"
     );
 }
@@ -1063,4 +1089,94 @@ fn no_propose_or_archive_command(world: &mut GivnWorld) {
             );
         }
     }
+}
+
+#[then("the guidance names \"givn ise verify-trial\" as the whole-system result gate")]
+fn guidance_names_verify_trial(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("givn ise verify-trial") && content.contains("whole-system trial result"),
+        "the served ise guidance does not name the whole-system trial gate: {content}"
+    );
+}
+
+#[then("the guidance states that \"givn ise compare\" proves frozen-input equality only")]
+fn guidance_compare_is_input_equality_only(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("`givn ise compare` is read-only")
+            && content.contains("frozen-input")
+            && content.contains("Trial result: unverified"),
+        "the served ise guidance does not separate input equality from a trial result: {content}"
+    );
+}
+
+#[then("the guidance names \"givn ise compare\" as the normal executed trial path")]
+fn guidance_compare_is_the_normal_trial_path(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("`givn ise compare` is the normal trial command"),
+        "the served ise guidance does not name compare as the normal executed trial path: {content}"
+    );
+}
+
+#[then("the guidance states that \"givn ise verify-trial\" remains the explicit executor")]
+fn guidance_verify_trial_is_the_explicit_executor(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("`givn ise verify-trial` remains the explicit executor"),
+        "the served ise guidance does not keep verify-trial as the explicit executor: {content}"
+    );
+}
+
+#[then("the guidance states that \"--inputs-only\" prints \"Trial result: unverified\"")]
+fn guidance_inputs_only_is_unverified(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("--inputs-only") && content.contains("Trial result: unverified"),
+        "the served ise guidance does not label --inputs-only as unverified: {content}"
+    );
+}
+
+#[then(
+    "the guidance requires the builder to write the component runner step definitions and fakes"
+)]
+fn guidance_requires_component_runner_steps_and_fakes(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("builder writes the component runner, step definitions, fakes"),
+        "the served ise guidance does not require the component runner, steps, and fakes: {content}"
+    );
+}
+
+#[then(
+    "the guidance requires the component feature files to execute even though they stay in the Specification"
+)]
+fn guidance_requires_component_feature_execution(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("executes the component feature files in the copy"),
+        "the served ise guidance does not require the component feature files to execute: {content}"
+    );
+}
+
+#[then("the guidance requires per-tier coverage and an uninstrumented End-to-end report")]
+fn guidance_requires_per_tier_coverage(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("Record each tier's line and branch coverage")
+            && content.contains("subprocess End-to-end report is declared uninstrumented"),
+        "the served ise guidance does not require per-tier coverage and an uninstrumented End-to-end report: {content}"
+    );
+}
+
+#[then(
+    "the guidance refuses a coverage number as a substitute for the declared scenario execution"
+)]
+fn guidance_coverage_never_substitutes(world: &mut GivnWorld) {
+    let content = loaded_guidance(world);
+    assert!(
+        content.contains("a coverage number never substitutes for the executed component corpus"),
+        "the served ise guidance lets coverage substitute for scenario execution: {content}"
+    );
 }

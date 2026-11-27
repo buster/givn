@@ -1,0 +1,1134 @@
+# post-archive verification
+# revision: b7ddea75c6c480a2e514dfa0feae13c0f00b6f63
+# host: morbo
+
+===== post-archive non-e2e =====
+# command: env GIVN_FEATURES=givn/specs ./run-tests.sh --non-e2e
+# started: 2026-11-17T22:45:17+01:00
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.12s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+────────────
+ Nextest run ID 142ae3a8-b1ed-48bb-8250-f9b5eb4a4108 with nextest profile: default
+    Starting 1117 tests across 1 binary (115 tests skipped)
+        PASS [   2.086s] (   1/1117) givn::features_runner archive-change/archive-proof.feature::A Fossil checkout without the fossil executable is refused by name
+        PASS [   2.157s] (   2/1117) givn::features_runner archive-change/archive-proof.feature::A legacy archive without a receipt refuses another archive run
+        PASS [   2.215s] (   3/1117) givn::features_runner archive-change/archive-proof.feature::A change present as both active and archived without a receipt is refused as corrupt
+        PASS [   2.238s] (   4/1117) givn::features_runner archive-change/archive-proof.feature::A change present as both active and archived is refused as corrupt
+        PASS [   2.263s] (   5/1117) givn::features_runner archive-change/archive-proof.feature::A rejected candidate revision on Git leaves the merge staged
+        PASS [   2.517s] (   6/1117) givn::features_runner archive-change/archive-proof.feature::A changed relevant input invalidates each affected scope before reuse
+        PASS [   2.542s] (   7/1117) givn::features_runner archive-change/archive-proof.feature::A failed archive move keeps the change retryable
+        PASS [   2.823s] (   8/1117) givn::features_runner archive-change/archive-proof.feature::A Fossil EXTRA file blocks the archive
+        PASS [   2.881s] (   9/1117) givn::features_runner archive-change/archive-proof.feature::A Fossil edited file blocks the archive
+        PASS [   2.905s] (  10/1117) givn::features_runner archive-change/archive-proof.feature::A rejected candidate revision on Fossil leaves the merged state uncommitted
+        PASS [   3.677s] (  11/1117) givn::features_runner archive-change/archive-proof.feature::A rejected candidate revision leaves the archive unproven and repairable
+        PASS [   3.771s] (  12/1117) givn::features_runner archive-change/archive-proof.feature::A proven archive records a verification receipt binding the tested revision
+        PASS [   2.240s] (  13/1117) givn::features_runner archive-change/archive-proof.feature::An already proven archive refuses another archive run
+        PASS [   2.316s] (  14/1117) givn::features_runner archive-change/archive-proof.feature::A stale passing scope result cannot prove a new archive execution
+        PASS [   2.168s] (  15/1117) givn::features_runner archive-change/archive-proof.feature::An inconsistent no-behavior-change archive exemption is refused before mutation
+        PASS [   2.627s] (  16/1117) givn::features_runner archive-change/archive-proof.feature::A rejected finalization publication leaves the archive unproven
+        PASS [   2.481s] (  17/1117) givn::features_runner archive-change/archive-proof.feature::An in-flight delta file is retried without duplicating its scenarios
+        PASS [   2.273s] (  18/1117) givn::features_runner archive-change/archive-proof.feature::An interrupted archive move is surfaced by project status
+        PASS [   2.266s] (  19/1117) givn::features_runner archive-change/archive-proof.feature::An unproven archive candidate is surfaced by project status
+        PASS [   2.414s] (  20/1117) givn::features_runner archive-change/archive-proof.feature::An interrupted merge resumes from its pending candidate
+        PASS [   2.685s] (  21/1117) givn::features_runner archive-change/archive-proof.feature::An interrupted archive move resumes from an identical pending candidate
+        PASS [   2.278s] (  22/1117) givn::features_runner archive-change/archive-proof.feature::An untracked file blocks the archive
+        PASS [   2.674s] (  23/1117) givn::features_runner archive-change/archive-proof.feature::Archive publishes a consistent projected interaction inventory
+        PASS [   2.441s] (  24/1117) givn::features_runner archive-change/archive-proof.feature::Archive refuses a merged candidate whose interaction inventory is inconsistent
+        PASS [   2.351s] (  25/1117) givn::features_runner archive-change/archive-proof.feature::Archive refuses a projected interaction-inventory mismatch before moving the change
+        PASS [   2.247s] (  26/1117) givn::features_runner archive-change/archive-proof.feature::Archive requires a committed project state
+        PASS [   2.379s] (  27/1117) givn::features_runner archive-change/archive-proof.feature::Archive refuses a stale change verification receipt before merging
+        PASS [   5.046s] (  28/1117) givn::features_runner archive-change/archive-proof.feature::A scope result that does not prove the suite blocks proof
+        PASS [   2.216s] (  29/1117) givn::features_runner archive-change/archive-proof.feature::Archive requires a version-controlled project
+        PASS [   2.256s] (  30/1117) givn::features_runner archive-change/archive-proof.feature::Archive requires the project root to be the checkout root
+        PASS [   3.148s] (  31/1117) givn::features_runner archive-change/archive-proof.feature::Archive refuses a proof after tested content changed
+        PASS [   3.562s] (  32/1117) givn::features_runner archive-change/archive-proof.feature::Archive publishes the merged candidate before running the full suite
+        PASS [   2.587s] (  33/1117) givn::features_runner archive-change/archive-proof.feature::Archive reuses a proof committed with its receipt
+        PASS [   2.452s] (  34/1117) givn::features_runner archive-change/archive-proof.feature::Archive reuses the change receipt and runs only the merged suite
+        PASS [   2.551s] (  35/1117) givn::features_runner archive-change/archive-proof.feature::Archive-directory evidence exemptions remain broad during proof reuse
+        PASS [   2.376s] (  36/1117) givn::features_runner archive-change/archive-proof.feature::CLI interaction transcripts are declared evidence
+        PASS [   2.411s] (  37/1117) givn::features_runner archive-change/archive-proof.feature::Finalization refuses a tree change outside the declared evidence
+        PASS [   2.558s] (  38/1117) givn::features_runner archive-change/archive-proof.feature::Each verification scope runs once against the merged permanent specs
+        PASS [   2.293s] (  39/1117) givn::features_runner archive-change/archive-proof.feature::Instructions route an unproven archive candidate to its resume command
+        PASS [   2.641s] (  40/1117) givn::features_runner archive-change/archive-proof.feature::Evidence-only recovery reuses successful scopes and runs only the failed scope
+        PASS [   2.819s] (  41/1117) givn::features_runner archive-change/archive-proof.feature::Change evidence does not block the archive
+        PASS [   2.349s] (  42/1117) givn::features_runner archive-change/archive-proof.feature::No-behavior-change archive retains merged-candidate verification
+        PASS [   2.509s] (  43/1117) givn::features_runner archive-change/archive-proof.feature::Scope inputs are captured before archive verification and checked afterward
+        PASS [   2.592s] (  44/1117) givn::features_runner archive-change/archive-proof.feature::Retry uses cheap input checks rather than blanket review revalidation
+        PASS [   2.366s] (  45/1117) givn::features_runner archive-change/archive-proof.feature::The end-to-end scope is not applicable when no end-to-end scenario is merged
+        PASS [   2.444s] (  46/1117) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::A failing end-to-end scope leaves the candidate unproven
+        PASS [   2.316s] (  47/1117) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured
+        PASS [   3.948s] (  48/1117) givn::features_runner archive-change/archive-proof.feature::Repairing a failed candidate forward proves it without repeating the merge
+        PASS [   2.372s] (  49/1117) givn::features_runner archive-change/extract-coverage-gate.feature::A coverage failure leaves the archive candidate unproven
+        PASS [   2.452s] (  50/1117) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured
+        PASS [   2.463s] (  51/1117) givn::features_runner archive-change/enforce-post-merge-e2e-gate.feature::Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured
+        PASS [   2.300s] (  52/1117) givn::features_runner archive-change/extract-coverage-gate.feature::A successful coverage command cannot reuse an old report
+        PASS [   2.476s] (  53/1117) givn::features_runner archive-change/extract-coverage-gate.feature::A coverage failure proves on rerun after the repair
+        PASS [   2.372s] (  54/1117) givn::features_runner archive-change/extract-coverage-gate.feature::Archive with coverage addon enabled still runs the coverage gate
+        PASS [   2.371s] (  55/1117) givn::features_runner archive-change/extract-coverage-gate.feature::Equal coverage from honest scope executions does not block proof
+        PASS [   2.553s] (  56/1117) givn::features_runner archive-change/extract-coverage-gate.feature::Evidence-only finalization retry reuses valid coverage
+        PASS [   2.711s] (  57/1117) givn::features_runner archive-change/extract-coverage-gate.feature::Fresh coverage reports must be valid
+        PASS [   2.404s] (  58/1117) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::A new capability preserves its supported feature structure
+        PASS [   2.415s] (  59/1117) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::An unsupported Rule in one new capability prevents every delta mutation
+        PASS [   2.396s] (  60/1117) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Archive is blocked when a new capability has no declared routing decision
+        PASS [   2.277s] (  61/1117) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Nothing is merged when one delta file of a change has no routing decision
+        PASS [   2.350s] (  62/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A conflicting Background replacement is refused before archive mutation
+        PASS [   2.513s] (  63/1117) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Retiring a use case's last capability removes the use-case directory and its narrative
+        PASS [   2.498s] (  64/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A modified scenario keeps its step data table after archiving
+        PASS [   2.538s] (  65/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A modified scenario keeps its step docstring after archiving
+        PASS [   2.608s] (  66/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::A supported Scenario Outline retains every Examples block
+        PASS [   2.558s] (  67/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::An added scenario keeps its step docstring after archiving
+        PASS [   2.586s] (  68/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::An explicit non-English Gherkin dialect is refused before archive mutation
+        PASS [   2.415s] (  69/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::An unsupported Rule is refused before archive mutation
+        PASS [   2.745s] (  70/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::Merging a modified scenario preserves its supported Background setup
+        PASS [   2.756s] (  71/1117) givn::features_runner archive-change/preserve-scenario-docstrings.feature::Supported execution tags retain their inheritance on archive
+        PASS [   2.686s] (  72/1117) givn::features_runner archive-change/require-durable-retained-paths.feature::A project with ise off archives without reading the declaration
+        PASS [   2.732s] (  73/1117) givn::features_runner archive-change/require-durable-retained-paths.feature::A retained root that also covers the archive location is unaffected
+        PASS [   2.653s] (  74/1117) givn::features_runner archive-change/require-durable-retained-paths.feature::Archive is blocked when the declaration cannot be loaded
+        PASS [   2.652s] (  75/1117) givn::features_runner archive-change/require-durable-retained-paths.feature::The refusal reports at most twenty isolated retained paths
+        PASS [   3.321s] (  76/1117) givn::features_runner archive-change/require-durable-retained-paths.feature::Archive is blocked when a declared retained path moves with the change
+        PASS [   2.451s] (  77/1117) givn::features_runner archive-change/require-merged-step-definitions.feature::An unproven archive candidate with a missing step definition is not verified again
+        PASS [   2.460s] (  78/1117) givn::features_runner archive-change/require-merged-step-definitions.feature::Archive is blocked when a delta step definition is missing from the permanent test tree
+        PASS [   1.949s] (  79/1117) givn::features_runner assess-code-structure/outline-report.feature::A Java production class is reported
+        PASS [   2.292s] (  80/1117) givn::features_runner archive-change/require-merged-step-definitions.feature::The refusal lists a bounded number of missing step phrases and a remainder count
+        PASS [   1.807s] (  81/1117) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript arrow-function binding is named in the human report
+        PASS [   1.925s] (  82/1117) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript class field is reported
+        PASS [   2.048s] (  83/1117) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript arrow-function binding is reported
+        PASS [   7.039s] (  84/1117) givn::features_runner archive-change/grouped-merge-for-new-capabilities.feature::Review and archive resolve existing capability owners consistently
+        PASS [   2.012s] (  85/1117) givn::features_runner assess-code-structure/outline-report.feature::A JavaScript production class and function are reported
+        PASS [   2.021s] (  86/1117) givn::features_runner assess-code-structure/outline-report.feature::A Python class is outlined with its methods and calls
+        PASS [   2.304s] (  87/1117) givn::features_runner assess-code-structure/outline-report.feature::A Python module outline lists its classes
+        PASS [   1.990s] (  88/1117) givn::features_runner assess-code-structure/outline-report.feature::A Python module without classes is a module unit
+        PASS [   2.040s] (  89/1117) givn::features_runner assess-code-structure/outline-report.feature::A Python project whose analyzer is unavailable still reports
+        PASS [   1.949s] (  90/1117) givn::features_runner assess-code-structure/outline-report.feature::A Rust-only project never invokes python3
+        PASS [   2.049s] (  91/1117) givn::features_runner assess-code-structure/outline-report.feature::A TypeScript interface is reported with its own type kind
+        PASS [   2.309s] (  92/1117) givn::features_runner assess-code-structure/outline-report.feature::A Rust module outline lists the types it declares
+        PASS [   2.017s] (  93/1117) givn::features_runner assess-code-structure/outline-report.feature::A TypeScript production class and function are reported
+        PASS [   1.960s] (  94/1117) givn::features_runner assess-code-structure/outline-report.feature::A call to another component is a leaf
+        PASS [   1.989s] (  95/1117) givn::features_runner assess-code-structure/outline-report.feature::A cohesive type is not treated as a god type
+        PASS [   2.021s] (  96/1117) givn::features_runner assess-code-structure/outline-report.feature::A component outline is a call tree
+        PASS [   2.354s] (  97/1117) givn::features_runner assess-code-structure/outline-report.feature::A call on the unit's own receiver resolves within the unit
+        PASS [   1.987s] (  98/1117) givn::features_runner assess-code-structure/outline-report.feature::A data-only type is not treated as a god type
+        PASS [   1.977s] (  99/1117) givn::features_runner assess-code-structure/outline-report.feature::A developer reads each call's resolution in the human report
+        PASS [   2.017s] ( 100/1117) givn::features_runner assess-code-structure/outline-report.feature::A developer scopes the report to a workspace member
+        PASS [   1.933s] ( 101/1117) givn::features_runner assess-code-structure/outline-report.feature::A file that cannot be analyzed is reported and the report continues
+        PASS [   1.964s] ( 102/1117) givn::features_runner assess-code-structure/outline-report.feature::A large type in the inspect band is a cohesive large type
+        PASS [   2.351s] ( 103/1117) givn::features_runner assess-code-structure/outline-report.feature::A file's code lines exclude inline test modules
+        PASS [   2.098s] ( 104/1117) givn::features_runner assess-code-structure/outline-report.feature::A god type found through cohesion reports only the cohesion evidence
+        PASS [   2.006s] ( 105/1117) givn::features_runner assess-code-structure/outline-report.feature::A long method found through complexity reports only complexity evidence
+        PASS [   1.969s] ( 106/1117) givn::features_runner assess-code-structure/outline-report.feature::A long method is a method-length finding
+        PASS [   1.968s] ( 107/1117) givn::features_runner assess-code-structure/outline-report.feature::A malformed Java file does not hide a valid TypeScript file
+        PASS [   1.967s] ( 108/1117) givn::features_runner assess-code-structure/outline-report.feature::A malformed JavaScript file does not hide a valid TypeScript file
+        PASS [   2.393s] ( 109/1117) givn::features_runner assess-code-structure/outline-report.feature::A method call on a named receiver resolves to that owner
+        PASS [   2.340s] ( 110/1117) givn::features_runner assess-code-structure/outline-report.feature::A method call on an unknown receiver is a name-only guess
+        PASS [   2.049s] ( 111/1117) givn::features_runner assess-code-structure/outline-report.feature::A mixed-language report discloses every supported language
+        PASS [   2.314s] ( 112/1117) givn::features_runner assess-code-structure/outline-report.feature::A method signature keeps arrays, qualified paths, and its full type detail
+        PASS [   2.272s] ( 113/1117) givn::features_runner assess-code-structure/outline-report.feature::A module outline interleaves member types and free functions in source order
+        PASS [   1.986s] ( 114/1117) givn::features_runner assess-code-structure/outline-report.feature::A module over the plan limit is a module finding
+        PASS [   2.338s] ( 115/1117) givn::features_runner assess-code-structure/outline-report.feature::A name-only guess is not expanded as a same-unit call
+        PASS [   1.994s] ( 116/1117) givn::features_runner assess-code-structure/outline-report.feature::A report is available in machine-readable form
+        PASS [   2.437s] ( 117/1117) givn::features_runner assess-code-structure/outline-report.feature::A name-only guess does not connect methods for cohesion
+        PASS [   2.354s] ( 118/1117) givn::features_runner assess-code-structure/outline-report.feature::A project can explicitly disable the outline experiment
+        PASS [   2.040s] ( 119/1117) givn::features_runner assess-code-structure/outline-report.feature::A report is written to a file
+        PASS [   1.993s] ( 120/1117) givn::features_runner assess-code-structure/outline-report.feature::A report output path that cannot be written is an error
+        PASS [   1.973s] ( 121/1117) givn::features_runner assess-code-structure/outline-report.feature::A type at the readable size limit is within limits
+        PASS [   1.904s] ( 122/1117) givn::features_runner assess-code-structure/outline-report.feature::A type one line over the readable size limit is a finding
+        PASS [   1.916s] ( 123/1117) givn::features_runner assess-code-structure/outline-report.feature::A type with many public methods is an interface
+        PASS [   2.349s] ( 124/1117) givn::features_runner assess-code-structure/outline-report.feature::A same-unit method implemented in another file is project_other_file
+        PASS [   2.322s] ( 125/1117) givn::features_runner assess-code-structure/outline-report.feature::A unit's physical lines cover only its own spans
+        PASS [   2.246s] ( 126/1117) givn::features_runner assess-code-structure/outline-report.feature::An ambiguous method name has no resolved target
+        PASS [   1.971s] ( 127/1117) givn::features_runner assess-code-structure/outline-report.feature::An explicitly requested scope that does not exist is an error
+        PASS [   1.985s] ( 128/1117) givn::features_runner assess-code-structure/outline-report.feature::An interface found through its public methods reports only public-method evidence
+        PASS [   2.020s] ( 129/1117) givn::features_runner assess-code-structure/outline-report.feature::An unsupported construct is named and not invented
+        PASS [   2.410s] ( 130/1117) givn::features_runner assess-code-structure/outline-report.feature::An associated-function call whose qualifier contradicts the target is external
+        PASS [   2.155s] ( 131/1117) givn::features_runner assess-code-structure/outline-report.feature::An interface is classified as an interface, not a god type
+        PASS [   2.463s] ( 132/1117) givn::features_runner assess-code-structure/outline-report.feature::An impl-level test method is excluded from the unit's lines
+        PASS [   1.901s] ( 133/1117) givn::features_runner assess-code-structure/outline-report.feature::Conditional code is counted as written
+        PASS [   2.048s] ( 134/1117) givn::features_runner assess-code-structure/outline-report.feature::JSX-only production sources remain unsupported
+        PASS [   2.037s] ( 135/1117) givn::features_runner assess-code-structure/outline-report.feature::Java and TypeScript test and dependency sources are excluded
+        PASS [   2.692s] ( 136/1117) givn::features_runner assess-code-structure/outline-report.feature::Every analyzed unit has exactly one classification
+        PASS [   1.919s] ( 137/1117) givn::features_runner assess-code-structure/outline-report.feature::JavaScript test and dependency sources are excluded
+        PASS [   2.096s] ( 138/1117) givn::features_runner assess-code-structure/outline-report.feature::JavaScript production modules are reported for every supported extension
+        PASS [   2.016s] ( 139/1117) givn::features_runner assess-code-structure/outline-report.feature::Loose class cohesion is omitted when it is not independently measured
+        PASS [   1.976s] ( 140/1117) givn::features_runner assess-code-structure/outline-report.feature::Test sources are not scanned
+        PASS [   1.956s] ( 141/1117) givn::features_runner assess-code-structure/outline-report.feature::The JSON report carries analyzer capabilities and limitations
+        PASS [   1.993s] ( 142/1117) givn::features_runner assess-code-structure/outline-report.feature::The JSON report carries the schema and rules versions
+        PASS [   2.019s] ( 143/1117) givn::features_runner assess-code-structure/outline-report.feature::The JSON hints count counts every non-within-limits unit
+        PASS [   2.093s] ( 144/1117) givn::features_runner assess-code-structure/outline-report.feature::The outline experiment is enabled by default
+        PASS [   2.368s] ( 145/1117) givn::features_runner assess-code-structure/outline-report.feature::The JSON report names each call's resolved target
+        PASS [   2.083s] ( 146/1117) givn::features_runner assess-code-structure/outline-report.feature::The outline report is unavailable when the experiment is disabled
+        PASS [   2.048s] ( 147/1117) givn::features_runner assess-code-structure/outline-report.feature::The report fails when the scope has no production sources
+        PASS [   1.978s] ( 148/1117) givn::features_runner assess-code-structure/outline-report.feature::The report is deterministic
+        PASS [   1.969s] ( 149/1117) givn::features_runner assess-code-structure/outline-report.feature::The same source produces the same report through either analysis engine
+        PASS [   2.019s] ( 150/1117) givn::features_runner assess-code-structure/outline-report.feature::Unavailable outline measurements are not reported as measured zero
+        PASS [   2.119s] ( 151/1117) givn::features_runner assess-code-structure/outline-report.feature::Unsupported-only Go production sources are not reported as absent
+        PASS [   2.431s] ( 152/1117) givn::features_runner assess-code-structure/outline-report.feature::Units are sorted by classification and path
+        PASS [   2.134s] ( 153/1117) givn::features_runner create-change/create-a-change.feature::Already-existing change is rejected
+        PASS [   2.170s] ( 154/1117) givn::features_runner create-change/create-a-change.feature::Empty id is rejected
+        PASS [   2.325s] ( 155/1117) givn::features_runner create-change/change-strategy.feature::The design-review guidance keeps a rebuild without an Ise Test mode a finding
+        PASS [   2.081s] ( 156/1117) givn::features_runner create-change/create-a-change.feature::Id beginning with a hyphen is rejected by argument parsing
+        PASS [   2.154s] ( 157/1117) givn::features_runner create-change/create-a-change.feature::Id beginning with a hyphen passed after the argument separator is rejected by validation
+        PASS [   2.123s] ( 158/1117) givn::features_runner create-change/create-a-change.feature::Id containing digits is accepted
+        PASS [   2.111s] ( 159/1117) givn::features_runner create-change/create-a-change.feature::Id ending with a hyphen is rejected
+        PASS [   2.129s] ( 160/1117) givn::features_runner create-change/create-a-change.feature::Id with a dot is rejected
+        PASS [   2.111s] ( 161/1117) givn::features_runner create-change/create-a-change.feature::Id with non-ASCII letters is rejected
+        PASS [   2.107s] ( 162/1117) givn::features_runner create-change/create-a-change.feature::Id with spaces is rejected
+        PASS [   2.097s] ( 163/1117) givn::features_runner create-change/create-a-change.feature::Id with underscores is rejected
+        PASS [   2.156s] ( 164/1117) givn::features_runner create-change/create-a-change.feature::Id with uppercase letters is rejected
+        PASS [   2.136s] ( 165/1117) givn::features_runner create-change/create-a-change.feature::Only proposal.md and the add-on lock are created in the change directory
+        PASS [   2.108s] ( 166/1117) givn::features_runner create-change/create-a-change.feature::Project override at givn/artifacts/proposal/proposal.md is used instead of the built-in template
+        PASS [   2.137s] ( 167/1117) givn::features_runner create-change/create-a-change.feature::Single-word id is accepted
+        PASS [   1.938s] ( 168/1117) givn::features_runner create-change/create-a-change.feature::Uninitialised project is rejected
+        PASS [   2.195s] ( 169/1117) givn::features_runner create-change/create-a-change.feature::Valid multi-word kebab-case id creates the change scaffold
+        PASS [   2.194s] ( 170/1117) givn::features_runner create-change/create-a-change.feature::proposal.md content equals the built-in template verbatim
+        PASS [   2.380s] ( 171/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy accepts the library public API as its real interface
+        PASS [   2.139s] ( 172/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy classifies a browser-rendered page as a Web UI
+        PASS [   2.132s] ( 173/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy classifies output-affecting flags as variants
+        PASS [   2.204s] ( 174/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy keeps the in-process allowance while ise is off
+        PASS [   2.307s] ( 175/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy names the declared e2e package as the E2E target
+        PASS [   2.126s] ( 176/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy refuses a silent deferral of a mandatory check
+        PASS [   2.159s] ( 177/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy requires a rendered-state assertion
+        PASS [   2.145s] ( 178/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy requires evidence for every declared UI state
+        PASS [   2.142s] ( 179/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy requires the visual baseline at every assertion
+        PASS [   2.547s] ( 180/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy selects E2E scope explicitly rather than by command shape
+        PASS [   2.157s] ( 181/1117) givn::features_runner create-change/prose-consolidation.feature::Canonical policy uses transcripts for terminal interfaces
+        PASS [   2.204s] ( 182/1117) givn::features_runner create-change/prose-consolidation.feature::Design and review instructions defer to the canonical policy
+        PASS [   2.083s] ( 183/1117) givn::features_runner create-change/prose-consolidation.feature::Disabling optional addons does not disable the dialog obligation
+        PASS [   1.914s] ( 184/1117) givn::features_runner create-change/prose-consolidation.feature::Justified E2E reclassification preserves real-interface coverage
+        PASS [   2.193s] ( 185/1117) givn::features_runner create-change/prose-consolidation.feature::Generated guidance names the commit path that works on every backend
+        PASS [   2.180s] ( 186/1117) givn::features_runner create-change/prose-consolidation.feature::Project override replaces the canonical specs instruction
+        PASS [   2.220s] ( 187/1117) givn::features_runner create-change/prose-consolidation.feature::Successful project skill and command replacements are preserved without policy injection
+        PASS [   2.235s] ( 188/1117) givn::features_runner create-change/prose-consolidation.feature::The propose and archive commands carry the seed stamping instructions
+        PASS [   2.478s] ( 189/1117) givn::features_runner create-change/prose-consolidation.feature::Served ise guidance keeps component scenarios in the Specification
+        PASS [   2.480s] ( 190/1117) givn::features_runner create-change/prose-consolidation.feature::Served ise guidance states that the trial always carries the declaration
+        PASS [   2.478s] ( 191/1117) givn::features_runner create-change/spec-gap.feature::A spec gap record names the artifact rather than its finder
+        PASS [   2.369s] ( 192/1117) givn::features_runner create-change/spec-gap.feature::An E2E test defect stops the Ise Test until the test is corrected
+        PASS [   2.420s] ( 193/1117) givn::features_runner create-change/spec-gap.feature::The proposal guidance names the corrective route for each outcome
+        PASS [   2.119s] ( 194/1117) givn::features_runner create-change/visual-design-contract.feature::Design guidance classifies a browser-rendered screen as a Web UI
+        PASS [   2.109s] ( 195/1117) givn::features_runner create-change/visual-design-contract.feature::Design guidance keeps improvements inside the style
+        PASS [   2.141s] ( 196/1117) givn::features_runner create-change/visual-design-contract.feature::Design guidance names the default browser driver
+        PASS [   2.190s] ( 197/1117) givn::features_runner create-change/visual-design-contract.feature::Design guidance names the default viewports
+        PASS [   2.110s] ( 198/1117) givn::features_runner create-change/visual-design-contract.feature::Design guidance names the user-visible persona boundary
+        PASS [   2.104s] ( 199/1117) givn::features_runner create-change/visual-design-contract.feature::Design guidance requires a driver for every Web UI matrix row
+        PASS [   2.190s] ( 200/1117) givn::features_runner create-change/visual-design-contract.feature::Design guidance requires breakpoints and accessibility
+        PASS [   2.216s] ( 201/1117) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance records the persona disposition
+        PASS [   2.199s] ( 202/1117) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance requires an approved contract
+        PASS [   2.267s] ( 203/1117) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance requires an operator question before a deferral
+        PASS [   2.205s] ( 204/1117) givn::features_runner create-change/visual-design-contract.feature::Design-review guidance tests the opposite interface classification
+        PASS [   2.172s] ( 205/1117) givn::features_runner create-change/visual-design-contract.feature::Proposal guidance requires confirmed personas or a reasoned none
+        PASS [   2.079s] ( 206/1117) givn::features_runner create-change/visual-design-contract.feature::The design template carries the state, breakpoint, and accessibility lines
+        PASS [   2.230s] ( 207/1117) givn::features_runner create-change/visual-design-contract.feature::The design template carries the visual contract section
+        PASS [   2.443s] ( 208/1117) givn::features_runner create-change/visual-design-contract.feature::Synchronized authoring guidance carries the classification, driver, and persona rules
+        PASS [   2.140s] ( 209/1117) givn::features_runner create-change/visual-design-contract.feature::The design-review template carries the persona disposition table
+        PASS [   2.188s] ( 210/1117) givn::features_runner create-change/visual-design-contract.feature::The proposal template carries the persona confirmation line
+        PASS [   2.111s] ( 211/1117) givn::features_runner create-change/visual-design-contract.feature::The review template carries the persona disposition and deferral markers
+        PASS [   2.265s] ( 212/1117) givn::features_runner declare-the-specification/specification-declaration.feature::A declaration that is not valid YAML is refused by name
+        PASS [   2.334s] ( 213/1117) givn::features_runner declare-the-specification/specification-declaration.feature::A declaration that names build inputs under the four content roles is accepted
+        PASS [   2.272s] ( 214/1117) givn::features_runner declare-the-specification/specification-declaration.feature::A project with ise disabled reads no declaration
+        PASS [   1.954s] ( 215/1117) givn::features_runner discover-specifications/keep-audit-output-clean.feature::Repeated audits emit stable output without progress lines
+        PASS [   2.258s] ( 216/1117) givn::features_runner declare-the-specification/specification-declaration.feature::A role that is not a list is refused by name
+        PASS [   1.930s] ( 217/1117) givn::features_runner discover-specifications/keep-audit-output-clean.feature::The text audit keeps model wording off the report channel
+        PASS [   2.261s] ( 218/1117) givn::features_runner declare-the-specification/specification-declaration.feature::An unknown role is named before the role it replaces
+        PASS [   2.262s] ( 219/1117) givn::features_runner declare-the-specification/specification-declaration.feature::An unreadable declaration is refused by name
+        PASS [   1.921s] ( 220/1117) givn::features_runner discover-specifications/spec-duplicates.feature::A malformed permanent feature reports its path and fails the audit
+        PASS [   1.973s] ( 221/1117) givn::features_runner discover-specifications/spec-duplicates.feature::A missing permanent specifications directory is an empty corpus
+        PASS [   1.922s] ( 222/1117) givn::features_runner discover-specifications/spec-duplicates.feature::A structural subset is reported as an overlap
+        PASS [   1.978s] ( 223/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Archived scenarios are excluded from the audit
+        PASS [   2.044s] ( 224/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Auditing leaves permanent specifications unchanged
+        PASS [   1.877s] ( 225/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Different inherited setup prevents an exact duplicate label
+        PASS [   4.439s] ( 226/1117) givn::features_runner declare-the-specification/specification-declaration.feature::A malformed declaration is refused by name and left unchanged
+        PASS [   1.937s] ( 227/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Equal supported executable arguments remain exact duplicates
+        PASS [   1.966s] ( 228/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Exact duplicates across features are reported together
+        PASS [   1.974s] ( 229/1117) givn::features_runner discover-specifications/spec-duplicates.feature::JSON output lists every match with relation and endpoints
+        PASS [   1.992s] ( 230/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Normalized executable differences do not establish literal equality
+        PASS [   2.005s] ( 231/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Repeating an unchanged audit produces the same report
+        PASS [   1.974s] ( 232/1117) givn::features_runner discover-specifications/spec-duplicates.feature::Same assertion shape without exact behavior is reported as a structural match
+        PASS [   2.011s] ( 233/1117) givn::features_runner discover-specifications/spec-duplicates.feature::The deterministic audit works without model downloads
+        PASS [   2.230s] ( 234/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::A malformed extension entry is dropped with a warning
+        PASS [   2.221s] ( 235/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::A repeated instruction key keeps the last entry
+        PASS [   2.206s] ( 236/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::A whitespace-only rule entry is skipped with a warning
+        PASS [   2.260s] ( 237/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::An empty extension list is valid and adds nothing
+        PASS [   2.313s] ( 238/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::An extension extends a policy and a step instruction alike
+        PASS [   2.021s] ( 239/1117) givn::features_runner fragments/adr-qualification-gate.feature::All effective guidance sources use the same ADR policy
+        PASS [   2.203s] ( 240/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::An extension for an unknown instruction is dropped with a warning
+        PASS [   2.144s] ( 241/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::Removing an extension restores the built-in rules alone
+        PASS [   2.017s] ( 242/1117) givn::features_runner fragments/adr-qualification-gate.feature::An ADR refinement is routed to amendment without duplication
+        PASS [   2.189s] ( 243/1117) givn::features_runner extend-an-instruction/instruction-extension.feature::Changing an extension changes the next served content and touches nothing else
+        PASS [   2.187s] ( 244/1117) givn::features_runner fragments/adr-qualification-gate.feature::A reviewer requests design-review guidance through the Givn CLI
+        PASS [   2.004s] ( 245/1117) givn::features_runner fragments/adr-qualification-gate.feature::An architectural replacement preserves supersession history
+        PASS [   1.949s] ( 246/1117) givn::features_runner fragments/adr-qualification-gate.feature::Arc42 impact does not by itself require an ADR
+        PASS [   2.005s] ( 247/1117) givn::features_runner fragments/adr-qualification-gate.feature::Design-review requires the cheaper-home challenge for a new ADR
+        PASS [   2.015s] ( 248/1117) givn::features_runner fragments/adr-qualification-gate.feature::Ordinary ADR downsides are not automatically risk debt
+        PASS [   2.002s] ( 249/1117) givn::features_runner fragments/adr-qualification-gate.feature::Shared guidance alone does not qualify an ADR
+        PASS [   2.034s] ( 250/1117) givn::features_runner fragments/adr-qualification-gate.feature::The ADR guidance requires an adversarial qualification record
+        PASS [   1.934s] ( 251/1117) givn::features_runner fragments/adr-qualification-gate.feature::The ADR register has one canonical ownership contract
+        PASS [   1.951s] ( 252/1117) givn::features_runner fragments/adr-qualification-gate.feature::The design template keeps decision justification in the design
+        PASS [   1.984s] ( 253/1117) givn::features_runner fragments/adr-qualification-gate.feature::The chapter-selection guidance does not normalize row 9
+        PASS [   2.044s] ( 254/1117) givn::features_runner fragments/adr-qualification-gate.feature::The ADR template ships with no pre-passed qualification values
+        PASS [   2.089s] ( 255/1117) givn::features_runner fragments/adr-qualification-gate.feature::The change assessment records ADR disposition separately from chapter impact
+        PASS [   2.030s] ( 256/1117) givn::features_runner fragments/adr-qualification-gate.feature::The guidance carries the three falsification tests
+        PASS [   1.957s] ( 257/1117) givn::features_runner fragments/adr-qualification-gate.feature::The guidance defines strict qualification as an all-gates contract
+        PASS [   1.939s] ( 258/1117) givn::features_runner fragments/adr-qualification-gate.feature::The guidance forbids invented ADR evidence
+        PASS [   2.096s] ( 259/1117) givn::features_runner fragments/adr-qualification-gate.feature::The guidance requires an existing-ADR check before drafting
+        PASS [   2.077s] ( 260/1117) givn::features_runner fragments/adr-qualification-gate.feature::The guidance routes normal design decisions to one canonical artifact
+        PASS [   1.983s] ( 261/1117) givn::features_runner fragments/adr-qualification-gate.feature::The impact assessment records the verdict before drafting
+        PASS [   2.118s] ( 262/1117) givn::features_runner fragments/adr-qualification-gate.feature::The migration preserves independent architecture history across three proposed decisions
+        PASS [   2.107s] ( 263/1117) givn::features_runner fragments/attribute-commits.feature::An unavailable optional attribution helper does not fail a human commit
+        PASS [   2.257s] ( 264/1117) givn::features_runner fragments/attribute-commits.feature::A human commit remains usable without attribution context
+        PASS [   2.330s] ( 265/1117) givn::features_runner fragments/attribute-commits.feature::A partial attribution context does not block a commit
+        PASS [   2.376s] ( 266/1117) givn::features_runner fragments/attribute-commits.feature::An existing commit hook runs before Givn attribution
+        PASS [   2.413s] ( 267/1117) givn::features_runner fragments/attribute-commits.feature::Attribution follows a model change between commits
+        PASS [   2.812s] ( 268/1117) givn::features_runner fragments/attribute-commits.feature::A commit without explicit paths fails before staging
+        PASS [   2.760s] ( 269/1117) givn::features_runner fragments/attribute-commits.feature::An explicit selected tracked deletion is committed successfully
+        PASS [   2.228s] ( 270/1117) givn::features_runner fragments/attribute-commits.feature::Git commits the selected working content without consuming an older staged version
+        PASS [   2.370s] ( 271/1117) givn::features_runner fragments/attribute-commits.feature::Maki leaves a command that creates no revision unchanged
+        PASS [   2.403s] ( 272/1117) givn::features_runner fragments/attribute-commits.feature::Maki marks a missing reasoning mode as unavailable
+        PASS [   2.364s] ( 273/1117) givn::features_runner fragments/attribute-commits.feature::Maki marks a partial attribution context as unavailable
+        PASS [   2.240s] ( 274/1117) givn::features_runner fragments/attribute-commits.feature::Maki prepares attribution for a revision command
+        PASS [   2.015s] ( 275/1117) givn::features_runner fragments/attribute-commits.feature::OpenCode attributes a command to the session that issued it
+        PASS [   2.018s] ( 276/1117) givn::features_runner fragments/attribute-commits.feature::OpenCode leaves attribution unavailable when no model is observed
+        PASS [   2.355s] ( 277/1117) givn::features_runner fragments/attribute-commits.feature::Maki resolves attribution from the session without an interactive UI
+        PASS [   2.107s] ( 278/1117) givn::features_runner fragments/attribute-commits.feature::The SCM-neutral commit path attributes a Git revision
+        PASS [   2.350s] ( 279/1117) givn::features_runner fragments/attribute-commits.feature::The SCM-neutral commit path attributes a Fossil check-in
+        PASS [   2.634s] ( 280/1117) givn::features_runner fragments/attribute-commits.feature::Repeated hook installation never dispatches its own launcher
+        PASS [   2.469s] ( 281/1117) givn::features_runner fragments/attribute-commits.feature::The commit wrapper records only the named paths on Fossil
+        PASS [   2.238s] ( 282/1117) givn::features_runner fragments/attribute-commits.feature::The commit wrapper without attribution context leaves the message unchanged
+        PASS [   2.018s] ( 283/1117) givn::features_runner fragments/choose-project-license.feature::Cargo.toml declares GPL-3.0-or-later license
+        PASS [   2.266s] ( 284/1117) givn::features_runner fragments/attribute-commits.feature::omp leaves a command that creates no revision unchanged
+        PASS [   2.053s] ( 285/1117) givn::features_runner fragments/choose-project-license.feature::Consumer inspects the project license in Cargo.toml and README
+        PASS [   2.253s] ( 286/1117) givn::features_runner fragments/attribute-commits.feature::omp marks a partial attribution context as unavailable
+        PASS [   2.669s] ( 287/1117) givn::features_runner fragments/attribute-commits.feature::Unrelated staged additions and deletions survive an explicit Git commit
+        PASS [   2.009s] ( 288/1117) givn::features_runner fragments/choose-project-license.feature::README.md declares the project license
+        PASS [   2.102s] ( 289/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Arc42 addon expands to arc42-docs artifact when enabled
+        PASS [   2.029s] ( 290/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Arc42 addon is idempotent when already enabled
+        PASS [   2.056s] ( 291/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Cycle in dependency graph is rejected
+        PASS [   2.071s] ( 292/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Dangling require reference is rejected
+        PASS [   2.153s] ( 293/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Empty overlay returns the base manifest unchanged
+        PASS [   1.887s] ( 294/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay adds a new artifact
+        PASS [   2.003s] ( 295/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay deep-merges fields on an existing artifact
+        PASS [   2.007s] ( 296/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay marks an existing artifact as optional
+        PASS [   1.986s] ( 297/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay refuses to remove a protected gate artifact
+        PASS [   1.912s] ( 298/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay removes a leaf artifact via remove true
+        PASS [   2.076s] ( 299/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay remove is rejected when artifact has dependents
+        PASS [   1.876s] ( 300/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay replaces apply requires
+        PASS [   1.881s] ( 301/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::Overlay replaces the verify command
+        PASS [   1.998s] ( 302/1117) givn::features_runner fragments/customize-the-lifecycle-graph.feature::apply.requires referencing non-existent artifact is rejected
+        PASS [   2.115s] ( 303/1117) givn::features_runner fragments/detect-the-project-repository.feature::A Git worktree without the Git executable is refused by name
+        PASS [   2.568s] ( 304/1117) givn::features_runner fragments/detect-the-project-repository.feature::A Fossil checkout nested inside an ancestor Git worktree selects Fossil
+        PASS [   6.269s] ( 305/1117) givn::features_runner fragments/attribute-commits.feature::Unsafe explicit-path isolation is refused without consuming other work
+        PASS [   1.941s] ( 306/1117) givn::features_runner fragments/find-existing-scenarios.feature::Lexical search is parsed from the AST so docstring payload creates no phantom hits
+        PASS [   1.989s] ( 307/1117) givn::features_runner fragments/find-existing-scenarios.feature::Discovery commands never modify permanent files
+        PASS [   2.127s] ( 308/1117) givn::features_runner fragments/detect-the-project-repository.feature::A project root with both markers is refused as ambiguous
+        PASS [   2.376s] ( 309/1117) givn::features_runner fragments/detect-the-project-repository.feature::A project root nested inside a larger Git worktree is refused by name
+        PASS [   2.144s] ( 310/1117) givn::features_runner fragments/detect-the-project-repository.feature::A project without version control is refused by name
+        PASS [   2.077s] ( 311/1117) givn::features_runner fragments/find-existing-scenarios.feature::Lexical search reports an empty result for unknown terms
+        PASS [   2.193s] ( 312/1117) givn::features_runner fragments/generate-ideation-guidance.feature::A consumer synchronizes skills and every agent target receives the ideation facilitation skill
+        PASS [   2.339s] ( 313/1117) givn::features_runner fragments/generate-ideation-guidance.feature::Handoff cuts change seeds by deliverable guarantee
+        PASS [   2.334s] ( 314/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The event storming review checks canvas coverage, legality, agreement, and rendering
+        PASS [   2.160s] ( 315/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The frame is confirmed once and later phase boundaries report
+        PASS [   2.154s] ( 316/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The generated ideation files direct the agent to the ideation instruction
+        PASS [   2.236s] ( 317/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the same conduct rules
+        PASS [   2.215s] ( 318/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation command guardrails carry the verified-name rule
+        PASS [   2.202s] ( 319/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation command guardrails require the canvas and legal aggregates
+        PASS [   2.178s] ( 320/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance binds every confirmed term to the user's verified name
+        PASS [   2.279s] ( 321/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance asks the naming question as soon as a name fails
+        PASS [   2.215s] ( 322/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance binds personas to the artifacts that affect them
+        PASS [   2.751s] ( 323/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance asks the term check before a phase closes
+        PASS [   2.351s] ( 324/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the authoring requirements and the handoff mapping
+        PASS [   2.208s] ( 325/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the live-question standard
+        PASS [   2.559s] ( 326/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the canonical definition and the eight scoping rules
+        PASS [   2.276s] ( 327/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the open-question qualifier rule
+        PASS [   2.471s] ( 328/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the persona identity criteria and the reuse protocol
+        PASS [   2.100s] ( 329/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance compares start rather than explore
+        PASS [   2.408s] ( 330/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the persona schema
+        PASS [   2.409s] ( 331/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the seed schema and its status values
+        PASS [   2.426s] ( 332/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the phase ladder and the one-question rule
+        PASS [   2.362s] ( 333/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance keeps aggregates to declared consistency boundaries
+        PASS [   2.596s] ( 334/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance carries the term schema and the collision procedure
+        PASS [   2.293s] ( 335/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
+        PASS [   2.496s] ( 336/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance keeps the confirmed persona behaviors
+        PASS [   2.369s] ( 337/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance requires a canvas with distinguishable element kinds
+        PASS [   2.343s] ( 338/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation guidance stops questions at decided directions
+        PASS [   2.066s] ( 339/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The ideation skill ships without any addon enabled
+        PASS [   1.933s] ( 340/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The persona template carries the stable core and the running record
+        PASS [   2.092s] ( 341/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The start guidance points to ideation for structured domain work
+        PASS [   2.131s] ( 342/1117) givn::features_runner fragments/generate-ideation-guidance.feature::The verified-name gate holds without the addon
+        PASS [   2.138s] ( 343/1117) givn::features_runner fragments/guide-domain-modeling.feature::A rendered diagram is required evidence
+        PASS [   2.339s] ( 344/1117) givn::features_runner fragments/guide-domain-modeling.feature::A project without the addon is not routed to the domain skill
+        PASS [   2.486s] ( 345/1117) givn::features_runner fragments/guide-domain-modeling.feature::A project without arc42 is still pointed at the domain skill
+        PASS [   2.289s] ( 346/1117) givn::features_runner fragments/guide-domain-modeling.feature::An agent requests next-step guidance as JSON and the skill route is machine-readable
+        PASS [   2.268s] ( 347/1117) givn::features_runner fragments/guide-domain-modeling.feature::An existing arc42 glossary migrates without losing definitions
+        PASS [   2.217s] ( 348/1117) givn::features_runner fragments/guide-domain-modeling.feature::Durable documents are reused instead of copied per change
+        PASS [   2.173s] ( 349/1117) givn::features_runner fragments/guide-domain-modeling.feature::Lifecycle guidance describes the domain, not the givn change
+        PASS [   2.179s] ( 350/1117) givn::features_runner fragments/guide-domain-modeling.feature::Relationships link to their governing contract instead of copying rules
+        PASS [   2.293s] ( 351/1117) givn::features_runner fragments/guide-domain-modeling.feature::The challenge bullet hands the name choice to the user
+        PASS [   2.211s] ( 352/1117) givn::features_runner fragments/guide-domain-modeling.feature::The challenge bullet shows a naming question with candidates and a collision
+        PASS [   2.154s] ( 353/1117) givn::features_runner fragments/guide-domain-modeling.feature::The design-review skill checks that the ubiquitous language is followed
+        PASS [   2.259s] ( 354/1117) givn::features_runner fragments/guide-domain-modeling.feature::The domain model and glossary have separate owners
+        PASS [   2.301s] ( 355/1117) givn::features_runner fragments/guide-domain-modeling.feature::The domain-modeling guidance carries the term introduction test
+        PASS [   2.185s] ( 356/1117) givn::features_runner fragments/guide-domain-modeling.feature::The review skill checks that the ubiquitous language is followed
+        PASS [   1.899s] ( 357/1117) givn::features_runner fragments/guide-domain-modeling.feature::The skill trigger names conversation states
+        PASS [   2.195s] ( 358/1117) givn::features_runner fragments/guide-domain-modeling.feature::The skill body is an active discipline
+        PASS [   2.435s] ( 359/1117) givn::features_runner fragments/guide-domain-modeling.feature::The next-step guidance names the domain skill during later change phases
+        PASS [   2.180s] ( 360/1117) givn::features_runner fragments/guide-domain-modeling.feature::The structural template does not require a lifecycle or event catalogue
+        PASS [   2.236s] ( 361/1117) givn::features_runner fragments/guide-domain-modeling.feature::The structural template keeps its notation legend separate
+        PASS [   2.220s] ( 362/1117) givn::features_runner fragments/guide-domain-modeling.feature::The structural template provides the boundaries and relationships scaffold
+        PASS [   2.162s] ( 363/1117) givn::features_runner fragments/guide-domain-modeling.feature::Unknown structure stays qualified
+        PASS [   2.052s] ( 364/1117) givn::features_runner fragments/instruction-integrity.feature::A configured target without synchronized guidance fails the check
+        PASS [   2.354s] ( 365/1117) givn::features_runner fragments/instruction-integrity.feature::A dangling stack instruction id fails the reference check by name
+        PASS [   2.399s] ( 366/1117) givn::features_runner fragments/instruction-integrity.feature::A policy instruction named with a change context is a finding
+        PASS [   2.244s] ( 367/1117) givn::features_runner fragments/instruction-integrity.feature::A printed reference that resolves nowhere fails the check
+        PASS [   2.222s] ( 368/1117) givn::features_runner fragments/instruction-integrity.feature::An undeclared reference in an installed skill fails the check
+        PASS [   2.300s] ( 369/1117) givn::features_runner fragments/instruction-integrity.feature::A project dialog override remains the effective policy after synchronization
+        PASS [   2.194s] ( 370/1117) givn::features_runner fragments/instruction-integrity.feature::An unresolvable instruction id keeps the known-artifact error
+        PASS [   2.271s] ( 371/1117) givn::features_runner fragments/instruction-integrity.feature::An author requests the canonical interaction and E2E guidance
+        PASS [   1.977s] ( 372/1117) givn::features_runner fragments/instruction-integrity.feature::Canonical E2E guidance rejects weaker interface evidence
+        PASS [   2.276s] ( 373/1117) givn::features_runner fragments/instruction-integrity.feature::Artifact instructions reject an unsafe change context
+        PASS [   2.015s] ( 374/1117) givn::features_runner fragments/instruction-integrity.feature::Current shipped guidance and help exclude harness-project leakage without rewriting history
+        PASS [   2.225s] ( 375/1117) givn::features_runner fragments/instruction-integrity.feature::Design guidance requires the complete E2E setup record
+        PASS [   2.097s] ( 376/1117) givn::features_runner fragments/instruction-integrity.feature::Dialog teaching contrasts show complete decisions rather than bare labels
+        PASS [   2.067s] ( 377/1117) givn::features_runner fragments/instruction-integrity.feature::Givn release distribution excludes local recordings and harness fixtures
+        PASS [   2.082s] ( 378/1117) givn::features_runner fragments/instruction-integrity.feature::Givn shipped templates render parser-compatible documents and examples
+        PASS [   2.291s] ( 379/1117) givn::features_runner fragments/instruction-integrity.feature::Machine-readable instructions describe the effective artifact
+        PASS [   3.124s] ( 380/1117) givn::features_runner fragments/instruction-integrity.feature::Every generated direction is invokable in its documented context
+        PASS [   2.871s] ( 381/1117) givn::features_runner fragments/instruction-integrity.feature::Every generated skill and command directs to exactly one served instruction id
+        PASS [   2.628s] ( 382/1117) givn::features_runner fragments/instruction-integrity.feature::Every instruction id named by generated guidance resolves through the Givn CLI
+        PASS [   2.265s] ( 383/1117) givn::features_runner fragments/instruction-integrity.feature::Machine-readable no-active startup guidance carries the start route
+        PASS [   2.209s] ( 384/1117) givn::features_runner fragments/instruction-integrity.feature::Machine-readable startup guidance retains the dialog obligation while reporting an active change
+        PASS [   2.166s] ( 385/1117) givn::features_runner fragments/instruction-integrity.feature::Migration consent does not imply an unverified recovery guarantee
+        PASS [   1.943s] ( 386/1117) givn::features_runner fragments/instruction-integrity.feature::Relevant dialog examples are required before the first question of their type
+        PASS [   2.461s] ( 387/1117) givn::features_runner fragments/instruction-integrity.feature::Project instruction overrides survive skill synchronization
+        PASS [   3.788s] ( 388/1117) givn::features_runner fragments/instruction-integrity.feature::Every instruction id a served instruction names resolves
+        PASS [   2.116s] ( 389/1117) givn::features_runner fragments/instruction-integrity.feature::Review guidance names the deterministic disposition gates
+        PASS [   2.171s] ( 390/1117) givn::features_runner fragments/instruction-integrity.feature::Retrieval guidance distinguishes build capabilities
+        PASS [   2.176s] ( 391/1117) givn::features_runner fragments/instruction-integrity.feature::The active-change startup guidance qualifies its next step
+        PASS [   1.947s] ( 392/1117) givn::features_runner fragments/instruction-integrity.feature::The design-review guidance points at the use-case scope criteria
+        PASS [   2.005s] ( 393/1117) givn::features_runner fragments/instruction-integrity.feature::The design and design-review guidance carry the decision ledger
+        PASS [   2.129s] ( 394/1117) givn::features_runner fragments/instruction-integrity.feature::The canonical dialog policy is retrievable through the Givn CLI
+        PASS [   2.126s] ( 395/1117) givn::features_runner fragments/instruction-integrity.feature::The characterization guidance requests the reverse review from Givn
+        PASS [   2.209s] ( 396/1117) givn::features_runner fragments/instruction-integrity.feature::The canonical dialog policy demonstrates the full question record
+        PASS [   2.176s] ( 397/1117) givn::features_runner fragments/instruction-integrity.feature::The design-review template carries the per-question record shape
+        PASS [   2.117s] ( 398/1117) givn::features_runner fragments/instruction-integrity.feature::The dialog policy is retrievable without an active change
+        PASS [   2.161s] ( 399/1117) givn::features_runner fragments/instruction-integrity.feature::The generated guidance references resolve with the default configuration
+        PASS [   2.097s] ( 400/1117) givn::features_runner fragments/instruction-integrity.feature::The generated guidance references resolve without addons
+        PASS [   2.309s] ( 401/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction accepts an asset the rebuild generates inside the replaced unit
+        PASS [   2.318s] ( 402/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction carries the five rebuild obligations
+        PASS [   2.266s] ( 403/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction keeps a dry run out of the product
+        PASS [   2.271s] ( 404/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction keeps a published copy out of the clean room
+        PASS [   2.305s] ( 405/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction keeps the dependency cache in the environment
+        PASS [   2.239s] ( 406/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction makes the declaration cover every build input
+        PASS [   2.338s] ( 407/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction records a rebuild's neighbors and consolidations
+        PASS [   2.259s] ( 408/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction requires a relied-on contract to enumerate its fixed values
+        PASS [   2.349s] ( 409/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction says declared retained paths survive archiving
+        PASS [   2.595s] ( 410/1117) givn::features_runner fragments/instruction-integrity.feature::The ise instruction names only instruction ids that resolve
+        PASS [   2.155s] ( 411/1117) givn::features_runner fragments/instruction-integrity.feature::The proposal design and design-review templates carry the ledger shapes
+        PASS [   2.624s] ( 412/1117) givn::features_runner fragments/instruction-integrity.feature::The printed instructions reference only resolvable files
+        PASS [   1.944s] ( 413/1117) givn::features_runner fragments/instruction-integrity.feature::The proposal instruction carries the question disposition rule
+        PASS [   2.080s] ( 414/1117) givn::features_runner fragments/instruction-integrity.feature::The propose guidance carries the no-signal routing rule
+        PASS [   1.913s] ( 415/1117) givn::features_runner fragments/instruction-integrity.feature::The review instruction rejects an unqualified guarantee with an open prerequisite
+        PASS [   1.973s] ( 416/1117) givn::features_runner fragments/instruction-integrity.feature::The review instruction carries the use-case scope rejection criteria
+        PASS [   2.145s] ( 417/1117) givn::features_runner fragments/instruction-integrity.feature::The review guidance keeps every surviving obligation
+        PASS [   2.318s] ( 418/1117) givn::features_runner fragments/instruction-integrity.feature::The review guidance asks the neighboring-components question without a gate
+        PASS [   2.214s] ( 419/1117) givn::features_runner fragments/instruction-integrity.feature::The specs guidance carries the capability placement test
+        PASS [   2.150s] ( 420/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::An unbalanced conditional in a skill template fails the synchronization
+        PASS [   2.553s] ( 421/1117) givn::features_runner fragments/local-only-transition.feature::A tracked generated rule becomes local-only without deleting the file
+        PASS [   2.610s] ( 422/1117) givn::features_runner fragments/local-only-transition.feature::The transition is idempotent after the removal is committed
+        PASS [   2.213s] ( 423/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::An unknown addon name in a conditional fails the synchronization and names the template
+        PASS [   2.666s] ( 424/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Architecture principles guidance follows an enabled addon
+        PASS [   2.466s] ( 425/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Architecture principles guidance is off by default
+        PASS [   2.328s] ( 426/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled
+        PASS [   2.533s] ( 427/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Disabling arc42 keeps the generated domain-modeling skill
+        PASS [   2.506s] ( 428/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Disabling the domain-modeling addon removes the generated domain-modeling skill
+        PASS [   2.533s] ( 429/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Enabling domain modeling without arc42 generates the domain-modeling skill
+        PASS [   2.358s] ( 430/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Review guidance omits the Arc42 section when the Arc42 addon is disabled
+        PASS [   2.830s] ( 431/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Outline guidance follows an enabled addon
+        PASS [   2.289s] ( 432/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::The architecture-principles instruction keeps the decision-timing rule
+        PASS [   2.656s] ( 433/1117) givn::features_runner fragments/match-guidance-to-enabled-addons.feature::Project skill overrides retain conditional addon behavior without command generation
+        PASS [   2.403s] ( 434/1117) givn::features_runner fragments/measure-coverage-per-project.feature::A failed coverage merge leaves the archive candidate unproven
+        PASS [   2.591s] ( 435/1117) givn::features_runner fragments/publication-cleanliness.feature::The check names rules that survive in reachable history
+        PASS [   2.037s] ( 436/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Design and step instructions require the Black-Box-First decision
+        PASS [   2.396s] ( 437/1117) givn::features_runner fragments/publication-cleanliness.feature::The dedicated check names a tracked rule and exits non-zero
+        PASS [   2.244s] ( 438/1117) givn::features_runner fragments/publication-cleanliness.feature::The dedicated check passes on a clean project
+        PASS [   2.146s] ( 439/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Fresh initialization generates start instead of explore
+        PASS [   2.283s] ( 440/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Generated implementation guidance routes to the task and step instructions
+        PASS [   1.966s] ( 441/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Synchronization removes a recognizable generated explore skill
+        PASS [   2.130s] ( 442/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Review instructions require deterministic gate dispositions
+        PASS [   2.109s] ( 443/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Spec instructions use deterministic gates before retrieval exists
+        PASS [   2.733s] ( 444/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Generated guidance carries no copy of a built-in rule
+        PASS [   2.198s] ( 445/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Synchronization preserves a custom explore skill and reports a manual transition
+        PASS [   2.143s] ( 446/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Synchronization reports a project-owned explore override without changing it
+        PASS [   2.055s] ( 447/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Synchronization still removes a recognizable generated explore command
+        PASS [   1.993s] ( 448/1117) givn::features_runner fragments/review-architecture-documentation.feature::A changed unit unreadable from its outline rejects PASS
+        PASS [   2.084s] ( 449/1117) givn::features_runner fragments/review-architecture-documentation.feature::Arc42-disabled review instructions mark conformance as not applicable
+        PASS [   2.383s] ( 450/1117) givn::features_runner fragments/refresh-generated-guidance.feature::Upgrade removes a tracked generated explore skill under the versioned rules policy
+        PASS [   1.974s] ( 451/1117) givn::features_runner fragments/review-architecture-documentation.feature::Architecture review checks substantive boundaries from the first implementation
+        PASS [   1.993s] ( 452/1117) givn::features_runner fragments/review-architecture-documentation.feature::Final architecture review uses the advisory outline without a second verdict
+        PASS [   2.195s] ( 453/1117) givn::features_runner fragments/review-architecture-documentation.feature::Design-review guidance checks vocabulary and structure at their owners
+        PASS [   2.057s] ( 454/1117) givn::features_runner fragments/review-architecture-documentation.feature::Later Arc42 changes maintain affected chapters rather than reapprove the baseline
+        PASS [   2.049s] ( 455/1117) givn::features_runner fragments/review-architecture-documentation.feature::Review closure is bounded to findings and regressions from their fixes
+        PASS [   2.150s] ( 456/1117) givn::features_runner fragments/review-architecture-documentation.feature::Review guidance checks vocabulary and structure at their owners
+        PASS [   2.225s] ( 457/1117) givn::features_runner fragments/review-architecture-documentation.feature::Review does not accept a no-op model edit as maintenance evidence
+        PASS [   1.964s] ( 458/1117) givn::features_runner fragments/review-architecture-documentation.feature::The first completed Arc42 change establishes a real twelve-chapter baseline
+        PASS [   2.040s] ( 459/1117) givn::features_runner fragments/route-a-change.feature::A goal-aligned capability ranks above a lexically similar candidate
+        PASS [   1.932s] ( 460/1117) givn::features_runner fragments/route-a-change.feature::A proposal matching an existing capability surface recommends EXTEND
+        PASS [   1.945s] ( 461/1117) givn::features_runner fragments/route-a-change.feature::A proposal with no matching surface reports no signal
+        PASS [   1.950s] ( 462/1117) givn::features_runner fragments/route-a-change.feature::A tied route reports no signal
+        PASS [   1.979s] ( 463/1117) givn::features_runner fragments/route-a-change.feature::Routing never modifies permanent files
+        PASS [   1.975s] ( 464/1117) givn::features_runner fragments/route-a-change.feature::Routing requires exactly one input
+        PASS [   2.061s] ( 465/1117) givn::features_runner fragments/rules-policy.feature::A fresh project resolves the rules policy to local-only
+        PASS [   2.369s] ( 466/1117) givn::features_runner fragments/rules-policy.feature::An explicit versioned policy is preserved and named
+        PASS [   2.371s] ( 467/1117) givn::features_runner fragments/rules-policy.feature::An unrecognized rules value warns and continues as local-only
+        PASS [   2.177s] ( 468/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A damaged managed block for an enabled addon fails the command
+        PASS [   2.252s] ( 469/1117) givn::features_runner fragments/verify-repository-ownership.feature::A failed archive preserves the merged candidate unproven
+        PASS [   2.406s] ( 470/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A change locked before ise existed accepts the enabled addon
+        PASS [   2.184s] ( 471/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A declaration scaffold failure names the path and the applied setting
+        PASS [   2.128s] ( 472/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A forced init cannot change add-ons during a locked change
+        PASS [   2.325s] ( 473/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A forced init that preserves add-ons is allowed during a locked change
+        PASS [   2.210s] ( 474/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A locked change adds the lock to each suggestion
+        PASS [   2.504s] ( 475/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A forced re-initialization preserves an effective ise and its declaration
+        PASS [   2.121s] ( 476/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A new change records the operator add-on configuration
+        PASS [   2.197s] ( 477/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A non-interactive operator override is refused
+        PASS [   2.119s] ( 478/1117) givn::features_runner initialize-project/enable-optional-addons.feature::A retired addon key in the configuration is refused with its replacement
+        PASS [   2.170s] ( 479/1117) givn::features_runner initialize-project/enable-optional-addons.feature::An active change refuses add-on mutation
+        PASS [   2.357s] ( 480/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Add-ons remain changeable without an active change
+        PASS [   2.110s] ( 481/1117) givn::features_runner initialize-project/enable-optional-addons.feature::An addon-free project listing reports every addon explicitly disabled
+        PASS [   2.561s] ( 482/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Addon edits preserve unrelated configuration or refuse unsupported YAML
+        PASS [   2.181s] ( 483/1117) givn::features_runner initialize-project/enable-optional-addons.feature::An enabled addon whose effect is a managed block reports the block state
+        PASS [   2.134s] ( 484/1117) givn::features_runner initialize-project/enable-optional-addons.feature::An enabled addon with missing files is reported and the exit status is non-zero
+        PASS [   2.454s] ( 485/1117) givn::features_runner initialize-project/enable-optional-addons.feature::An enabled skill addon missing its skill from a selected target is reported as partial
+        PASS [   2.316s] ( 486/1117) givn::features_runner initialize-project/enable-optional-addons.feature::An operator override on a real terminal is recorded
+        PASS [   2.193s] ( 487/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Challenge guidance omits disabled principle sections
+        PASS [   2.317s] ( 488/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Challenge is optional and introduces no lifecycle gate
+        PASS [   2.079s] ( 489/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Communication policy replaces absolute mode without a compatibility alias
+        PASS [   2.129s] ( 490/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Disabling domain modeling leaves the durable documents in place
+        PASS [   2.279s] ( 491/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Disabling domain_modeling keeps the shared glossary from a partial report
+        PASS [   3.232s] ( 492/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Challenge guidance researches the subject before asking unresolved decisions
+        PASS [   2.172s] ( 493/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Enabling an addon preserves an existing glossary
+        PASS [   2.130s] ( 494/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Enabling arc42 scaffolds only the standalone glossary
+        PASS [   2.788s] ( 495/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Configuration fields are enforced in their owning file
+        PASS [   2.514s] ( 496/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Disabling ise preserves the declaration and reports it project-owned
+        PASS [   2.077s] ( 497/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Enabling domain modeling scaffolds both durable documents
+        PASS [   2.292s] ( 498/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Enabling ise preserves an edited declaration
+        PASS [   2.348s] ( 499/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Enabling ise without its prerequisite is refused by name
+        PASS [   2.218s] ( 500/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Enabling ise writes the setting and scaffolds the declaration
+        PASS [   2.344s] ( 501/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Existing domain documents survive initialization
+        PASS [   2.195s] ( 502/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Files present for a disabled addon are reported without failing the command
+        PASS [   2.093s] ( 503/1117) givn::features_runner initialize-project/enable-optional-addons.feature::The communication block binds documentation to named artifacts
+        PASS [   2.079s] ( 504/1117) givn::features_runner initialize-project/enable-optional-addons.feature::The listing writes nothing to the project
+        PASS [   2.067s] ( 505/1117) givn::features_runner initialize-project/enable-optional-addons.feature::The scaffolded domain model carries the notation legend
+        PASS [   2.329s] ( 506/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Retired grill settings require manual transition
+        PASS [   2.436s] ( 507/1117) givn::features_runner initialize-project/enable-optional-addons.feature::Repeating the enable changes nothing
+        PASS [   2.081s] ( 508/1117) givn::features_runner initialize-project/enable-optional-addons.feature::The scaffolded glossary is the standalone vocabulary authority
+        PASS [   2.334s] ( 509/1117) givn::features_runner initialize-project/enable-optional-addons.feature::a partial addons block resolves each omitted addon to its declared default
+        PASS [   2.273s] ( 510/1117) givn::features_runner initialize-project/enable-optional-addons.feature::addon skills are written to the default agent target after sync
+        PASS [   2.392s] ( 511/1117) givn::features_runner initialize-project/enable-optional-addons.feature::addon skills are written to every configured agent target after sync
+        PASS [   1.910s] ( 512/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn addons disable errors when givn/ is not initialised
+        PASS [   2.341s] ( 513/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn addons disable removes generated command files
+        PASS [   2.259s] ( 514/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn addons disable removes generated skill files
+        PASS [   1.935s] ( 515/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn addons enable errors when givn/ is not initialised
+        PASS [   2.028s] ( 516/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn init --no-addons produces no skill or command addon files
+        PASS [   2.234s] ( 517/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn addons disable when already disabled is idempotent
+        PASS [   2.124s] ( 518/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn addons exposes architecture principles as opt-in
+        PASS [   2.040s] ( 519/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn init --no-addons writes an explicit false for every addon including ise
+        PASS [   2.179s] ( 520/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn addons enable generates skill and command files
+        PASS [   2.142s] ( 521/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn init --no-addons writes an explicit opt-out for every addon
+        PASS [   2.115s] ( 522/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn init writes the nine default-on addons and omits ise
+        PASS [   2.271s] ( 523/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn skills sync excludes addon skills and commands when disabled
+        PASS [   2.278s] ( 524/1117) givn::features_runner initialize-project/enable-optional-addons.feature::givn skills sync includes skill and command addons when enabled
+        PASS [   2.031s] ( 525/1117) givn::features_runner initialize-project/initialize-a-project.feature::A new project declares verification runners as unconfigured
+        PASS [   2.263s] ( 526/1117) givn::features_runner initialize-project/initialize-a-project.feature::A custom legacy command is preserved and its manual transition is reported
+        PASS [   1.941s] ( 527/1117) givn::features_runner initialize-project/initialize-a-project.feature::An answer without any known agent refuses initialization
+        PASS [   2.255s] ( 528/1117) givn::features_runner initialize-project/initialize-a-project.feature::A full copy installed by an earlier version is reconciled to the direction
+        PASS [   1.989s] ( 529/1117) givn::features_runner initialize-project/initialize-a-project.feature::An empty answer refuses initialization
+        PASS [   2.077s] ( 530/1117) givn::features_runner initialize-project/initialize-a-project.feature::An unknown agent name in the --agents flag is dropped with a hint
+        PASS [   2.104s] ( 531/1117) givn::features_runner initialize-project/initialize-a-project.feature::An unknown agent name in the answer is dropped with a hint listing the valid agents
+        PASS [   2.255s] ( 532/1117) givn::features_runner initialize-project/initialize-a-project.feature::An omp project keeps the generated omp rules out of the repository
+        PASS [   1.950s] ( 533/1117) givn::features_runner initialize-project/initialize-a-project.feature::An unknown-only --agents value refuses initialization
+        PASS [   2.548s] ( 534/1117) givn::features_runner initialize-project/initialize-a-project.feature::Fossil initialization names the supported attribution path without Git plumbing
+        PASS [   2.050s] ( 535/1117) givn::features_runner initialize-project/initialize-a-project.feature::Initialization onboarding names the proportionate entry point
+        PASS [   1.999s] ( 536/1117) givn::features_runner initialize-project/initialize-a-project.feature::Initializing a Maki target installs the attribution integration
+        PASS [   2.738s] ( 537/1117) givn::features_runner initialize-project/initialize-a-project.feature::Init reentry preserves explicit addon opt-outs
+        PASS [   2.992s] ( 538/1117) givn::features_runner initialize-project/initialize-a-project.feature::Every supported target discovers thin skills without generated commands
+        PASS [   2.211s] ( 539/1117) givn::features_runner initialize-project/initialize-a-project.feature::Initialization without SCM preserves guidance and names the later archive refusal
+        PASS [   2.048s] ( 540/1117) givn::features_runner initialize-project/initialize-a-project.feature::Interactive init installs only the agents the user selects
+        PASS [   2.126s] ( 541/1117) givn::features_runner initialize-project/initialize-a-project.feature::Interactive init can select the .agents target
+        PASS [   2.422s] ( 542/1117) givn::features_runner initialize-project/initialize-a-project.feature::Initialization keeps the generated rules out of the repository
+        PASS [   2.564s] ( 543/1117) givn::features_runner initialize-project/initialize-a-project.feature::Initialization keeps a rule from a disabled addon out of the repository
+        PASS [   2.173s] ( 544/1117) givn::features_runner initialize-project/initialize-a-project.feature::Maki guidance does not promise generated slash commands
+        PASS [   1.980s] ( 545/1117) givn::features_runner initialize-project/initialize-a-project.feature::Non-interactive init without an agent target refuses initialization
+        PASS [   2.101s] ( 546/1117) givn::features_runner initialize-project/initialize-a-project.feature::Retrying skill synchronization completes partial initialization without losing choices
+        PASS [   2.189s] ( 547/1117) givn::features_runner initialize-project/initialize-a-project.feature::Required skill synchronization failure leaves an accurately reported partial initialization
+        PASS [   2.141s] ( 548/1117) givn::features_runner initialize-project/initialize-a-project.feature::Skills and commands are not installed to an agent excluded from the selection
+        PASS [   2.171s] ( 549/1117) givn::features_runner initialize-project/initialize-a-project.feature::Synchronizing an edited Maki manifest preserves its attribution revocation and names the needed grant
+        PASS [   2.421s] ( 550/1117) givn::features_runner initialize-project/initialize-a-project.feature::Re-running init keeps the persisted selection
+        PASS [   2.152s] ( 551/1117) givn::features_runner initialize-project/initialize-a-project.feature::Synchronizing an existing Maki manifest adds the reporter and attribution grants
+        PASS [   2.101s] ( 552/1117) givn::features_runner initialize-project/initialize-a-project.feature::The --agents flag accepts "all" as a shorthand for every target
+        PASS [   2.177s] ( 553/1117) givn::features_runner initialize-project/initialize-a-project.feature::Synchronizing an unmodified generated Maki manifest grants attribution
+        PASS [   2.065s] ( 554/1117) givn::features_runner initialize-project/initialize-a-project.feature::The --agents flag accepts the dotted directory form
+        PASS [   2.180s] ( 555/1117) givn::features_runner initialize-project/initialize-a-project.feature::The --agents flag accepts the dotted directory form for the omp target
+        PASS [   2.168s] ( 556/1117) givn::features_runner initialize-project/initialize-a-project.feature::The --agents flag selects targets non-interactively, no prompt needed
+        PASS [   2.800s] ( 557/1117) givn::features_runner initialize-project/initialize-a-project.feature::Target selection edits preserve unrelated YAML or refuse before writing
+        PASS [   2.055s] ( 558/1117) givn::features_runner initialize-project/initialize-a-project.feature::The omp target receives its own guidance and attribution integration
+        PASS [   2.243s] ( 559/1117) givn::features_runner initialize-project/initialize-a-project.feature::The generated Maki permission manifest names the session read
+        PASS [   2.062s] ( 560/1117) givn::features_runner initialize-project/initialize-a-project.feature::The selected agents are persisted in givn/config.yaml
+        PASS [   2.270s] ( 561/1117) givn::features_runner initialize-project/initialize-a-project.feature::The interactive prompt keeps asking until a target is marked
+        PASS [   2.381s] ( 562/1117) givn::features_runner initialize-project/initialize-a-project.feature::The interactive prompt accepts the pre-marked OpenCode default
+        PASS [   2.144s] ( 563/1117) givn::features_runner initialize-project/initialize-a-project.feature::The served runner guidance states the complete adapter contract
+        PASS [   2.197s] ( 564/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn init --force without a selection keeps the persisted selection
+        PASS [   2.371s] ( 565/1117) givn::features_runner initialize-project/initialize-a-project.feature::The project-start block renders its resident rules from the tasks instruction
+        PASS [   2.276s] ( 566/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn init --force re-applies the explicitly given selection
+        PASS [   2.078s] ( 567/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn skills sync defaults to opencode when the config has no skills block
+        PASS [   2.315s] ( 568/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn skills sync installs to the persisted selection only
+        PASS [   2.556s] ( 569/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn skills targets add accepts "all" as a shorthand for every target
+        PASS [   1.844s] ( 570/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn skills targets add errors when givn/ is not initialised
+        PASS [   2.059s] ( 571/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn skills targets add errors when every given name is unknown
+        PASS [   2.300s] ( 572/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn skills targets add drops an unknown name with a hint
+        PASS [   2.154s] ( 573/1117) givn::features_runner inspect-change-state/read-task-progress.feature::Lowercase [x] checkboxes are counted as done in text mode
+        PASS [   2.157s] ( 574/1117) givn::features_runner inspect-change-state/read-task-progress.feature::Mixed-case checkboxes are both counted as done in JSON mode
+        PASS [   2.152s] ( 575/1117) givn::features_runner inspect-change-state/read-task-progress.feature::Uppercase [X] checkboxes are counted as done in text mode
+        PASS [   2.340s] ( 576/1117) givn::features_runner initialize-project/initialize-a-project.feature::givn skills targets add installs the new agent without touching anything else
+        PASS [   2.145s] ( 577/1117) givn::features_runner inspect-change-state/report-change-status.feature::Active and archived changes — single active auto-defaults to detail JSON
+        PASS [   2.190s] ( 578/1117) givn::features_runner inspect-change-state/report-change-status.feature::Active and archived changes — single active auto-defaults to detail (text)
+        PASS [   2.463s] ( 579/1117) givn::features_runner inspect-change-state/read-task-progress.feature::Uppercase checkboxes satisfy the archive gate
+        PASS [   2.094s] ( 580/1117) givn::features_runner inspect-change-state/report-change-status.feature::Archived only — text mode (leading newline)
+        PASS [   2.774s] ( 581/1117) givn::features_runner inspect-change-state/report-change-status.feature::An archive candidate without current proof is not a proven archive
+        PASS [   2.144s] ( 582/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail mode — active change (JSON)
+        PASS [   2.204s] ( 583/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail mode — active change with proposal only (text)
+        PASS [   2.131s] ( 584/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail mode — archived change (JSON)
+        PASS [   2.089s] ( 585/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail mode — archived change (text)
+        PASS [   2.124s] ( 586/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail mode — skipped artifacts shown with skip marker
+        PASS [   2.067s] ( 587/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail mode — unknown change errors
+        PASS [   2.166s] ( 588/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail mode — task progress shown for tasks artifact
+        PASS [   2.153s] ( 589/1117) givn::features_runner inspect-change-state/report-change-status.feature::Detail view includes stage label and next required step
+        PASS [   2.293s] ( 590/1117) givn::features_runner inspect-change-state/report-change-status.feature::Multiple active changes listed alphabetically — text mode
+        PASS [   2.180s] ( 591/1117) givn::features_runner inspect-change-state/report-change-status.feature::No changes at all — JSON mode
+        PASS [   2.295s] ( 592/1117) givn::features_runner inspect-change-state/report-change-status.feature::No changes at all — text mode
+        PASS [   2.128s] ( 593/1117) givn::features_runner inspect-change-state/report-change-status.feature::Single active change — auto-defaults to detail view (text)
+        PASS [   4.014s] ( 594/1117) givn::features_runner inspect-change-state/report-change-status.feature::Inspecting status never executes verification
+        PASS [   2.116s] ( 595/1117) givn::features_runner inspect-change-state/report-change-status.feature::Uninitialized project errors
+        PASS [   2.211s] ( 596/1117) givn::features_runner inspect-change-state/report-change-status.feature::Status without a backend still succeeds and names the unavailable commands
+        PASS [   2.353s] ( 597/1117) givn::features_runner inspect-change-state/show-skipped-artifacts.feature::givn status JSON still reports skipped artifacts after dead code removal
+        PASS [   2.735s] ( 598/1117) givn::features_runner inspect-change-state/report-change-status.feature::Status names the active SCM backend
+        PASS [   2.349s] ( 599/1117) givn::features_runner inspect-change-state/show-skipped-artifacts.feature::givn status still reports skipped artifacts with the skip marker after dead code removal
+        PASS [   2.566s] ( 600/1117) givn::features_runner inspect-change-state/report-change-status.feature::arc42-docs appears in the artifact checklist when the addon is enabled
+        PASS [   2.320s] ( 601/1117) givn::features_runner inspect-change-state/validate-change-ids.feature::Path traversal id is rejected by archive
+        PASS [   2.214s] ( 602/1117) givn::features_runner inspect-change-state/validate-change-ids.feature::Path traversal id is rejected by check
+        PASS [   2.016s] ( 603/1117) givn::features_runner inspect-change-state/validate-change-ids.feature::Path traversal id is rejected by instructions
+        PASS [   2.278s] ( 604/1117) givn::features_runner inspect-change-state/validate-change-ids.feature::Path traversal id is rejected by graph
+        PASS [   4.074s] ( 605/1117) givn::features_runner inspect-change-state/report-change-status.feature::Status reports receipt freshness separately from artifact completion
+        PASS [   2.127s] ( 606/1117) givn::features_runner inspect-change-state/validate-change-ids.feature::Path traversal id is rejected by status
+        PASS [   2.207s] ( 607/1117) givn::features_runner inspect-change-state/validate-change-ids.feature::Path traversal id is rejected by lint
+        PASS [   2.341s] ( 608/1117) givn::features_runner inspect-change-state/validate-change-ids.feature::Valid kebab-case change id is accepted by every command that accepts --change
+        PASS [   2.263s] ( 609/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A Maki session title is recorded as a session entry
+        PASS [   2.361s] ( 610/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A Maki question records its answer, source, and time
+        PASS [   2.364s] ( 611/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A Maki subagent moved to the background stays open until it finishes
+        PASS [   2.320s] ( 612/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A Maki subagent still running when the session ends is recorded as unknown
+        PASS [   2.315s] ( 613/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A Maki subagent's cost is recorded where the harness reports it
+        PASS [   2.342s] ( 614/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A Maki subagent's tool calls are recorded under its own session
+        PASS [   2.399s] ( 615/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A Maki tool call moved to the background is not recorded as completed
+        PASS [   2.295s] ( 616/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A paused Maki subagent stays open until it finishes
+        PASS [   2.286s] ( 617/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A question wait is recorded with its duration
+        PASS [   2.269s] ( 618/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A reported event that does not match the intake contract is rejected without corrupting the record
+        PASS [   2.237s] ( 619/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A reported tool call is recorded for its scope
+        PASS [   2.267s] ( 620/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A subagent's activity is attributed to that subagent
+        PASS [   2.345s] ( 621/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A stopped Maki subagent is recorded as skipped
+        PASS [   2.338s] ( 622/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A tool-spawned Maki subagent is recorded once with the harness's own duration
+        PASS [   2.000s] ( 623/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Absent token usage is recorded as unavailable
+        PASS [   2.076s] ( 624/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Every supported harness receives a development reporter
+        PASS [   2.207s] ( 625/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Complete mode records a Maki tool call's output from the session transcript
+        PASS [   2.161s] ( 626/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Recording guidance does not confuse ignored paths with untracked history
+        PASS [   4.545s] ( 627/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A rejected report never fails the agent action it reports
+        PASS [   2.090s] ( 628/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Recording warnings disclose sensitivity without promising privacy filtering
+        PASS [   1.914s] ( 629/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Reported token usage is recorded with the model that produced it
+        PASS [   2.864s] ( 630/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Maki's reporter keeps the harness's own tool duration and marks what its harness omits
+        PASS [   1.965s] ( 631/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::The intake keeps the acceptable events of a payload with a rejected event
+        PASS [   1.967s] ( 632/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::The intake rejects a payload that is not readable JSON
+        PASS [   1.776s] ( 633/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::The neutral skills target receives no development reporter
+        PASS [   2.220s] ( 634/1117) givn::features_runner inspect-development-history/development-record.feature::A Fossil project ignores the record through its own ignore file
+        PASS [   1.836s] ( 635/1117) givn::features_runner inspect-development-history/development-record.feature::A failed command records a bounded error line
+        PASS [   1.849s] ( 636/1117) givn::features_runner inspect-development-history/development-record.feature::A record that cannot be written never fails the command it records
+        PASS [   2.039s] ( 637/1117) givn::features_runner inspect-development-history/development-record.feature::A linked usage entry is marked derived
+        PASS [   1.768s] ( 638/1117) givn::features_runner inspect-development-history/development-record.feature::A refused command outside a Givn project creates no record
+        PASS [   1.978s] ( 639/1117) givn::features_runner inspect-development-history/development-record.feature::A recorded step keeps a measured duration and its outcome
+        PASS [   1.932s] ( 640/1117) givn::features_runner inspect-development-history/development-record.feature::A reported event may name the session it belongs to
+        PASS [   1.868s] ( 641/1117) givn::features_runner inspect-development-history/development-record.feature::A reported session entry without a title is rejected
+        PASS [   6.606s] ( 642/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A wait the harness does not time is still recorded with a duration
+        PASS [   3.036s] ( 643/1117) givn::features_runner inspect-development-history/development-record.feature::A recorded label is bounded to 120 characters
+        PASS [   4.010s] ( 644/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::Token usage read from the harness's own session record is recorded with its model
+        PASS [   1.601s] ( 645/1117) givn::features_runner inspect-development-history/development-record.feature::A reported usage cost that is not a number is rejected
+        PASS [   1.797s] ( 646/1117) givn::features_runner inspect-development-history/development-record.feature::A reported usage carries its cost
+        PASS [   1.655s] ( 647/1117) givn::features_runner inspect-development-history/development-record.feature::A tool the agent moved to the background is marked
+        PASS [   2.037s] ( 648/1117) givn::features_runner inspect-development-history/development-record.feature::A reported session point entry is recorded with its title
+        PASS [   2.039s] ( 649/1117) givn::features_runner inspect-development-history/development-record.feature::Activity during an ideation belongs to its topic scope
+        PASS [   2.081s] ( 650/1117) givn::features_runner inspect-development-history/development-record.feature::Activity outside a change belongs to the project scope
+        PASS [   2.030s] ( 651/1117) givn::features_runner inspect-development-history/development-record.feature::An answered question records selection, source, and time
+        PASS [   2.111s] ( 652/1117) givn::features_runner inspect-development-history/development-record.feature::An artifact appearance is recorded as one phase transition
+        PASS [   1.888s] ( 653/1117) givn::features_runner inspect-development-history/development-record.feature::An ideation artifact appearance is recorded as one phase start
+        PASS [   1.871s] ( 654/1117) givn::features_runner inspect-development-history/development-record.feature::An initialized Git project names the record in its tracked ignore file
+        PASS [   2.041s] ( 655/1117) givn::features_runner inspect-development-history/development-record.feature::An invalid record mode falls back to the default
+        PASS [   2.067s] ( 656/1117) givn::features_runner inspect-development-history/development-record.feature::Reading the development record does not extend it
+        PASS [   3.792s] ( 657/1117) givn::features_runner inspect-development-history/development-record.feature::A verification run is recorded as its own step
+        PASS [   2.528s] ( 658/1117) givn::features_runner inspect-development-history/development-record.feature::Question text is captured in full
+        PASS [   2.033s] ( 659/1117) givn::features_runner inspect-development-history/development-record.feature::The default mode records metadata without content
+        PASS [   2.013s] ( 660/1117) givn::features_runner inspect-development-history/development-record.feature::The full mode records complete content
+        PASS [   2.121s] ( 661/1117) givn::features_runner inspect-development-history/development-record.feature::The record can be turned off for a project
+        PASS [   1.959s] ( 662/1117) givn::features_runner inspect-development-history/development-record.feature::The record is append-only across commands
+        PASS [   2.005s] ( 663/1117) givn::features_runner inspect-development-history/development-record.feature::The record stays out of the repository's own history
+        PASS [   2.540s] ( 664/1117) givn::features_runner inspect-development-history/development-record.feature::Two writers never mint the same entry id
+        PASS [   2.329s] ( 665/1117) givn::features_runner inspect-development-history/development-record.feature::Usage identity names provider, model, and variant
+        PASS [   2.062s] ( 666/1117) givn::features_runner inspect-development-history/development-report.feature::A change report shows its linked ideation group
+        PASS [   4.460s] ( 667/1117) givn::features_runner inspect-development-history/development-record.feature::Default capture keeps the metadata a review needs
+        PASS [   2.219s] ( 668/1117) givn::features_runner inspect-development-history/development-report.feature::A change whose proposal names no ideation topic shows no linked group
+        PASS [   2.146s] ( 669/1117) givn::features_runner inspect-development-history/development-report.feature::A dense record is reported as aggregates instead of raw ticks
+        PASS [   2.212s] ( 670/1117) givn::features_runner inspect-development-history/development-report.feature::A linked ideation with no recorded activity is stated
+        PASS [   2.179s] ( 671/1117) givn::features_runner inspect-development-history/development-report.feature::An archived change resolves its linked ideation from the archive
+        PASS [   2.133s] ( 672/1117) givn::features_runner inspect-development-history/development-report.feature::An ideation topic report uses the ideation workflow
+        PASS [   2.121s] ( 673/1117) givn::features_runner inspect-development-history/development-report.feature::Measured agent activity is ranked alongside Givn's own steps
+        PASS [   1.835s] ( 674/1117) givn::features_runner inspect-development-history/development-report.feature::The report groups repeated steps
+        PASS [   2.148s] ( 675/1117) givn::features_runner inspect-development-history/development-report.feature::The report lays parallel sessions side by side
+        PASS [   2.280s] ( 676/1117) givn::features_runner inspect-development-history/development-report.feature::The report derives the current workflow state
+        PASS [   1.867s] ( 677/1117) givn::features_runner inspect-development-history/development-report.feature::The report needs no network access to render
+        PASS [   2.121s] ( 678/1117) givn::features_runner inspect-development-history/development-report.feature::The report names the agent's fan-out into small subagents
+        PASS [   2.497s] ( 679/1117) givn::features_runner inspect-development-history/development-report.feature::The report marks a skipped workflow phase
+        PASS [   1.922s] ( 680/1117) givn::features_runner inspect-development-history/development-report.feature::The report of an archived change marks every phase done
+        PASS [   2.045s] ( 681/1117) givn::features_runner inspect-development-history/development-report.feature::The report of an ideation topic names the work done before the change exists
+        PASS [   2.192s] ( 682/1117) givn::features_runner inspect-development-history/development-report.feature::The report omits the recorder's own command entries
+        PASS [   2.044s] ( 683/1117) givn::features_runner inspect-development-history/development-report.feature::The report orders the timeline by recorded time, not by store position
+        PASS [   4.250s] ( 684/1117) givn::features_runner inspect-development-history/development-report.feature::The lane log carries the captured metadata and content
+        PASS [   1.985s] ( 685/1117) givn::features_runner inspect-development-history/development-report.feature::The report ranks the longest single step first
+        PASS [   1.982s] ( 686/1117) givn::features_runner inspect-development-history/development-report.feature::The report shows the empty state for a scope with no recorded activity
+        PASS [   2.152s] ( 687/1117) givn::features_runner inspect-development-history/development-report.feature::The report states a record with no stage transition
+        PASS [   1.997s] ( 688/1117) givn::features_runner inspect-development-history/development-report.feature::The report totals token usage per turn and per subagent
+        PASS [   2.056s] ( 689/1117) givn::features_runner inspect-development-history/development-report.feature::The report totals the time spent waiting for questions
+        PASS [   2.262s] ( 690/1117) givn::features_runner inspect-development-history/development-report.feature::The written report's text view presents the workflow
+        PASS [   2.321s] ( 691/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::A deleted development block is not re-inserted
+        PASS [   2.196s] ( 692/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::A disabled addon needs no impact decision
+        PASS [   1.982s] ( 693/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::A legacy README is reported for migration
+        PASS [   1.879s] ( 694/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::A marker-less README is unmanaged
+        PASS [   2.160s] ( 695/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::A missing README blocks the archive
+        PASS [   2.110s] ( 696/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::An unknown impact value is refused
+        PASS [   2.053s] ( 697/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::Instructions stay silent on a complete README
+        PASS [   2.250s] ( 698/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::An unmanaged README blocks the archive
+        PASS [   2.204s] ( 699/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::Missing impact decision refuses the review
+        PASS [   1.752s] ( 700/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::The check reports a missing README
+        PASS [   2.003s] ( 701/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::The check names a damaged managed block
+        PASS [   2.065s] ( 702/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::The check names every open placeholder
+        PASS [   2.284s] ( 703/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::Open placeholders block the archive
+        PASS [   2.203s] ( 704/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::Updated impact decision passes the review
+        PASS [   1.887s] ( 705/1117) givn::features_runner make-usecases-canonical/canonical-usecase-contract.feature::The durable use-case model publishes the canonical definition and rules
+        PASS [   1.839s] ( 706/1117) givn::features_runner make-usecases-canonical/canonical-usecase-contract.feature::The generated use-case document template carries the authoring guidance
+        PASS [   2.113s] ( 707/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::A coherent behavior batch is completed with its actual explicit-path revision
+        PASS [   2.096s] ( 708/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::A project-owned explore override cannot restore a callable alias
+        PASS [   2.063s] ( 709/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::An ise instruction request with the addon off is refused by name
+        PASS [   1.999s] ( 710/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::An unknown stack instruction id is refused by name with the known list
+        PASS [   2.146s] ( 711/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Core step guidance carries no stack body
+        PASS [   5.892s] ( 712/1117) givn::features_runner keep-documentation-current/readme-enforcement.feature::Ambiguous managed markers are rejected before README modification
+        PASS [   2.119s] ( 713/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Encountered cleanup is a separate GREEN refactoring batch
+        PASS [   3.166s] ( 714/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::A guidance request changes nothing in the project
+        PASS [   3.192s] ( 715/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Core step guidance names each stack instruction with its load condition
+        PASS [   2.144s] ( 716/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Immediately passing tests protect existing behavior without a production edit
+        PASS [   3.240s] ( 717/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Design guidance names each stack instruction with its load condition and carries no runner table
+        PASS [   2.055s] ( 718/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Implementation guidance routes to the shared step mechanics
+        PASS [   2.221s] ( 719/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Refactor guidance treats an unreadable changed unit as a finding
+        PASS [   2.170s] ( 720/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Refactor guidance uses the outline once for supported changed components and their neighbors
+        PASS [   3.297s] ( 721/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Every stack instruction is served only on its own request with its runner body
+        PASS [   2.176s] ( 722/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Served development guidance requires modular boundaries from the start
+        PASS [   2.134s] ( 723/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Specs and review guidance carry no stack body
+        PASS [   2.219s] ( 724/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Served implementation guidance requires behavioral RED before production edits
+        PASS [   2.195s] ( 725/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Skipped RED is admitted rather than reconstructed from history
+        PASS [   2.024s] ( 726/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The built-in rules are served alone when no extension exists
+        PASS [   2.191s] ( 727/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The extension adds to the built-in rules without replacing or reordering them
+        PASS [   2.225s] ( 728/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The extension applies on top of a project-owned replacement
+        PASS [   2.211s] ( 729/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The ise instruction is served while ise is effective
+        PASS [   2.055s] ( 730/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The machine-readable path carries the same extended content as the text path
+        PASS [   1.894s] ( 731/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The retired explore instruction has no callable alias
+        PASS [   2.227s] ( 732/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The machine-readable ise path carries the same content as the text path
+        PASS [   2.137s] ( 733/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The machine-readable stack path carries the same content as the text path
+        PASS [   2.020s] ( 734/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The start guidance is available without optional addons
+        PASS [   2.034s] ( 735/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The start guidance preserves direct-work obligations
+        PASS [   2.098s] ( 736/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The start guidance keeps the handoff with the user
+        PASS [   1.601s] ( 737/1117) givn::features_runner operate-product/declare-the-product-start.feature::A complete CLI declaration validates cleanly
+        PASS [   2.303s] ( 738/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The start guidance recommends a proportionate outcome
+        PASS [   2.134s] ( 739/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::The tasks guidance points at the stack mapping and carries no stack body
+        PASS [   2.180s] ( 740/1117) givn::features_runner obtain-effective-guidance/serve-extended-rules.feature::Unsupported outline languages receive source assessment without a waiver
+        PASS [   1.915s] ( 741/1117) givn::features_runner operate-product/declare-the-product-start.feature::A complete server declaration validates cleanly
+        PASS [   1.865s] ( 742/1117) givn::features_runner operate-product/declare-the-product-start.feature::A half-configured server declaration renders the placeholder
+        PASS [   1.935s] ( 743/1117) givn::features_runner operate-product/declare-the-product-start.feature::A library may keep the placeholder command
+        PASS [   1.775s] ( 744/1117) givn::features_runner operate-product/declare-the-product-start.feature::A no-op start command is rejected
+        PASS [   1.799s] ( 745/1117) givn::features_runner operate-product/declare-the-product-start.feature::A server needs exactly one port source
+        PASS [   1.904s] ( 746/1117) givn::features_runner operate-product/declare-the-product-start.feature::A relative readiness path is rejected
+        PASS [   1.811s] ( 747/1117) givn::features_runner operate-product/declare-the-product-start.feature::A server rejects two port sources
+        PASS [   2.540s] ( 748/1117) givn::features_runner operate-product/declare-the-product-start.feature::A repeated upgrade creates no additional commit
+        PASS [   1.879s] ( 749/1117) givn::features_runner operate-product/declare-the-product-start.feature::A server without a readiness path is incomplete
+        PASS [   1.588s] ( 750/1117) givn::features_runner operate-product/declare-the-product-start.feature::A zero readiness timeout is rejected
+        PASS [   1.886s] ( 751/1117) givn::features_runner operate-product/declare-the-product-start.feature::An unconfigured declaration reports only unset findings
+        PASS [   1.924s] ( 752/1117) givn::features_runner operate-product/declare-the-product-start.feature::An unconfigured declaration renders exactly one open placeholder
+        PASS [   1.936s] ( 753/1117) givn::features_runner operate-product/declare-the-product-start.feature::An unknown product type is rejected when the commands file loads
+        PASS [   1.808s] ( 754/1117) givn::features_runner operate-product/declare-the-product-start.feature::Server-only fields are rejected for a CLI product
+        PASS [   2.299s] ( 755/1117) givn::features_runner operate-product/declare-the-product-start.feature::Archive is blocked while the run declaration is unconfigured
+        PASS [   1.901s] ( 756/1117) givn::features_runner operate-product/declare-the-product-start.feature::The README renders a CLI product
+        PASS [   1.919s] ( 757/1117) givn::features_runner operate-product/declare-the-product-start.feature::The README renders a complete server declaration
+        PASS [   1.898s] ( 758/1117) givn::features_runner operate-product/declare-the-product-start.feature::The README renders a library product as nothing to start
+        PASS [   1.939s] ( 759/1117) givn::features_runner operate-product/declare-the-product-start.feature::The README renders a library's declared start command
+        PASS [   2.066s] ( 760/1117) givn::features_runner operate-product/declare-the-product-start.feature::The backfill appends the run scaffold to an existing commands file
+        PASS [   2.076s] ( 761/1117) givn::features_runner operate-product/declare-the-product-start.feature::The backfill is idempotent
+        PASS [   1.782s] ( 762/1117) givn::features_runner operate-product/start-the-declared-product.feature::A caller port without a port hand-off is refused
+        PASS [   2.022s] ( 763/1117) givn::features_runner operate-product/start-the-declared-product.feature::A failing readiness response is retried until ready
+        PASS [   2.152s] ( 764/1117) givn::features_runner operate-product/start-the-declared-product.feature::A CLI product forwards the product's exit code
+        PASS [   2.312s] ( 765/1117) givn::features_runner operate-product/declare-the-product-start.feature::The upgrade commit includes the backfilled run declaration
+        PASS [   2.055s] ( 766/1117) givn::features_runner operate-product/start-the-declared-product.feature::A fixed declared port is used without a port hand-off
+        PASS [   2.022s] ( 767/1117) givn::features_runner operate-product/start-the-declared-product.feature::A library has nothing to start
+        PASS [   2.244s] ( 768/1117) givn::features_runner operate-product/start-the-declared-product.feature::A port that is not listening yet is retried until ready
+        PASS [   2.133s] ( 769/1117) givn::features_runner operate-product/start-the-declared-product.feature::An early product exit is forwarded before readiness
+        PASS [   2.206s] ( 770/1117) givn::features_runner operate-product/start-the-declared-product.feature::A terminate request is forwarded and the start waits
+        PASS [   2.056s] ( 771/1117) givn::features_runner operate-product/start-the-declared-product.feature::An unconfigured declaration refuses to start
+        PASS [   1.822s] ( 772/1117) givn::features_runner operate-product/start-the-declared-product.feature::Any success response satisfies the readiness probe
+        PASS [  32.970s] ( 773/1117) givn::features_runner inspect-development-history/agent-activity-reporting.feature::A stalled reporting helper cannot block primary agent work
+        PASS [   1.941s] ( 774/1117) givn::features_runner operate-product/start-the-declared-product.feature::Print mode for a library resolves the declared start command
+        PASS [   1.932s] ( 775/1117) givn::features_runner operate-product/start-the-declared-product.feature::Print mode omits the port hand-off for a fixed-port declaration
+        PASS [   3.116s] ( 776/1117) givn::features_runner operate-product/start-the-declared-product.feature::A readiness timeout abandons the start
+        PASS [   2.007s] ( 777/1117) givn::features_runner operate-product/start-the-declared-product.feature::Print mode on an unconfigured declaration reports preflight findings
+        PASS [   2.536s] ( 778/1117) givn::features_runner operate-product/start-the-declared-product.feature::Readiness retries share one deadline across connection and exchange
+        PASS [   2.512s] ( 779/1117) givn::features_runner operate-product/start-the-declared-product.feature::The readiness probe gives up after the timeout
+        PASS [   1.728s] ( 780/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A role that matches the declaration counts it once
+        PASS [   2.208s] ( 781/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A component rebuild refuses an empty path list
+        PASS [   2.221s] ( 782/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A declaration with no End-to-end role copies every Specification file
+        PASS [   2.003s] ( 783/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A named path absent from the revision removes nothing
+        PASS [   2.011s] ( 784/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A project-root End-to-end entry covers the whole tracked tree
+        PASS [   2.303s] ( 785/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A dry run without a manifest prints no manifest line
+        PASS [   2.325s] ( 786/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A dry run writes no spec copy and no manifest
+        PASS [   1.673s] ( 787/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A whole-product rebuild keeps the declaration under a source root
+        PASS [   2.285s] ( 788/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A whole-product rebuild keeps a Specification file under a source root
+        PASS [   2.001s] ( 789/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::An End-to-end entry that overlaps a source root wins over the removal
+        PASS [   2.296s] ( 790/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::A whole-product rebuild removes every tracked file under the source roots
+        PASS [   1.703s] ( 791/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation checksums a repository link in the End-to-end set
+        PASS [   6.487s] ( 792/1117) givn::features_runner operate-product/start-the-declared-product.feature::A stalled readiness exchange cannot outlive the total deadline
+        PASS [   1.990s] ( 793/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::An End-to-end role that covers the declaration keeps it among the Specification files
+        PASS [   1.975s] ( 794/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Developer rebuilds one component and leaves its neighbours
+        PASS [   2.323s] ( 795/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation carries every declared build input into the spec copy
+        PASS [   2.410s] ( 796/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation collapses a repeated path
+        PASS [   2.282s] ( 797/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation does not expand a glob-shaped path
+        PASS [   2.447s] ( 798/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation counts the files left in a removed path's directory
+        PASS [   2.417s] ( 799/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation expands a directory path to the tracked files beneath it
+        PASS [   2.502s] ( 800/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation leaves an ignored file out of the spec copy
+        PASS [   2.313s] ( 801/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation partitions with the declaration at the selected revision
+        PASS [   2.335s] ( 802/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation preserves the executable bit and the symlink target
+        PASS [   2.054s] ( 803/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation records the canonical checksums for a pinned fixture
+        PASS [   2.042s] ( 804/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation records the canonical checksums for a richer feature
+        PASS [   2.438s] ( 805/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation reads an explicit revision and reports it
+        PASS [   2.721s] ( 806/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation reads a Fossil revision and preserves an executable file and a symlink
+        PASS [   2.008s] ( 807/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a component path that names the declaration
+        PASS [   2.381s] ( 808/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a Specification path missing at the revision
+        PASS [   2.336s] ( 809/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a checkout carrying both Git and Fossil markers
+        PASS [   2.378s] ( 810/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a declaration the revision records but cannot read
+        PASS [   2.421s] ( 811/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a declaration that is not UTF-8
+        PASS [   2.300s] ( 812/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a directory path that contains a Specification path
+        PASS [   2.107s] ( 813/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a directory that contains the declaration
+        PASS [   2.357s] ( 814/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a malformed declaration at the selected revision
+        PASS [   2.512s] ( 815/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a dirty checkout and names every dirty path
+        PASS [   2.457s] ( 816/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a malformed declaration
+        PASS [   2.331s] ( 817/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a manifest inside the checkout
+        PASS [   2.376s] ( 818/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a manifest inside the spec copy
+        PASS [   2.341s] ( 819/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a manifest that is an ancestor of the spec copy
+        PASS [   2.372s] ( 820/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a nested repository marker in the copy set
+        PASS [   2.364s] ( 821/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a path matched by a Specification role
+        PASS [   2.252s] ( 822/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a project root nested inside a Git worktree
+        PASS [   2.345s] ( 823/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a path outside every source root
+        PASS [   2.157s] ( 824/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a project with no version-control backend
+        PASS [   2.449s] ( 825/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a repository link in the copy set
+        PASS [   2.336s] ( 826/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a spec copy target symlinked into the checkout
+        PASS [   2.449s] ( 827/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a revision that does not record the declaration
+        PASS [   2.409s] ( 828/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a symlink whose target resolves outside the spec copy
+        PASS [   2.386s] ( 829/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses a target inside the checkout
+        PASS [   2.387s] ( 830/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an absent revision
+        PASS [   2.434s] ( 831/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an absolute symlink target
+        PASS [   2.349s] ( 832/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an existing manifest
+        PASS [   2.395s] ( 833/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an existing spec copy directory
+        PASS [   2.378s] ( 834/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an existing spec copy file
+        PASS [   2.323s] ( 835/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses an omitted target
+        PASS [   2.460s] ( 836/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses when a revision blob cannot be read
+        PASS [   2.358s] ( 837/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses when the declaration is missing
+        PASS [   2.149s] ( 838/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses while the ise addon is off
+        PASS [   2.352s] ( 839/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses when the manifest cannot be written
+        PASS [   2.368s] ( 840/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation refuses while architecture principles are off
+        PASS [   1.966s] ( 841/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::The manifest lists the End-to-end tests it does not copy
+        PASS [   2.351s] ( 842/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation writes no manifest when no manifest path is given
+        PASS [   2.457s] ( 843/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::Preparation writes no version-control metadata into the spec copy
+        PASS [   2.076s] ( 844/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison ignores an ignored file under the End-to-end package
+        PASS [   2.374s] ( 845/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::The manifest lists the declaration among the Specification files
+        PASS [   2.355s] ( 846/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::The retired command names and flags exit 2
+        PASS [   2.353s] ( 847/1117) givn::features_runner prepare-an-ise-test/clean-room-preparation.feature::The spec copy carries the declaration when no role names it
+        PASS [   2.070s] ( 848/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names a changed Specification file in the copy
+        PASS [   2.044s] ( 849/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names a content-only change to an @e2e feature in the checkout
+        PASS [   2.070s] ( 850/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names a missing End-to-end test in the checkout
+        PASS [   2.143s] ( 851/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names a missing @e2e feature in the checkout
+        PASS [   2.106s] ( 852/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names a missing Specification file in the checkout
+        PASS [   2.074s] ( 853/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names a missing Specification file in the copy
+        PASS [   2.046s] ( 854/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names a missing declaration in the copy
+        PASS [   1.997s] ( 855/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names an @e2e scenario changed in the checkout
+        PASS [   2.037s] ( 856/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names an added @e2e scenario file in the checkout
+        PASS [   2.081s] ( 857/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names an End-to-end test changed in the checkout
+        PASS [   2.124s] ( 858/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names an added End-to-end file in the checkout
+        PASS [   2.118s] ( 859/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names an added End-to-end root in the checkout declaration
+        PASS [   2.124s] ( 860/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names an added Specification file in the checkout
+        PASS [   2.166s] ( 861/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison names every drifting path in one run
+        PASS [   2.051s] ( 862/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a deleted kept Source code file
+        PASS [   2.077s] ( 863/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison prints one line for a path drifting in the copy and the checkout
+        PASS [   2.076s] ( 864/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a file added under a declared Specification path
+        PASS [   2.160s] ( 865/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a file added under an End-to-end role
+        PASS [   2.104s] ( 866/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a manifest inside the copy
+        PASS [   2.152s] ( 867/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a manifest whose copy directory is not the copy
+        PASS [   2.052s] ( 868/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a manifest with a malformed checksum
+        PASS [   2.084s] ( 869/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a manifest whose scope is not ise-manifest/v1
+        PASS [   2.098s] ( 870/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a manifest with an unknown field
+        PASS [   2.196s] ( 871/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a manifest with a missing field
+        PASS [   2.218s] ( 872/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses a retired ise-trial/v1 record by scope
+        PASS [   2.127s] ( 873/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses an unreadable manifest
+        PASS [   2.030s] ( 874/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses while the ise addon is off
+        PASS [   2.191s] ( 875/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison refuses while architecture principles are off
+        PASS [   2.105s] ( 876/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison reports a Specification changed after the copy was written
+        PASS [   2.037s] ( 877/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison reports no difference after the agent adds Source code
+        PASS [   2.208s] ( 878/1117) givn::features_runner prepare-an-ise-test/trial-input-verification.feature::Comparison reports no difference after a kept Source code file is edited
+        PASS [   2.056s] ( 879/1117) givn::features_runner publish-a-release/describe-the-release.feature::A release cannot be prepared without a tag for the current version
+        PASS [   2.084s] ( 880/1117) givn::features_runner publish-a-release/describe-the-release.feature::A release range without user-visible change has no release section
+        PASS [   2.245s] ( 881/1117) givn::features_runner publish-a-release/describe-the-release.feature::A release section lists only the user-visible change groups
+        PASS [   1.981s] ( 882/1117) givn::features_runner publish-a-release/describe-the-release.feature::Cargo installation enables every declared feature by default
+        PASS [   2.098s] ( 883/1117) givn::features_runner publish-a-release/describe-the-release.feature::A release section without user-visible change stops the release
+        PASS [   2.122s] ( 884/1117) givn::features_runner publish-a-release/describe-the-release.feature::Synthetic future migration bundles retain complete metadata validation
+        PASS [   1.935s] ( 885/1117) givn::features_runner publish-a-release/describe-the-release.feature::The changelog describes the complete 0.3.0 release
+        PASS [   1.955s] ( 886/1117) givn::features_runner publish-a-release/describe-the-release.feature::The migration catalog defines complete release-owned bundles
+        PASS [   2.053s] ( 887/1117) givn::features_runner publish-a-release/describe-the-release.feature::The release identifies itself as its package version
+        PASS [   2.366s] ( 888/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A Fossil project with uncommitted changes is protected from automatic migration commits
+        PASS [   2.208s] ( 889/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A declaration scaffold write failure reports the path and the completed writes
+        PASS [   2.142s] ( 890/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project outside Git is protected from a partial automatic migration
+        PASS [   2.528s] ( 891/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A local-only upgrade publishes rule removals without AGENTS.md
+        PASS [   2.201s] ( 892/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An existing migration plan is never overwritten
+        PASS [   3.022s] ( 893/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A clean Fossil project receives the same managed upgrade revision shape
+        PASS [   2.294s] ( 894/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An unclean project is protected from automatic migration commits
+        PASS [   2.598s] ( 895/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::A project-owned replacement stays byte-for-byte across an upgrade
+        PASS [   2.593s] ( 896/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade leaves the project's extensions untouched
+        PASS [   2.632s] ( 897/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade preserves an edited declaration
+        PASS [   2.563s] ( 898/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade reconciles full-copy guidance to the direction
+        PASS [   2.439s] ( 899/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade writes and stages the declaration when ise is effective and it is absent
+        PASS [   2.421s] ( 900/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::An upgrade writes no declaration when ise is not effective
+        PASS [   2.475s] ( 901/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Repeating the upgrade does not duplicate the migration
+        PASS [   2.416s] ( 902/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::The migration change remains honest until the project review passes
+        PASS [   2.647s] ( 903/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Repeating an upgrade after the declaration scaffold creates no second revision
+        PASS [   2.905s] ( 904/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Pre-1.0 projects require manual transition instead of embedded migration plans
+        PASS [   2.522s] ( 905/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::The upgrade reports rules that survive in reachable history
+        PASS [   2.672s] ( 906/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Unsupported old configuration is refused before upgrade writes
+        PASS [   3.550s] ( 907/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Future supported migration routes remain reviewable
+        PASS [   2.128s] ( 908/1117) givn::features_runner verify-change/check-specification-health.feature::--change scopes the check to that change's specs directory
+        PASS [   2.011s] ( 909/1117) givn::features_runner verify-change/check-specification-health.feature::--change with no specs directory reports no files and exits 0
+        PASS [   2.323s] ( 910/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Upgrade reconciles only recognizable generated commands to skills
+        PASS [   2.165s] ( 911/1117) givn::features_runner verify-change/check-specification-health.feature::A .feature file outside the behavior globs is reported as advisory
+        PASS [   2.060s] ( 912/1117) givn::features_runner verify-change/check-specification-health.feature::A @wip-tagged scenario is reported on stderr and exits 2
+        PASS [   2.052s] ( 913/1117) givn::features_runner verify-change/check-specification-health.feature::A PENDING step is reported on stderr and exits 2
+        PASS [   2.101s] ( 914/1117) givn::features_runner verify-change/check-specification-health.feature::A blocking finding renders its severity
+        PASS [   2.068s] ( 915/1117) givn::features_runner verify-change/check-specification-health.feature::A change seed proposed by an archived change is reported as stale
+        PASS [   2.193s] ( 916/1117) givn::features_runner verify-change/check-specification-health.feature::A change seed proposed by a missing change is reported as an advisory
+        PASS [   4.141s] ( 917/1117) givn::features_runner upgrade-a-project/apply-a-managed-upgrade.feature::Upgrade failures report actual partial state and operator recovery
+        PASS [   2.074s] ( 918/1117) givn::features_runner verify-change/check-specification-health.feature::A change seed without a status line is reported as an advisory
+        PASS [   2.133s] ( 919/1117) givn::features_runner verify-change/check-specification-health.feature::A dangling persona reference is reported as an advisory
+        PASS [   2.285s] ( 920/1117) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package with a dependency edge into source is reported as advisory
+        PASS [   2.351s] ( 921/1117) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package missing from the tree is reported as advisory
+        PASS [   2.458s] ( 922/1117) givn::features_runner verify-change/check-specification-health.feature::A declared e2e package with a transitive dependency edge into source is reported as advisory
+        PASS [   2.272s] ( 923/1117) givn::features_runner verify-change/check-specification-health.feature::A declared e2e path with no package manifest is reported by the boundary finding
+        PASS [   2.107s] ( 924/1117) givn::features_runner verify-change/check-specification-health.feature::A fragment cannot be an extension target even when a use case has the same identifier
+        PASS [   2.218s] ( 925/1117) givn::features_runner verify-change/check-specification-health.feature::A declared path missing from the tree is reported as advisory
+        PASS [   2.079s] ( 926/1117) givn::features_runner verify-change/check-specification-health.feature::A fragment inclusion does not invent an edge to a same-named use case
+        PASS [   2.069s] ( 927/1117) givn::features_runner verify-change/check-specification-health.feature::A non-existent change id is not surfaced
+        PASS [   2.348s] ( 928/1117) givn::features_runner verify-change/check-specification-health.feature::A malformed package manifest skips the dependency-edge finding
+        PASS [   2.167s] ( 929/1117) givn::features_runner verify-change/check-specification-health.feature::A parse error outranks a @wip finding
+        PASS [   2.229s] ( 930/1117) givn::features_runner verify-change/check-specification-health.feature::A parse error is reported on stderr and exits 1
+        PASS [   2.623s] ( 931/1117) givn::features_runner verify-change/check-specification-health.feature::A malformed Unicode use-case title produces a diagnostic instead of a panic
+        PASS [   2.134s] ( 932/1117) givn::features_runner verify-change/check-specification-health.feature::A removed placeholder suppresses the @wip warning on itself
+        PASS [   2.295s] ( 933/1117) givn::features_runner verify-change/check-specification-health.feature::A relationship cannot resolve through the other namespace
+        PASS [   2.113s] ( 934/1117) givn::features_runner verify-change/check-specification-health.feature::A removed scenario does not suppress an unrelated later @wip scenario
+        PASS [   2.318s] ( 935/1117) givn::features_runner verify-change/check-specification-health.feature::An absent declaration is reported by name and no advisory finding is computed
+        PASS [   2.137s] ( 936/1117) givn::features_runner verify-change/check-specification-health.feature::An advisory finding renders its severity and keeps the exit code
+        PASS [   2.320s] ( 937/1117) givn::features_runner verify-change/check-specification-health.feature::An advisory seed finding is counted in the summary and still exits 0
+        PASS [   2.181s] ( 938/1117) givn::features_runner verify-change/check-specification-health.feature::An unrecognised seed status is reported and a status after prose is honoured
+        PASS [   2.421s] ( 939/1117) givn::features_runner verify-change/check-specification-health.feature::An empty role list retains nothing and produces no finding
+        PASS [   2.284s] ( 940/1117) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint accepts a delta that keeps the projected inventory consistent
+        PASS [   2.196s] ( 941/1117) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a declared interaction whose projected corpus has no E2E scenario
+        PASS [   2.215s] ( 942/1117) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a delta capability with no projected owner
+        PASS [   2.419s] ( 943/1117) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint does not read the declaration
+        PASS [   2.203s] ( 944/1117) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a feature the projected inventory does not declare
+        PASS [   2.154s] ( 945/1117) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports a pre-existing inventory mismatch
+        PASS [   2.242s] ( 946/1117) givn::features_runner verify-change/check-specification-health.feature::Change-scoped lint reports an E2E scenario the projected inventory does not declare
+        PASS [   2.295s] ( 947/1117) givn::features_runner verify-change/check-specification-health.feature::Cycles follow use-case includes and extends relationships
+        PASS [   2.179s] ( 948/1117) givn::features_runner verify-change/check-specification-health.feature::Default lint reports an undeclared capability
+        PASS [   2.147s] ( 949/1117) givn::features_runner verify-change/check-specification-health.feature::Explicit paths lint exactly those files without recursive descent
+        PASS [   2.156s] ( 950/1117) givn::features_runner verify-change/check-specification-health.feature::Findings across multiple files are aggregated and files are processed in sorted order
+        PASS [   2.384s] ( 951/1117) givn::features_runner verify-change/check-specification-health.feature::Explicit relationship namespaces disambiguate equal identifiers
+        PASS [   2.125s] ( 952/1117) givn::features_runner verify-change/check-specification-health.feature::Fragment interactions are checked in their declaring fragment
+        PASS [   2.110s] ( 953/1117) givn::features_runner verify-change/check-specification-health.feature::No .feature files under givn/ reports clean and exits 0
+        PASS [   2.315s] ( 954/1117) givn::features_runner verify-change/check-specification-health.feature::Interaction evidence cannot be credited from another capability
+        PASS [   2.305s] ( 955/1117) givn::features_runner verify-change/check-specification-health.feature::One path declared in two roles is reported as advisory
+        PASS [   2.210s] ( 956/1117) givn::features_runner verify-change/check-specification-health.feature::The JSON output exposes the finding severity
+        PASS [   2.125s] ( 957/1117) givn::features_runner verify-change/check-specification-health.feature::The change scope reports a dangling persona reference
+        PASS [   2.323s] ( 958/1117) givn::features_runner verify-change/check-specification-health.feature::The JSON path exposes declaration findings with advisory severity
+        PASS [   2.145s] ( 959/1117) givn::features_runner verify-change/check-specification-health.feature::The lint exit-code contract is preserved after refactor
+        PASS [   2.294s] ( 960/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A case-mismatched document title is refused with the exact correction
+        PASS [   2.216s] ( 961/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A change without ise keeps today's receipt without an E2E identity
+        PASS [   2.393s] ( 962/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A change whose declared E2E package is a standalone workspace passes the tasks check and binds the E2E scope
+        PASS [   2.098s] ( 963/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A consumer runs migration coverage and sees a passing receipt
+        PASS [   2.267s] ( 964/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A checked scenario without a commit fails the task check
+        PASS [   2.126s] ( 965/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A legacy review record without a kind keeps its existing gate result
+        PASS [   2.408s] ( 966/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A failed new-capability candidate tells the developer how to repair it
+        PASS [   2.316s] ( 967/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A malformed Level does not fabricate missing-section or leaf-capability diagnostics
+        PASS [   2.270s] ( 968/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A near-miss section heading is refused with the exact accepted spellings
+        PASS [   2.362s] ( 969/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A malformed title does not fabricate missing-section or empty-section diagnostics
+        PASS [   2.284s] ( 970/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A recorded self-review is accepted
+        PASS [   2.231s] ( 971/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A self-review cannot satisfy a recorded independent request
+        PASS [   2.241s] ( 972/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A successful runner without new output cannot reuse a stale result
+        PASS [   2.268s] ( 973/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::A valid kebab-case use-case title remains accepted
+        PASS [   2.228s] ( 974/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An explicit no-behavior-change declaration needs no delta scenarios
+        PASS [   2.227s] ( 975/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An independent review by a different context is accepted
+        PASS [   2.202s] ( 976/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An independent review whose reviewer is the author is refused
+        PASS [   2.425s] ( 977/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change receipt binds the declared e2e package, the E2E runner command, and the Givn version
+        PASS [   2.206s] ( 978/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose E2E run leaves a step unbound fails the tasks check
+        PASS [   2.250s] ( 979/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose E2E run reports a skipped step fails the tasks check
+        PASS [   3.083s] ( 980/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change receipt whose E2E scope no longer matches the delta is stale for review
+        PASS [   2.796s] ( 981/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose E2E runner command names no declared e2e root fails the tasks check
+        PASS [   2.276s] ( 982/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose delta has no E2E scenario records the E2E scope as not applicable
+        PASS [   2.742s] ( 983/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose declared e2e role resolves no readable package fails the tasks check
+        PASS [   2.169s] ( 984/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose e2e package contains a source root fails the tasks check
+        PASS [   2.132s] ( 985/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose e2e path resolves no package and imports a source package fails the tasks check
+        PASS [   2.125s] ( 986/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose e2e path sits under a source root fails the tasks check
+        PASS [   2.172s] ( 987/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change with no behavior change still needs a readable e2e declaration
+        PASS [   2.875s] ( 988/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change whose e2e package reaches a source package fails the tasks check
+        PASS [   4.718s] ( 989/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An ise-effective change receipt whose E2E identity no longer matches the project is stale for review
+        PASS [   2.193s] ( 990/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::An opaque revision identifier passes the integrity check
+        PASS [   2.447s] ( 991/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Archive allowed when @wip only on a @givn.removed placeholder
+        PASS [   2.331s] ( 992/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Archive blocked when delta spec has non-removed @wip scenario
+        PASS [   2.369s] ( 993/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Archive blocked when merged permanent specs fail verify
+        PASS [   2.328s] ( 994/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Archive re-runs the static review gates
+        PASS [   2.275s] ( 995/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Batch traceability rejects an unreachable revision
+        PASS [   2.341s] ( 996/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Archive refuses a change without a signed design-review
+        PASS [   2.352s] ( 997/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Check tasks blocked when delta spec has @wip
+        PASS [   2.553s] ( 998/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Archive re-runs verify against merged permanent specs and passes
+        PASS [   2.427s] ( 999/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Conflicting actual verdicts cannot pass review
+        PASS [   2.267s] (1000/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Design review and final review share one independent context
+        PASS [   2.136s] (1001/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Design.md template includes Internal Primitives section
+        PASS [   2.080s] (1002/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Explicit retirement documents a changed behavior
+        PASS [   1.950s] (1003/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Guidance assets stop prescribing subagent orchestration
+        PASS [   2.417s] (1004/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Final review does not reconstruct TDD order from commit shape
+        PASS [   2.386s] (1005/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Implementation verification does not require the review it will inform
+        PASS [   2.342s] (1006/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Independent cheap failures are reported while dependent checks are deferred
+        PASS [   2.348s] (1007/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Independent local findings are still reported with a malformed title
+        PASS [   2.217s] (1008/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook fails on empty step-definition file
+        PASS [   2.277s] (1009/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook fails on Step Definitions section that is not a table
+        PASS [   2.145s] (1010/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook fails on missing step-definition file
+        PASS [   2.237s] (1011/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook fails on placeholder commit hash
+        PASS [   2.255s] (1012/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook fails on unedited arc42 chapter
+        PASS [   2.292s] (1013/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook passes on edited arc42 chapter
+        PASS [   3.272s] (1014/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Inputs changed during execution cannot receive a passed receipt
+        PASS [   2.199s] (1015/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook passes when arc42 is disabled
+        PASS [   2.243s] (1016/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook passes when tasks.md commit hashes are present
+        PASS [   2.212s] (1017/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity hook skips arc42 check when slug cannot be resolved
+        PASS [   2.060s] (1018/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Lower branch coverage blocks migration coverage
+        PASS [   2.138s] (1019/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Lost E2E evidence blocks migration coverage
+        PASS [   2.504s] (1020/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Integrity remains applicable without delta specs
+        PASS [   2.148s] (1021/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Lower interaction coverage blocks migration coverage
+        PASS [   2.070s] (1022/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Missing behavior blocks migration coverage
+        PASS [   2.112s] (1023/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Lower line coverage blocks migration coverage
+        PASS [   2.244s] (1024/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Missing required sections and a malformed interaction table are reported together
+        PASS [   2.271s] (1025/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Moving unchanged supported executable content preserves behavior
+        PASS [   2.392s] (1026/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Negated PASS prose is not a passing verdict
+        PASS [   3.809s] (1027/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Invalid fresh runner output cannot prove changed scenarios
+        PASS [   2.280s] (1028/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Omitting delta specs without declaring no behavior change is not an exemption
+        PASS [   2.881s] (1029/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Non-executable FAIL examples do not override an actual PASS
+        PASS [   2.303s] (1030/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::One real revision per scenario passes the task check
+        PASS [   2.245s] (1031/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::One use-case parse failure is reported once across several delta capabilities
+        PASS [   2.279s] (1032/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review accepts a green proof after documentation-only review edits
+        PASS [   2.293s] (1033/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review accepts a delta whose projected interaction inventory is consistent
+        PASS [   2.371s] (1034/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review accepts a current verification receipt
+        PASS [   2.245s] (1035/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review accepts an explicit no-behavior-change verification result
+        PASS [   2.279s] (1036/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review corrects a non-kebab-case use-case title to its canonical identifier
+        PASS [   2.393s] (1037/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review corrects an exact-prefix non-kebab-case title with the canonical identifier
+        PASS [   2.391s] (1038/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review does not accept a non-kebab-case title as the use-case identifier
+        PASS [   4.068s] (1039/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Preservation detects changes to supported executable content
+        PASS [   2.394s] (1040/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review does not run the full suite
+        PASS [   2.243s] (1041/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review refuses a change without a verification receipt
+        PASS [   2.291s] (1042/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review refuses a change whose delta fails the lint gate
+        PASS [   2.859s] (1043/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review ignores verdict examples rather than treating them as decisions
+        PASS [   2.322s] (1044/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review refuses a projected interaction-inventory mismatch before archive
+        PASS [   2.347s] (1045/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review refuses a receipt after the delta specs changed
+        PASS [   2.338s] (1046/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review rejects add-on configuration drift
+        PASS [   2.289s] (1047/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Review validates an active delta use-case narrative even for an extension
+        PASS [   2.255s] (1048/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::The recorded independent choice is authoritative from the proposal
+        PASS [   2.363s] (1049/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::The review instruction carries the one-context policy
+        PASS [   2.487s] (1050/1117) givn::features_runner verify-change/givn-workflow-enforcement.feature::Two scenarios sharing a batch commit pass the task check
+        PASS [   2.324s] (1051/1117) givn::features_runner verify-change/resolve-change-directories.feature::Integrity hook resolves the change directory from a relative features path inside givn/changes
+        PASS [   2.282s] (1052/1117) givn::features_runner verify-change/resolve-change-directories.feature::Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
+        PASS [   2.489s] (1053/1117) givn::features_runner verify-change/review-disposition-gates.feature::A completed split satisfies the scenario-length disposition
+        PASS [   2.775s] (1054/1117) givn::features_runner verify-change/review-disposition-gates.feature::A keep disposition must contain an explicit decision and a reason
+        PASS [   2.406s] (1055/1117) givn::features_runner verify-change/review-disposition-gates.feature::A promised split cannot pass review while the long scenario remains unsplit
+        PASS [   2.312s] (1056/1117) givn::features_runner verify-change/review-disposition-gates.feature::Review blocks when a long scenario in the delta has no split-or-keep entry
+        PASS [   2.389s] (1057/1117) givn::features_runner verify-change/review-disposition-gates.feature::Consumer passes review without shape dispositions and receives the net-delta receipt
+        PASS [   2.399s] (1058/1117) givn::features_runner verify-change/review-disposition-gates.feature::Review blocks with a clear message when review.md is missing
+        PASS [   2.387s] (1059/1117) givn::features_runner verify-change/review-disposition-gates.feature::Review passes when a long scenario has a split-or-keep entry
+        PASS [   2.306s] (1060/1117) givn::features_runner verify-change/review-disposition-gates.feature::Review passes when a shape match exists only between permanent scenarios
+        PASS [   2.129s] (1061/1117) givn::features_runner verify-change/spec-overlap-gates.feature::A delta of another active change duplicating a permanent spec title is a hard error
+        PASS [   2.134s] (1062/1117) givn::features_runner verify-change/spec-overlap-gates.feature::A modified delta matching its merge target in the same capability is allowed
+        PASS [   2.312s] (1063/1117) givn::features_runner verify-change/review-disposition-gates.feature::The net-delta receipt counts added, modified, and removed scenarios
+        PASS [   2.106s] (1064/1117) givn::features_runner verify-change/spec-overlap-gates.feature::A modified delta whose title exists in a different capability is a hard error
+        PASS [   2.126s] (1065/1117) givn::features_runner verify-change/spec-overlap-gates.feature::A scenario whose assertion sequence is a subset of another produces a subset warning
+        PASS [   2.160s] (1066/1117) givn::features_runner verify-change/spec-overlap-gates.feature::A removed delta referencing its target by title is allowed
+        PASS [   2.108s] (1067/1117) givn::features_runner verify-change/spec-overlap-gates.feature::A scenario with more than 14 steps produces a long-scenario warning
+        PASS [   2.067s] (1068/1117) givn::features_runner verify-change/spec-overlap-gates.feature::An added delta duplicating a permanent spec title is a hard error
+        PASS [   2.098s] (1069/1117) givn::features_runner verify-change/spec-overlap-gates.feature::An explicit archive path still lints its file
+        PASS [   3.636s] (1070/1117) givn::features_runner verify-change/review-disposition-gates.feature::Shape matches do not block review or archive
+        PASS [   2.166s] (1071/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Background steps are prepended before the comparison
+        PASS [   2.140s] (1072/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Consecutive And and But steps normalise to the same shape as plain Then steps
+        PASS [   2.048s] (1073/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Data table contents are compared as facts and can contradict
+        PASS [   2.154s] (1074/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Deltas of two active changes sharing a title are a hard error
+        PASS [   2.189s] (1075/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Docstrings are ignored in the shape comparison
+        PASS [   2.114s] (1076/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Numbers are masked in the shape comparison but exit codes stay facts
+        PASS [   2.101s] (1077/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Quoted strings are masked in the shape comparison
+        PASS [   2.042s] (1078/1117) givn::features_runner verify-change/spec-overlap-gates.feature::The json output reports a parse error as a machine-readable finding
+        PASS [   2.130s] (1079/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Scenario outlines sharing a template produce a shape-match warning
+        PASS [   2.172s] (1080/1117) givn::features_runner verify-change/spec-overlap-gates.feature::The default scope excludes the archive tree
+        PASS [   2.211s] (1081/1117) givn::features_runner verify-change/spec-overlap-gates.feature::The same shape with contradicting facts produces a related-scenario hint
+        PASS [   2.117s] (1082/1117) givn::features_runner verify-change/spec-overlap-gates.feature::The same shape without any extractable facts suggests merging
+        PASS [   2.125s] (1083/1117) givn::features_runner verify-change/spec-overlap-gates.feature::Two scenarios with the same shape but different titles produce a warning
+        PASS [   2.156s] (1084/1117) givn::features_runner verify-change/validate-artifact-ids.feature::givn check with known artifact proceeds to run hooks
+        PASS [   2.103s] (1085/1117) givn::features_runner verify-change/validate-artifact-ids.feature::givn check with unknown artifact validates against manifest and provides helpful error
+        PASS [   2.128s] (1086/1117) givn::features_runner verify-change/validate-artifact-ids.feature::givn eject instruction with unknown artifact validates against manifest and provides helpful error
+        PASS [   2.266s] (1087/1117) givn::features_runner verify-change/visual-review-gate.feature::A change that declares no visual interface is exempt
+        PASS [   2.338s] (1088/1117) givn::features_runner verify-change/visual-review-gate.feature::A change that declares the interface none with a reasoned none fails review
+        PASS [   2.291s] (1089/1117) givn::features_runner verify-change/visual-review-gate.feature::A change that declares the interface none without a persona disposition fails review
+        PASS [   2.290s] (1090/1117) givn::features_runner verify-change/visual-review-gate.feature::A change without a visual contract is exempt from the visual gate
+        PASS [   2.313s] (1091/1117) givn::features_runner verify-change/visual-review-gate.feature::A deferral with an operator decision passes review
+        PASS [   2.429s] (1092/1117) givn::features_runner verify-change/visual-review-gate.feature::A change without a visual interface passes review with a reasoned none
+        PASS [   2.329s] (1093/1117) givn::features_runner verify-change/visual-review-gate.feature::A deferral without an operator decision fails review
+        PASS [   2.347s] (1094/1117) givn::features_runner verify-change/visual-review-gate.feature::A machine-only CLI records not applicable and passes review
+        PASS [   2.296s] (1095/1117) givn::features_runner verify-change/visual-review-gate.feature::A terminal change passes review with a transcript
+        PASS [   2.470s] (1096/1117) givn::features_runner verify-change/visual-review-gate.feature::A visual change with a confirmed persona disposition passes review
+        PASS [   2.378s] (1097/1117) givn::features_runner verify-change/visual-review-gate.feature::A visual change with a reasoned none fails review
+        PASS [   2.364s] (1098/1117) givn::features_runner verify-change/visual-review-gate.feature::A visual change with an unknown persona disposition fails review
+        PASS [   2.378s] (1099/1117) givn::features_runner verify-change/visual-review-gate.feature::A visual change with incomplete evidence fails review
+        PASS [   2.392s] (1100/1117) givn::features_runner verify-change/visual-review-gate.feature::A visual change without a persona disposition fails review
+        PASS [   2.292s] (1101/1117) givn::features_runner verify-change/visual-review-gate.feature::A visual change without a visual verdict fails review
+        PASS [   2.367s] (1102/1117) givn::features_runner verify-change/visual-review-gate.feature::A visual interface with an empty persona disposition fails review
+        PASS [   2.236s] (1103/1117) givn::features_runner verify-change/visual-review-gate.feature::A web contract with complete state evidence passes review
+        PASS [   2.356s] (1104/1117) givn::features_runner verify-change/visual-review-gate.feature::A web contract with missing state evidence fails review
+        PASS [   2.296s] (1105/1117) givn::features_runner verify-change/visual-review-gate.feature::A web contract without viewports fails review
+        PASS [   2.277s] (1106/1117) givn::features_runner verify-change/visual-review-gate.feature::An empty state screenshot fails review
+        PASS [   2.314s] (1107/1117) givn::features_runner verify-change/visual-review-gate.feature::An empty evidence file fails review
+        PASS [   2.279s] (1108/1117) givn::features_runner verify-change/visual-review-gate.feature::An unverified visual verdict cannot pass review
+        PASS [   2.079s] (1109/1117) givn::features_runner verify-change/visual-review-gate.feature::Review guidance fails a deferral without an operator decision
+        PASS [   2.058s] (1110/1117) givn::features_runner verify-change/visual-review-gate.feature::Review guidance names the state screenshots the vision review saw
+        PASS [   1.975s] (1111/1117) givn::features_runner verify-change/visual-review-gate.feature::Review guidance records an unverified verdict without vision
+        PASS [   1.764s] (1112/1117) givn::features_runner verify-change/visual-review-gate.feature::Review guidance records the persona disposition
+        PASS [   1.618s] (1113/1117) givn::features_runner verify-change/visual-review-gate.feature::Review guidance treats style improvements as contract updates
+        PASS [   1.887s] (1114/1117) givn::features_runner verify-change/visual-review-gate.feature::Review guidance requires a persona for a declared interface none contract
+        PASS [   1.848s] (1115/1117) givn::features_runner verify-change/visual-review-gate.feature::Review guidance tests the opposite interface classification
+        PASS [   1.739s] (1116/1117) givn::features_runner verify-change/visual-review-gate.feature::Synchronized review guidance carries the visual block
+        PASS [   1.762s] (1117/1117) givn::features_runner verify-change/visual-review-gate.feature::The review template carries the visual review section
+────────────
+     Summary [ 215.017s] 1117 tests run: 1117 passed, 115 skipped
+# exit: 0
+# finished: 2026-11-17T22:48:54+01:00

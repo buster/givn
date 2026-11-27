@@ -1507,14 +1507,15 @@ fn user_requests_ise_as_json(world: &mut GivnWorld) {
     world.last_output = Some(common::run_givn(env, &["instructions", "ise", "--json"]));
 }
 
-#[then("the served instruction names the five rebuild obligations")]
+#[then("the served instruction names the six rebuild obligations")]
 fn served_instruction_names_five_obligations(world: &mut GivnWorld) {
     let content = crate::steps::stdout(world);
     for label in [
         "Specification completeness",
-        "two-layer test boundary",
-        "persisted-state continuity",
-        "change strategy",
+        "Two-layer test boundary",
+        "Persisted-state continuity",
+        "Ise rebuild decision",
+        "Implementation freedom",
         "Spec gap",
     ] {
         assert!(

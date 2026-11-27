@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "change": "ise-ship-component-tier",
+  "status": "passed",
+  "head": "e427e87f9f5bfeed72c8d6d26ea2655235a4e90c",
+  "features_path": "givn/changes/ise-ship-component-tier/specs",
+  "features_digest": "bbf1f992b07dd4aad6191cb315c4e7b172a0c00ab7769ba5be04594ed0f36892",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "159ebdc50397eb8ebd5a58a8cd23fc71c7f6f98d6c7f38bf0c9a62593327c9c3",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "skipped": 0
+  },
+  "e2e_identity": {
+    "package_digests": {
+      "e2e": "1ee8fdecba45820adb45fc9f2879643da800f56907ca51ec60e2251c3c33f52d"
+    },
+    "runner_command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+    "givn_version": "0.9.21"
+  },
+  "e2e_scope": {
+    "status": "not_applicable",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0
+  },
+  "finished_at_unix": 1795098321
+}

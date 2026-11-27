@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "change": "givn-self-rebuild-under-the-updated-rules",
+  "status": "passed",
+  "head": "6f79cb71cafda36106152056671ebe2b09f42e42",
+  "features_path": "givn/changes/givn-self-rebuild-under-the-updated-rules/specs",
+  "features_digest": "c8bcce317c4cf43f352cfb0e81a985dfc505d00ca0eb69b7b9576b1e53ab288d",
+  "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+  "command": "./run-tests.sh --non-e2e",
+  "tested_content_digest": "c4512b19a87caa3946c297b67c46a46191782d85007991b14ff876a25a472739",
+  "content_scope": "change-proof/v1",
+  "runner_exit": 0,
+  "result": {
+    "scope": "change",
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0
+  },
+  "e2e_identity": {
+    "package_digests": {
+      "e2e": "e28bcc31683350cb759845e6725183290ace6431125dc0380455c744e5acbfce"
+    },
+    "runner_command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+    "givn_version": "0.9.20"
+  },
+  "e2e_scope": {
+    "status": "not_applicable",
+    "total": 0,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.0
+  },
+  "finished_at_unix": 1794951071
+}

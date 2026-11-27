@@ -2,6 +2,8 @@
 verify:
   command: "./run-tests.sh --non-e2e"
   e2e_command: "./run-tests.sh --e2e --package e2e"
+  product_path: "target/debug/givn"
+  product_env: "GIVN_BIN"
 
 coverage:
   measure_command: "./measure-coverage.sh"
@@ -9,6 +11,7 @@ coverage:
   non_e2e_path: "coverage/non-e2e-cobertura.xml"
   e2e_path: "coverage/e2e-cobertura.xml"
   output_path: "coverage/cobertura-coverage.xml"
+  e2e_subprocess: true
 
 # --- Product start ------------------------------------------------------------
 # How the built product is started. givn is a CLI; its canonical entry point

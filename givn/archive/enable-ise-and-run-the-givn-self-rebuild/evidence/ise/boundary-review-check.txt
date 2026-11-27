@@ -1,0 +1,9 @@
+Mandatory checks for 'review':
+  ✓ integrity checks passed
+  ✓ run declaration passed
+givn lint: no .feature files found under givn/changes/enable-ise-and-run-the-givn-self-rebuild/specs/
+givn lint: 0 file(s) checked — clean
+net delta: 0 added, 0 modified, 0 removed
+net delta json: {"added":0,"modified":0,"removed":0}
+  ✓ overlap dispositions passed
+  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)

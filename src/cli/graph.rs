@@ -232,6 +232,8 @@ mod tests {
                 command: "true".to_string(),
                 e2e_command: String::new(),
                 features_path: "givn/specs".to_string(),
+                product_path: None,
+                product_env: "GIVN_BIN".to_string(),
             },
             run: Run::default(),
             addons: Addons {

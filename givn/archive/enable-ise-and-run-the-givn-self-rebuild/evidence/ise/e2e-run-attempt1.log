@@ -1,0 +1,1771 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s
+     Running tests/e2e_runner.rs (/home/buster/.paseo/worktrees/008cxm4u/modern-mule/target/e2e-package/debug/deps/e2e_runner-1e7228000a132c67)
+Feature: Archive Proof
+  Scenario Outline: Consumer archives a completed change and receives a proven archive
+   ✔  Given a committed Git project with a completed change "proof-real" ready to archive
+   ✔  And the project reports scenario counts for every verification scope
+   ✔  When the user invokes `givn archive --change proof-real`
+   ✔  Then the command succeeds
+   ✘  And the archive at givn/archive/proof-real/ carries a proven verification receipt
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/archive-proof.feature:130:5
+      Matched: tests/steps/archive_proof_e2e_steps.rs:45:1
+      Step panicked. Captured output: proven receipt does not name the tested commit: {"change":"proof-real","counts":{"failed":0,"passed":2,"total":2},"finished_at":"2026-11-17T13:53:01.535Z","proven":true,"revision":"12a77089caf224485a378dbad60795ebb7039ebd","scope":"archive-verification/v1","scopes":{"regular":{"failed":0,"passed":true,"passed_count":2,"total":2}},"status":"proven"}
+  Scenario Outline: Consumer archives a completed change and receives a proven archive
+   ✔  Given a committed Fossil project with a completed change "proof-real" ready to archive
+   ✔  And the project reports scenario counts for every verification scope
+   ✔  When the user invokes `givn archive --change proof-real`
+   ✔  Then the command succeeds
+   ✘  And the archive at givn/archive/proof-real/ carries a proven verification receipt
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/archive-proof.feature:130:5
+      Matched: tests/steps/archive_proof_e2e_steps.rs:45:1
+      Step panicked. Captured output: proven receipt does not name the tested commit: {"change":"proof-real","counts":{"failed":0,"passed":2,"total":2},"finished_at":"2026-11-17T13:53:01.580Z","proven":true,"revision":"","scope":"archive-verification/v1","scopes":{"regular":{"failed":0,"passed":true,"passed_count":2,"total":2}},"status":"proven"}
+  Scenario: Consumer repairs a blocked archive and the rerun proves it
+   ✘  Given a committed givn project with an unproven candidate whose scopes passed but finalization publication failed
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/archive-proof.feature:138:5
+      Matched: tests/steps/archive_proof_steps.rs:194:1
+      Step panicked. Captured output: fixture archive unexpectedly succeeded: Finalization revision: 82187c86df833d84aa6848def2493bea1317986c
+      Archived 'proof-repair'
+      Proven archive: givn/archive/proof-repair/
+      Verification receipt: givn/archive/proof-repair/verification.json
+      Merged 1 delta feature(s) into the permanent corpus.
+  Scenario: Consumer inspects an unproven archive candidate
+   ✔  Given a committed givn project with an unproven archive candidate "proof-pending"
+   ✔  When the user invokes `givn status`
+   ✘  Then stdout lists "proof-pending" as an unproven archive
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/archive-proof.feature:150:5
+      Matched: tests/steps/archive_proof_steps.rs:57:1
+      Step panicked. Captured output: stdout does not list unproven archive proof-pending: SCM: git
+      Active changes: none
+      Next: start with the givn-start skill, or create a change with `givn new <change-id>`.
+      Archives:
+      - proof-pending (unproven archive candidate; resume with `givn archive --change proof-pending`)
+  Scenario: Consumer archives a change after documentation-only review edits and the proof is reused
+   ✔  Given a clean committed change with a green change verification receipt recorded at an earlier revision
+   ✔  And the developer commits only proposal, design, design-review, tasks, review, arc42, use-case narrative, README, and evidence edits after that revision
+   ✔  And the verify command records every invocation with its scope and features path
+   ✔  When the developer runs `givn archive --change review-proof-demo`
+   ✔  Then the command exits 0
+   ✔  And the archive is proven
+   ✔  And the change suite was not invoked again
+   ✘  And the merged regular scope ran once with features path "givn/specs"
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/archive-proof.feature:364:5
+      Matched: tests/steps/archive_proof_e2e_steps.rs:129:1
+      Step panicked. Captured output: assertion `left == right` failed: merged regular scope did not run exactly once: before= after=regular /tmp/.tmpWfico5/givn/specs
+      e2e /tmp/.tmpWfico5/givn/specs
+      
+        left: 0
+       right: 1
+Feature: Enforce Post-Merge E2E Gate
+  Scenario: Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+   ✔  Given a committed givn project with verify.e2e_command unconfigured in givn/commands.yaml
+   ✔  And a change "real-e2e-merge" with all artifacts done, whose delta spec has an @e2e scenario
+   ✔  And the permanent spec directory givn/specs/ has no @e2e scenario
+   ✔  When the user invokes `givn archive --change real-e2e-merge`
+   ✔  Then the command fails
+   ✔  And stderr says the e2e runner is not configured for permanent specs with @e2e coverage
+   ✔  And stderr names givn/commands.yaml as the e2e runner's configuration file
+   ✔  And the change directory still exists under givn/changes/
+   ✔  And no archive candidate exists for "real-e2e-merge"
+Feature: Extract Coverage Gate
+  Scenario: Consumer archives a change with coverage enabled and the coverage summary appears in README
+   ✔  Given a givn project with coverage enabled and valid coverage commands that produce Cobertura XML
+   ✔  And a completed change "cov-real" with all required artifacts
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn archive --change cov-real`
+   ✔  Then the command succeeds
+   ✘  And the README.md contains a coverage summary fence
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/extract-coverage-gate.feature:19:5
+      Matched: tests/steps/mod.rs:521:1
+      Step panicked. Captured output: README.md missing coverage fence: # test-project
+      
+      <!-- givn:begin:coverage-badge -->
+      [![Line Coverage: n/a](https://img.shields.io/badge/line%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+      [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+      <!-- givn:end:coverage-badge -->
+      
+      A small command-line tool used as a givn test fixture.
+      
+      ## Quick start
+      
+      ```sh
+      cargo install test-project
+      test-project --help
+      ```
+      
+      ## Prerequisites
+      
+      Rust (latest stable).
+      
+      ## Usage
+      
+      `test-project <args>` prints the requested output to stdout.
+      
+      ## Contributing
+      
+      Conventional Commits; PRs require a green test suite.
+      
+      ## License
+      
+      MIT
+      
+      <!-- givn:begin:development -->
+      ## Development
+      
+      - Verify: `./emit-result.sh regular`
+      - Measure coverage: `./measure-coverage.sh`
+      - Merge coverage: `cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml`
+      <!-- givn:end:development -->
+      
+Feature: grouped-merge-for-new-capabilities
+  Scenario: Consumer archives a new capability and the merged spec lands in its declared use case
+   ✔  Given a givn project with a completed change declaring a capability NEW in "some-group"
+   ✔  And its supported delta feature has Background setup, inherited execution tags and a Scenario Outline with a docstring, table and Examples
+   ✔  And all applicable archive verification passes
+   ✔  When the consumer invokes `givn archive --change grouped-new`
+   ✘  Then the command succeeds and terminal output reports a proven archive
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/grouped-merge-for-new-capabilities.feature:9:5
+      Matched: tests/steps/grouped_merge_steps.rs:129:1
+      Step panicked. Captured output: stdout does not report the archive: Finalization revision: ac90694bb44b14abb0e489ef0347c2903e2c2c3f
+      Archived 'grouped-new'
+      Proven archive: givn/archive/grouped-new/
+      Verification receipt: givn/archive/grouped-new/verification.json
+      Merged 1 delta feature(s) into the permanent corpus.
+Feature: Preserve scenario docstrings on archive
+  Scenario: Consumer archives a modified scenario and the permanent spec keeps the docstring
+   ✔  Given a givn project with a completed change "real-modify" whose delta modifies scenario "Existing behaviour" within capability "real-cap" and gives a step the docstring:
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn archive --change real-modify`
+   ✔  Then the command succeeds
+   ✘  And the permanent spec file for "real-cap" contains the text "docstring-present-after-real-archive"
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/preserve-scenario-docstrings.feature:35:5
+      Matched: tests/steps/preserve_docstrings_on_archive_steps.rs:182:1
+      Step panicked. Captured output: permanent spec "/tmp/.tmpVXxGaF/givn/specs/real-cap/real-cap.feature" missing "docstring-present-after-real-archive":
+      Feature: real-cap
+      
+        Scenario: Existing behaviour
+          Given  a baseline step exists
+Feature: Require Durable Retained Paths
+  Scenario: Consumer archives a change whose declared retained paths survive the move
+   ✔  Given a givn project with a completed change "durable-paths" ready to archive
+   ✘  And an effective declaration whose limits role names "givn/archive/durable-paths/design.md"
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/archive-change/require-durable-retained-paths.feature:7:5
+      Matched: tests/steps/require_durable_retained_paths_steps.rs:55:1
+      Step panicked. Captured output: givn addons enable ise failed: givn addons: an active change locks the addon configuration; finish or archive it first, or use --operator --reason "<reason>" on an interactive terminal.
+Feature: Require Merged Step Definitions
+  Scenario: Consumer archives a change whose delta step definitions are already in the permanent test tree
+   ✔  Given a givn project with a completed change "merged-steps" ready to archive
+   ✔  And the change's spec tree binds "an imported catalog" in "steps/catalog_steps.py"
+   ✔  And a permanent step-definition file "tests/steps/catalog_steps.py" binds "an imported catalog"
+   ✔  When the user invokes `givn archive --change merged-steps`
+   ✔  Then the command exits 0
+   ✔  And the change directory has been moved to givn/archive/
+   ✔  And the archived change still contains the step-definition file "specs/steps/catalog_steps.py"
+Feature: Outline report
+  Scenario: A developer runs a outline report and sees the classified units
+   ✔  Given a Givn project with the outline experiment enabled
+   ✔  And a production source unit that is over the readable size
+   ✔  When the developer runs "givn outline report"
+   ✔  Then the command exits with code 0
+   ✘  And the report classifies the unit as a god type
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/assess-code-structure/outline-report.feature:9:5
+      Matched: tests/steps/outline_report_steps.rs:35:1
+      Step panicked. Captured output: expected a god-type classification, got: givn outline report
+      
+      Advisory structure report. Metrics never change the exit code and no baseline is written.
+      
+      Units:
+      - src/god_type.rs  (rust, 521 lines)
+      
+      Metric hints:
+      - src/god_type.rs  (521 lines)  classification: god type  severity: advisory
+Feature: Change release note
+  Scenario: A new change's proposal carries the release-note field
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn new shared-note`
+   ✔  Then the command exits 0
+   ✔  And the file "givn/changes/shared-note/proposal.md" contains "release note"
+  Scenario: The proposal guidance requires a release note
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "shared-note" exists with artifact "proposal"
+   ✔  When the user runs `givn instructions proposal --change shared-note`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "release note"
+   ✔  And stdout contains "carries the release note as its message subject"
+  Scenario: The generated implementation guidance shares the release note
+   ✘  Given a givn project with all agent skill targets enabled and an active change
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/create-change/change-release-note.feature:21:5
+      Matched: tests/steps/prose_consolidation_steps.rs:42:1
+      Step panicked. Captured output: givn init failed: Output { status: ExitStatus(unix_wait_status(256)), stdout: "", stderr: "givn init: no agent targets selected; pass --agents <opencode|agents|claude|omp|maki|all>\n" }
+Feature: change-strategy
+  Scenario: The design guidance requires one recorded change strategy
+   ✔  Given a Givn project with the ise addon enabled and the skills synchronized
+   ✔  When the consumer requests the design guidance for an active change
+   ✔  Then the command exits 0
+   ✘  And the served design guidance requires exactly one change strategy as a `Decides D` entry
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/create-change/change-strategy.feature:9:5
+      Matched: tests/steps/change_strategy_e2e_steps.rs:28:1
+      Step panicked. Captured output: the served design guidance does not require one change strategy in the Decisions ledger: # Design ## Purpose Write the technical design: technology, step locations, decisions, the interaction matrix, the visual contract, and local runnability. ## Technology Name the language, runtime, build, and libraries. State why each material choice is the boring fit. ## Step Definitions Record every step binding in a table with the step text and its location. ## Decisions Use a decision ledger: `Decides D<n>: <decision> — <where it is realized>`. Every proposal question id maps to a resolution or a named owner. ## Interaction matrix Map each capability to each delta scenario and to the E2E evidence. The inventory is advisory for shape; shape matches are advisory and never veto a design. Preserve black-box behavior and distinct requirement coverage. ## Visual Design Contract When the change affects a rendered surface, record one Visual Design Contract. It is style-level, not pixel-exact: - the reference under `docs/design/`; - design tokens (color, spacing, type, radius, motion); - component states (default, hover, focus, active, disabled, error, empty, loading); - the rendered reference (screenshot, mockup, or a described rendered surface); - the declared viewports and the visual evidence to capture. An improvement stays inside the style. Propose a style change explicitly and get user approval before implementing it. ## Local runnability Declare how the product starts and how a reviewer verifies the change locally. ## Change strategy Require exactly one change strategy as a `Decides D` entry (`Decides D<n>`) in the design: `incremental modification`, `Constant Ise`, or a whole-product rebuild. A rebuilding change records its `Ise Test` mode beside it: `Dry-Run Ise` or `Full replacement`. The entry names the affected consumers, the persisted state, and the rebuild boundary. An unresolved or unrecorded change strategy, or a rebuild with no recorded mode, is a design-review finding, not a missing artifact. Do not add a mandatory design field for it.
+Feature: prose-consolidation
+  Scenario: Canonical E2E policy is emitted by specs instructions
+   ✔  Given a givn project
+   ✔  When the user runs `givn instructions specs --change visual-ui-review`
+   ✔  Then stdout contains "one E2E evidence scenario per distinct real user action"
+   ✔  And stdout does not contain "one `@e2e` scenario per User Interaction Inventory entry"
+   ✔  And stdout contains "final-state screenshot"
+   ✔  And stdout contains "Samsung S24"
+   ✔  And stdout contains "Full HD"
+  Scenario: Generated guidance points to the canonical E2E policy
+   ✔  Given a Givn project with all agent skill targets and optional guidance enabled
+   ✔  When the consumer synchronizes the selected agent guidance through the Givn CLI
+   ✔  Then the generated givn-spec skill directs the author to the canonical specs instruction
+   ✘  And managed bootstrap guidance owns loading the effective dialog policy before the first question once per context
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/create-change/prose-consolidation.feature:18:5
+      Matched: tests/steps/prose_consolidation_e2e_steps.rs:63:1
+      Step panicked. Captured output: managed bootstrap does not own the once-per-context dialog load: <!-- givn:begin:project -->
+      # Givn project: .tmpN4ZMD4
+      
+      This project uses Givn. Generated skills are the invocation surface; run
+      `givn instructions <id>` for the canonical rules of a step.
+      
+      Bootstrap obligation: before the first user-facing question in this context,
+      load the effective dialog policy with `givn instructions dialog`. Load it once
+      per context and reload it if the context is lost. This obligation is
+      independent of optional addons and named skills.
+      
+      - Managed bootstrap owns loading the effective dialog policy before the first
+        question once per context.
+      - A new or unclassified request starts with the `givn-start` skill; the direct
+        alternative is `givn new <change-id>`.
+      - Every change proposal carries one release note; every completed behavior
+        batch revision carries the release note as its message subject, and the
+        scenario title goes in the message body.
+      - Check off a scenario task only after recording the actual completed batch
+        revision.
+      <!-- givn:end:project -->
+      <!-- givn:begin:communication-policy -->
+      ## Communication policy
+      
+      State decisions, evidence, and consequences concretely. Use complete sentences in project documentation; keep chat concise and fact-first.
+      <!-- givn:end:communication-policy -->
+Feature: spec-gap
+  Scenario: The review guidance requires one spec gap outcome before any fix
+   ✔  Given a Givn project with the ise addon enabled and the skills synchronized
+   ✔  When the consumer requests the review guidance for an active change
+   ✔  Then the command exits 0
+   ✘  And the served review guidance requires exactly one spec gap outcome before any fix
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/create-change/spec-gap.feature:9:5
+      Matched: tests/steps/spec_gap_e2e_steps.rs:17:1
+      Step panicked. Captured output: the served review guidance does not require one spec gap outcome before any fix: # Review ## Purpose Complete the coverage review, implementation evidence check, gap classification, targeted closure, and sign-off. Review consumes evidence; it does not rerun the suites. ## Obligations - Check every delta scenario against the permanent corpus and the interaction inventory. A feature file absent from the declared capability list is a blocking mismatch. - Check the implementation evidence: actual RED, GREEN, and REFACTOR records, and one real reachable revision per scenario. - Classify each gap before fixing it. A structural or shape match is advisory: retain split-or-keep without a mandatory disposition table, and never let a shape match veto review. - Check black-box behavior and distinct requirement coverage. - Record the README impact decision: `none` or the sections updated. - Record the visual decision when the change renders a surface. - Return exactly one verdict: `Review: PASS` or a refusal naming the open findings. ## Discovery is advisory A duplicate or overlap shape is explicit advisory discovery. Shape matches are advisory: retain split-or-keep, report each match with evidence, and never let it veto review by itself. Preserve black-box behavior and distinct requirement coverage. ## Arc42 implementation conformance Compare the Arc42 design tasks and the completed implementation against available evidence. Record evidence and material mismatches. Resolve every material conformance mismatch before sign-off. Do not require an unwritten review verdict or a future archive receipt as evidence. ## Ubiquitous language conformance Check the change's terms against `docs/glossary.md` and its structure against `docs/domain-model.md`. An invented synonym, a renamed durable term without a recorded decision, or an aggregate that is really a record is a finding. ## Visual review A visual change passes only with complete evidence: - a final-state screenshot for every `@e2e` scenario that renders a surface, at every declared viewport; - one review lens per confirmed Persona affected by the change; - the vision review verdict; - the transcript of the rendered walkthrough. Record `VISUAL-REVIEW: PASS` only when every lens and viewport has evidence. A missing screenshot, a pre-act screenshot, or an unfrozen animation is a blocking finding. Improvements stay inside the approved style. ## Spec gap Require exactly one spec gap outcome before any fix after an Ise Test: - `E2E test defect` — the frozen test is wrong; correct the test and restart the trial. - `implementation defect` — the build is wrong; fix it inside the trial with no corpus edit. - `specification defect` — the Specification is wrong or incomplete; correct the corpus in a corrective change. - `acceptable undocumented change` — record the behavior in the corpus. Only specification defect is a defect in the Specification, and only specification defect is a gap in the Specification. An E2E test defect is a gap in the test, an implementation defect is a gap in the build, and an acceptable undocumented change is no gap. Record the outcome before the fix and name the artifact that is wrong, not who found it.
+Feature: Visual Design Contract
+  Scenario: Author requests the visual design contract guidance
+   ✔  Given a givn project
+   ✔  When the user runs `givn instructions design --change visual-ui-review`
+   ✔  Then stdout contains "Visual Design Contract"
+   ✔  And stdout contains "style-level"
+   ✔  And stdout contains "not pixel"
+   ✔  And stdout contains "docs/design/"
+   ✔  And stdout contains "design tokens"
+   ✔  And stdout contains "component states"
+   ✔  And stdout contains "rendered reference"
+  Scenario: Synchronized guidance defines the contract approval and capture mechanics
+   ✘  Given a givn project with all agent skill targets enabled
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/create-change/visual-design-contract.feature:31:5
+      Matched: tests/steps/prose_consolidation_steps.rs:33:1
+      Step panicked. Captured output: givn init failed: Output { status: ExitStatus(unix_wait_status(256)), stdout: "", stderr: "givn init: no agent targets selected; pass --agents <opencode|agents|claude|omp|maki|all>\n" }
+Feature: specification-declaration
+  Scenario: The declared roles are read by the project-health pass
+   ✔  Given an ise-enabled project selecting opencode with a declaration naming the five roles and two source roots
+   ✔  When the consumer runs `givn lint`
+   ✔  Then the command exits 0
+   ✔  And stderr contains no declaration-schema error
+   ✘  And stderr contains the declared-path advisory for the contracts role
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/declare-the-specification/specification-declaration.feature:10:5
+      Matched: tests/steps/specification_declaration_e2e_steps.rs:47:1
+      Step panicked. Captured output: stderr reports no contracts-role advisory:
+      givn lint: advisory: declared path missing from the tree: contracts entry 'docs/reference.md'
+      givn lint: advisory: declared path missing from the tree: e2e entry 'tests/e2e'
+      givn lint: advisory: declared e2e path resolves no package: tests/e2e
+      givn lint: advisory: the declared e2e role resolves no package or package manifest
+Feature: keep-audit-output-clean
+  Scenario: The JSON duplicate audit is valid JSON without progress wording
+   ✔  Given a spec discovery project whose corpus contains one feature with two identical scenarios
+   ✔  When the user audits the permanent corpus with `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And stdout is a JSON array
+   ✔  And stdout stays free of "embedding" and "download" wording
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Exact duplicates in one feature are reported together
+   ✔  Given a spec discovery project whose corpus contains one feature with two scenarios having literally equal supported executable content
+   ✔  When the user audits the permanent corpus with `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "exact_duplicate"
+   ✔  And stdout contains "scanned permanent corpus"
+   ✔  And stdout contains both audit endpoints
+   ✔  And the terminal transcript is captured for this scenario
+Feature: A project extends an instruction's built-in rules
+  Scenario: A developer records an extension and it governs the next guidance request
+   ✔  Given a Givn project with an active change
+   ✔  And the developer records the rule "Keep proposals under 500 words" for the proposal instruction in the project's configuration
+   ✔  When the agent requests the proposal instructions through the Givn CLI
+   ✘  Then the served content carries the project's rule in the marked extension section
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/extend-an-instruction/instruction-extension.feature:8:5
+      Matched: tests/steps/serve_extended_rules_steps.rs:283:1
+      Step panicked. Captured output: the served proposal content carries no marked extension section: # Proposal
+      
+      ## Purpose
+      
+      Write the change's WHAT and WHY, its release note, its capability routing, and
+      its open questions.
+      
+      ## Release note
+      
+      The proposal carries exactly one release note: one complete, user-facing
+      sentence naming what the change does. Every revision the change records
+      carries the release note as its message subject; the scenario title goes in
+      the message body. A changelog line derived from revision subjects is a consequence, not the
+      release note.
+      
+      ## WHAT
+      
+      State the observable behavior added, modified, or removed. Name the consumer
+      and the outcome.
+      
+      ## WHY
+      
+      State the problem and the consequence of leaving it unsolved. Do not restate
+      the solution.
+      
+      ## Capability routing
+      
+      Record each capability as `NEW in <group>`, `MODIFIED <capability>`, or
+      `REMOVED <capability>`. A NEW capability names the group whose use case will
+      own it.
+      
+      ## Open questions
+      
+      Record unresolved decisions with ids `Q1`, `Q2`, ... Each question states what
+      it blocks and which artifact will resolve it. If none remain, say so explicitly.
+      
+      ## Change strategy
+      
+      Every change records exactly one change strategy in its design: `incremental
+      modification`, `Constant Ise`, or a whole-product rebuild. A change that
+      rebuilds also records its `Ise Test` mode beside the strategy.
+      
+  Scenario: An upgrade preserves the extension and the next request serves it
+   ✔  Given a committed Givn project with an active change and an extension for the proposal instruction
+   ✔  When the consumer upgrades the project through the Givn CLI
+   ✔  And the agent requests the proposal instructions through the Givn CLI
+   ✔  Then the upgrade revision carries no extension content
+   ✘  And the served content carries the project's rule beside the current built-in rules
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/extend-an-instruction/instruction-extension.feature:75:5
+      Matched: tests/steps/instruction_extension_e2e_steps.rs:89:1
+      Step panicked. Captured output: the served proposal content carries no marked extension section: # Proposal
+      
+      ## Purpose
+      
+      Write the change's WHAT and WHY, its release note, its capability routing, and
+      its open questions.
+      
+      ## Release note
+      
+      The proposal carries exactly one release note: one complete, user-facing
+      sentence naming what the change does. Every revision the change records
+      carries the release note as its message subject; the scenario title goes in
+      the message body. A changelog line derived from revision subjects is a consequence, not the
+      release note.
+      
+      ## WHAT
+      
+      State the observable behavior added, modified, or removed. Name the consumer
+      and the outcome.
+      
+      ## WHY
+      
+      State the problem and the consequence of leaving it unsolved. Do not restate
+      the solution.
+      
+      ## Capability routing
+      
+      Record each capability as `NEW in <group>`, `MODIFIED <capability>`, or
+      `REMOVED <capability>`. A NEW capability names the group whose use case will
+      own it.
+      
+      ## Open questions
+      
+      Record unresolved decisions with ids `Q1`, `Q2`, ... Each question states what
+      it blocks and which artifact will resolve it. If none remain, say so explicitly.
+      
+      ## Change strategy
+      
+      Every change records exactly one change strategy in its design: `incremental
+      modification`, `Constant Ise`, or a whole-product rebuild. A change that
+      rebuilds also records its `Ise Test` mode beside the strategy.
+      
+Feature: Strict qualification and canonical routing of architecture decisions
+  Scenario: An author requests the strict ADR guidance through the Givn CLI
+   ✔  Given an initialized ADR qualification project with active change `adr-qualification-gate`
+   ✔  When the author requests the Arc42 ADR guidance through the Givn CLI
+   ✔  Then the CLI exits with status 0
+   ✘  And the output explains qualification by architectural commitment real alternatives lasting consequence and existing-ADR search
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/adr-qualification-gate.feature:104:5
+      Matched: tests/steps/adr_qualification_gate_e2e_steps.rs:58:1
+      Step panicked. Captured output: served ADR guidance is missing "Architectural commitment": # Arc42 change documentation
+      
+      Record the change's durable architecture consequences: the affected building
+      blocks, runtime scenarios, deployment changes, crosscutting concepts, and any
+      ADR qualification. Link to the durable chapters under `docs/arc42/`; do not
+      copy them. One ADR records one independent durable boundary or trade-off.
+      
+Feature: Attribute commits
+  Scenario: Consumer initializes a project and receives shared attribution plumbing
+   ✔  Given a new Git project with `core.hooksPath` set to `.githooks`
+   ✔  And an existing user commit-msg hook that writes a marker
+   ✔  When the consumer runs `givn init --agents opencode,claude,omp,maki`
+   ✘  Then the command exits 0 and reports installed attribution plumbing
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/attribute-commits.feature:8:5
+      Matched: tests/steps/llm_attribution_steps.rs:175:1
+      Step panicked. Captured output: assertion failed: String::from_utf8_lossy(&output.stdout).contains("commit attribution")
+  Scenario: An attributed commit exposes the current LLM and harness
+   ✔  Given a Git project with complete commit attribution context
+   ✔  And changed "batch.txt" beside unrelated staged and unstaged work
+   ✔  When the consumer runs `givn commit batch.txt -m "fix parser"`
+   ✘  Then the command succeeds and reports the created revision
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/attribute-commits.feature:18:5
+      Matched: tests/steps/llm_attribution_steps.rs:289:1
+      Step panicked. Captured output: assertion failed: String::from_utf8_lossy(&output.stdout).contains("committed revision")
+  Scenario: OpenCode prepares attribution using its selected model
+   ✘  Given a project with the generated OpenCode attribution integration
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/attribute-commits.feature:60:5
+      Matched: tests/steps/llm_attribution_e2e_steps.rs:10:1
+      Step panicked. Captured output: assertion `left == right` failed: the generated OpenCode integration must match the embedded asset
+        left: "const sessions = new Map()\nlet lastModel = null\nconst UNAVAILABLE = \"unavailable\"\n// A hung configured-default lookup must not stall shell creation.\nconst DEFAULT_LOOKUP_TIMEOUT_MS = 2000\n\n// Attribution is best effort and never blocks: a hook that throws, for example\n// on a malformed payload, must not fail the command or the other hooks.\nconst guarded = (handler) => async (...args) => {\n  try {\n    await handler(...args)\n  } catch {\n    // Ignored on purpose; the shell is created without this attribution step.\n  }\n}\n\n// Each kind of registration failure is reported once per process.\nconst reported = new Set()\n\nconst report = (kind, error) => {\n  if (reported.has(kind)) return\n  reported.add(kind)\n  try {\n    console.warn(`givn-attribution: registering hook ${kind} failed: ${error?.message ?? error}`)\n  } catch {\n    // Diagnostics must never throw into OpenCode.\n  }\n}\n\n// A failing hook registration must not stop the remaining hooks from being registered.\nconst attempt = async (kind, action) => {\n  try {\n    return await action()\n  } catch (error) {\n    report(kind, error)\n    return undefined\n  }\n}\n\nconst rememberModel = (sessionID, model, variant) => {\n  if (!model && !variant) return\n  const current = sessionID ? sessions.get(sessionID) ?? {} : {}\n  const record = {\n    providerID: model?.providerID ?? current.providerID,\n    modelID: model?.id ?? model?.modelID ?? current.modelID,\n    variant: variant ?? model?.variant ?? current.variant,\n  }\n\n  if (sessionID) sessions.set(sessionID, record)\n  if (record.modelID) lastModel = record\n}\n\nconst stamp = (env, model) => {\n  if (!env || typeof env !== \"object\") return\n\n  env.GIVN_ATTRIBUTION_ACTIVE = \"1\"\n  env.GIVN_ATTRIBUTION_LLM = UNAVAILABLE\n  env.GIVN_ATTRIBUTION_REASONING = UNAVAILABLE\n  env.GIVN_ATTRIBUTION_HARNESS = \"opencode\"\n\n  if (!model?.modelID) return\n\n  const identity = model.providerID\n    ? `${model.providerID}/${model.modelID}`\n    : model.modelID\n  env.GIVN_ATTRIBUTION_LLM = identity\n  env.GIT_COMMITTER_NAME = `LLM: ${identity} via opencode`\n  if (model.variant) env.GIVN_ATTRIBUTION_REASONING = model.variant\n}\n\nconst withTimeout = (promise) =>\n  new Promise((resolve) => {\n    const timer = setTimeout(() => resolve(undefined), DEFAULT_LOOKUP_TIMEOUT_MS)\n    const settle = (value) => {\n      clearTimeout(timer)\n      resolve(value)\n    }\n    promise.then(settle, () => settle(undefined))\n  })\n\nconst configuredDefault = async (ctx) => {\n  if (!ctx.model?.default) return undefined\n  try {\n    const response = await withTimeout(Promise.resolve(ctx.model.default()))\n    const model = response?.data\n    if (!model) return undefined\n    return {\n      providerID: model.providerID,\n      modelID: model.id ?? model.modelID,\n      variant: model.variant,\n    }\n  } catch {\n    return undefined\n  }\n}\n\nexport default {\n  id: \"givn-attribution\",\n  async setup(ctx) {\n    for (const kind of [\"context\", \"compaction\", \"generate\"]) {\n      await attempt(`session.${kind}`, () =>\n        ctx.session.hook(\n          kind,\n          guarded((event) => {\n            rememberModel(event.sessionID, event.model, event.model?.variant)\n          }),\n        ),\n      )\n    }\n\n    // The shell hook carries no session, so a command is linked to its session\n    // through the tool hooks, which run before shell creation.\n    let pendingShells = []\n\n    await attempt(\"tool.execute.before\", () =>\n      ctx.tool.hook(\n        \"execute.before\",\n        guarded((event) => {\n          if (\n            event.tool !== \"shell\" ||\n            typeof event.sessionID !== \"string\" ||\n            typeof event.messageID !== \"string\" ||\n            typeof event.id !== \"string\" ||\n            typeof event.input?.command !== \"string\"\n          ) {\n            return\n          }\n          // A request from an older message of the same session never reached shell\n          // creation (vetoed, denied, or aborted); it must not label a later command.\n          pendingShells = pendingShells.filter(\n            (pending) =>\n              pending.sessionID !== event.sessionID ||\n              pending.messageID === event.messageID,\n          )\n          pendingShells.push(event)\n        }),\n      ),\n    )\n\n    await attempt(\"tool.execute.after\", () =>\n      ctx.tool.hook(\n        \"execute.after\",\n        guarded((event) => {\n          if (event.tool !== \"shell\" || typeof event.id !== \"string\") return\n          pendingShells = pendingShells.filter(\n            (pending) =>\n              pending.sessionID !== event.sessionID || pending.id !== event.id,\n          )\n        }),\n      ),\n    )\n\n    const claimShell = (command) => {\n      const index = pendingShells.findIndex(\n        (pending) => pending.input?.command === command,\n      )\n      return index < 0 ? undefined : pendingShells.splice(index, 1)[0]\n    }\n\n    await attempt(\"shell.create.before\", () =>\n      ctx.shell.hook(\n        \"create.before\",\n        guarded(async (event) => {\n          // The runtime may abandon this hook while the default lookup is pending, so\n          // the unavailable defaults are written before the first await.\n          stamp(event.env, undefined)\n          const linked = claimShell(event.command)\n          let model = linked ? sessions.get(linked.sessionID) : undefined\n          if (!model?.modelID) model = lastModel\n          if (!model?.modelID) model = await configuredDefault(ctx)\n          stamp(event.env, model)\n        }),\n      ),\n    )\n\n    return () => {\n      pendingShells = []\n    }\n  },\n}\n"
+       right: "// givn:managed:attribution (best-effort, not complete)\n// Best-effort OpenCode commit attribution: remembers the selected model per\n// session and exports the attribution context for a shell created by it.\nexport const GivnAttribution = async ({ $, client }) => {\n  const sessions = new Map();\n  return {\n    event: async ({ event }) => {\n      if (event.type === \"session.model\") {\n        sessions.set(event.properties.sessionID, event.properties);\n      }\n    },\n    \"shell.env\": async (input, output) => {\n      const remembered = sessions.get(input.sessionID) || {};\n      output.env.GIVN_LLM = remembered.provider && remembered.model\n        ? `${remembered.provider}/${remembered.model}`\n        : (process.env.GIVN_LLM || \"unavailable\");\n      output.env.GIVN_REASONING = remembered.reasoning || \"unavailable\";\n      output.env.GIVN_HARNESS = \"opencode\";\n      if (output.env.GIVN_LLM !== \"unavailable\") {\n        output.env.GIVN_COMMITTER = `LLM: ${output.env.GIVN_LLM} via opencode`;\n      }\n    },\n  };\n};\n"
+  Scenario: Claude attributes a commit using its current model
+   ✔  Given a project with the generated Claude attribution integration
+   ✔  When Claude provides current model "claude-sonnet-5" in its session transcript
+   ✘  And Claude prepares an RTK-wrapped Bash commit command with message "claude attribution"
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/attribute-commits.feature:72:5
+      Matched: tests/steps/llm_attribution_e2e_steps.rs:205:1
+      Step panicked. Captured output: parse Claude hook response: Error("EOF while parsing a value", line: 1, column: 0)
+  Scenario: omp attributes a commit using its current model
+   ✘  Given a project with the generated omp attribution integration
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/attribute-commits.feature:122:5
+      Matched: tests/steps/llm_attribution_e2e_steps.rs:408:1
+      Step panicked. Captured output: assertion `left == right` failed: the generated omp integration must match the embedded asset
+        left: "// Givn commit attribution for the omp coding agent.\n//\n// omp discovers this file under `.omp/hooks/pre/`, loads it through its\n// extension runner, and binds the handlers the factory registers. The\n// `tool_call` handler rewrites a revision-creating Bash command with the\n// attribution environment the checked-in `.githooks/commit-msg` hook reads —\n// the same protocol the OpenCode and Claude Code integrations contribute.\n//\n// Best effort: a command that creates no revision is left untouched, and an\n// unknown model is recorded as `unavailable` rather than blocking the commit.\n\nconst UNAVAILABLE = \"unavailable\"\nconst HARNESS = \"omp\"\nconst REVISION_VERB = /\\bcommit\\b/\n\nconst shellQuote = (value) => `'${String(value).replaceAll(\"'\", \"'\\\"'\\\"'\")}'`\n\nconst attributionEnv = (model, reasoning) => {\n  const identity = model?.id\n    ? model.provider\n      ? `${model.provider}/${model.id}`\n      : model.id\n    : undefined\n  const env = {\n    GIVN_ATTRIBUTION_ACTIVE: \"1\",\n    GIVN_ATTRIBUTION_LLM: identity ?? UNAVAILABLE,\n    GIVN_ATTRIBUTION_REASONING: reasoning ?? UNAVAILABLE,\n    GIVN_ATTRIBUTION_HARNESS: HARNESS,\n  }\n  if (identity) env.GIT_COMMITTER_NAME = `LLM: ${identity} via ${HARNESS}`\n  return env\n}\n\nexport default function givnAttribution(pi) {\n  pi.on(\"tool_call\", (event, ctx) => {\n    if (event?.toolName !== \"bash\") return\n    const input = event.input ?? {}\n    const command = input.command\n    if (typeof command !== \"string\" || !REVISION_VERB.test(command)) return\n\n    const model = ctx?.models?.current?.() ?? ctx?.model\n    const prefix = Object.entries(attributionEnv(model, pi.getThinkingLevel?.()))\n      .map(([name, value]) => `${name}=${shellQuote(value)}`)\n      .join(\" \")\n\n    return { input: { ...input, command: `export ${prefix}; ${command}` } }\n  })\n}\n"
+       right: "// givn:managed:attribution (best-effort, not complete)\n// Best-effort omp attribution: export the current model and reasoning mode.\nexport default function install(api) {\n  api.on(\"pre\", (event) => {\n    if (event?.env) {\n      if (process.env.GIVN_LLM) event.env.GIVN_LLM = process.env.GIVN_LLM;\n      if (process.env.GIVN_REASONING) event.env.GIVN_REASONING = process.env.GIVN_REASONING;\n      event.env.GIVN_HARNESS = \"omp\";\n    }\n  });\n}\n"
+  Scenario: Maki attributes a commit using its current model
+   ✘  Given a project with the generated Maki attribution integration
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/attribute-commits.feature:270:5
+      Matched: tests/steps/llm_attribution_e2e_steps.rs:618:1
+      Step panicked. Captured output: assertion `left == right` failed: the generated Maki integration must match the embedded asset
+        left: "-- Givn commit attribution for the Maki coding agent.\n--\n-- Maki loads this module through the managed `-- givn:begin:attribution`\n-- fence in `.maki/init.lua`. Maki fires `tool.bash.input` before a Bash call is\n-- parsed or checked; the layer reads `maki.model.get()` for the focused\n-- session's model and thinking level, then rewrites only a command whose text\n-- names a revision verb. The prefix is the same environment protocol the\n-- OpenCode, omp, and Claude integrations use; the checked-in commit-msg hook\n-- consumes it.\n--\n-- Maki 0.7.0 passes a plain table to this layer, not the `LuaCtx` handle that\n-- `maki.agent.resolve_model` requires, so a subagent command names the focused\n-- session. `maki.model.get` answers through the UI event loop, so a headless\n-- driver (`maki acp`, `maki -p`) gets nil and no error pair; the layer then\n-- reads the focused session snapshot, whose `model` field is always present.\n-- Thinking is absent from that snapshot under headless drivers, so reasoning\n-- stays `unavailable` there. The layer stays best effort: a missing model\n-- leaves `unavailable` facts and no committer override; a non-revision command\n-- is untouched; a host without the slot API loads this module inert. Maki\n-- requires `run`, `session_read`, and `session_write` for a `tool.bash.input`\n-- layer; the generated manifest grants them even though this module never\n-- writes session content.\n\nlocal M = {}\nlocal registered = false\n\nlocal HARNESS = \"maki\"\nlocal UNAVAILABLE = \"unavailable\"\nlocal REVISION_VERB = \"%f[%w]commit%f[%W]\"\n\nlocal function shell_quote(value)\n  return \"'\" .. tostring(value):gsub(\"'\", \"'\\\"'\\\"'\") .. \"'\"\nend\n\nlocal function identity_of(model)\n  if type(model) ~= \"table\" then\n    return nil\n  end\n  local spec = model.spec\n  if type(spec) == \"string\" and spec ~= \"\" then\n    return spec\n  end\n  local id = model.id\n  if type(id) ~= \"string\" or id == \"\" then\n    return nil\n  end\n  local provider = model.provider\n  if type(provider) == \"string\" and provider ~= \"\" then\n    return provider .. \"/\" .. id\n  end\n  return id\nend\n\nlocal function reasoning_of(model)\n  if type(model) ~= \"table\" then\n    return UNAVAILABLE\n  end\n  local value = model.thinking_shown or model.thinking\n  if type(value) == \"string\" and value ~= \"\" then\n    return value\n  end\n  return UNAVAILABLE\nend\n\nlocal function ui_model()\n  if type(maki) ~= \"table\" or type(maki.model) ~= \"table\" or type(maki.model.get) ~= \"function\" then\n    return nil\n  end\n  local ok, model = pcall(maki.model.get)\n  if ok and type(model) == \"table\" then\n    return model\n  end\n  return nil\nend\n\n-- The snapshot a headless driver answers with. Its `model` is a spec string and\n-- `thinking` is absent, so only the identity survives.\nlocal function session_model()\n  if type(maki) ~= \"table\" or type(maki.session) ~= \"table\" or type(maki.session.read) ~= \"function\" then\n    return nil\n  end\n  local ok, session = pcall(maki.session.read)\n  if not ok or type(session) ~= \"table\" then\n    return nil\n  end\n  local spec = session.model\n  if type(spec) ~= \"string\" or spec == \"\" then\n    return nil\n  end\n  return { spec = spec, thinking = session.thinking }\nend\n\nlocal function current_model()\n  return ui_model() or session_model()\nend\n\nlocal function environment(identity, reasoning)\n  local values = {\n    \"GIVN_ATTRIBUTION_ACTIVE=1\",\n    \"GIVN_ATTRIBUTION_LLM=\" .. shell_quote(identity),\n    \"GIVN_ATTRIBUTION_REASONING=\" .. shell_quote(reasoning),\n    \"GIVN_ATTRIBUTION_HARNESS=\" .. shell_quote(HARNESS),\n  }\n  if identity ~= UNAVAILABLE then\n    values[#values + 1] = \"GIT_COMMITTER_NAME=\" .. shell_quote(\"LLM: \" .. identity .. \" via \" .. HARNESS)\n  end\n  return table.concat(values, \" \")\nend\n\nfunction M.prepare(command)\n  if type(command) ~= \"string\" or not command:find(REVISION_VERB) then\n    return command\n  end\n  local model = current_model()\n  local identity = identity_of(model) or UNAVAILABLE\n  local reasoning = reasoning_of(model)\n  return \"export \" .. environment(identity, reasoning) .. \"; \" .. command\nend\n\nfunction M.setup()\n  if type(maki) ~= \"table\" or type(maki.api) ~= \"table\" or type(maki.api.set_slot) ~= \"function\" then\n    return\n  end\n  if registered then\n    return\n  end\n  local function rewrite(prev, value, ctx)\n    if type(prev) ~= \"function\" then\n      return value\n    end\n    local next_value, extra = prev(value, ctx)\n    if next_value == nil and extra ~= nil then\n      return nil, extra\n    end\n    local input = next_value\n    if type(input) ~= \"table\" then\n      input = value\n    end\n    if type(input) ~= \"table\" then\n      return next_value, extra\n    end\n    local command = input.command\n    if type(command) ~= \"string\" then\n      return next_value, extra\n    end\n    local prepared = M.prepare(command)\n    if prepared == command then\n      return next_value, extra\n    end\n    local rewritten = {}\n    for key, item in pairs(input) do\n      rewritten[key] = item\n    end\n    rewritten.command = prepared\n    return rewritten, extra\n  end\n  local ok = pcall(function()\n    maki.api.set_slot(\"tool.bash.input\", rewrite)\n  end)\n  if ok then\n    registered = true\n  end\nend\n\nreturn M\n"
+       right: "-- givn:managed:attribution\n-- Best-effort Maki attribution from the focused session's model.\nlocal M = {}\nfunction M.export()\n  local ok, model = pcall(function() return maki.model.get() end)\n  if ok and model then\n    vim.env.GIVN_LLM = (model.provider or \"unavailable\") .. \"/\" .. (model.model or \"unavailable\")\n    vim.env.GIVN_REASONING = model.reasoning or \"unavailable\"\n  else\n    vim.env.GIVN_LLM = vim.env.GIVN_LLM or \"unavailable\"\n    vim.env.GIVN_REASONING = vim.env.GIVN_REASONING or \"unavailable\"\n  end\n  vim.env.GIVN_HARNESS = \"maki\"\n  if vim.env.GIVN_LLM ~= \"unavailable\" then\n    vim.env.GIVN_COMMITTER = \"LLM: \" .. vim.env.GIVN_LLM .. \" via maki\"\n  end\nend\nreturn M\n"
+Feature: Coverage README guidance
+  Scenario: Coverage-enabled project receives a complete README coverage example
+   ✔  Given a givn project with the coverage addon enabled
+   ✔  When the user runs `givn skills sync`
+   ✘  Then the served coverage guidance shows a README coverage example with a badge, report link, non-E2E and E2E totals, and reproduction commands
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/coverage-readme-example.feature:7:5
+      Matched: tests/steps/coverage_readme_example_steps.rs:11:1
+      Step panicked. Captured output: givn instructions coverage failed: givn instructions: unknown instruction id 'coverage'; known ids: proposal, specs, design, design-review, tasks, review, arc42-docs, start, dialog, steps, dialog-examples, challenge, dev-principles, domain-modeling, architecture-principles, ise, ideation, implement, archive, review-reverse, specs-reverse, tasks-reverse, steps-rust, steps-python, steps-node, steps-java, steps-go, steps-ruby
+Feature: Detect the project repository
+  Scenario: A Git worktree at the project root selects the Git backend
+   ✔  Given a Git project whose project root is the worktree top level
+   ✔  And a managed file is missing from the project
+   ✔  When the consumer runs `givn upgrade`
+   ✔  Then the command exits 0
+   ✘  And the managed upgrade publishes a revision
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/detect-the-project-repository.feature:9:5
+      Matched: tests/steps/scm_backend_selection_e2e_steps.rs:11:1
+      Step panicked. Captured output: stdout does not report the refresh: Commit attribution plumbing installed: shared Git hook .githooks/givn-commit-msg (launcher .githooks/commit-msg)
+      Managed upgrade revision: 127dfa2d6d503551aef97842e03e738661d3392b
+      Project configuration identifies Givn 0.9.10.
+Feature: Enable commit attribution
+  Scenario: Consumer sees the commit attribution installation report
+   ✔  Given a new Git project with `core.hooksPath` set to `.githooks` and a user commit-msg hook
+   ✔  When the consumer runs `givn init --agents opencode,claude,omp,maki`
+   ✔  Then the command exits 0
+   ✘  And stdout reports the shared Git hook and each selected harness attribution integration
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/enable-commit-attribution.feature:8:5
+      Matched: tests/steps/llm_attribution_steps.rs:200:1
+      Step panicked. Captured output: missing .opencode/plugins/givn-attribution.js: Detected version control: git
+      Commit attribution plumbing installed: shared Git hook .githooks/givn-commit-msg (launcher .githooks/commit-msg)
+      Existing user commit-msg hook preserved at .githooks/commit-msg.user
+      Installed skills: opencode, claude, omp, maki
+      Initialized Givn project.
+  Scenario: Consumer upgrades an existing project with attribution plumbing missing
+   ✔  Given a clean initialized Git project using `.githooks` with attribution plumbing missing and a preserved user hook
+   ✔  When the consumer runs `givn upgrade`
+   ✘  Then the command exits 0 and reports refreshed attribution plumbing
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/enable-commit-attribution.feature:17:5
+      Matched: tests/steps/llm_attribution_installation_e2e_steps.rs:89:1
+      Step panicked. Captured output: Commit attribution plumbing installed: shared Git hook .githooks/givn-commit-msg (launcher .githooks/commit-msg)
+      Managed upgrade revision: f6ce856583832767961920016fdf885bc40c61de
+      Project configuration identifies Givn 0.9.10.
+  Scenario: Consumer initializes a Fossil project and receives the givn commit path without a hook
+   ✔  Given a Fossil checkout without a givn/ directory
+   ✔  When the consumer initializes Givn with an explicit agent target
+   ✔  Then the command exits 0
+   ✘  And stdout names `givn commit` with explicit file paths as the attribution path
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/enable-commit-attribution.feature:27:5
+      Matched: tests/steps/llm_attribution_installation_e2e_steps.rs:159:1
+      Step panicked. Captured output: Detected version control: fossil
+      Commit attribution: use `givn commit <path>... -m <message>` with explicit file paths; raw Fossil commits are not stamped.
+      Installed skills: opencode
+      Initialized Givn project.
+Feature: Find existing scenarios
+  Scenario: Lexical search locates a permanent scenario by a step text token
+   ✔  Given a spec discovery project whose corpus contains a scenario mentioning "shovel-unique-token"
+   ✔  When the user searches the permanent corpus for "shovel-unique-token" with `givn spec find`
+   ✔  Then the command exits 0
+   ✔  And stdout contains the matching scenario title
+   ✔  And stdout identifies the owning use case and capability
+  Scenario: The spec tree reports per-use-case counts and the use-case narrative
+   ✔  Given a spec discovery project with two use cases and a usecase.md narrative
+   ✔  When the user inspects the corpus with `givn spec tree`
+   ✔  Then the command exits 0
+   ✔  And stdout contains both use-case names
+   ✘  And stdout contains the scenario count and the e2e count per capability
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/find-existing-scenarios.feature:17:5
+      Matched: tests/steps/spec_discovery_deterministic_steps.rs:196:1
+      Step panicked. Captured output: givn spec tree
+      use case: diggers
+        actor: A builder digging holes.
+        capability: digging  scenarios: 2  e2e: 1
+      use case: fillers
+        actor: none
+        capability: filling  scenarios: 1  e2e: 0
+Feature: Guide domain modeling
+  Scenario: An agent synchronizes skills and the domain skill is routed
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent synchronizes skills through the Givn CLI
+   ✔  Then the generated domain skill names the domain-modeling skill
+   ✔  And the generated skill loads during every workflow step of a change
+   ✔  And the generated givn-domain-modeling guidance directs the domain modeler to the domain-modeling instruction
+   ✔  And the generated skill instructs maintaining the project's glossary
+   ✔  And the served domain-modeling instruction contains "maintaining the project's glossary"
+   ✔  And the generated skill does not describe the givn change lifecycle
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: An agent requests next-step guidance and is routed to the domain skill
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent requests the next-step guidance through the Givn CLI
+   ✘  Then the guidance says to load the domain-modeling skill now
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/guide-domain-modeling.feature:40:5
+      Matched: tests/steps/fix_domain_modeling_skill_trigger_steps.rs:49:1
+      Step panicked. Captured output: guidance does not say to load the domain-modeling skill now: Givn project state
+      
+      SCM: git
+      Active changes: domain-skill-trigger
+      
+      Request routing:
+      - For new or unclassified work, load the `givn-start` skill.
+      - For a change whose goal and scope are already clear, the direct alternative is `givn new <change-id>`.
+      - For a formal change, load the `givn-propose` skill and run `givn instructions proposal --change <id>`.
+      
+      Bootstrap obligation: before the first user-facing question, load the effective dialog policy with `givn instructions dialog`, once per context, and reload it if lost.
+      
+  Scenario: An agent requests the specs guidance and is routed to the domain skill
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent requests the specs instructions through the Givn CLI
+   ✘  Then the guidance says to load the domain-modeling skill now
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/guide-domain-modeling.feature:51:5
+      Matched: tests/steps/fix_domain_modeling_skill_trigger_steps.rs:49:1
+      Step panicked. Captured output: guidance does not say to load the domain-modeling skill now: # Specifications
+      
+      ## Purpose
+      
+      Write the change's Gherkin delta with observable behavior and no implementation
+      detail.
+      
+      ## Universal rules
+      
+      - Every scenario states observable behavior at a real boundary.
+      - One scenario states one requirement; a scenario title names the consumer
+        action and the outcome.
+      - No step names an internal function, module, or data structure.
+      - Cover each distinct requirement once; do not duplicate a scenario or split one
+        requirement across near-identical scenarios.
+      - A Background carries only setup every scenario needs.
+      - Use `@givn.delta` and the delta tags the workflow defines.
+      
+      ## Canonical E2E policy
+      
+      - Write one E2E evidence scenario per distinct real user action. A real user
+        action is one thing the consumer does at the product's external interface;
+        do not multiply scenarios for internal branches.
+      - An `@e2e` scenario exercises the product solely through its real external
+        interfaces (CLI, HTTP, UI, queue) and shares no code, helper, enum, or DTO
+        with production source.
+      - A step definition that needs production source in process is a `@component`
+        scenario, not an `@e2e` scenario. Feature files stay shared: an `@e2e`
+        scenario and a component scenario may live in one `.feature` file.
+      - With `ise` effective, the declared `e2e` role's package holds the runner and
+        every `@e2e` step definition; that package links no production source,
+        `verify.e2e_command` runs it, and an unbound or skipped step fails the run.
+      - Component scenarios stay in the Specification unchanged; only their step
+        definitions, fakes, and harness are implementation.
+      - Visual evidence captures a final-state screenshot after the action settles;
+        animations are frozen before capture. Save captures under `evidence/visual/`
+        and written reports under `reports/`.
+      - A `@component` scenario covers a black-box behavior boundary with distinct
+        requirement coverage; do not duplicate a scenario to fake coverage.
+      - Capture visual evidence at the declared viewports. The reference mobile
+        viewport is Samsung S24 (portrait, 1080x2340) and the reference desktop
+        viewport is Full HD (1920x1080) unless the design declares another.
+      - Preserve the recorded final-state screenshot and transcript as evidence.
+      
+      Do not count inventory rows as scenarios: the interaction inventory maps a
+      consumer action to one evidence scenario, not to a number of scenarios.
+      
+  Scenario: An agent requests the design guidance and is routed to the domain skill
+   ✔  Given a Givn project with the domain model addon enabled and a change awaiting specs
+   ✔  When the agent requests the design instructions through the Givn CLI
+   ✘  Then the guidance says to load the domain-modeling skill now
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/guide-domain-modeling.feature:57:5
+      Matched: tests/steps/fix_domain_modeling_skill_trigger_steps.rs:49:1
+      Step panicked. Captured output: guidance does not say to load the domain-modeling skill now: # Design
+      
+      ## Purpose
+      
+      Write the technical design: technology, step locations, decisions, the
+      interaction matrix, the visual contract, and local runnability.
+      
+      ## Technology
+      
+      Name the language, runtime, build, and libraries. State why each material
+      choice is the boring fit.
+      
+      ## Step Definitions
+      
+      Record every step binding in a table with the step text and its location.
+      
+      ## Decisions
+      
+      Use a decision ledger: `Decides D<n>: <decision> — <where it is realized>`.
+      Every proposal question id maps to a resolution or a named owner.
+      
+      ## Interaction matrix
+      
+      Map each capability to each delta scenario and to the E2E evidence. The
+      inventory is advisory for shape; shape matches are advisory and never veto a
+      design. Preserve black-box behavior and distinct requirement coverage.
+      
+      ## Visual Design Contract
+      
+      When the change affects a rendered surface, record one Visual Design Contract.
+      It is style-level, not pixel-exact:
+      
+      - the reference under `docs/design/`;
+      - design tokens (color, spacing, type, radius, motion);
+      - component states (default, hover, focus, active, disabled, error, empty,
+        loading);
+      - the rendered reference (screenshot, mockup, or a described rendered surface);
+      - the declared viewports and the visual evidence to capture.
+      
+      An improvement stays inside the style. Propose a style change explicitly and
+      get user approval before implementing it.
+      
+      ## Local runnability
+      
+      Declare how the product starts and how a reviewer verifies the change locally.
+      
+Feature: Instruction and skill guidance remains complete and machine-readable
+  Scenario: An agent requests machine-readable artifact guidance
+   ✔  Given a Givn project with an active change
+   ✔  When the agent requests the specs instructions as JSON through the Givn CLI
+   ✔  Then the response is valid JSON with artifact paths prerequisites and instructions
+  Scenario: Author starts a session with the universal dialog obligation
+   ✔  Given an initialized Givn project without an active change
+   ✔  When the author requests the normal Givn startup instructions through the Givn CLI
+   ✘  Then the startup guidance requires loading the effective dialog policy before the context's first user-facing question
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/instruction-integrity.feature:211:5
+      Matched: tests/steps/instruction_integrity_e2e_steps.rs:40:1
+      Step panicked. Captured output: startup guidance does not require loading the policy before the first question: Givn project state
+      
+      SCM: git
+      Active changes: none
+      
+      Request routing:
+      - For new or unclassified work, load the `givn-start` skill.
+      - For a change whose goal and scope are already clear, the direct alternative is `givn new <change-id>`.
+      
+      Bootstrap obligation: before the first user-facing question, load the effective dialog policy with `givn instructions dialog`, once per context, and reload it if lost.
+      
+Feature: Match guidance to enabled addons
+  Scenario: A consumer synchronizes skills and the generated guidance omits disabled-addon sections
+   ✔  Given a Givn project with the arc42, domain-modeling, and coverage addons disabled and the skills synchronized
+   ✔  When a consumer synchronizes skills through the Givn CLI
+   ✔  Then the served review instruction omits the Arc42 implementation conformance section
+   ✔  And the served review instruction omits the Ubiquitous language conformance section
+   ✔  And the generated review skill carries no Arc42 implementation conformance section
+   ✔  And the generated review skill carries no Ubiquitous language conformance section
+   ✔  And no generated domain-modeling skill exists
+   ✔  And no generated skill mentions any disabled addon
+   ✔  And no Givn command files are generated
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A consumer enables the addons a generated section needs and the guidance gains it
+   ✔  Given a Givn project with the arc42 and domain-modeling addons disabled and the skills synchronized
+   ✔  When a consumer enables the arc42 and domain-modeling addons through the Givn CLI
+   ✔  Then the served review instruction contains the Arc42 implementation conformance section
+   ✔  And the served review instruction contains the Ubiquitous language conformance section
+   ✔  And the served design-review instruction contains the Architecture documentation (arc42) branch
+   ✔  And a generated domain-modeling skill exists
+   ✔  And the generated review skill directs the reviewer to the review instruction
+   ✔  And no generated review command exists
+   ✔  And the terminal transcript is captured for this scenario
+Feature: Measure coverage per project
+  Scenario: An initialized project documents reusable test and coverage scripts
+   ✔  Given a fresh givn project
+   ✔  When the user runs `givn init --agents opencode`
+   ✔  Then givn/commands.yaml contains `measure_command: "./measure-coverage.sh"`
+   ✔  And givn/commands.yaml contains `merge_command: "./merge-coverages.sh"`
+   ✘  And the README documents the configured runner and coverage scripts
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/measure-coverage-per-project.feature:9:5
+      Matched: tests/steps/coverage_script_workflow_e2e_steps.rs:114:1
+      Step panicked. Captured output: README missing configured command givn missing-testrunner
+  Scenario: Archiving publishes line and branch badges from the merged report
+   ✔  Given a givn project with script-based coverage commands
+   ✔  And a completed change "merged-coverage" with all required artifacts
+   ✔  When the user archives the change
+   ✔  Then the archive succeeds
+   ✘  And the merged Cobertura report contains line coverage `95/100` and branch coverage `19/20`
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/measure-coverage-per-project.feature:18:5
+      Matched: tests/steps/coverage_script_workflow_e2e_steps.rs:53:1
+      Step panicked. Captured output: read merged report: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+Feature: Refresh generated guidance
+  Scenario: Synchronized guidance explains how to resolve the deterministic gates
+   ✘  Given a givn project with all agent skill targets enabled
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/refresh-generated-guidance.feature:5:5
+      Matched: tests/steps/prose_consolidation_steps.rs:33:1
+      Step panicked. Captured output: givn init failed: Output { status: ExitStatus(unix_wait_status(256)), stdout: "", stderr: "givn init: no agent targets selected; pass --agents <opencode|agents|claude|omp|maki|all>\n" }
+Feature: Review architecture documentation
+  Scenario: Arc42-enabled review instructions require conformance evidence
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn new arc42-review-alignment-test`
+   ✔  And the user runs `givn instructions review --change arc42-review-alignment-test`
+   ✔  Then the command succeeds
+   ✘  And the returned guidance compares Arc42 design tasks and completed implementation against available evidence
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/review-architecture-documentation.feature:9:5
+      Matched: tests/steps/arc42_review_alignment_steps.rs:27:1
+      Step panicked. Captured output: review guidance does not compare design tasks and the completed implementation: # Review
+      
+      ## Purpose
+      
+      Complete the coverage review, implementation evidence check, gap
+      classification, targeted closure, and sign-off. Review consumes evidence; it
+      does not rerun the suites.
+      
+      ## Obligations
+      
+      - Check every delta scenario against the permanent corpus and the interaction
+        inventory. A feature file absent from the declared capability list is a
+        blocking mismatch.
+      - Check the implementation evidence: actual RED, GREEN, and REFACTOR records,
+        and one real reachable revision per scenario.
+      - Classify each gap before fixing it. A structural or shape match is advisory:
+        retain split-or-keep without a mandatory disposition table, and never let a
+        shape match veto review.
+      - Check black-box behavior and distinct requirement coverage.
+      - Record the README impact decision: `none` or the sections updated.
+      - Record the visual decision when the change renders a surface.
+      - Return exactly one verdict: `Review: PASS` or a refusal naming the open
+        findings.
+      
+      ## Discovery is advisory
+      
+      A duplicate or overlap shape is explicit advisory discovery. Shape matches are
+      advisory: retain split-or-keep, report each match with evidence, and never let
+      it veto review by itself. Preserve black-box behavior and distinct requirement
+      coverage.
+      
+      ## Arc42 implementation conformance
+      
+      Compare the Arc42 design tasks and the completed implementation against
+      available evidence. Record evidence and material mismatches. Resolve every
+      material conformance mismatch before sign-off. Do not require an unwritten
+      review verdict or a future archive receipt as evidence.
+      
+      ## Ubiquitous language conformance
+      
+      Check the change's terms against `docs/glossary.md` and its structure against
+      `docs/domain-model.md`. An invented synonym, a renamed durable term without a
+      recorded decision, or an aggregate that is really a record is a finding.
+      
+      ## Visual review
+      
+      A visual change passes only with complete evidence:
+      
+      - a final-state screenshot for every `@e2e` scenario that renders a surface,
+        at every declared viewport;
+      - one review lens per confirmed Persona affected by the change;
+      - the vision review verdict;
+      - the transcript of the rendered walkthrough.
+      
+      Record `VISUAL-REVIEW: PASS` only when every lens and viewport has evidence.
+      A missing screenshot, a pre-act screenshot, or an unfrozen animation is a
+      blocking finding. Improvements stay inside the approved style.
+      
+  Scenario: The review template includes the Arc42 conformance block
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn eject review:template`
+   ✔  Then the command succeeds
+   ✘  And the ejected template records Arc42 implementation conformance against design tasks and completed implementation
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/review-architecture-documentation.feature:19:5
+      Matched: tests/steps/arc42_review_alignment_steps.rs:60:1
+      Step panicked. Captured output: read ejected review template: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+  Scenario: Generated review guidance stays aligned after skill sync
+   ✔  Given a project root with givn/ initialised
+   ✔  And an existing change named "review-alignment"
+   ✔  When the user runs `givn skills sync`
+   ✔  Then the command succeeds
+   ✔  And the generated review skill directs the reviewer to the review instruction
+   ✔  And the generated review skill carries no Arc42 implementation conformance section
+   ✔  And the served review instruction contains "Arc42 implementation conformance"
+Feature: Route a change to existing behavior
+  Scenario: Routing a proposal prints ranked candidates with evidence
+   ✔  Given a spec discovery project whose corpus contains a capability that invokes `givn lint`
+   ✔  And an active change whose proposal describes extending the lint command
+   ✔  When the user routes the change with `givn spec route --change`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "ranked candidates"
+   ✔  And stdout contains the capability that invokes `givn lint`
+   ✘  And stdout contains an evidence line
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/route-a-change.feature:11:5
+      Matched: tests/steps/spec_discovery_deterministic_steps.rs:213:1
+      Step panicked. Captured output: assertion failed: stdout(world).contains("both invoke `givn lint`")
+Feature: Show coverage in the README
+  Scenario: Coverage-enabled project is guided to place the coverage badge directly after the README title
+   ✔  Given a givn project with the coverage addon enabled
+   ✔  When the user runs `givn skills sync`
+   ✘  Then the served coverage guidance places the coverage badge directly after the README title
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/show-coverage-in-the-readme.feature:7:5
+      Matched: tests/steps/readme_coverage_badge_steps.rs:19:1
+      Step panicked. Captured output: givn instructions coverage failed: givn instructions: unknown instruction id 'coverage'; known ids: proposal, specs, design, design-review, tasks, review, arc42-docs, start, dialog, steps, dialog-examples, challenge, dev-principles, domain-modeling, architecture-principles, ise, ideation, implement, archive, review-reverse, specs-reverse, tasks-reverse, steps-rust, steps-python, steps-node, steps-java, steps-go, steps-ruby
+Feature: Verify repository ownership
+  Scenario: Repository-wide review accepts explicit overlap dispositions
+   ✔  Given an isolated ownership fixture with dispositions for every overlap finding
+   ✔  When the maintainer invokes the fixture review command
+   ✘  Then the fixture command exits 0
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/verify-repository-ownership.feature:7:5
+      Matched: tests/steps/repository_ownership_fixtures_steps.rs:27:1
+      Step panicked. Captured output: stderr: [103, 105, 118, 110, 32, 99, 104, 101, 99, 107, 32, 114, 101, 118, 105, 101, 119, 58, 32, 116, 104, 101, 32, 99, 104, 97, 110, 103, 101, 32, 118, 101, 114, 105, 102, 105, 99, 97, 116, 105, 111, 110, 32, 114, 101, 99, 101, 105, 112, 116, 32, 105, 115, 32, 110, 111, 116, 32, 103, 114, 101, 101, 110, 10, 103, 105, 118, 110, 32, 99, 104, 101, 99, 107, 32, 114, 101, 118, 105, 101, 119, 58, 32, 114, 101, 118, 105, 101, 119, 32, 102, 97, 105, 108, 101, 100, 10]
+  Scenario: Archive publishes consolidated permanent specifications
+   ✔  Given an isolated ownership fixture with dispositions for every overlap finding
+   ✔  When the maintainer invokes the fixture archive command
+   ✔  Then the fixture command exits 0
+   ✔  And fixture stdout contains "Archived 'fixture-consolidation'"
+   ✔  And the fixture permanent specification tree contains no duplicate scenario titles
+   ✔  And the fixture permanent specification tree contains "Canonical retained behavior"
+   ✘  And the fixture permanent specification tree does not contain "Obsolete behavior"
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/fragments/verify-repository-ownership.feature:19:5
+      Matched: tests/steps/repository_ownership_fixtures_steps.rs:57:1
+      Step panicked. Captured output: tree contains "Obsolete behavior": "Feature: Existing fixture\n\n  Scenario: Obsolete behavior\n    Given this obsolete scenario is removed\n\nFeature: Retained fixture\n\n  Scenario: Existing unrelated behavior\n    Given a different fixture behavior\n    When unrelated behavior runs\n    Then unrelated result appears\n\n  Scenario: Canonical retained behavior\n    Given a consolidated canonical behavior\n    When the consolidated canonical flow runs\n    Then the consolidated canonical result appears\n"
+Feature: enable-optional-addons
+  Scenario: Consumer enables the outline addon and it is listed as enabled
+   ✔  Given an initialized addon-free project with outline disabled
+   ✔  When the consumer runs `givn addons enable outline`
+   ✘  Then the command exits 0 and reports that outline is enabled
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/initialize-project/enable-optional-addons.feature:103:5
+      Matched: tests/steps/default_all_addons_steps.rs:70:1
+      Step panicked. Captured output: Addon 'outline' enabled.
+  Scenario: A consumer lists addons and each declared default is reported
+   ✔  Given a project root without a givn/ directory
+   ✔  When the consumer runs `givn init --agents opencode`
+   ✔  And the consumer runs `givn addons list`
+   ✔  Then the command exits 0
+   ✔  And stdout contains "[disabled]  ise"
+   ✔  And stdout contains "[enabled ]  outline"
+   ✔  And stdout contains "each omitted key resolves that addon's declared default"
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A consumer disables a required addon and the refusal names ise
+   ✔  Given an ise-enabled project selecting opencode
+   ✔  When the consumer runs `givn addons disable architecture_principles`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains "addon 'architecture_principles' is required by 'ise'; disable 'ise' first"
+   ✔  And the active addon settings keep "architecture_principles" enabled
+   ✔  And the active addon settings keep "ise" enabled
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: Consumer lists addons and sees each addon's materialized files reported
+   ✔  Given an initialized project with scaffolding materialized
+   ✔  When the consumer lists the addons
+   ✔  Then the command exits 0
+   ✘  And the listing reports arc42 as enabled with artifacts present
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/initialize-project/enable-optional-addons.feature:444:5
+      Matched: tests/steps/addon_artifact_report_e2e_steps.rs:32:1
+      Step panicked. Captured output: no listing block for addon arc42:
+      Registered addons (effective state and materialization):
+      [enabled ]  arc42  (artifacts present)
+      [enabled ]  communication_policy  (block present)
+      [enabled ]  readme  (artifacts present)
+      [enabled ]  coverage  (artifacts present)
+      [enabled ]  domain_modeling  (artifacts present)
+      [enabled ]  dev_principles  (guidance embedded)
+      [enabled ]  architecture_principles  (guidance embedded)
+      [enabled ]  challenge  (guidance embedded)
+      [enabled ]  outline  (guidance embedded)
+      [disabled]  ise  (artifacts missing)
+      
+      Every registered addon declares its own default; each omitted key resolves that addon's declared default, and only an explicit false disables a default-on addon.
+      The Opt-in addon is ise: its declared default is false and a fresh initialization omits its key.
+Feature: initialize-a-project
+  Scenario: Consumer selects agent targets during interactive init
+   ✔  Given a project root without a givn/ directory
+   ✔  When the consumer selects opencode and claude in the real terminal init prompt
+   ✘  Then the terminal displays a labeled agent-target selection and confirms the selected integrations
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/initialize-project/initialize-a-project.feature:105:5
+      Matched: tests/steps/initialize_a_project_e2e_steps.rs:261:1
+      Step panicked. Captured output: the terminal stream does not display the labeled agent-target selection: Script started on 2026-11-17 14:53:01+01:00 [COMMAND="/tmp/givn-ise-self-rebuild-20261117T133311Z/target/release/givn init" <not executed on terminal>]
+      ^[[B^[[B 
+      [?25lSelect agent targets (space toggles, enter confirms):
+      > [x] .opencode  (opencode)
+        [ ] .claude    (claude)
+        [ ] .omp       (omp)
+        [ ] .maki      (maki)
+        [ ] .agents    (agents)
+      [5A[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[5A  [x] .opencode  (opencode)
+      > [ ] .claude    (claude)
+        [ ] .omp       (omp)
+        [ ] .maki      (maki)
+        [ ] .agents    (agents)
+      [5A[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[5A  [x] .opencode  (opencode)
+        [ ] .claude    (claude)
+      > [ ] .omp       (omp)
+        [ ] .maki      (maki)
+        [ ] .agents    (agents)
+      [5A[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[5A  [x] .opencode  (opencode)
+        [ ] .claude    (claude)
+      > [x] .omp       (omp)
+        [ ] .maki      (maki)
+        [ ] .agents    (agents)
+      [6A[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[2K[1B[6ASelect agent targets (space toggles, enter confirms): .opencode  (opencode), .omp       (omp)
+      [?25hSelected agent targets: opencode, omp
+      Detected version control: none
+      Warning: no version control detected; archive and managed upgrade are unavailable.
+      Installed skills: opencode, omp
+      Initialized Givn project.
+      
+      Script done on 2026-11-17 14:53:01+01:00 [COMMAND_EXIT_CODE="0"]
+  Scenario: Consumer runs init non-interactively and gets opencode skills
+   ✔  Given a project root without a givn/ directory
+   ✔  And human-authored agent instructions outside the managed block
+   ✔  When the consumer runs `givn init --no-addons --agents opencode`
+   ✘  Then the command exits 0 and reports installed skills and disabled optional addons
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/initialize-project/initialize-a-project.feature:121:5
+      Matched: tests/steps/initialize_a_project_e2e_steps.rs:104:1
+      Step panicked. Captured output: the report does not name installed skills and disabled addons: Detected version control: none
+      Warning: no version control detected; archive and managed upgrade are unavailable.
+      Installed skills: opencode
+      Addons: every addon is explicitly disabled, including ise; the mandatory dialog bootstrap is still installed.
+      Initialized Givn project.
+  Scenario: Consumer re-syncs skills after init and the selection is honoured
+   ✔  Given an initialized project selecting opencode and claude
+   ✔  And an older managed startup block beside human-authored instructions
+   ✔  And recognizable Givn-generated legacy commands beside custom commands
+   ✔  When the consumer runs `givn skills sync`
+   ✘  Then the command exits 0 and reports the selected skill destinations
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/initialize-project/initialize-a-project.feature:134:5
+      Matched: tests/steps/initialize_a_project_e2e_steps.rs:185:1
+      Step panicked. Captured output: the report does not name the selected skill destinations: Removed recognizable generated command .claude/commands/givn-propose.md
+      Skill destinations: .opencode, .claude
+      Synced 32 skill(s) across 2 target(s).
+      Generated skills only; no agent command files are generated.
+      Commit attribution integration: OpenCode (.opencode/plugins/givn-attribution.js)
+      Commit attribution integration: Claude (.claude/hooks/givn-attribution.sh)
+Feature: Read task progress
+  Scenario: Consumer runs givn status on a change with uppercase checkboxes
+   ✔  Given a givn project with a change "e2e-upper-check" containing tasks.md with content "- [X] hello world\n- [ ] not done"
+   ✔  When the user invokes `givn status --change e2e-upper-check`
+   ✔  Then stdout contains "1/2 tasks"
+   ✔  And the command exits 0
+Feature: report-change-status
+  Scenario: Detail mode — active change with all required done (text)
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "done" exists with all required artifacts complete
+   ✔  And the change has no verification receipt
+   ✔  When the user invokes `givn status --change done`
+   ✔  Then the command exits 0
+   ✘  And stdout reports that required artifacts are complete
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-change-state/report-change-status.feature:102:5
+      Matched: tests/steps/run_command_steps.rs:42:1
+      Step panicked. Captured output: SCM: git
+      Change: done
+      Stage: review
+      Artifacts:
+      - proposal: complete
+      - specs: pending
+      - design: complete
+      - design-review: complete
+      - tasks: complete
+      - review: complete
+      - arc42-docs: complete
+      Required artifacts: incomplete
+      Tasks: 1/1 tasks
+      Verification: not checked
+      Next: run `givn check tasks --change done` before review.
+      Next required: delta specifications
+      Note: artifact completion alone is not archive readiness.
+Feature: Show skipped artifacts
+  Scenario: Consumer runs givn status on a change with skipped artifacts and sees them correctly
+   ✔  Given a givn project with a change "skip-real" that has proposal.md and a .givn-skip file listing "design"
+   ✔  When the user invokes `givn status --change skip-real`
+   ✔  Then the command succeeds
+   ✘  And stdout shows design as skipped
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-change-state/show-skipped-artifacts.feature:25:5
+      Matched: tests/steps/mod.rs:499:1
+      Step panicked. Captured output: stdout missing 'design as skipped': SCM: git
+      Change: skip-real
+      Stage: proposal
+      Artifacts:
+      - proposal: complete
+      - specs: pending
+      - design: skipped (declared in .givn-skip)
+      - design-review: pending
+      - tasks: pending
+      - review: pending
+      - arc42-docs: pending
+      Required artifacts: incomplete
+      Tasks: 0/0 tasks
+      Verification: not checked
+      Next: run `givn check tasks --change skip-real` before review.
+      Next required: delta specifications
+      Note: artifact completion alone is not archive readiness.
+Feature: Validate change ids
+  Scenario: Consumer invokes givn status with a path traversal change id and gets a clear error
+   ✔  Given a givn project with a change "my-change" and proposal.md
+   ✔  When the user invokes `givn status --change "../etc"`
+   ✔  Then the command fails
+   ✔  And stderr says the change id must be kebab-case
+Feature: Agent Activity Reporting
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "omp" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✘  When the installed reporter reports a completed tool call, a subagent, and a question wait
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/agent-activity-reporting.feature:106:5
+      Matched: tests/steps/agent_activity_reporting_e2e_steps.rs:277:1
+      Step panicked. Captured output: the driver /tmp/.tmpYdZ5F8/invoke-omp-reporter.mjs failed (exit Some(1)): file:///tmp/.tmpYdZ5F8/invoke-omp-reporter.mjs:20
+        if (!handler) throw new Error(`the reporter registered no ${event} handler`)
+                            ^
+      
+      Error: the reporter registered no session_start handler
+          at fire (file:///tmp/.tmpYdZ5F8/invoke-omp-reporter.mjs:20:23)
+          at file:///tmp/.tmpYdZ5F8/invoke-omp-reporter.mjs:23:7
+      
+      Node.js v22.20.0
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "opencode" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✘  When the installed reporter reports a completed tool call, a subagent, and a question wait
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/agent-activity-reporting.feature:106:5
+      Matched: tests/steps/agent_activity_reporting_e2e_steps.rs:277:1
+      Step panicked. Captured output: the driver /tmp/.tmpemtisZ/invoke-opencode-reporter.mjs failed (exit Some(1)): file:///tmp/.tmpemtisZ/invoke-opencode-reporter.mjs:31
+      await module.default.setup(ctx)
+                           ^
+      
+      TypeError: Cannot read properties of undefined (reading 'setup')
+          at file:///tmp/.tmpemtisZ/invoke-opencode-reporter.mjs:31:22
+      
+      Node.js v22.20.0
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "claude" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✘  When the installed reporter reports a completed tool call, a subagent, and a question wait
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/agent-activity-reporting.feature:106:5
+      Matched: tests/steps/agent_activity_reporting_e2e_steps.rs:277:1
+      Step panicked. Captured output: run the generated shim /tmp/.tmpb2pBCJ/.claude/hooks/givn-timeline.sh: Permission denied (os error 13)
+  Scenario Outline: Consumer installs the agent reporter and its reported activity lands in the record
+   ✔  Given an initialized project with the installed "maki" reporter
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✘  When the installed reporter reports a completed tool call, a subagent, and a question wait
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/agent-activity-reporting.feature:106:5
+      Matched: tests/steps/agent_activity_reporting_e2e_steps.rs:277:1
+      Step panicked. Captured output: maki --trust prompt failed (exit Some(1)): 
+      [1;31m✖ load init.lua files[0m
+      [2m├─[0m [31mlua error in project/init.lua: runtime error: [string "givn-attribution"]:10: attempt to index nil with 'env'
+      stack traceback:
+      	[string "givn-attribution"]:10: in function 'export'
+      	[string "project/init.lua"]:3: in function <[string "project/init.lua"]:1>[0m
+      [2m└─[0m [31mruntime error: [string "givn-attribution"]:10: attempt to index nil with 'env'
+      stack traceback:
+      	[string "givn-attribution"]:10: in function 'export'
+      	[string "project/init.lua"]:3: in function <[string "project/init.lua"]:1>[0m
+      
+Feature: Development Record
+  Scenario: Consumer runs a lifecycle step and reads its recorded actions
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "demo" exists with artifact "proposal.md"
+   ✔  When the user runs `givn status --change demo`
+   ✔  And the user runs `givn history --change demo --json`
+   ✔  Then the command exits 0
+   ✘  And the machine-readable record names the status command for "demo"
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-record.feature:177:5
+      Matched: tests/steps/development_record_e2e_steps.rs:110:1
+      Step panicked. Captured output: the machine-readable read printed no JSON entries (invalid type: map, expected a sequence at line 1 column 0): "{\n  \"entries\": [\n    {\n      \"at\": \"2026-11-17T13:53:04.214Z\",\n      \"change\": \"demo\",\n      \"command\": \"givn new\",\n      \"duration\": 0,\n      \"duration_ms\": 0,\n      \"kind\": \"command\",\n      \"schema\": 1,\n      \"scope\": \"demo\"\n    },\n    {\n      \"at\": \"2026-11-17T13:53:54.712Z\",\n      \"change\": \"demo\",\n      \"command\": \"givn status\",\n      \"duration\": 0,\n      \"duration_ms\": 0,\n      \"kind\": \"command\",\n      \"schema\": 1,\n      \"scope\": \"demo\"\n    }\n  ],\n  \"scope\": \"demo\"\n}\n"
+  Scenario: Consumer reads the development record as machine-readable output
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "demo" with a recorded history
+   ✔  When the user runs `givn history --change demo --json`
+   ✔  Then the command exits 0
+   ✘  And the output names every recorded entry with its kind, its scope, and its duration
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-record.feature:186:5
+      Matched: tests/steps/development_record_e2e_steps.rs:144:1
+      Step panicked. Captured output: the machine-readable read printed no JSON entries (invalid type: map, expected a sequence at line 1 column 0): "{\n  \"entries\": [\n    {\n      \"at\": \"2026-11-17T13:53:04.217Z\",\n      \"change\": \"demo\",\n      \"command\": \"givn new\",\n      \"duration\": 0,\n      \"duration_ms\": 0,\n      \"kind\": \"command\",\n      \"schema\": 1,\n      \"scope\": \"demo\"\n    },\n    {\n      \"at\": \"2026-11-17T13:53:04.218Z\",\n      \"change\": \"demo\",\n      \"command\": \"givn status\",\n      \"duration\": 0,\n      \"duration_ms\": 0,\n      \"kind\": \"command\",\n      \"schema\": 1,\n      \"scope\": \"demo\"\n    }\n  ],\n  \"scope\": \"demo\"\n}\n"
+Feature: Development Report
+  Scenario: Consumer generates the development report for a change
+   ✔  Given a project root with givn/ initialised
+   ✔  And a change "demo" with a recorded history whose last recorded artifact transition is "tasks.md"
+   ✔  When the user runs `givn timeline --change demo --out report.html`
+   ✔  Then the command exits 0
+   ✘  And the command prints the path of the written report
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:176:5
+      Matched: tests/steps/development_report_e2e_steps.rs:163:1
+      Step panicked. Captured output: assertion `left == right` failed: the command printed another path than the report it was asked for
+        left: "/tmp/.tmp0XCm2K/report.html\nReport written: /tmp/.tmp0XCm2K/report.html"
+       right: "/tmp/.tmp0XCm2K/report.html"
+  Scenario Outline: Consumer opens the generated development report in a browser
+   ✔  Given a change "demo" with a recorded history
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✘  Then the browser shows the report heading and the current workflow state
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:185:5
+      Matched: tests/steps/development_report_e2e_steps.rs:333:1
+      Step panicked. Captured output: the browser driver failed `evaluate`: evaluate: page.evaluate: TypeError: Cannot read properties of null (reading 'textContent')
+          at eval (eval at evaluate (:370:30), <anonymous>:2:67)
+          at eval (eval at evaluate (:370:30), <anonymous>:23:3)
+          at eval (<anonymous>)
+          at UtilityScript.evaluate (<anonymous>:370:30)
+          at UtilityScript.<anonymous> (<anonymous>:1:44)
+  Scenario Outline: Consumer opens the generated development report in a browser
+   ✔  Given a topic "demo" with a recorded history
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✘  Then the browser shows the report heading and the current workflow state
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:185:5
+      Matched: tests/steps/development_report_e2e_steps.rs:333:1
+      Step panicked. Captured output: the browser driver failed `evaluate`: evaluate: page.evaluate: TypeError: Cannot read properties of null (reading 'textContent')
+          at eval (eval at evaluate (:370:30), <anonymous>:2:67)
+          at eval (eval at evaluate (:370:30), <anonymous>:23:3)
+          at eval (<anonymous>)
+          at UtilityScript.evaluate (<anonymous>:370:30)
+          at UtilityScript.<anonymous> (<anonymous>:1:44)
+  Scenario: Consumer expands a workflow phase and sees its lanes
+   ✔  Given an open development report with a recorded history holding parallel sessions
+   ✘  When the consumer expands the "implement" phase
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:197:5
+      Matched: tests/steps/development_report_e2e_steps.rs:1048:1
+      Step panicked. Captured output: the browser driver failed `attribute`: attribute: page.getAttribute: Timeout 30000ms exceeded.
+      Call log:
+        - waiting for locator('.phase-card[data-phase="implement"] .phase-expander')
+  Scenario: Consumer reads a change's linked ideation group
+   ✔  Given a change "demo" whose proposal links the ideation topic "ideas"
+   ✔  And the topic's record holds the markers for personas and event storming
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✘  Then the browser shows the linked ideation group before the change workflow
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:208:5
+      Matched: tests/steps/development_report_e2e_steps.rs:686:1
+      Step panicked. Captured output: the browser driver failed `evaluate`: evaluate: page.evaluate: TypeError: Cannot read properties of null (reading 'textContent')
+          at eval (eval at evaluate (:370:30), <anonymous>:2:67)
+          at eval (eval at evaluate (:370:30), <anonymous>:27:3)
+          at eval (<anonymous>)
+          at UtilityScript.evaluate (<anonymous>:370:30)
+          at UtilityScript.<anonymous> (<anonymous>:1:44)
+  Scenario: Consumer selects a timeline element and reads its details
+   ✔  Given an open development report with a recorded history holding parallel sessions
+   ✘  When the consumer selects the "Architect.Scout" lane
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:216:5
+      Matched: tests/steps/development_report_e2e_steps.rs:1290:1
+      Step panicked. Captured output: the browser driver failed `click`: click: page.click: Timeout 10000ms exceeded.
+      Call log:
+        - waiting for locator('.phase-card[data-phase="implement"] .phase-expander')
+  Scenario: Consumer zooms the timeline to a shorter time range
+   ✔  Given an open development report with a recorded history
+   ✘  When the consumer zooms the expanded phase's timeline in
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:225:5
+      Matched: tests/steps/development_report_e2e_steps.rs:1520:1
+      Step panicked. Captured output: the browser driver failed `click`: click: page.click: Timeout 10000ms exceeded.
+      Call log:
+        - waiting for locator('.phase-card[data-phase="implement"] .phase-expander')
+  Scenario: Consumer opens the report of a scope with no recorded activity
+   ✔  Given a change "demo" with no recorded activity
+   ✔  And the development report for "demo" has been generated
+   ✔  When the consumer opens the development report in a browser
+   ✘  Then the browser shows the empty state for "demo"
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/inspect-development-history/development-report.feature:233:5
+      Matched: tests/steps/development_report_e2e_steps.rs:1674:1
+      Step panicked. Captured output: assertion `left == right` failed: the browser renders no empty state at all: {
+        "back": null,
+        "backHref": null,
+        "declared": null,
+        "detail": null,
+        "heading": null,
+        "present": false,
+        "scope": "Scope: demo",
+        "workflow": {
+          "axes": 0,
+          "cards": 0,
+          "controls": 0,
+          "lanes": 0,
+          "phases": 0,
+          "sections": 0,
+          "stack": 0,
+          "ticks": 0
+        }
+      }
+        left: Bool(false)
+       right: Bool(true)
+Feature: README enforcement
+  Scenario: Scaffolding marks the unfilled sections
+   ✔  Given a project root without a givn/ directory
+   ✔  When the user runs `givn init --agents opencode`
+   ✔  Then the file "README.md" exists
+   ✘  And the README has the description open placeholder
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/keep-documentation-current/readme-enforcement.feature:8:5
+      Matched: tests/steps/readme_enforcement_e2e_steps.rs:52:1
+      Step panicked. Captured output: README must carry the description open placeholder:
+      # .tmpbLUOwG
+      
+      <!-- givn:todo -->Describe the project here (description open placeholder).<!-- /givn:todo -->
+      
+      ## License
+      
+      <!-- givn:todo -->State the project license here (license open placeholder).<!-- /givn:todo -->
+      
+      <!-- givn:begin:development -->
+      ## Development
+      
+      <!-- givn:todo -->Document the configured verification and coverage commands here (development open placeholder).<!-- /givn:todo -->
+      <!-- givn:end:development -->
+      
+      <!-- givn:begin:coverage -->
+      ## Coverage
+      
+      <!-- givn:todo -->Coverage will be reported here once the project declares coverage commands.<!-- /givn:todo -->
+      <!-- givn:end:coverage -->
+      
+      <!-- givn:begin:run -->
+      ## Running
+      
+      <!-- givn:todo -->Fill in the run declaration in `givn/commands.yaml` (run open placeholder).<!-- /givn:todo -->
+      <!-- givn:end:run -->
+  Scenario: The check passes on a complete README
+   ✔  Given a project root with givn/ initialised
+   ✔  And a complete README
+   ✔  When the user invokes `givn readme check`
+   ✔  Then the command exits 0
+  Scenario: Archiving refreshes the development block
+   ✔  Given a project root with givn/ initialised
+   ✔  And a stale development managed block with exactly one ordered opening and closing marker
+   ✔  And user-authored prose before and after the managed block
+   ✔  And a givn project providing its own workflow scripts
+   ✔  And a completed change "readme-demo"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn archive --change readme-demo`
+   ✔  Then the command succeeds
+   ✔  And the development block lists the configured commands
+   ✘  And the user-authored prose before and after the managed block is byte-for-byte unchanged
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/keep-documentation-current/readme-enforcement.feature:154:5
+      Matched: tests/steps/readme_enforcement_steps.rs:292:1
+      Step panicked. Captured output: assertion `left == right` failed
+        left: "\n\r\nUser suffix.  \t"
+       right: "\n\n\r\nUser suffix.  \t"
+  Scenario: A recorded impact decision passes the review
+   ✔  Given a project root with givn/ initialised
+   ✔  And verify commands are no-ops
+   ✔  And a reviewable change "readme-demo"
+   ✔  And its review records the impact "none"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check review --change readme-demo`
+   ✘  Then the command exits 0
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/keep-documentation-current/readme-enforcement.feature:166:5
+      Matched: tests/steps/mod.rs:426:1
+      Step panicked. Captured output: expected exit 0, got Some(1): stderr=givn check review: the change verification receipt is not green
+      givn check review: review failed
+  Scenario: Instructions surface an unfinished README
+   ✔  Given a project root with givn/ initialised
+   ✔  And a scaffolded README
+   ✔  When the user invokes `givn instructions`
+   ✘  Then the instructions mention the unfinished README
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/keep-documentation-current/readme-enforcement.feature:173:5
+      Matched: tests/steps/readme_enforcement_e2e_steps.rs:146:1
+      Step panicked. Captured output: instructions must name `givn readme check`: Givn project state
+      
+      SCM: git
+      Active changes: none
+      
+      Request routing:
+      - For new or unclassified work, load the `givn-start` skill.
+      - For a change whose goal and scope are already clear, the direct alternative is `givn new <change-id>`.
+      
+      README: the scaffolded README still has open placeholders (givn:todo); fill the description, license, development, coverage, and run sections before review.
+      
+      Bootstrap obligation: before the first user-facing question, load the effective dialog policy with `givn instructions dialog`, once per context, and reload it if lost.
+      
+Feature: Canonical use-case contract
+  Scenario: Use-case tree reports explicit use-case ownership
+   ✔  Given a spec discovery project with two use cases and a usecase.md narrative
+   ✔  When the user inspects the corpus with `givn spec tree`
+   ✔  Then the command exits 0
+   ✔  And stdout contains both use-case names
+   ✘  And stdout contains the use-case actor line
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/make-usecases-canonical/canonical-usecase-contract.feature:9:5
+      Matched: tests/steps/spec_discovery_deterministic_steps.rs:203:1
+      Step panicked. Captured output: assertion failed: stdout(world).contains("actors:")
+Feature: The served instruction carries the built-in rules and the project's extension
+  Scenario: An agent receives the extended rules through the Givn CLI
+   ✔  Given a Givn project with an active change
+   ✔  And the project records an extension for the proposal instruction
+   ✔  When the agent requests the proposal instructions through the Givn CLI
+   ✔  Then the command exits 0
+   ✘  And the served content carries the built-in proposal rules
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/obtain-effective-guidance/serve-extended-rules.feature:9:5
+      Matched: tests/steps/serve_extended_rules_steps.rs:298:1
+      Step panicked. Captured output: the served proposal content is missing the built-in proposal rules: # Proposal
+      
+      ## Purpose
+      
+      Write the change's WHAT and WHY, its release note, its capability routing, and
+      its open questions.
+      
+      ## Release note
+      
+      The proposal carries exactly one release note: one complete, user-facing
+      sentence naming what the change does. Every revision the change records
+      carries the release note as its message subject; the scenario title goes in
+      the message body. A changelog line derived from revision subjects is a consequence, not the
+      release note.
+      
+      ## WHAT
+      
+      State the observable behavior added, modified, or removed. Name the consumer
+      and the outcome.
+      
+      ## WHY
+      
+      State the problem and the consequence of leaving it unsolved. Do not restate
+      the solution.
+      
+      ## Capability routing
+      
+      Record each capability as `NEW in <group>`, `MODIFIED <capability>`, or
+      `REMOVED <capability>`. A NEW capability names the group whose use case will
+      own it.
+      
+      ## Open questions
+      
+      Record unresolved decisions with ids `Q1`, `Q2`, ... Each question states what
+      it blocks and which artifact will resolve it. If none remain, say so explicitly.
+      
+      ## Change strategy
+      
+      Every change records exactly one change strategy in its design: `incremental
+      modification`, `Constant Ise`, or a whole-product rebuild. A change that
+      rebuilds also records its `Ise Test` mode beside the strategy.
+      
+Feature: Declare the product start
+  Scenario: Scaffolding ships an unconfigured run declaration
+   ✔  Given a project root without a givn/ directory
+   ✔  When the user runs `givn init --agents opencode`
+   ✔  Then the file "givn/commands.yaml" exists
+   ✔  And the commands file has run.command set to the sentinel
+   ✔  And the README has the run managed block
+   ✘  And the README has the run open placeholder
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/operate-product/declare-the-product-start.feature:10:5
+      Matched: tests/steps/run_execution_e2e_steps.rs:271:1
+      Step panicked. Captured output: README must carry the run open placeholder:
+      # .tmp2kQTQS
+      
+      <!-- givn:todo -->Describe the project here (description open placeholder).<!-- /givn:todo -->
+      
+      ## License
+      
+      <!-- givn:todo -->State the project license here (license open placeholder).<!-- /givn:todo -->
+      
+      <!-- givn:begin:development -->
+      ## Development
+      
+      <!-- givn:todo -->Document the configured verification and coverage commands here (development open placeholder).<!-- /givn:todo -->
+      <!-- givn:end:development -->
+      
+      <!-- givn:begin:coverage -->
+      ## Coverage
+      
+      <!-- givn:todo -->Coverage will be reported here once the project declares coverage commands.<!-- /givn:todo -->
+      <!-- givn:end:coverage -->
+      
+      <!-- givn:begin:run -->
+      ## Running
+      
+      <!-- givn:todo -->Fill in the run declaration in `givn/commands.yaml` (run open placeholder).<!-- /givn:todo -->
+      <!-- givn:end:run -->
+  Scenario: The review check reports an unconfigured run declaration
+   ✔  Given a project root with givn/ initialised
+   ✔  And verify commands are no-ops
+   ✔  And a reviewable change "run-demo"
+   ✔  And its review records the impact "none"
+   ✔  When the user runs `givn check review --change run-demo`
+   ✔  Then the command exits non-zero
+   ✔  And stdout mentions "run.command is unset"
+   ✔  And stdout mentions "run.product_type is unset"
+  Scenario: Archive passes once the run declaration is complete
+   ✔  Given a project root with givn/ initialised
+   ✔  And a complete README
+   ✔  And verify commands are no-ops with a complete server run declaration
+   ✔  And givn addon "coverage" is "false"
+   ✔  And a completed change "run-demo"
+   ✔  When the user runs `givn archive --change run-demo`
+   ✔  Then the command exits 0
+   ✔  And the archived change directory "run-demo" exists
+  Scenario: Upgrade backfills the run declaration into an existing project
+   ✔  Given a git-managed project with givn initialised
+   ✔  And the commands file has no run declaration
+   ✔  When the user runs `givn upgrade`
+   ✔  Then the command exits 0
+   ✔  And the file "givn/commands.yaml" contains "run:"
+   ✔  And stdout mentions "fill it in"
+  Scenario: The check names a damaged run managed block
+   ✔  Given a project root with givn/ initialised
+   ✔  And a README with a broken run managed block
+   ✔  When the user runs `givn readme check`
+   ✔  Then the command exits non-zero
+   ✔  And stdout mentions "run managed block"
+  Scenario: The sentinel start command prints setup guidance
+   ✔  Given a project root with givn/ initialised
+   ✔  When the user runs `givn missing-run-command`
+   ✔  Then the command exits non-zero
+   ✔  And stderr mentions "run.command is unset"
+Feature: Start the declared product
+  Scenario: The started server reports readiness and forwards a clean exit
+   ✔  Given a server declaration with a readiness deadline whose server becomes ready before that deadline and exits cleanly
+   ✔  When the consumer runs `givn run`
+   ✔  Then the command exits 0
+   ✔  And stdout reports readiness at the declared port and readiness path
+   ✔  And the reported ready outcome follows a successful response through the declared boundary
+   ✔  And the terminal transcript is captured for this scenario
+  Scenario: A caller-provided port is handed to the product
+   ✔  Given a project with a server run declaration that becomes ready and exits cleanly
+   ✔  When the user runs givn run with a caller-provided port
+   ✔  Then the command exits 0
+   ✔  And the ready line names the caller-provided port
+  Scenario: Print mode emits the start plan without starting
+   ✔  Given a project with a server run declaration with a port hand-off
+   ✔  When the user runs `givn run --print`
+   ✔  Then the command exits 0
+   ✔  And stdout is one line that exports the port hand-off and names the start command
+   ✔  And stdout does not contain "givn run: ready"
+  Scenario: An interrupt stops the started product
+   ✔  Given a project with a server run declaration that stays ready
+   ✔  When the user interrupts givn run after the ready line
+   ✘  Then the command exits 130
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/operate-product/start-the-declared-product.feature:31:5
+      Matched: tests/steps/run_execution_e2e_steps.rs:101:1
+      Step panicked. Captured output: assertion `left == right` failed: stderr=
+        left: None
+       right: Some(130)
+Feature: Clean-room preparation
+  Scenario: Developer rebuilds the whole product from its Specification
+   ✔  Given a Git project with ise enabled and a declaration whose "behavior" role names "givn/specs/**", whose "e2e" role names "tests/e2e", and whose source root is "src/**"
+   ✔  And a committed revision with "givn/specs/demo.feature", "tests/e2e/Cargo.toml", "tests/e2e/steps/demo.rs", "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", and "notes.md"
+   ✔  When the developer rebuilds the whole product from "HEAD" into a spec copy with a manifest
+   ✔  Then the command succeeds and prints "Backend: git", "Specification files: 2", "Source code kept: 0", "Source code removed: 3", "Outside the spec copy: 1", and "Files beside removed paths: 0"
+   ✔  And the report prints a "Revision:" line holding the resolved 40-hex commit
+   ✔  And the report prints "End-to-end tests: not copied (2 files)"
+   ✔  And the report prints a "Specification checksum:" line and an "End-to-end checksum:" line of 12 lowercase hex characters each
+   ✔  And the report prints the copy directory and the manifest path
+   ✔  And the spec copy holds "givn/specs/demo.feature" and "givn/specification.yaml"
+   ✔  And the spec copy omits "src/keys/parser.rs", "src/keys/mod.rs", "src/other.rs", "notes.md", "tests/e2e/Cargo.toml", and "tests/e2e/steps/demo.rs"
+   ✘  And the manifest records the scope, the revision, the removed paths, the five counts, the checksums, the copy directory, and the Givn version
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/prepare-an-ise-test/clean-room-preparation.feature:242:5
+      Matched: tests/steps/clean_room_preparation_e2e_steps.rs:438:1
+      Step panicked. Captured output: assertion `left == right` failed: the manifest has the wrong Givn version
+        left: Some("0.9.10")
+       right: Some("0.9.20")
+Feature: Trial input verification
+  Scenario: Verifier compares the spec copy with the manifest
+   ✔  Given a prepared spec copy with a manifest
+   ✔  When the verifier compares the spec copy with the manifest
+   ✔  Then comparison prints "Specification files: match" and "End-to-end tests: match"
+   ✔  And comparison exits zero
+   ✔  And comparison prints no line beginning "- "
+Feature: Givn release metadata and migration route
+  Scenario: Repeated revisions of one change yield one changelog entry
+   ✔  Given a release range with three feature revisions of one change that share the release note "Givn reports the active SCM backend in givn status"
+   ✔  And a documentation revision in the same range
+   ✔  When the maintainer generates the changelog for the release range
+   ✔  Then the changelog lists "Givn reports the active SCM backend in givn status" exactly once
+   ✔  And the changelog lists no documentation entry
+Feature: Managed upgrade and legacy project migration
+  Scenario: A clean project without migration requirements receives one managed upgrade commit
+   ✔  Given a clean Git project with stale generated integration and a committed checkpoint
+   ✔  And its current-format configuration was prepared manually with the last 0.x version marker
+   ✔  And the installed Givn version is 0.9.10
+   ✔  When the consumer runs `givn upgrade`
+   ✘  Then the command exits successfully and reports the managed upgrade revision
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature:9:5
+      Matched: tests/steps/run_upgrade_steps.rs:356:1
+      Step panicked. Captured output: Commit attribution plumbing installed: shared Git hook .githooks/givn-commit-msg (launcher .githooks/commit-msg)
+      Managed upgrade revision: 4ec51b70184b85925a757f5f8a4d1d711ad3f5b6
+      Project configuration identifies Givn 0.9.10.
+  Scenario: A completed maintenance migration can be archived without a product specification
+   ✘  Given a completed no-behavior-change maintenance migration change prepared manually in a disposable project
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature:60:5
+      Matched: tests/steps/run_upgrade_steps.rs:449:1
+      Step panicked. Captured output: write design review: Os { code: 2, kind: NotFound, message: "No such file or directory" }
+  Scenario: A consumer invoking a retired engine command is told it does not exist
+   ✔  Given an installed Givn binary
+   ✔  When the consumer invokes the retired `givn spec index` command
+   ✔  Then the command exits non-zero
+   ✘  And the error reports "spec index" is not an available command
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature:72:5
+      Matched: tests/steps/release_0_3_0_steps.rs:23:1
+      Step panicked. Captured output: givn: spec index is not an available command
+  Scenario: A consumer invoking the retired history rewrite command is told it does not exist
+   ✔  Given an installed Givn binary
+   ✔  When the consumer invokes the retired `givn rewrite-history` command
+   ✔  Then the command exits non-zero
+   ✘  And the error reports "rewrite-history" is not an available command
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/upgrade-a-project/apply-a-managed-upgrade.feature:136:5
+      Matched: tests/steps/release_0_3_0_steps.rs:50:1
+      Step panicked. Captured output: givn: rewrite-history is not an available command
+Feature: check-specification-health
+  Scenario: All clean .feature files report a clean summary on stdout
+   ✔  Given a project root with givn/ initialised
+   ✔  And a structurally valid specification corpus with one clean feature
+   ✔  When the user invokes `givn lint`
+   ✘  Then the command exits 0
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/verify-change/check-specification-health.feature:14:5
+      Matched: tests/steps/mod.rs:426:1
+      Step panicked. Captured output: expected exit 0, got Some(1): stderr=givn/specs/clean/usecase.md: ## Level must be exactly ! or +
+      givn/specs/clean/usecase.md: missing required heading `## Actors`
+      givn/specs/clean/usecase.md: missing required heading `## Capabilities`
+      givn/specs/clean/usecase.md: missing required heading `## Examples`
+      givn/specs/clean/usecase.md: missing required heading `## Extends`
+      givn/specs/clean/usecase.md: missing required heading `## Extensions`
+      givn/specs/clean/usecase.md: missing required heading `## Goal`
+      givn/specs/clean/usecase.md: missing required heading `## Includes`
+      givn/specs/clean/usecase.md: missing required heading `## Interactions`
+      givn/specs/clean/usecase.md: missing required heading `## Main flow`
+      givn/specs/clean/usecase.md: missing required heading `## Minimal guarantee`
+      givn/specs/clean/usecase.md: missing required heading `## Out of scope`
+      givn/specs/clean/usecase.md: missing required heading `## Personas`
+      givn/specs/clean/usecase.md: missing required heading `## Preconditions`
+      givn/specs/clean/usecase.md: missing required heading `## Rules`
+      givn/specs/clean/usecase.md: missing required heading `## Success guarantee`
+      givn/specs/clean/usecase.md: missing required heading `## Trigger`
+Feature: givn Workflow Enforcement
+  Scenario: Consumer runs migration coverage check and sees passed evidence
+   ✔  Given a migration evidence change with matching behavior snapshots
+   ✔  When the consumer runs the migration coverage check
+   ✔  Then the command exits 0
+   ✔  And stdout contains "migration coverage passed"
+  Scenario: Consumer runs check tasks and receives a change verification receipt
+   ✔  Given a clean committed givn project with a change whose delta specs pass
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check tasks --change verify-demo`
+   ✔  Then the command succeeds
+   ✘  And stdout reports passed change-scoped verification
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/verify-change/givn-workflow-enforcement.feature:271:5
+      Matched: tests/steps/workflow_enforcement_steps.rs:661:1
+      Step panicked. Captured output: givn check tasks: passed change-scoped verification (2 scenario(s) passed)
+      Receipt: givn/changes/verify-demo/verification/tasks-verification.json
+  Scenario: The result helper writes four counts without a scope
+   ✔  Given a givn project with a result file path
+   ✔  When the user runs the result helper for 3 total and 3 passed
+   ✔  Then the command exits 0
+   ✔  And the result file contains total 3, passed 3, failed 0 and skipped 0 without a scope
+  Scenario: Consumer runs review and receives every use-case schema problem in one pass
+   ✔  Given a clean committed change whose delta capability is routed "NEW in review-diagnostics-demo"
+   ✔  And the use-case contract has a case-mismatched title, an unknown "## Guarantees" heading, a capability line that is not a bullet, an interaction that names an undeclared capability, and an example line that is not a bullet
+   ✔  When the developer runs `givn check review --change review-diagnostics-demo`
+   ✔  Then the command exits non-zero
+   ✘  And stderr reports the title, the unknown heading, the capability line, the undeclared interaction, and the example line together in one review run
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/verify-change/givn-workflow-enforcement.feature:339:5
+      Matched: tests/steps/workflow_enforcement_steps.rs:574:1
+      Step panicked. Captured output: stderr missing "expected '# Use case: <kebab-case-id>', got '# Use Case: review-diagnostics-demo'": givn check review: givn/changes/review-diagnostics-demo/specs/review-diagnostics-demo/usecase.md: title line must be `# Use case: <kebab-case-id>`
+      givn check review: givn/changes/review-diagnostics-demo/specs/review-diagnostics-demo/usecase.md: unknown heading `## Guarantees`
+      givn check review: givn/changes/review-diagnostics-demo/specs/review-diagnostics-demo/usecase.md: capability line is not a bullet
+      givn check review: givn/changes/review-diagnostics-demo/specs/review-diagnostics-demo/usecase.md: interaction names undeclared capability `register-readiness`
+      givn check review: givn/changes/review-diagnostics-demo/specs/review-diagnostics-demo/usecase.md: example line is not a bullet: This line is prose, not a bullet.
+      givn check review: the change verification receipt is not green
+      givn check review: review failed
+  Scenario: Consumer invokes bare check and receives explicit non-executing guidance
+   ✔  Given a givn project whose configured hooks and verification commands record execution
+   ✔  When the consumer invokes `givn check`
+   ✘  Then terminal output explains that no checks were executed
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/verify-change/givn-workflow-enforcement.feature:701:5
+      Matched: tests/steps/workflow_enforcement_steps.rs:748:1
+      Step panicked. Captured output: givn check: no checks were executed.
+      
+      This command prints guidance only; it runs no configured hook and no runner.
+      
+      Explicit checks:
+      - `givn check review --change <id>`: integrity, run declaration, change-scoped lint, overlap, retirement, routing, receipt, and scenario-commit checks. Static; executes no runner.
+      - `givn check tasks --change <id>`: runs verify.command against the change's delta features. Executes the Gherkin runner.
+      - `givn check migration --change <id>`: preservation comparison. Static.
+      - `givn check rules`: reports rule cleanliness. Static.
+      - `givn check <artifact> --change <id>`: runs that artifact's mandatory checks and its configured post hooks.
+Feature: Resolve change directories
+  Scenario: Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected
+   ✔  Given a givn project with a change "detect-int" that has design.md with a valid Step Definitions table and tasks.md where every COMMIT hash is a valid 40-character hex string
+   ✔  And givn addon "outline" is "false"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check review --change detect-int`
+   ✘  Then the command succeeds
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/verify-change/resolve-change-directories.feature:31:5
+      Matched: tests/steps/mod.rs:448:1
+      Step panicked. Captured output: expected exit 0, got Some(1): stderr=givn check review: the change verification receipt is not green
+      givn check review: review failed
+  Scenario: Integrity check detects a placeholder COMMIT hash in tasks.md and fails
+   ✔  Given a givn project with a change "bad-hash" that has design.md with a valid Step Definitions table and tasks.md containing a placeholder COMMIT hash "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user invokes `givn check review --change bad-hash`
+   ✔  Then the command exits non-zero
+   ✘  And stderr reports the placeholder hash as invalid
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/verify-change/resolve-change-directories.feature:40:5
+      Matched: tests/steps/mod.rs:511:1
+      Step panicked. Captured output: stderr missing hash validity report: givn check review: review.md is missing; the required review verdict evidence is absent
+      givn check review: the change verification receipt is not green
+      givn check review: review failed
+Feature: spec-overlap-gates
+  Scenario: A duplicate title across two permanent spec files is a hard error
+   ✔  Given a project root with givn/ initialised
+   ✔  And a .feature file at "givn/specs/alpha/alpha.feature" with:
+   ✔  And a .feature file at "givn/specs/beta/beta.feature" with:
+   ✔  When the user runs `givn lint`
+   ✔  Then the command exits 3
+   ✔  And stderr contains "duplicate scenario title"
+   ✔  And stderr contains "alpha.feature"
+   ✔  And stderr contains "beta.feature"
+   ✔  And stderr contains "The same behaviour twice"
+  Scenario: The json output reports duplicate-title findings machine-readably
+   ✔  Given a project root with givn/ initialised
+   ✔  And a .feature file at "givn/specs/alpha/alpha.feature" with:
+   ✔  And a .feature file at "givn/specs/beta/beta.feature" with:
+   ✔  When the user runs `givn lint --json`
+   ✔  Then the command exits 3
+   ✔  And stdout is valid JSON
+   ✔  And stdout contains "duplicate_title"
+   ✔  And stdout contains "titles"
+   ✔  And stdout contains "Twin title"
+Feature: Validate artifact ids
+  Scenario: Consumer invokes givn check with an unknown artifact and gets a helpful error
+   ✔  Given a givn project with a standard manifest
+   ✔  When the user invokes `givn check bogus-artifact`
+   ✔  Then the command fails
+   ✔  And stderr contains "unknown artifact"
+Feature: Visual Review Gate
+  Scenario: A visual change with complete evidence passes review
+   ✔  Given a givn project with a change that has passed design-review
+   ✔  And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"
+   ✔  And the change's delta spec contains an @e2e scenario "Consumer opens the dashboard"
+   ✔  And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "mobile"
+   ✔  And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "desktop"
+   ✔  And the change's review.md contains "VISUAL-REVIEW: PASS"
+   ✔  And the project declares a complete run declaration
+   ✔  When the user runs `givn check review --change test-change`
+   ✘  Then the command exits 0
+      Step failed:
+      Defined: home/buster/.paseo/worktrees/008cxm4u/modern-mule/givn/specs/verify-change/visual-review-gate.feature:13:5
+      Matched: tests/steps/mod.rs:426:1
+      Step panicked. Captured output: expected exit 0, got Some(1): stderr=givn check review: the change verification receipt is not green
+      givn check review: review failed
+  Scenario: Review guidance requires the visual verdict and persona lenses
+   ✔  Given a givn project
+   ✔  When the user runs `givn instructions review --change visual-ui-review`
+   ✔  Then stdout contains "VISUAL-REVIEW: PASS"
+   ✔  And stdout contains "confirmed Persona"
+   ✔  And stdout contains "vision"
+   ✔  And stdout contains "transcript"
+[Summary]
+56 features
+120 scenarios (35 passed, 85 failed)
+568 steps (483 passed, 85 failed)
+error: test failed, to rerun pass `--test e2e_runner`
+
+Caused by:
+  process didn't exit successfully: `/home/buster/.paseo/worktrees/008cxm4u/modern-mule/target/e2e-package/debug/deps/e2e_runner-1e7228000a132c67` (exit status: 1)

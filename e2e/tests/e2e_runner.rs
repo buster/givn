@@ -32,6 +32,7 @@ use std::path::{Path, PathBuf};
 use cucumber::World as _;
 use cucumber::gherkin::tagexpr::TagOperation;
 use cucumber::tag::Ext as _;
+use sha2::{Digest, Sha256};
 use steps::GivnWorld;
 
 const PRODUCT_PACKAGES: [&str; 3] = ["givn", "givn-config", "givn-core"];
@@ -42,10 +43,16 @@ async fn main() {
     let features_path = features_path();
     let filter = e2e_filter();
     let scope = std::env::var("GIVN_RESULT_SCOPE").unwrap_or_else(|_| "e2e".to_string());
+    let executed: std::sync::Arc<std::sync::Mutex<Vec<String>>> =
+        std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let recorded = std::sync::Arc::clone(&executed);
     let writer = GivnWorld::cucumber()
         .fail_on_skipped()
-        .before(|_, _, scenario, world| {
+        .before(move |_, _, scenario, world| {
             world.scenario_title = Some(scenario.name.clone());
+            if let Ok(mut names) = recorded.lock() {
+                names.push(scenario.name.clone());
+            }
             Box::pin(async {})
         })
         .filter_run(features_path, move |feature, _, scenario| {
@@ -53,7 +60,14 @@ async fn main() {
         })
         .await;
     let stats = writer.scenarios_stats();
-    write_result_file(&scope, stats);
+    let names = executed
+        .lock()
+        .map(|names| names.clone())
+        .unwrap_or_default();
+    let product = std::env::var("GIVN_BIN").unwrap_or_default();
+    let product = std::fs::canonicalize(&product).unwrap_or_else(|_| PathBuf::from(product));
+    let product_sha256 = sha256_file(&product).unwrap_or_default();
+    write_result_file(&scope, stats, &names, &product, &product_sha256);
     if stats.failed > 0 || stats.skipped > 0 || stats.total() == 0 {
         std::process::exit(1);
     }
@@ -162,7 +176,13 @@ fn e2e_filter() -> impl Fn(&gherkin::Feature, &gherkin::Scenario) -> bool {
     }
 }
 
-fn write_result_file(scope: &str, stats: &cucumber::writer::summarize::Stats) {
+fn write_result_file(
+    scope: &str,
+    stats: &cucumber::writer::summarize::Stats,
+    scenarios: &[String],
+    product: &Path,
+    product_sha256: &str,
+) {
     let Ok(path) = std::env::var("GIVN_RESULT_FILE") else {
         return;
     };
@@ -172,11 +192,23 @@ fn write_result_file(scope: &str, stats: &cucumber::writer::summarize::Stats) {
         "passed": stats.passed,
         "failed": stats.failed,
         "skipped": stats.skipped,
+        "scenarios": scenarios,
+        "product": product,
+        "product_sha256": product_sha256,
     });
     if let Err(error) = std::fs::write(&path, format!("{payload}\n")) {
         eprintln!("failed to write GIVN_RESULT_FILE {path}: {error}");
         std::process::exit(2);
     }
+}
+
+/// The SHA-256 of the product bytes.
+fn sha256_file(path: &Path) -> std::io::Result<String> {
+    let bytes = std::fs::read(path)?;
+    Ok(Sha256::digest(&bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect())
 }
 
 #[cfg(unix)]

@@ -35,6 +35,18 @@ pub(super) struct Manifest {
     pub end_to_end_checksum: String,
     pub copy_directory: String,
     pub givn_version: String,
+    /// The generated verification contract. Absent in manifests written
+    /// before the contract existed; a present record is authoritative.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verification: Option<Verification>,
+}
+
+/// The generated verification contract's path and checksum.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct Verification {
+    pub path: String,
+    pub checksum: String,
 }
 
 /// The scope a manifest document records, under the current shape's `scope`
@@ -106,7 +118,18 @@ impl Manifest {
             )?;
         }
         require_checksum(path, "specification_checksum", &self.specification_checksum)?;
-        require_checksum(path, "end_to_end_checksum", &self.end_to_end_checksum)
+        require_checksum(path, "end_to_end_checksum", &self.end_to_end_checksum)?;
+        if let Some(verification) = &self.verification {
+            require_checksum(
+                path,
+                &format!(
+                    "the verification contract checksum of '{}'",
+                    verification.path
+                ),
+                &verification.checksum,
+            )?;
+        }
+        Ok(())
     }
 
     /// Write the manifest to a new path. An existing or unwritable target is

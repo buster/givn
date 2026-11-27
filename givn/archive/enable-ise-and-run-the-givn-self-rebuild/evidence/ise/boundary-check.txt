@@ -1,0 +1,5 @@
+Mandatory checks for 'tasks':
+  ⚠ task preflight: review.md is missing
+  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)
+  ✓ verify passed
+# note: the `verify passed` line above is the not-applicable path line; it is not `verify.command` evidence. The declared-package preflight ran and accepted the declaration with no `e2e boundary:` warning and no refusal.

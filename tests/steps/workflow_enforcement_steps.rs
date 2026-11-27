@@ -366,6 +366,9 @@ fn write_fixture_change_receipt(world: &GivnWorld, id: &str) {
                 failed: 0,
                 skipped: 0,
             },
+            features_path: String::new(),
+            features_digest: String::new(),
+            component: None,
             e2e_identity: None,
             e2e_scope: None,
         },
@@ -3877,6 +3880,57 @@ fn ise_change_without_delta_e2e(world: &mut GivnWorld) {
 #[given("a change ready for change-scoped verification with ise off")]
 fn change_without_ise(world: &mut GivnWorld) {
     e2e_boundary_support::change_ready_for_verification_without_ise(world);
+}
+
+#[given(
+    regex = r#"^an ise-effective ship change declaring two retained component scenarios and a runner that (.+)$"#
+)]
+fn ise_ship_change_with_runner(world: &mut GivnWorld, runner: String) {
+    let mode = match runner.as_str() {
+        "reports every declared scenario" => "every",
+        "exits 0 without a result file" => "none",
+        "reports one executed scenario" => "one",
+        other => panic!("unknown ship runner '{other}'"),
+    };
+    e2e_boundary_support::ise_ship_change(world, mode);
+}
+
+#[given(
+    "an ise-effective ship change that keeps one delta scenario and two retained component scenarios"
+)]
+fn ise_ship_change_with_a_delta(world: &mut GivnWorld) {
+    e2e_boundary_support::ise_ship_change_with_delta(world);
+}
+
+fn ship_receipt(world: &GivnWorld) -> serde_json::Value {
+    let path = change_dir_for(world, "ise-boundary").join("verification/tasks-verification.json");
+    let content = std::fs::read_to_string(&path).expect("read the ship receipt");
+    serde_json::from_str(&content).expect("parse the ship receipt")
+}
+
+#[then(
+    regex = r#"^the change verification receipt records the retained component corpus at "([^"]+)" with two scenarios$"#
+)]
+fn receipt_records_the_retained_component_corpus(world: &mut GivnWorld, features_path: String) {
+    let receipt = ship_receipt(world);
+    assert_eq!(receipt["features_path"], features_path);
+    assert_eq!(receipt["result"]["total"], 2);
+    assert_eq!(receipt["result"]["passed"], 2);
+}
+
+#[then("the change verification receipt records a delta result of one scenario")]
+fn receipt_records_one_delta_scenario(world: &mut GivnWorld) {
+    let receipt = ship_receipt(world);
+    assert_eq!(receipt["result"]["total"], 1);
+    assert_eq!(receipt["result"]["passed"], 1);
+}
+
+#[then("the change verification receipt records a component result of two scenarios")]
+fn receipt_records_two_component_scenarios(world: &mut GivnWorld) {
+    let receipt = ship_receipt(world);
+    assert_eq!(receipt["component"]["features_path"], "givn/specs");
+    assert_eq!(receipt["component"]["result"]["total"], 2);
+    assert_eq!(receipt["component"]["result"]["passed"], 2);
 }
 
 #[given(

@@ -18,7 +18,10 @@
 # During the first product change, adapt or create the project's Gherkin runner.
 # The adapter must execute GIVN_FEATURES, handle GIVN_RESULT_SCOPE, remove/write
 # a fresh GIVN_RESULT_FILE, and report actual total, passed, failed, and skipped
-# counts. `change` executes every delta scenario, including @e2e; regular
+# counts. An executed ise trial (compare or verify-trial) also carries one
+# scenario title per execution unit (duplicates and outline rows preserved);
+# its e2e result also carries the rebuilt product path and product_sha256.
+# `change` executes every delta scenario, including @e2e; regular
 # excludes @e2e from permanent specs; e2e selects only @e2e from permanent specs.
 # A failed, undefined, pending, ambiguous, or skipped scenario must fail the
 # command. Run the default sentinel for runner/tooling choices and see
@@ -34,6 +37,17 @@ verify:
   # Command to run @e2e-tagged scenarios. If unconfigured, the review gate and
   # archive gate will reject any change whose specs include @e2e scenarios.
   e2e_command: "givn missing-e2e-runner"  # unconfigured sentinel
+
+  # --- Rebuilt product binding (whole-system Ise trial) ----------------------
+  # The product path relative to the spec copy: a regular file or a directory
+  # of binaries. The executed ise trial (`givn ise compare` or
+  # `givn ise verify-trial`) requires it after the component command, hashes
+  # the file bytes or the directory tree, passes its absolute path in
+  # `product_env`, and requires the End-to-end result to name the same path and
+  # digest. `product_env` is the project's variable, for example `GIVN_BIN` or
+  # `PASSUFF_BIN_DIR`.
+  # product_path: "target/debug/my-product"
+  # product_env: "GIVN_BIN"
 
 # --- Coverage gate (requires addons.coverage: true) ---------------------------
 # Commands that produce Cobertura XML coverage data. The measurement script
@@ -52,6 +66,10 @@ coverage:
   non_e2e_path: "coverage/non-e2e-cobertura.xml"
   e2e_path: "coverage/e2e-cobertura.xml"
   output_path: "coverage/cobertura-coverage.xml"
+  # Set true only when the End-to-end suite drives the product as a
+  # subprocess and cannot instrument it; the trial gate then accepts a
+  # 0-line End-to-end report and records it as uninstrumented.
+  e2e_subprocess: false
 
 # The scripts receive GIVN_COVERAGE_NON_E2E_PATH,
 # GIVN_COVERAGE_E2E_PATH, GIVN_COVERAGE_OUTPUT_PATH, and GIVN_FEATURES.

@@ -1,0 +1,1 @@
+{"failed":0,"passed":1,"product":"/home/buster/.paseo/worktrees/008cxm4u/melodic-unicorn/target/debug/givn","product_sha256":"4cf316805f27e82fa662f7e48416f02727c8089532f52abd2d0a617fb3441ea5","scenarios":["Verifier compares the spec copy with the manifest and runs the trial"],"scope":"e2e","skipped":0,"total":1}

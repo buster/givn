@@ -1,6 +1,6 @@
 # givn — Architecture Documentation (arc42)
 
-This is the durable architecture documentation for the current checkout,
+This is the durable architecture documentation for the project,
 organized according to the [arc42](https://arc42.org) template. Each chapter is
 a separate file. Chapter 9 is a register whose decisions are stored as
 individual MADR files.
@@ -20,12 +20,12 @@ Each contract has one home:
 | Post-1.0 work | Chapter [11](11-risks-and-technical-debt.md) |
 
 An active change's proposal, design, and specs own its planned behavior until it
-archives. Docs describe the current checkout; they do not present a planned or
+archives. Docs describe the project; they do not present a planned or
 completed change as pending work.
 
 ## Current State
 
-The checkout contains the Rust CLI, the Git and Fossil adapters, the change
+The project contains the Rust CLI, the Git and Fossil adapters, the change
 lifecycle and archive proof, the deterministic specification tools, the
 skills-only guidance pipeline, the arc42 addon, the development record and
 report, the clean-room trial commands, and the advisory outline report.
@@ -47,14 +47,15 @@ Current architecture facts that recur in the chapters:
 - Review and archive reuse a fresh change verification receipt while its tested
   content is unchanged; archive runs its merged scopes against the published
   candidate.
-- Clean-room spec copies are written by `givn ise rebuild-all` or
-  `givn ise rebuild-component` from one revision and compared by `givn ise
-  compare`; the `ise-manifest/v1` manifest carries per-path Specification and
-  End-to-end (E2E) checksums and lives outside the copy and the checkout.
+- Spec copies are written by `givn ise rebuild-all` or `givn ise
+  rebuild-component` from one selected revision and compared by `givn ise
+  compare`; the spec-copy manifest carries per-path Specification and
+  End-to-end (E2E) checksums and lives outside the copy and the project working
+  tree.
 - With `ise` effective, `givn archive` refuses before mutation when a declared
-  Specification path in `givn/specification.yaml` would be isolated by the change
+  manifest entry in `givn/specification.yaml` would be isolated by the change
   move, naming the entry and the archived path to declare instead; the served
-  `ise` guidance states that Specification paths must survive archiving.
+  `ise` guidance states that manifest entries must survive archiving.
 - The outline report is advisory. There is no outline review gate, verdict,
   waiver, baseline, or forced reviewer context.
 - The supported migration baseline is 1.0. The shipped migration catalog is

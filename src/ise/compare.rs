@@ -22,6 +22,7 @@ use crate::e2e_boundary::{Glob, e2e_file_set, glob_matches_path_or_parent};
 use crate::gherkin::content::e2e_scenario_digest;
 use crate::scm::EntryKind;
 
+use super::contract::CONTRACT_PATH;
 use super::manifest;
 use super::require_addons;
 
@@ -90,6 +91,7 @@ pub fn compare(project_root: &Path, request: &CompareRequest) -> Result<CompareR
         require_no_added_specification_paths(&copy, &recorded, &declaration)?;
     }
     require_kept_paths_present(&copy, &recorded)?;
+    require_verification_contract(&recorded, &copy)?;
 
     let mut specification: BTreeMap<String, Difference> = BTreeMap::new();
     let mut end_to_end: BTreeMap<String, Difference> = BTreeMap::new();
@@ -284,7 +286,7 @@ impl Checkout {
 
 /// The manifest must belong to the copy it describes: its recorded
 /// `copy_directory` resolves to the canonical `--copy` argument.
-fn require_recorded_copy(
+pub(super) fn require_recorded_copy(
     manifest: &Path,
     recorded: &manifest::Manifest,
     copy: &Path,
@@ -321,6 +323,33 @@ fn require_manifest_outside_the_copy(manifest: &Path, copy: &Path) -> Result<()>
     )
 }
 
+/// Refuse a copy whose generated verification contract is missing or differs
+/// from the manifest's recorded checksum. An older manifest without a
+/// verification record is still valid for input comparison.
+fn require_verification_contract(recorded: &manifest::Manifest, copy: &Path) -> Result<()> {
+    let Some(verification) = &recorded.verification else {
+        return Ok(());
+    };
+    if verification.path != CONTRACT_PATH {
+        bail!(
+            "the manifest records the verification contract at '{}'; the only contract path is '{}'",
+            verification.path,
+            CONTRACT_PATH
+        );
+    }
+    match local_checksum(copy, &verification.path)? {
+        None => bail!(
+            "the spec copy lost the verification contract '{}'; the manifest records it",
+            verification.path
+        ),
+        Some(observed) if observed != verification.checksum => bail!(
+            "the verification contract '{}' changed after the manifest was written",
+            verification.path
+        ),
+        Some(_) => Ok(()),
+    }
+}
+
 /// The spec copy's declaration: the added-file refusal is read with the
 /// declaration the copy carries, not the checkout's. A declaration the copy
 /// does not carry, or one the loader refuses, contributes no roles: the
@@ -345,11 +374,14 @@ fn require_no_added_specification_paths(
         .flat_map(|(_, patterns)| patterns.iter())
         .map(|pattern| Glob::compile(pattern))
         .collect();
-    let listed: BTreeSet<&str> = recorded
+    let mut listed: BTreeSet<&str> = recorded
         .specification_files
         .iter()
         .map(String::as_str)
         .collect();
+    if let Some(verification) = &recorded.verification {
+        listed.insert(verification.path.as_str());
+    }
     let added: Vec<String> = copy_paths(copy)?
         .into_iter()
         .filter(|path| !listed.contains(path.as_str()))

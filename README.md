@@ -1,5 +1,5 @@
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 86%](https://img.shields.io/badge/line%20coverage-86%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 85%](https://img.shields.io/badge/line%20coverage-85%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
@@ -101,9 +101,12 @@ fail if the project configuration drifts from the record. An operator can use
 | `givn/commands.yaml` | Define project-specific test runner, coverage, and startup commands. |
 | `givn skills sync` | Regenerate agent skill files after changing config. |
 | `givn commit -m "<msg>" <paths...>` | Commit explicit paths for a behavior batch without sweeping in unrelated working-tree edits. |
-| `givn ise rebuild-all --into <dir> [--manifest <file>]` | Write the spec copy in which the whole product is rebuilt: every declared source root is removed from it. |
-| `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one component is rebuilt: only the named paths are removed, and neighbouring components and their contracts stay. |
-| `givn ise compare --manifest <file> --copy <dir>` | Report every difference between the manifest and the copy's Specification files, the checkout's Specification files, and the End-to-end (E2E) tests. |
+| `givn ise rebuild-all --into <dir> [--manifest <file>]` | Write the spec copy in which the System is rebuilt: every declared `source:` entry is removed from it. |
+| `givn ise rebuild-component <path>... --into <dir> [--manifest <file>]` | Write the spec copy in which one Component is rebuilt: only the named paths are removed, and neighbouring Components and their Component Interfaces stay. |
+| `givn ise compare --manifest <file> --copy <dir> [--result <file>] [--inputs-only]` | Report frozen-input equality: the Specification files in the spec copy, the Specification files in the project working tree, and the End-to-end (E2E) tests. When both match, execute the generated verification contract and write the whole-system trial result beside the manifest; `--inputs-only` stops at input equality and prints `Trial result: unverified`. |
+| `givn ise verify-trial --manifest <file> --copy <dir> --result <file>` | Execute the generated verification contract with an explicit result path: exact declared component and End-to-end counts, zero failed or skipped, and per-tier coverage. |
+
+The `ise` addon applies [The Ise Principle](https://iseprinciple.org) to a Givn project. The site is framework-agnostic and names no Givn command, flag, or record.
 
 ## Documentation
 
@@ -131,7 +134,7 @@ As a special exception under section 7 of the GNU General Public License, versio
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 86% (21774/25186)
+Line coverage: 85% (22922/26865)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:

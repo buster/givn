@@ -1,0 +1,15 @@
+Scenario: Verifier compares the spec copy with the manifest and runs the trial
+argv: givn ise compare --manifest /tmp/.tmpn46oQj/manifest.yaml --copy /tmp/.tmpn46oQj/trial
+cwd (fixture project root): /tmp/.tmp239fog
+binary: the compiled `givn` the scenario spawns (GIVN_BIN)
+exit code: 0
+
+--- stdout (raw) ---
+Specification files: match
+End-to-end tests: match
+Component scenarios: 1/1 executed, 0 failed, 0 skipped
+End-to-end tests: 1/1 executed, 0 failed, 0 skipped
+Trial result: passed
+
+--- stderr (raw) ---
+

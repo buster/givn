@@ -48,6 +48,12 @@ Required branches — cover every one (or explicitly record "no issue found"):
   Does the design name a concrete strict-mode mechanism, a not-implemented stub
   pattern, and a single-scenario run command? Missing or vague on any of the
   three is a finding — it is the root cause of fabricated changes.
+- **Two-tier runner coverage** — read the design's runner command and confirm
+  it executes the retained `givn/specs/**` component corpus, not only unit
+  tests or the frozen `@e2e` package. When a `source:` root is replaced, its
+  coupled step definitions, fakes, and fixture builders are rebuild work. A
+  design that leaves the component corpus without a runner is a finding, even
+  when the change records `Behavior change: none` and skips delta specs.
 - **E2E fidelity** — read the spec instruction served by
   `givn instructions specs --change <id>` and verify its normalized action
   scope, interface type, real driver, and primary-assertion rules are applied
@@ -83,7 +89,7 @@ Required branches — cover every one (or explicitly record "no issue found"):
   implementation tests are the only exceptions. A component with a named
   responsibility and a consumer outside itself but no contract is a finding; an
   internal helper with no contract is correct. When the change has an external
-  service or more than one external boundary, the design names each port and
+  service or more than one external boundary, the design names each Component Interface and
   adapter. A single-file implementation is accepted only for one external
   dependency and simple business rules; a complex change implemented as one
   unit is a finding.
@@ -96,10 +102,11 @@ Required branches — cover every one (or explicitly record "no issue found"):
   treated as an open question is a finding.
 {{/if}}
 {{#if addons.ise}}
-- **change strategy** — with `ise` effective, verify that the change records
-  exactly one `change strategy` as a `Decides D<n>` entry. An unresolved or
-  unrecorded change strategy is a finding. A rebuilding change with no recorded
-  `Ise Test` mode (`Dry-Run Ise` or `Full replacement`) is a finding.
+- **Ise rebuild decision** — with `ise` effective, verify that the change
+  records exactly one `Ise rebuild decision` as a `Decides D<n>` entry. An
+  unresolved or unrecorded decision is a finding. A rebuilding change with no
+  recorded `Rebuilt code` line (`discard` or `ship`) is a finding, and a
+  `No rebuild` change that records one is a finding.
 {{/if}}
 - **Visual design contract** — for a change that introduces or visibly changes
   a screen, `design.md` must contain the `## Visual Design Contract` section

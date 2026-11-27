@@ -697,8 +697,11 @@ pub(crate) fn verify_trial_project() -> common::TestEnv {
     std::fs::write(env.path(".git/info/exclude"), "givn/config.yaml\n")
         .expect("write the Git exclude fixture");
     std::fs::create_dir_all(env.path("givn")).expect("create givn/");
-    std::fs::write(env.path("givn/config.yaml"), "addons:\n  ise: true\n")
-        .expect("write the fixture config");
+    std::fs::write(
+        env.path("givn/config.yaml"),
+        "addons:\n  ise: true\n  coverage: false\n",
+    )
+    .expect("write the fixture config");
     std::fs::write(env.path("givn/specification.yaml"), verify_declaration())
         .expect("write the fixture declaration");
     env
@@ -714,15 +717,91 @@ fn verify_declaration() -> String {
         .to_string()
 }
 
-/// Commit the six files the verify fixtures freeze: the `@e2e` feature, the
-/// contract document, the two e2e package files, one kept source file, and
-/// the replaced source file. Returns the revision identifier.
+/// The verification fixture's feature: one component scenario and one
+/// `@e2e` scenario, so the component tier has a corpus to execute.
+pub(crate) const TRIAL_FEATURE_CONTENT: &str = "Feature: demo\n\n  Scenario: component\n    Given nothing\n\n  @e2e\n  Scenario: demo\n    Given nothing\n";
+
+/// The commands the verification fixture declares: a component runner inside
+/// the copy, a frozen End-to-end runner in the checkout, and a product file.
+pub(crate) const TRIAL_COMMANDS: &str = "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n  product_path: \"target/debug/gate-product\"\n  product_env: \"GIVN_BIN\"\n";
+
+/// The component runner the builder writes into the copy: it builds the
+/// declared product, parses the frozen feature, and executes the
+/// `Given nothing` step for every non-`@e2e` scenario.
+pub(crate) const TRIAL_COMPONENT_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+mkdir -p target/debug
+printf 'rebuilt gate product\n' > target/debug/gate-product
+names=""
+sep=""
+scenario=""
+e2e=0
+skip=0
+step_nothing() {
+  :
+}
+while IFS= read -r line; do
+  case "$line" in
+    "  @e2e")
+      e2e=1
+      ;;
+    "  Scenario: "*)
+      if [ "$e2e" -eq 1 ]; then
+        e2e=0
+        skip=1
+        scenario=""
+        continue
+      fi
+      skip=0
+      title=${line#  Scenario: }
+      scenario=$title
+      names="$names$sep\"$title\""
+      sep=","
+      ;;
+    "    Given nothing")
+      if [ "$skip" -eq 1 ]; then
+        continue
+      fi
+      [ -n "$scenario" ] || { echo "step outside a scenario" >&2; exit 1; }
+      step_nothing
+      ;;
+    "    "*)
+      echo "unbound step: $line" >&2
+      exit 1
+      ;;
+  esac
+done < givn/specs/demo/spec.feature
+printf '{"scope":"component","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s]}\n' "$names" > "$GIVN_RESULT_FILE"
+"#;
+
+/// The frozen End-to-end runner: it names the `@e2e` scenario and records the
+/// rebuilt product digest it drove.
+pub(crate) const TRIAL_E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/demo/spec.feature)
+product=${GIVN_TRIAL_PRODUCT:-${GIVN_BIN:-}}
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+"#;
+
+/// Commit the verification fixture's frozen inputs and commands. Returns the
+/// revision identifier.
 pub(crate) fn commit_verify_trial_revision(env: &common::TestEnv) -> String {
     commit_files(
         env,
         &[
             (DECLARATION_PATH, &verify_declaration()),
-            (FOSSIL_FEATURE_PATH, FOSSIL_FEATURE_CONTENT),
+            ("givn/commands.yaml", TRIAL_COMMANDS),
+            (FOSSIL_FEATURE_PATH, TRIAL_FEATURE_CONTENT),
             (REFERENCE_PATH, "reference\n"),
             (VERIFY_E2E_MANIFEST_PATH, "[package]\nname = \"e2e\"\n"),
             (VERIFY_E2E_STEP_PATH, "// e2e steps\n"),
@@ -731,6 +810,27 @@ pub(crate) fn commit_verify_trial_revision(env: &common::TestEnv) -> String {
         ],
         "fixture: verify trial revision",
     )
+}
+
+/// Install the trial scripts after preparation: the component runner inside
+/// the copy and the frozen End-to-end runner in the checkout.
+pub(crate) fn write_trial_scripts(env: &common::TestEnv, copy: &Path) {
+    for (path, content) in [
+        (copy.join("scripts/verify.sh"), TRIAL_COMPONENT_SCRIPT),
+        (env.path("scripts/e2e.sh"), TRIAL_E2E_SCRIPT),
+    ] {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("create script parent");
+        }
+        std::fs::write(&path, content).expect("write trial script");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut permissions = std::fs::metadata(&path).unwrap().permissions();
+            permissions.set_mode(0o755);
+            std::fs::set_permissions(&path, permissions).expect("make the trial script executable");
+        }
+    }
 }
 
 /// The e2e step files the broad-package fixture commits beside its manifest,

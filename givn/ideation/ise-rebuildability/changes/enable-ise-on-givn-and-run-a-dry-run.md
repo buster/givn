@@ -1,6 +1,6 @@
 # Change seed: enable-ise-on-givn-and-run-a-dry-run
 
-Status: ready
+Status: proposed by enable-ise-and-run-the-givn-self-rebuild
 
 - Use-case IDs: `prepare-an-ise-test` (`clean-room-preparation`,
   `trial-input-verification`), `declare-the-specification`

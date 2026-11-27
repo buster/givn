@@ -18,11 +18,19 @@ use crate::config::overlay::load_effective_at;
 use crate::scm::{Backend, EntryKind, RevisionEntry};
 
 mod compare;
+mod contract;
 mod manifest;
 mod partition;
+mod verify;
+
+pub(crate) mod ship;
 
 pub use compare::{CompareReport, CompareRequest, Difference, DifferenceKind, compare};
 pub(crate) use manifest::abbreviate;
+pub use verify::{
+    CoverageNumbers, TierReport, TrialCoverage, TrialReport, VerifyRequest, prepare_trial_result,
+    verify_trial,
+};
 
 /// What one rebuild command replaces.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,6 +64,7 @@ pub struct Admission {
     pub revision: String,
     pub declaration: SpecificationDeclaration,
     pub entries: Vec<RevisionEntry>,
+    pub manifest: Manifest,
 }
 
 /// One successful preparation's report: the fixed lines, the two checksum
@@ -99,6 +108,16 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
     )?;
     let (copy_directory, manifest_path) = require_write_targets(project_root, request)?;
     let copy_paths = placement.copy_paths();
+    if admission
+        .entries
+        .iter()
+        .any(|entry| entry.path == contract::CONTRACT_PATH)
+    {
+        bail!(
+            "the revision tracks '{}', which is reserved for the generated verification contract",
+            contract::CONTRACT_PATH
+        );
+    }
     require_copy_set(&copy_paths, &admission.entries)?;
 
     let revision_paths: Vec<&str> = admission
@@ -143,6 +162,13 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
         .into_iter()
         .collect();
     let scenarios = manifest::scenario_digests(&admission.declaration, &admission.entries, &blobs)?;
+    let contract = contract::Contract::build(
+        &admission.manifest,
+        &admission.revision,
+        &admission.declaration,
+        &admission.entries,
+        &blobs,
+    )?;
 
     let mut end_to_end_files: Vec<String> =
         e2e_paths.iter().chain(scenarios.keys()).cloned().collect();
@@ -190,6 +216,14 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
             paths.join(", ")
         );
     }
+    let contract_path = copy_directory.join(contract::CONTRACT_PATH);
+    let contract_checksum = match contract.write(&contract_path) {
+        Ok(checksum) => checksum,
+        Err(error) => {
+            remove_created_copy(&copy_directory)?;
+            return Err(error);
+        }
+    };
     if let Some(path) = &manifest_path {
         let document = manifest::Manifest {
             scope: manifest::CONTENT_SCOPE.to_string(),
@@ -204,23 +238,26 @@ pub fn rebuild(project_root: &Path, request: &RebuildRequest) -> Result<Report> 
             end_to_end_checksum,
             copy_directory: copy_directory.to_string_lossy().into_owned(),
             givn_version: env!("CARGO_PKG_VERSION").to_string(),
+            verification: Some(manifest::Verification {
+                path: contract::CONTRACT_PATH.to_string(),
+                checksum: contract_checksum,
+            }),
         };
         if let Err(error) = document.write(path) {
-            remove_created_copy(&copy_directory, path)?;
+            remove_created_copy(&copy_directory)?;
             return Err(error);
         }
     }
     Ok(report)
 }
 
-/// A failed manifest write leaves no spec copy behind: the copy this command
-/// created is removed before the refusal surfaces.
-fn remove_created_copy(copy: &Path, manifest: &Path) -> Result<()> {
+/// A failed contract or manifest write leaves no spec copy behind: the copy
+/// this command created is removed before the refusal surfaces.
+fn remove_created_copy(copy: &Path) -> Result<()> {
     std::fs::remove_dir_all(copy).with_context(|| {
         format!(
-            "remove the spec copy '{}' after the manifest '{}' could not be written",
-            copy.display(),
-            manifest.display()
+            "remove the spec copy '{}' after its evidence could not be written",
+            copy.display()
         )
     })
 }
@@ -308,6 +345,7 @@ fn admit(project_root: &Path, at: Option<&str>) -> Result<Admission> {
         revision,
         declaration,
         entries,
+        manifest,
     })
 }
 

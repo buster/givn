@@ -114,6 +114,14 @@ pub struct Verify {
     /// Features path passed to the runner via GIVN_FEATURES.
     #[serde(default = "Verify::default_features_path")]
     pub features_path: String,
+    /// Rebuilt product path relative to the spec copy; the trial gate requires
+    /// it and binds the frozen End-to-end run to its bytes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product_path: Option<String>,
+    /// Environment variable through which the End-to-end command receives the
+    /// rebuilt product path (default `GIVN_BIN`).
+    #[serde(default = "Verify::default_product_env")]
+    pub product_env: String,
 }
 
 impl Default for Verify {
@@ -122,6 +130,8 @@ impl Default for Verify {
             command: "givn missing-testrunner".to_string(),
             e2e_command: "givn missing-e2e-runner".to_string(),
             features_path: Self::default_features_path(),
+            product_path: None,
+            product_env: Self::default_product_env(),
         }
     }
 }
@@ -133,6 +143,10 @@ impl Verify {
 
     fn default_features_path() -> String {
         "givn/specs".to_string()
+    }
+
+    fn default_product_env() -> String {
+        "GIVN_BIN".to_string()
     }
 }
 
@@ -235,6 +249,10 @@ pub struct Coverage {
     /// Cobertura XML.
     #[serde(default = "default_cobertura_output")]
     pub output_path: String,
+    /// The End-to-end suite runs the product as a subprocess and cannot
+    /// instrument it. A 0-line e2e report is accepted only when this is true.
+    #[serde(default)]
+    pub e2e_subprocess: bool,
 }
 
 fn sentinel() -> String {
@@ -261,6 +279,7 @@ impl Default for Coverage {
             non_e2e_path: default_non_e2e_path(),
             e2e_path: default_e2e_path(),
             output_path: default_cobertura_output(),
+            e2e_subprocess: false,
         }
     }
 }

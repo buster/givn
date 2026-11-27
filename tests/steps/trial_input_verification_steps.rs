@@ -704,9 +704,67 @@ fn verifier_compares(world: &mut GivnWorld) {
             manifest.as_str(),
             "--copy",
             copy.as_str(),
+            "--inputs-only",
         ],
     );
     world.last_output = Some(out);
+}
+
+#[when("the verifier compares the spec copy with the manifest and runs the trial")]
+fn verifier_compares_and_runs_the_trial(world: &mut GivnWorld) {
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let result = trial_result_path(world).to_string_lossy().into_owned();
+    let out = common::run_givn(
+        project_env(world),
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.as_str(),
+            "--copy",
+            copy.as_str(),
+            "--result",
+            result.as_str(),
+        ],
+    );
+    world.last_output = Some(out);
+}
+
+#[when(
+    "the verifier compares the spec copy with the manifest and writes the trial result into the copy"
+)]
+fn verifier_compares_and_writes_the_result_into_the_copy(world: &mut GivnWorld) {
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let result = trial(world).join("trial-result.json");
+    let result = result.to_string_lossy().into_owned();
+    let out = common::run_givn(
+        project_env(world),
+        &[
+            "ise",
+            "compare",
+            "--manifest",
+            manifest.as_str(),
+            "--copy",
+            copy.as_str(),
+            "--result",
+            result.as_str(),
+        ],
+    );
+    world.last_output = Some(out);
+}
+
+#[then("the comparison writes no trial result")]
+fn comparison_writes_no_trial_result(world: &mut GivnWorld) {
+    let manifest = record(world);
+    let name = manifest.file_name().expect("manifest file name");
+    let path = manifest.with_file_name(format!("{}.trial-result.json", name.to_string_lossy()));
+    assert!(
+        !path.exists(),
+        "the comparison wrote a trial result at {}",
+        path.display()
+    );
 }
 
 #[when(
@@ -1136,4 +1194,227 @@ fn comparison_fails_naming_the_manifest_and_the_copy(world: &mut GivnWorld) {
     let manifest = manifest_argument(world);
     let copy = trial(world).canonicalize().expect("resolve the spec copy");
     comparison_refused_naming(world, &[manifest.as_str(), copy.to_string_lossy().as_ref()]);
+}
+
+/// The result path the trial gate writes beside the prepared copy.
+fn trial_result_path(world: &GivnWorld) -> PathBuf {
+    world.ise_clean_room.sibling_target("trial-result.json")
+}
+
+/// Set up the trial-gate fixture, commit it, and run `rebuild-all`.
+fn prepare_trial_gate(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::trial_gate_project());
+    ise_clean_room_support::commit_trial_gate_revision(project_env(world));
+    world.ise_clean_room.ensure_targets();
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let out = common::run_givn(
+        project_env(world),
+        &[
+            "ise",
+            "rebuild-all",
+            "--at",
+            "HEAD",
+            "--into",
+            copy.as_str(),
+            "--manifest",
+            manifest.as_str(),
+        ],
+    );
+    assert!(
+        out.status.success(),
+        "preparing the trial-gate copy failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_output = Some(out);
+}
+
+fn run_trial_verification(world: &mut GivnWorld, component_not_run: Option<&str>) {
+    let copy = trial(world).to_string_lossy().into_owned();
+    let manifest = record(world).to_string_lossy().into_owned();
+    let result = trial_result_path(world).to_string_lossy().into_owned();
+    let mut args = vec![
+        "ise",
+        "verify-trial",
+        "--manifest",
+        manifest.as_str(),
+        "--copy",
+        copy.as_str(),
+        "--result",
+        result.as_str(),
+    ];
+    if let Some(reason) = component_not_run {
+        args.push("--component-not-run");
+        args.push(reason);
+    }
+    let out = common::run_givn(project_env(world), &args);
+    world.last_output = Some(out);
+}
+
+fn trial_record(world: &GivnWorld) -> serde_json::Value {
+    let path = trial_result_path(world);
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the trial result {}: {error}", path.display()));
+    serde_json::from_str(&text)
+        .unwrap_or_else(|error| panic!("parse the trial result {}: {error}", path.display()))
+}
+
+#[given(
+    "a committed verification fixture with ten component scenarios and one End-to-end scenario"
+)]
+fn committed_verification_fixture(world: &mut GivnWorld) {
+    world.env = Some(ise_clean_room_support::trial_gate_project());
+    ise_clean_room_support::commit_trial_gate_revision(project_env(world));
+}
+
+#[when("the verifier prepares a trial with ten component scenarios and one End-to-end scenario")]
+fn verifier_prepares_the_gate_trial(world: &mut GivnWorld) {
+    prepare_trial_gate(world);
+}
+
+#[then(
+    regex = r#"^the verification contract declares ([0-9]+) component execution units? and ([0-9]+) End-to-end execution units?$"#
+)]
+fn contract_declares_counts(world: &mut GivnWorld, component: usize, end_to_end: usize) {
+    let path = trial(world).join("givn/ise-verification.yaml");
+    let text = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read the contract {}: {error}", path.display()));
+    let contract: serde_yaml_ng::Value = serde_yaml_ng::from_str(&text)
+        .unwrap_or_else(|error| panic!("parse the contract {}: {error}", path.display()));
+    assert_eq!(
+        contract["component"]["execution_units"].as_u64(),
+        Some(component as u64)
+    );
+    assert_eq!(
+        contract["end_to_end"]["execution_units"].as_u64(),
+        Some(end_to_end as u64)
+    );
+}
+
+#[when("the agent writes a component verification script that writes no runner result")]
+fn agent_writes_a_component_script_without_a_result(world: &mut GivnWorld) {
+    ise_clean_room_support::write_trial_gate_component_script(&trial(world), 0);
+}
+
+#[when(
+    regex = r#"^the agent writes a component verification script reporting ([0-9]+) executed scenarios$"#
+)]
+fn agent_writes_a_component_script_with_counts(world: &mut GivnWorld, total: usize) {
+    ise_clean_room_support::write_trial_gate_component_script(&trial(world), total);
+}
+
+#[when("the verifier runs the trial verification")]
+fn verifier_runs_trial_verification(world: &mut GivnWorld) {
+    run_trial_verification(world, None);
+}
+
+#[when(regex = r#"^the verifier runs the trial verification with the not-run decision "([^"]+)"$"#)]
+fn verifier_runs_trial_verification_not_run(world: &mut GivnWorld, reason: String) {
+    run_trial_verification(world, Some(&reason));
+}
+
+#[then(regex = r#"^the trial verification succeeds and prints "([^"]+)"$"#)]
+fn trial_verification_succeeds_and_prints(world: &mut GivnWorld, line: String) {
+    assert_eq!(
+        output(world).status.code(),
+        Some(0),
+        "stderr={}",
+        stderr(world)
+    );
+    assert!(
+        stdout(world).lines().any(|printed| printed == line),
+        "stdout {:?} does not print {line:?}",
+        stdout(world)
+    );
+}
+
+#[then(regex = r#"^the trial verification fails and exits 1, naming "([^"]+)"$"#)]
+fn trial_verification_fails_naming(world: &mut GivnWorld, needle: String) {
+    assert_eq!(
+        output(world).status.code(),
+        Some(1),
+        "stderr={}",
+        stderr(world)
+    );
+    assert!(
+        stderr(world).contains(&needle),
+        "stderr {:?} does not name {needle:?}",
+        stderr(world)
+    );
+}
+
+#[then(regex = r#"^the trial result records "clean": (true|false)$"#)]
+fn trial_result_records_clean(world: &mut GivnWorld, clean: String) {
+    let record = trial_record(world);
+    assert_eq!(
+        record["clean"].as_bool(),
+        Some(clean == "true"),
+        "trial result {record}"
+    );
+}
+
+#[then(regex = r#"^the trial result records "component_executed=([0-9]+)/([0-9]+)"$"#)]
+fn trial_result_records_component_executed(
+    world: &mut GivnWorld,
+    executed: usize,
+    declared: usize,
+) {
+    let record = trial_record(world);
+    assert_eq!(
+        record["component"]["executed"].as_u64(),
+        Some(executed as u64)
+    );
+    assert_eq!(
+        record["component"]["declared"].as_u64(),
+        Some(declared as u64)
+    );
+}
+
+#[then(regex = r#"^the command prints no "([^"]+)" line$"#)]
+fn command_prints_no_line(world: &mut GivnWorld, needle: String) {
+    assert!(
+        !stdout(world).lines().any(|printed| printed == needle),
+        "stdout {:?} prints {needle:?}",
+        stdout(world)
+    );
+}
+
+#[then("comparison prints a \"Trial result: unverified\" line")]
+fn comparison_prints_unverified(world: &mut GivnWorld) {
+    assert!(
+        stdout(world)
+            .lines()
+            .any(|printed| printed.starts_with("Trial result: unverified")),
+        "stdout {:?} prints no unverified trial line",
+        stdout(world)
+    );
+}
+
+#[when("the agent writes a count-only component verification script")]
+fn agent_writes_a_count_only_component_script(world: &mut GivnWorld) {
+    ise_clean_room_support::write_trial_gate_count_only_component_script(&trial(world));
+}
+
+#[then("the trial result names ten component scenarios and the rebuilt product digest")]
+fn trial_result_names_scenarios_and_product(world: &mut GivnWorld) {
+    let record = trial_record(world);
+    let component = record["component"]["scenarios"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the component scenarios are not an array: {record}"));
+    assert_eq!(component.len(), 10, "component scenarios: {record}");
+    let end_to_end = record["end_to_end"]["scenarios"]
+        .as_array()
+        .unwrap_or_else(|| panic!("the End-to-end scenarios are not an array: {record}"));
+    assert_eq!(end_to_end.len(), 1, "End-to-end scenarios: {record}");
+    assert_eq!(end_to_end[0], "acceptance");
+    assert_eq!(
+        record["product"]["sha256"].as_str().map(str::len),
+        Some(64),
+        "product digest: {record}"
+    );
+}
+
+#[when("the agent writes an End-to-end verification script that reports another product")]
+fn agent_writes_a_foreign_product_e2e_script(world: &mut GivnWorld) {
+    ise_clean_room_support::write_trial_gate_foreign_product_script(project_env(world));
 }

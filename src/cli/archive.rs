@@ -1353,7 +1353,7 @@ fn ensure_change_receipt(
     change_dir: &Path,
     change: &str,
 ) -> Result<()> {
-    if crate::proof::change_verification_not_applicable(change_dir)? {
+    if !crate::proof::change_verification_required(project_root, change_dir)? {
         println!(
             "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
         );

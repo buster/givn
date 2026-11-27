@@ -1,0 +1,4 @@
+revision: 9822ffbb29effb0de320789c2882f9a6915714b0
+commit: docs(enable-ise-and-run-the-givn-self-rebuild): plan the change with the trial inputs
+git rev-parse 9822ffbb29effb0de320789c2882f9a6915714b0
+git ls-tree -r --name-only 9822ffbb29effb0de320789c2882f9a6915714b0 -- src tests | wc -l

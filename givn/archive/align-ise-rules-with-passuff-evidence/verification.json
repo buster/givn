@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "change": "align-ise-rules-with-passuff-evidence",
+  "status": "proven",
+  "candidate_revision": "f448825ecdfdebf054f2ca637fa24c16a64b1aaf",
+  "tested_revision": "f448825ecdfdebf054f2ca637fa24c16a64b1aaf",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 120,
+      "passed": 120,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 59.851222791
+    },
+    "regular": {
+      "status": "passed",
+      "total": 1294,
+      "passed": 1294,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 272.184678037
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 21923,
+    "line_valid": 25348,
+    "line_percent": 86
+  },
+  "scope_evidence": {
+    "e2e": {
+      "inputs": {
+        "revision": "f448825ecdfdebf054f2ca637fa24c16a64b1aaf",
+        "features_digest": "18537acd381700f82e35643e19bfb112693361e67a348dd3e881358fd10fad80",
+        "command_digest": "51b2e859b19e075941087080c06783f7ddfbe09da72abeeff74dd1e5987913ac",
+        "content_digest": "bff47af66fcb16b298e5e9eddd76029c3dc99bdcb43f974984be6e4daa171e92",
+        "scope": "e2e"
+      },
+      "result_digest": "c12b62c31beff785335cef77ed7603cb68b1220961052438fe8596d3f4e9dcba"
+    },
+    "regular": {
+      "inputs": {
+        "revision": "f448825ecdfdebf054f2ca637fa24c16a64b1aaf",
+        "features_digest": "18537acd381700f82e35643e19bfb112693361e67a348dd3e881358fd10fad80",
+        "command_digest": "917f6703608df37a10c1669eed1e777a674fb366751a173bb0e097edf9583767",
+        "content_digest": "bff47af66fcb16b298e5e9eddd76029c3dc99bdcb43f974984be6e4daa171e92",
+        "scope": "regular"
+      },
+      "result_digest": "7957325df1f868d92fd5f83310a5bf42a0ef1cc6c71b599b0e4dde2461ea2628"
+    }
+  },
+  "coverage_inputs": {
+    "revision": "f448825ecdfdebf054f2ca637fa24c16a64b1aaf",
+    "features_digest": "18537acd381700f82e35643e19bfb112693361e67a348dd3e881358fd10fad80",
+    "command_digest": "16b6296c6b3d3f329e8b035453b00bf9212254940aef50d3404ae7f509a74424",
+    "content_digest": "bff47af66fcb16b298e5e9eddd76029c3dc99bdcb43f974984be6e4daa171e92",
+    "scope": "coverage"
+  },
+  "merge_completed": true,
+  "merged_deltas": [],
+  "merge_in_progress": null,
+  "merge_plan": [],
+  "merge_targets": {},
+  "started_at_unix": 1794944011,
+  "finished_at_unix": 1794944652
+}

@@ -111,11 +111,46 @@ fn normalise_hook(entry: &HookEntry) -> (String, bool, Option<String>) {
     }
 }
 
-/// Resolve the `verify` built-in to `manifest.verify.command` and run it.
+/// Resolve the `verify` built-in to `manifest.verify.command` and run it under
+/// the runner-result contract.
+///
+/// The hook sets `GIVN_FEATURES`, `GIVN_RESULT_FILE`, and
+/// `GIVN_RESULT_SCOPE=change`. A command that exits 0 without a valid result is
+/// not a passing scope: the documented contract says exit code and file are
+/// both part of the result. The temporary result is not change evidence; it
+/// proves this hook run only.
 pub(crate) fn run_verify_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
     let command = &manifest.verify.command;
     println!("  Running: {command}");
-    run_shell_command(command, features_path)
+    let result_file = std::env::temp_dir().join(format!(
+        "givn-verify-hook-{}-{}.json",
+        std::process::id(),
+        crate::proof::unix_now()
+    ));
+    crate::proof::remove_previous_output(&result_file)?;
+    let result_path = result_file.to_string_lossy().into_owned();
+    let status = crate::subprocess::sh_streamed(
+        command,
+        &[
+            ("GIVN_FEATURES", features_path),
+            ("GIVN_RESULT_FILE", &result_path),
+            ("GIVN_RESULT_SCOPE", "change"),
+        ],
+        None,
+        "gate hook",
+    )?;
+    if !status.success() {
+        anyhow::bail!(
+            "command '{}' exited with status: {}",
+            command,
+            status.code().unwrap_or(-1)
+        );
+    }
+    crate::proof::RunnerResult::read(&result_file, "change").map_err(|error| {
+        anyhow::anyhow!("the verify hook wrote no valid runner result: {error}")
+    })?;
+    let _ = std::fs::remove_file(&result_file);
+    Ok(())
 }
 
 /// Resolve the `verify-e2e` built-in to `manifest.verify.e2e_command` and run it.
@@ -224,6 +259,8 @@ mod verify_e2e_hook_tests {
                 command: "true".to_string(),
                 e2e_command: e2e_command.to_string(),
                 features_path: "givn/specs".to_string(),
+                product_path: None,
+                product_env: "GIVN_BIN".to_string(),
             },
             run: Run::default(),
             addons: Addons::default(),

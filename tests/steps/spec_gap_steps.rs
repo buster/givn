@@ -100,7 +100,7 @@ fn review_stops_the_trial_on_an_e2e_test_defect(world: &mut GivnWorld) {
     let content = served_guidance(world);
     for marker in [
         "`E2E test defect` stops the Ise Test",
-        "restart the trial from the corrected suite",
+        "restart from the corrected suite",
     ] {
         assert!(
             content.contains(marker),

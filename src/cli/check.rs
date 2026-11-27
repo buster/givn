@@ -458,14 +458,18 @@ fn run_change_verification(
     preflight_readme_impact(&change_dir);
     let boundary = preflight_e2e_boundary(project_root, &change_dir, manifest)?;
     let not_applicable = crate::proof::change_verification_not_applicable(&change_dir)?;
+    let component_tier = crate::ise::ship::component_tier_required(project_root, &change_dir)?;
     let backend = crate::scm::select(project_root)?;
-    if not_applicable {
+    if not_applicable && component_tier.is_none() {
         println!(
             "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"
         );
         check_change_identity(&change_dir)?;
         check_scenario_commits(&backend, &change_dir)?;
         return Ok(());
+    }
+    if not_applicable {
+        check_change_identity(&change_dir)?;
     }
     check_scenario_commits(&backend, &change_dir)?;
     let offending: Vec<String> = backend
@@ -480,11 +484,19 @@ fn run_change_verification(
             offending.join(", ")
         );
     }
-    let rules = project_root
-        .join("givn/changes")
-        .join(change_id)
-        .join("specs");
-    let features = rules.to_string_lossy().into_owned();
+    let delta_dir = change_dir.join("specs");
+    let corpus_dir = project_root.join(crate::proof::COMPONENT_FEATURES_PATH);
+    let subject_dir = if not_applicable {
+        corpus_dir.clone()
+    } else {
+        delta_dir.clone()
+    };
+    let features = subject_dir.to_string_lossy().into_owned();
+    let subject_path = subject_dir
+        .strip_prefix(project_root)
+        .unwrap_or(&subject_dir)
+        .to_string_lossy()
+        .replace('\\', "/");
     let result_file = change_dir.join(crate::proof::CHANGE_RESULT_FILE);
     if let Some(parent) = result_file.parent() {
         std::fs::create_dir_all(parent)?;
@@ -496,7 +508,7 @@ fn run_change_verification(
         &backend,
         change_id,
         manifest,
-        &rules,
+        &subject_dir,
         &manifest.verify.command,
         "change",
     )?;
@@ -517,8 +529,31 @@ fn run_change_verification(
             status.code().unwrap_or(-1)
         );
     }
-    let result = crate::proof::RunnerResult::read(&result_file, "change")?;
-    let total = result.total;
+    let mut result = crate::proof::RunnerResult::read(&result_file, "change").map_err(|error| {
+        match (component_tier, not_applicable) {
+            (Some(declared), true) => {
+                anyhow::anyhow!("component_executed=0/{declared}: {error}")
+            }
+            _ => error,
+        }
+    })?;
+    let mut component = None;
+    if let Some(declared) = component_tier {
+        if not_applicable {
+            result = require_component_count(result, declared)?;
+        } else {
+            component = Some(run_component_tier(
+                manifest,
+                project_root,
+                &change_dir,
+                declared,
+            )?);
+        }
+        let executed = component
+            .as_ref()
+            .map_or(result.total, |evidence| evidence.result.total);
+        println!("  ✓ component corpus: component_executed={executed}/{declared}");
+    }
     let delta_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&change_dir.join("specs"));
     let (e2e_identity, e2e_scope) = match &boundary {
         None => (None, None),
@@ -544,17 +579,19 @@ fn run_change_verification(
         &backend,
         change_id,
         &current_manifest,
-        &rules,
+        &subject_dir,
         &current_manifest.verify.command,
         "change",
     )?;
     before.ensure_unchanged(&after)?;
+    let subject_digest = before.features_digest.clone();
     let head = before.revision;
     let tested_content_digest = before.content_digest;
     let e2e_summary = e2e_scope.as_ref().map(|scope| match scope.status.as_str() {
         "passed" => format!("{} scenario(s), 0 failed, 0 skipped", scope.total),
         status => status.to_string(),
     });
+    let total = result.total;
     crate::proof::write_change_receipt(
         project_root,
         &change_dir,
@@ -564,6 +601,9 @@ fn run_change_verification(
         &tested_content_digest,
         crate::proof::ChangeVerification {
             result,
+            features_path: subject_path,
+            features_digest: subject_digest,
+            component,
             e2e_identity,
             e2e_scope,
         },
@@ -574,6 +614,68 @@ fn run_change_verification(
         println!("  ✓ E2E verification: {summary}");
     }
     Ok(())
+}
+
+/// Refuse a component result whose executed count differs from the declared
+/// component units. The message shape matches the trial gate so one phrase
+/// names the refusal in both practices.
+fn require_component_count(
+    result: crate::proof::RunnerResult,
+    declared: usize,
+) -> anyhow::Result<crate::proof::RunnerResult> {
+    if result.total != declared as u64 {
+        anyhow::bail!(
+            "component_executed={}/{}: the retained component corpus executed a different \
+             number of scenarios than the Specification declares",
+            result.total,
+            declared
+        );
+    }
+    Ok(result)
+}
+
+/// Run the retained `givn/specs/**` corpus into its own result and return the
+/// evidence the receipt binds. A missing result refuses as
+/// `component_executed=0/<declared>`; a non-zero exit refuses by exit code.
+fn run_component_tier(
+    manifest: &crate::config::manifest::Manifest,
+    project_root: &std::path::Path,
+    change_dir: &std::path::Path,
+    declared: usize,
+) -> anyhow::Result<crate::proof::ChangeComponentEvidence> {
+    let corpus = project_root.join(crate::proof::COMPONENT_FEATURES_PATH);
+    let features = corpus.to_string_lossy().into_owned();
+    let result_file = change_dir.join(crate::proof::CHANGE_COMPONENT_RESULT_FILE);
+    if let Some(parent) = result_file.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let result_path = result_file.to_string_lossy().into_owned();
+    crate::proof::remove_previous_output(&result_file)?;
+    let status = crate::subprocess::sh_streamed(
+        &manifest.verify.command,
+        &[
+            ("GIVN_FEATURES", &features),
+            ("GIVN_RESULT_FILE", &result_path),
+            ("GIVN_RESULT_SCOPE", "change"),
+        ],
+        Some(project_root),
+        "component verification",
+    )?;
+    if !status.success() {
+        anyhow::bail!(
+            "component verification failed (exit code {}); the retained component corpus must \
+             pass before review",
+            status.code().unwrap_or(-1)
+        );
+    }
+    let result = crate::proof::RunnerResult::read(&result_file, "change")
+        .map_err(|error| anyhow::anyhow!("component_executed=0/{declared}: {error}"))?;
+    let result = require_component_count(result, declared)?;
+    Ok(crate::proof::ChangeComponentEvidence {
+        features_path: crate::proof::COMPONENT_FEATURES_PATH.to_string(),
+        features_digest: crate::proof::digest_features(&corpus)?,
+        result,
+    })
 }
 
 /// Capture the E2E identity a receipt binds: one digest per resolved package,
@@ -697,9 +799,10 @@ fn check_change_receipt(
     change_id: &str,
 ) -> anyhow::Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
-    if crate::proof::change_verification_not_applicable(&change_dir)? {
-        // No receipt exists for a change that declares no behavior change, so
-        // the boundary preflight is the acceptance check review can make.
+    if !crate::proof::change_verification_required(project_root, &change_dir)? {
+        // No receipt exists for a change that declares no behavior change and
+        // has no required component tier, so the boundary preflight is the
+        // acceptance check review can make.
         preflight_e2e_boundary(project_root, &change_dir, manifest)?;
         println!(
             "  changed-scenario verification: not applicable (Behavior change: none; specs explicitly skipped)"

@@ -16,8 +16,8 @@ Create a change ready to carry from intent to executable specification.
 
 The delta: the canonical `@e2e` policy names the declared E2E package
 boundary, the `ise` instruction keeps component scenarios in the Specification
-under that boundary, every change records one `Change strategy` with its
-`Ise Test` mode when it rebuilds, and a corrective change names exactly one
+under that boundary, every change records one `Ise rebuild decision` with its
+`Rebuilt code` line when it rebuilds, and a corrective change names exactly one
 `Spec gap` outcome before any fix.
 
 ## Trigger
@@ -61,11 +61,14 @@ The developer starts a new change.
 - Justified E2E reclassification aligns inventory, tasks, and review reasons and retains exactly one smoke for each real action; tags are never removed merely to evade verification.
 - Evidence matches the actual product interface: a real browser may render static content without invented state changes; a library's public API may be called in-process only from the declared `e2e` package; a call that needs production source becomes a `@component` scenario; CLI uses the binary and services their public protocol. Isolation, twins, and full-stack infrastructure are required only for dependencies that exist. Preserve applicable visual contracts, baselines, screenshots or transcripts, and honest obstacle reporting.
 - The scaffold records the effective add-on set with the change, so a change started while `ise` is off carries `ise: false` and no `ise` gate appears halfway through.
-- Every change records one `Change strategy`: `incremental modification`, `Constant Ise`, or a whole-product rebuild.
-- A rebuilding change records its `Ise Test` mode beside the strategy: `Dry-Run Ise` or `Full replacement`.
-- The strategy is the design's existing `Decides D<n>` entry; it names the affected consumers, the persisted state, and the rebuild boundary, and it adds no mandatory design field.
-- An unresolved or unrecorded change strategy, or a rebuild with no recorded mode, is a design-review finding, not a missing artifact.
-- Prose writes `change strategy` in full; a bare `strategy` names no domain decision.
+- Every change records one `Ise rebuild decision`: `No rebuild`, `Single-Component Rebuild`, or `Whole-system rebuild`.
+- A rebuilding change records a plain `Rebuilt code` line beside the decision: `discard` or `ship`; a `No rebuild` change records no such line.
+- The decision is the design's existing `Decides D<n>` entry; it names the affected consumers, the persisted state, and the rebuild boundary, and it adds no mandatory design field.
+- An unresolved or unrecorded Ise rebuild decision, or a rebuild with no recorded `Rebuilt code` line, is a design-review finding, not a missing artifact.
+- A `Single-Component Rebuild` with `Rebuilt code: ship` writes the updated Specification as the active change's delta, keeps the previous implementation in revision history, removes that Component's Source code and coupled unit tests from the project working tree, rebuilds the replacement there without consulting that history, verifies it against the active delta and the applicable End-to-end (E2E) scenarios, commits the replacement, and archives once; no spec copy, candidate revision, early archive merge, generated spec-copy manifest, repository view that hides history, or sandbox is required.
+- A passing working-tree verification proves the replacement's tested behaviour, not that the Specification alone was sufficient, because the previous implementation stays accessible in history; the review states that limitation.
+- If the Specification or the End-to-end (E2E) suite changes after the rebuild starts, the change records a new frozen revision and reruns the relevant verification against it.
+- Prose writes `Ise rebuild decision` in full; a bare `decision` names no domain decision.
 - A `Spec gap` record holds exactly one of `E2E test defect`, `implementation defect`, `specification defect`, or `acceptable undocumented change`, recorded before any fix.
 - The record names the artifact that is wrong, not who found it.
 - Only `specification defect` is a gap in the Specification; an `E2E test defect` is a gap in the test, an `implementation defect` is a gap in the build, and an `acceptable undocumented change` is no gap at all.
@@ -73,18 +76,19 @@ The developer starts a new change.
 - A `Spec gap` of `E2E test defect` recorded during an `Ise Test` stops that trial, and the trial restarts after the E2E test is corrected. The `e2e` package is part of the Specification, so the corrected test is a Specification correction, not an exception to the freeze.
 - No difference is closed as silent drift.
 - The `specs` instruction owns the canonical `@e2e` policy; the design, steps, and review instructions point at it and do not restate it.
-- With `ise` effective, the canonical `@e2e` policy states that the declared `e2e` role's package holds the runner and every `@e2e` step definition; that package links no production source, `verify.e2e_command` runs it, and an unbound or skipped step fails the run.
+- With `ise` effective, the canonical `@e2e` policy states that the declared `e2e` category's package holds the runner and every `@e2e` step definition; that package links no production source, `verify.e2e_command` runs it, and an unbound or skipped step fails the run.
 - Feature files stay shared, so an `@e2e` scenario and a component scenario may live in one `.feature` file; no phrase-uniqueness rule applies, because a step definition in the declared package cannot reach production source.
 - Component scenarios stay in the Specification unchanged; only their step definitions, fakes, and harness are implementation, never frozen, never diff-counted by the E2E identity, and a new feature's step bindings are expected.
-- Only the `End-to-end (E2E) test` package, as the declared `e2e` role resolves it, is frozen as acceptance authority during an `Ise Test`.
+- Only the `End-to-end (E2E) test` package, as the declared `e2e` category resolves it, is frozen as acceptance authority during an `Ise Test`.
 - The `ise` instruction states the same two-layer test boundary: `@e2e` scenarios run from the declared package and survive a rebuild, while component scenarios stay in the Specification and only their step definitions and fakes are replaceable.
 - The `ise`-effective policy content, the `ise`-off allowance, and the `ise` instruction's two-layer wording are variants of the canonical-guidance action; they add no interaction-inventory entry and are regular scenarios.
 
 ## Examples
 
-- A formatting fix records `Decides D2` with `change strategy incremental modification`; tasks 2 and 3 realize it, and no `Ise Test` runs.
-- A key-parser swap records `Decides D4` with `change strategy Constant Ise; Ise Test mode Dry-Run Ise`; tasks 3 to 5 realize it, and neighboring consumer contracts keep their wording.
-- A whole-product rewrite records `Decides D1` with `change strategy whole-product rebuild; Ise Test mode Full replacement`; tasks 2 to 9 realize it.
+- A formatting fix records `Decides D2` with `ise rebuild decision No rebuild`; tasks 2 and 3 realize it, and no `Ise Test` runs.
+- A key-parser swap records `Decides D4` with `ise rebuild decision Single-Component Rebuild; Rebuilt code: discard`; tasks 3 to 5 realize it, and neighboring consumer contracts keep their wording.
+- A whole-system rewrite records `Decides D1` with `ise rebuild decision Whole-system rebuild; Rebuilt code: ship`; tasks 2 to 9 realize it.
+- A parser swap recorded as `Single-Component Rebuild; Rebuilt code: ship` updates the parser's scenarios in the active delta, removes `src/parse.rs` and its unit tests from the working tree, rebuilds the file there, passes the delta and E2E scenarios, commits the replacement, and archives once; the review states that the passing checks prove behaviour, not that the Specification alone was sufficient.
 - An `Ise Test` reports a missing exit code that the contract never named: the record reads `Spec gap: specification defect`, and the corrective change adds the rule to the corpus. If the contract named the exit code, the record reads `Spec gap: implementation defect`, and the builder fixes it inside the trial with no corpus edit.
 - An undocumented column-spacing change that no consumer depends on records `Spec gap: acceptable undocumented change` and is added to the corpus.
 - A project whose `e2e` package imports a production module violates the canonical policy; the step moves to a `@component` scenario or drives the product through its real interface. An `@e2e` scenario and a component scenario may stay in one `.feature` file, because the package boundary, not the file, decides what the E2E runner executes.
@@ -102,9 +106,10 @@ The project remains unchanged when an invalid identity is rejected.
 ## Success guarantee
 
 The project has the requested change, ready to carry from intent to
-executable specification; the change's authoring contract requires one change
-strategy in the design ledger, a corrective change names one `Spec gap`
-outcome, and the canonical `@e2e` policy states the declared package boundary.
+executable specification; the change's authoring contract requires one Ise
+rebuild decision in the design ledger, a corrective change names one `Spec
+gap` outcome, and the canonical `@e2e` policy states the declared package
+boundary.
 
 ## Personas
 
@@ -115,7 +120,7 @@ outcome, and the canonical `@e2e` policy states the declared package boundary.
 ## Capabilities
 
 - change-release-note
-- change-strategy
+- ise-rebuild-decision
 - create-a-change
 - prose-consolidation
 - spec-gap
@@ -132,7 +137,7 @@ outcome, and the canonical `@e2e` policy states the declared package boundary.
 | change-release-note | create a change | A new change's proposal carries the release-note field |
 | change-release-note | read the proposal guidance | The proposal guidance requires a release note |
 | change-release-note | read the generated implementation guidance | The generated implementation guidance shares the release note |
-| change-strategy | read the design guidance for a rebuilding change (design-review guidance and the three strategy values are variants) | The design guidance requires one recorded change strategy |
+| ise-rebuild-decision | read the design guidance for a rebuilding change (design-review guidance and the three decision values are variants) | The design guidance requires one Ise rebuild decision |
 | spec-gap | read the review guidance after an Ise Test (the proposal guidance and the four outcomes are variants) | The review guidance requires one spec gap outcome before any fix |
 
 ## Includes
@@ -148,14 +153,14 @@ outcome, and the canonical `@e2e` policy states the declared package boundary.
 Implementing the change's product behavior; archiving the change
 (`archive-change`); managed upgrade (`maintain-project`); the `@e2e` boundary
 gate and the verification receipt (`verify-change`); declaring the
-Specification roles (`declare-the-specification`).
+Specification categories (`declare-the-specification`).
 
 ## Diagram
 
 ```mermaid
 flowchart LR
   Dev((Developer)) --> New[[Create change]]
-  New --> Strategy[[Record the change strategy]]
+  New --> Strategy[[Record the Ise rebuild decision]]
   New -->|corrective change| Gap[[Name one spec gap outcome]]
   Strategy --> Guidance[[Read canonical guidance]]
   Gap --> Guidance

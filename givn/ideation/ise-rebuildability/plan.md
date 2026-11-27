@@ -1193,15 +1193,29 @@ Compiled 2026-11-16 from the archive receipts, the `givn-harness` records, and t
 | `gap-03` post-migration observation | Neither `docs/reference.md` nor the suite states whether the first check after migration baselines existing activity | `/tmp/passuff-verify/gaps.txt`; `docs/reference.md` version-1 state row |
 | No self-rebuild | No `Dry-Run Ise` has run on Givn itself; `S13` change B is not started | `### S13` above |
 
+**Passuff and Givn trials (2026-11-17).** These supersede the "prepared only" and pre-qualification statements above.
+
+| Phase | Result | Source |
+|---|---|---|
+| S10 (Passuff `e2e` package qualification) | 20/20 seeded defects; 29/29 clean; both PTY viewports; no production dependency | `givn/archive/qualify-the-passuff-e2e-package/verification.json` |
+| S11 (Passuff `Constant Ise`) | 29/29 frozen, 215/215 component; the rebuilt key parser passed behind its unchanged contract; no kept source changed | `givn/archive/constant-ise-key-parser/verification.json` |
+| S12 (Passuff full-product dry run) | 28/29 frozen; 1 implementation, 4 specification, 23 acceptable undocumented, 0 `e2e` defect | `givn/archive/full-product-dry-run/verification.json` |
+| S13 (Givn self-rebuild under the updated rules) | Two attempts; attempt 2 rebuilt `givn 0.9.20`; 41/120 frozen; 79 implementation, 0 specification; every difference classified | `givn/archive/givn-self-rebuild-under-the-updated-rules/verification.json` |
+
 ## S14 decision
 
-Date: 2026-11-16. Evidence: `## S14 evidence`. The operator decides; this section stays open until the answer is recorded.
+Date: 2026-11-17. Evidence: `## S14 evidence`. The operator decides; this section stays open until the answer is recorded.
 
 1. **Keep `ise` opt-in** (`default_enabled: false`, unchanged).
 2. **Promote to default-on** for new projects.
 3. **Promote only after a bounded self-rebuild dry run** lands and is judged.
 
-**Answer.** Not recorded.
+**Answer. Option 1: keep `ise` opt-in.** The promotion rule requires every evidence row to hold, and two rows fail:
+
+- **S7 E1 (Catopia initial):** `ise=on` graded 13/14 on `R8` against `ise=off` 14/14, at one run per arm, with no scenarios or coverage recorded for either arm.
+- **S9 E3 (Catopia `Constant Ise`):** the follow-up arm chose incremental modification, so no replacement was tested.
+
+The Passuff S10 to S12 trials and the Givn S13 uplift are complete and classified, but they do not supply either failed row. `ise` remains opt-in; no promotion change is made.
 
 ## 12. Campaign results
 

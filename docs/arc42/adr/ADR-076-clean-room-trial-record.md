@@ -14,6 +14,18 @@ the record becomes the `ise-manifest/v1` manifest, and its canonical checksum
 bytes and additive-field compatibility rule are stated below. The original
 decision's ownership and placement stand.
 
+Amended 2026-11-18 by `ise-rebuild-decision-and-working-tree-ship`: the
+clean-room trial record is scoped to a **copy-based Ise Test**. A working-tree
+Ise Test builds in the project working tree, relies on an instruction not to
+consult accessible history, makes no clean-room claim, and produces no trial
+record; its evidence is the change verification receipt and the review record.
+The command contract, `ise-manifest/v1` scope, and per-path checksums below are
+unchanged. **Rejected alternative:** reserving `Ise Test` for the copy-based
+path. The working-tree practice is also a rebuild execution with the
+Specification and acceptance suite held fixed, so reserving the term would
+leave it without an execution noun; the term covers both practices, and the
+served instruction states the history-access limitation.
+
 ## Qualification
 
 ADR-QUALIFICATION: PASS
@@ -229,3 +241,93 @@ implementation of the stated rule.
 - Arc42 chapters [2](../02-architecture-constraints.md),
   [6](../06-runtime-view.md), and [8](../08-crosscutting-concepts.md) carry the
   current facts.
+
+## Amendment 2026-11-18: the verification contract and the trial gate
+
+The 2026-11-16 amendment fixed three commands and one `ise-manifest/v1` field
+set. It left the record able to prove frozen-input equality but unable to prove
+that the kept component corpus executed: a trial could pass with the frozen
+`@e2e` suite green and zero component scenarios run.
+
+This amendment adds one generated `givn/ise-verification.yaml` contract and one
+`givn ise verify-trial` command. The rebuild writes the contract into the spec
+copy and records its path and checksum in the manifest's optional
+`verification: {path, checksum}` field. The contract names the component and
+frozen End-to-end commands and feature paths, each tier's declared
+execution-unit count and scenario titles, the rebuilt `product.path` and
+`product.env`, and the coverage command and paths when the coverage addon is
+effective. An execution unit is one plain scenario or one Scenario Outline
+example row, matching the runner's expanded count.
+
+`givn ise compare` remains read-only. It verifies a recorded contract's
+checksum, excludes the reserved path from its added-Specification-file refusal,
+and prints `Trial result: unverified`; its exit 0 proves frozen-input equality
+only. `givn ise verify-trial` is the only command that executes the contract:
+it requires fresh results that name every declared scenario title, exact
+declared counts, zero failed and zero skipped, the rebuilt product bound by
+path and SHA-256, and declared coverage, re-checks the frozen inputs after the
+scripts, then writes `ise-trial-result/v1`. A count-only result or a foreign
+product refuses. A `--component-not-run` decision is refused when component
+units are declared. Givn does not inspect a `givn/trials/**` or other external
+report; external and manual reports are outside Givn enforcement. Only
+`verify-trial` writes the clean `ise-trial-result/v1`.
+
+The optional `verification` field's default is absence, so an older manifest
+still compares; `verify-trial` refuses an older manifest by name because it
+cannot prove the contract. The field belongs to `ise-manifest/v1` rather than a
+new scope because absence is a derivable default and the frozen-input fields
+are unchanged. **Rejected alternative:** executing the contract inside
+`givn ise compare`. A comparison of an untrusted copy would run copied scripts,
+and exit 0 would conflate input equality with trial success.
+
+### Amendment Confirmation
+
+`Preparation writes a runnable verification contract`, `Comparison labels
+frozen-input equality as unverified`, `Verification refuses a missing component
+runner`, `Verification records the exact declared counts`, `Verification
+refuses an exact count mismatch`, and `A not-run decision cannot replace
+declared component units` drive the real commands through the binary.
+
+## Amendment 2026-11-19: compare executes the trial by default
+
+The 2026-11-18 amendment made `givn ise compare` read-only and
+`givn ise verify-trial` the only executor. A whole-system Passuff rebuild then
+exited 0 from `compare` with `Trial result: unverified`, and the harness treated
+that as success without running the 215 component scenarios.
+
+This amendment supersedes the earlier rejected alternative. `givn ise compare`
+is the normal trial command: after frozen-input equality it executes the
+contract with the same gate as `verify-trial`, writes the
+`ise-trial-result/v1` record beside the manifest unless `--result` names a
+file, prints `Trial result: passed` only for `clean: true`, and exits 0 only
+then. A stale Givn-owned result at the selected path is revoked before the
+comparison, even when the inputs differ. The path must not be the manifest, lie
+inside the checkout or the copy, or be a symlink; only a regular Givn trial
+result and regular Givn runner siblings are removed, and an unrelated or
+malformed file refuses. `--inputs-only` keeps the 2026-11-18 read-only
+semantics: it executes nothing,
+writes no result, prints
+`Trial result: unverified (inputs only; no trial command was executed)`, and
+exits 0 only for matching inputs. `givn ise verify-trial` remains the explicit
+executor for a named result path and a `--component-not-run` decision.
+
+The earlier security objection is not dismissed: `compare` now runs the copy's
+declared component and End-to-end commands, so it is unsafe on an untrusted
+copy. The command's help, the reference, and the served ise guidance state
+that; `--inputs-only` is the safe inspection path. Default execution is the fix
+because a command that returned green on input equality alone was the observed
+failure mode.
+
+The component tier remains an execution gate, not a coverage ratio: a rebuild
+writes the component runner, step definitions, fakes, and fixture builders the
+frozen scenarios need, executes the component feature files in the copy, and
+records per-tier coverage when declared. A subprocess End-to-end report stays
+uninstrumented; a coverage number never substitutes for the declared scenario
+execution.
+
+### Amendment Confirmation
+
+`Verifier compares the spec copy with the manifest and runs the trial`,
+`Comparison labels frozen-input equality as unverified`, `Comparison refuses a
+missing component runner`, and `Comparison refuses a trial result inside the
+spec copy` drive the real commands through the binary.

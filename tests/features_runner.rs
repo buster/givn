@@ -51,10 +51,16 @@ async fn main() {
         return;
     }
     let features_path = features_path();
+    let executed: std::sync::Arc<std::sync::Mutex<Vec<String>>> =
+        std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    let recorded = std::sync::Arc::clone(&executed);
     let writer = GivnWorld::cucumber()
         .fail_on_skipped()
-        .before(|_, _, scenario, world| {
+        .before(move |_, _, scenario, world| {
             world.scenario_title = Some(scenario.name.clone());
+            if let Ok(mut names) = recorded.lock() {
+                names.push(scenario.name.clone());
+            }
             Box::pin(async {})
         })
         .filter_run(features_path, |_, _, scenario| {
@@ -62,8 +68,12 @@ async fn main() {
         })
         .await;
     let stats = writer.scenarios_stats();
+    let names = executed
+        .lock()
+        .map(|names| names.clone())
+        .unwrap_or_default();
     if let Ok(path) = std::env::var("GIVN_RESULT_FILE") {
-        write_result_file(&path, stats);
+        write_result_file(&path, stats, &names);
     }
     if stats.failed > 0 || stats.skipped > 0 {
         std::process::exit(1);
@@ -73,7 +83,7 @@ async fn main() {
 /// Write the fail-closed scope result Givn reconciles. The scope is provided
 /// by the project runner (`GIVN_RESULT_SCOPE`), never injected by Givn; Givn
 /// validates it against the expected scope.
-fn write_result_file(path: &str, stats: &cucumber::writer::summarize::Stats) {
+fn write_result_file(path: &str, stats: &cucumber::writer::summarize::Stats, scenarios: &[String]) {
     let scope = std::env::var("GIVN_RESULT_SCOPE").unwrap_or_else(|_| "regular".to_string());
     let payload = serde_json::json!({
         "scope": scope,
@@ -81,6 +91,7 @@ fn write_result_file(path: &str, stats: &cucumber::writer::summarize::Stats) {
         "passed": stats.passed,
         "failed": stats.failed,
         "skipped": stats.skipped,
+        "scenarios": scenarios,
     });
     if let Err(error) = std::fs::write(path, format!("{payload}\n")) {
         eprintln!("failed to write GIVN_RESULT_FILE {path}: {error}");

@@ -1,0 +1,2 @@
+givn 0.9.20
+800939a056038a7f7c5cd04c35ba8e142a8f81945e3f61f409c550229861c719  /tmp/givn-ise-self-rebuild-20261117T204903Z/target/release/givn

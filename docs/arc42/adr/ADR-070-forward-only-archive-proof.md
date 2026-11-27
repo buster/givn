@@ -12,6 +12,12 @@ informed:
 
 # Publish archives forward-only and bind proof to a committed candidate
 
+Amended 2026-11-19 by `ise-ship-component-tier`: an `ise`-effective change
+whose design records `Rebuilt code: ship` and whose `givn/specs/**` declares a
+component execution unit requires the retained component tier; the receipt
+records the executed subject and an optional component result. The
+2026-11-18 amendment's E2E identity rule stands.
+
 ## Qualification
 
 ADR-QUALIFICATION: PASS
@@ -387,6 +393,45 @@ each stale identity reason, the delta-aware scope outcome, and the unchanged
 missing-identity refusal, and the identity's scope over the resolved packages; a
 component step definition is outside that identity but still invalidates the
 receipt through the tested-content digest.
+
+## Amendment 2026-11-19: the retained component corpus for an Ise ship
+
+Amended 2026-11-19 by `ise-ship-component-tier`: the applicability rule now
+excludes an `ise`-effective change whose design records `Rebuilt code: ship`
+while `givn/specs/**` declares at least one component execution unit. Such a
+change is not not-applicable. `givn check tasks` executes the retained corpus
+with `GIVN_RESULT_FILE`, requires exactly the declared component units with zero
+failed and zero skipped, and records the executed subject and result in the
+receipt. `givn check review` and `givn archive` read that component evidence
+through the same freshness rule, before any archive mutation.
+
+The receipt's `features_path` and `features_digest` now describe the subject
+that produced `result` rather than always the change delta. The optional
+`component` record carries the retained corpus result when the delta also ran.
+A `Rebuilt code: discard` change and a change with no declared component unit
+keep the applicability rule stated above.
+
+### Amendment Decision Outcome
+
+Chosen option: **extend the change verification receipt instead of adding a
+second ship command**. The change-scope command already honours
+`GIVN_FEATURES`; the retained corpus is one more subject, and
+`component_executed=<executed>/<declared>` already names the trial refusal. A
+`givn ise verify-ship` command would duplicate the receipt and freshness rules
+for the same evidence.
+
+**Bad, because** the change-scope evidence is count-based: a runner can report
+the declared count without binding the scenario titles. The trial gate names
+titles; the change-scope gate compares counts and the corpus digest. R-177
+records the limit.
+
+### Amendment Confirmation
+
+`A whole-system Ise ship executes the retained component corpus`,
+`An Ise ship with a delta also executes the retained component corpus`,
+`A whole-system Ise ship without a runner result is refused`, and
+`A whole-system Ise ship that executes fewer component scenarios is refused`
+drive the compiled binary through the real change check.
 
 ## More Information
 

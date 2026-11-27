@@ -247,6 +247,70 @@ pub(crate) fn contracts_declaration(retained: &str, source: &str) -> String {
     )
 }
 
+/// The five declared build-input paths and one committed content each: the
+/// build manifest and lockfile under `contracts`, the toolchain pin under
+/// `limits`, the template under `structure`, and the served instruction text
+/// under `behavior`.
+pub(crate) const BUILD_INPUT_FILES: [(&str, &str); 5] = [
+    (
+        "Cargo.toml",
+        "[package]\nname = \"demo\"\nversion = \"0.1.0\"\n",
+    ),
+    ("Cargo.lock", "version = 4\n"),
+    ("rust-toolchain.toml", "[toolchain]\nchannel = \"1.97.1\"\n"),
+    ("assets/templates/glossary.md", "glossary template\n"),
+    ("assets/instructions/ise.md", "ise instruction\n"),
+];
+
+/// A declaration that places the five build inputs under the four content
+/// roles, retains the behavior corpus and the served instruction text, and
+/// names `e2e` as the End-to-end role path. The declaration and the six files
+/// it retains are seven Specification files.
+pub(crate) fn build_input_declaration(e2e: &str) -> String {
+    format!(
+        "behavior: [\"givn/specs/**\", \"assets/instructions/ise.md\"]\n\
+         structure: [\"assets/templates/glossary.md\"]\n\
+         contracts: [\"Cargo.toml\", \"Cargo.lock\"]\n\
+         limits: [\"rust-toolchain.toml\"]\n\
+         e2e: [{e2e}]\n\
+         source: [\"src/**\"]\n"
+    )
+}
+
+/// Every file the build-input declaration names outside its `e2e` role: the
+/// five build inputs, the behavior feature, and one source file.
+pub(crate) fn build_input_files() -> Vec<(&'static str, &'static str)> {
+    let mut files: Vec<(&'static str, &'static str)> = BUILD_INPUT_FILES.to_vec();
+    files.push((DEMO_FEATURE_PATH, DEMO_FEATURE_CONTENT));
+    files.push(("src/main.rs", "fn main() {}\n"));
+    files
+}
+
+/// Write every file the build-input declaration names outside its `e2e` role.
+pub(crate) fn write_build_inputs(env: &common::TestEnv) {
+    for (path, content) in build_input_files() {
+        let target = env.path(path);
+        std::fs::create_dir_all(target.parent().expect("the file has a parent"))
+            .expect("create the build-input parent directory");
+        std::fs::write(&target, content).expect("write the build-input file");
+    }
+}
+
+/// An initialized Git project with `ise` enabled and the build-input
+/// declaration committed, before the build inputs themselves exist at a
+/// revision.
+pub(crate) fn build_input_project() -> common::TestEnv {
+    ise_project_with_declaration(&build_input_declaration("\"e2e\""))
+}
+
+/// Commit the declared build inputs, the behavior feature, one source file,
+/// and the End-to-end package manifest.
+pub(crate) fn commit_build_inputs(env: &common::TestEnv) -> String {
+    let mut files = build_input_files();
+    files.push(("e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"));
+    commit_files(env, &files, "fixture: declared build inputs")
+}
+
 /// The declaration with one unknown top-level key beside the six valid keys.
 pub(crate) fn malformed_declaration() -> String {
     format!("{MALFORMED_KEY}: [\"x\"]\n{}", default_declaration())
@@ -941,6 +1005,158 @@ fn verify_declaration() -> String {
         .to_string()
 }
 
+/// The feature path the trial-gate fixture commits: ten component scenarios
+/// and one `@e2e` scenario.
+pub(crate) const TRIAL_GATE_FEATURE_PATH: &str = "givn/specs/gate.feature";
+/// The component count the trial-gate fixture declares.
+pub(crate) const TRIAL_GATE_COMPONENT_SCENARIOS: usize = 10;
+
+/// A Git project with `ise` enabled and a verification contract that names
+/// `sh ./scripts/verify.sh` and `sh ./scripts/e2e.sh`. Coverage is off, so the
+/// gate exercises the component tier without a Cobertura fixture.
+pub(crate) fn trial_gate_project() -> common::TestEnv {
+    let env = common::make_bare_root();
+    common::git_init(&env);
+    std::fs::create_dir_all(env.path("givn")).expect("create givn/");
+    std::fs::write(
+        env.path("givn/config.yaml"),
+        "addons:\n  ise: true\n  coverage: false\n",
+    )
+    .expect("write the fixture config");
+    std::fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n  product_path: \"target/debug/gate-product\"\n  product_env: \"GIVN_BIN\"\n",
+    )
+    .expect("write the fixture commands");
+    std::fs::write(
+        env.path("givn/specification.yaml"),
+        "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: []\nlimits: []\ne2e: [\"tests/e2e\"]\nsource: [\"src/**\", \"scripts/**\"]\n",
+    )
+    .expect("write the fixture declaration");
+    env
+}
+
+/// Commit the trial-gate revision: ten component scenarios, one `@e2e`
+/// scenario, the frozen package, one source file, and the e2e script.
+pub(crate) fn commit_trial_gate_revision(env: &common::TestEnv) -> String {
+    let mut feature = String::from("Feature: trial gate\n\n");
+    for index in 1..=TRIAL_GATE_COMPONENT_SCENARIOS {
+        feature.push_str(&format!(
+            "  Scenario: component {index}\n    Given nothing\n\n"
+        ));
+    }
+    feature.push_str("  @e2e\n  Scenario: acceptance\n    Given nothing\n");
+    commit_files(
+        env,
+        &[
+            (
+                "givn/config.yaml",
+                "addons:\n  ise: true\n  coverage: false\n",
+            ),
+            (
+                "givn/commands.yaml",
+                "verify:\n  command: \"sh ./scripts/verify.sh\"\n  e2e_command: \"sh ./scripts/e2e.sh\"\n  features_path: \"givn/specs\"\n  product_path: \"target/debug/gate-product\"\n  product_env: \"GIVN_BIN\"\n",
+            ),
+            (
+                "givn/specification.yaml",
+                "behavior: [\"givn/specs/**\"]\nstructure: []\ncontracts: []\nlimits: []\ne2e: [\"tests/e2e\"]\nsource: [\"src/**\", \"scripts/**\"]\n",
+            ),
+            (TRIAL_GATE_FEATURE_PATH, &feature),
+            ("tests/e2e/Cargo.toml", "[package]\nname = \"e2e\"\n"),
+            ("tests/e2e/steps/demo.rs", "// e2e steps\n"),
+            ("src/one.rs", "pub fn one() {}\n"),
+            ("scripts/e2e.sh", TRIAL_GATE_E2E_SCRIPT),
+        ],
+        "fixture: trial gate revision",
+    )
+}
+
+/// The fixture's corpus-reading End-to-end runner: it selects `@e2e` by tag,
+/// names every selected title, and records the product bytes it was given.
+pub(crate) const TRIAL_GATE_E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/gate.feature)
+product=${GIVN_TRIAL_PRODUCT:-${GIVN_BIN:-}}
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+"#;
+
+/// Write the component script the builder authors inside the copy. It builds
+/// a product file, parses the frozen feature, and executes the `Given nothing`
+/// step for every non-`@e2e` scenario. The reported count is the argument so
+/// the count-mismatch fixtures can under-report a real execution.
+pub(crate) fn write_trial_gate_component_script(copy: &Path, total: usize) {
+    let path = copy.join("scripts/verify.sh");
+    std::fs::create_dir_all(path.parent().expect("script parent")).expect("create script parent");
+    let script = if total == 0 {
+        "#!/bin/sh\ntrue\n".to_string()
+    } else {
+        format!(
+            r#"#!/bin/sh
+set -eu
+mkdir -p target/debug
+printf 'rebuilt gate product\n' > target/debug/gate-product
+
+step_nothing() {{
+  :
+}}
+
+names=""
+sep=""
+scenario=""
+e2e=0
+skip=0
+while IFS= read -r line; do
+  case "$line" in
+    "  @e2e")
+      e2e=1
+      ;;
+    "  Scenario: "*)
+      if [ "$e2e" -eq 1 ]; then
+        e2e=0
+        skip=1
+        scenario=""
+        continue
+      fi
+      skip=0
+      title=${{line#  Scenario: }}
+      scenario=$title
+      names="$names$sep\"$title\""
+      sep=","
+      ;;
+    "    Given nothing")
+      if [ "$skip" -eq 1 ]; then
+        continue
+      fi
+      if [ -z "$scenario" ]; then
+        echo "step outside a scenario" >&2
+        exit 1
+      fi
+      step_nothing
+      ;;
+    "    "*)
+      echo "unbound step: $line" >&2
+      exit 1
+      ;;
+  esac
+done < givn/specs/gate.feature
+
+printf '{{"scope":"component","total":{total},"passed":{total},"failed":0,"skipped":0,"scenarios":[%s]}}\n' "$names" > "$GIVN_RESULT_FILE"
+"#
+        )
+    };
+    std::fs::write(&path, script).expect("write the component script");
+}
+
 /// Commit the files the verify fixtures freeze: the `@e2e` feature, the
 /// contract and limits documents, the two e2e package files, one kept source
 /// file, the replaced source file, and the file outside every role. Returns
@@ -1385,4 +1601,44 @@ fn git_in(directory: &Path, args: &[&str]) -> std::process::Output {
         String::from_utf8_lossy(&output.stderr)
     );
     output
+}
+
+/// Write the count-only script the review rejected: counts but no scenario
+/// titles. It must not satisfy the gate.
+pub(crate) fn write_trial_gate_count_only_component_script(copy: &Path) {
+    let path = copy.join("scripts/verify.sh");
+    std::fs::create_dir_all(path.parent().expect("script parent")).expect("create script parent");
+    std::fs::write(
+        &path,
+        "#!/bin/sh\nprintf '{\"scope\":\"component\",\"total\":10,\"passed\":10,\"failed\":0,\"skipped\":0}\\n' > \"$GIVN_RESULT_FILE\"\n",
+    )
+    .expect("write the count-only component script");
+}
+
+/// The fixture's End-to-end runner that reports another product while still
+/// naming the selected scenarios.
+pub(crate) const TRIAL_GATE_FOREIGN_PRODUCT_E2E_SCRIPT: &str = r#"#!/bin/sh
+set -eu
+names=$(awk '
+  /^  @e2e/ { e2e=1; next }
+  /^  Scenario: / {
+    if (!e2e) next
+    e2e=0
+    sub(/^  Scenario: /, "")
+    printf "%s\"%s\"", sep, $0
+    sep=","
+  }
+' givn/specs/gate.feature)
+product=/bin/true
+sha=$(sha256sum "$product" | cut -d' ' -f1)
+printf '{"scope":"e2e","total":1,"passed":1,"failed":0,"skipped":0,"scenarios":[%s],"product":"%s","product_sha256":"%s"}\n' "$names" "$product" "$sha" > "$GIVN_RESULT_FILE"
+"#;
+
+/// Replace the checkout's End-to-end script with the foreign-product variant.
+pub(crate) fn write_trial_gate_foreign_product_script(env: &common::TestEnv) {
+    std::fs::write(
+        env.path("scripts/e2e.sh"),
+        TRIAL_GATE_FOREIGN_PRODUCT_E2E_SCRIPT,
+    )
+    .expect("write the foreign-product e2e script");
 }

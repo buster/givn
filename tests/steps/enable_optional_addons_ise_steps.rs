@@ -204,14 +204,16 @@ fn active_change_with_pre_ise_lock(world: &mut GivnWorld) {
     .expect("write the pre-ise add-on lock");
 }
 
-#[given(regex = r#"^a declaration at "([^"]+)" whose bytes are recorded$"#)]
+#[given(regex = r#"^a Specification Manifest at "([^"]+)" whose bytes are recorded$"#)]
 fn declaration_at_path_with_recorded_bytes(world: &mut GivnWorld, path: String) {
     std::fs::write(env(world).path(&path), PROJECT_DECLARATION)
         .expect("write the project-owned declaration");
     world.specification_declaration.recorded = Some(PROJECT_DECLARATION.to_string());
 }
 
-#[given("an ise-enabled project selecting opencode whose declaration bytes are recorded")]
+#[given(
+    "an ise-enabled project selecting opencode whose Specification Manifest bytes are recorded"
+)]
 fn ise_enabled_project_with_recorded_declaration(world: &mut GivnWorld) {
     let env = ise_enabled_project();
     std::fs::write(env.path(DECLARATION_PATH), PROJECT_DECLARATION)
@@ -234,7 +236,7 @@ fn stdout_names(world: &mut GivnWorld, needle: String) {
     );
 }
 
-#[then("the declaration names exactly the five roles and one source list")]
+#[then("the Specification Manifest names exactly the five categories and one source list")]
 fn declaration_names_five_roles_and_source(world: &mut GivnWorld) {
     let content = std::fs::read_to_string(env(world).path(DECLARATION_PATH))
         .expect("read the scaffolded declaration");
