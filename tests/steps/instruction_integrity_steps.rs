@@ -3430,8 +3430,9 @@ fn rendered_parsers_accept(world: &mut GivnWorld) {
         .additional_output
         .as_deref()
         .expect("rendered template missing");
-    if text.contains("## Step Definitions") {
-        let row = text
+    if let Some((_, section)) = text.split_once("## Step Definitions") {
+        let section = section.split("\n## ").next().unwrap_or(section);
+        let row = section
             .lines()
             .find(|line| line.trim_start().starts_with("| Capability |"))
             .expect("Step Definitions table header missing");
@@ -3445,7 +3446,7 @@ fn rendered_parsers_accept(world: &mut GivnWorld) {
             "Step Definitions table is inside a blockquote: {row}"
         );
         assert!(
-            text.contains("Column 2 is the single path"),
+            section.contains("Column 2 is the single path"),
             "Step Definitions guidance names the wrong path column"
         );
     } else if text.contains("name: givn-") {
